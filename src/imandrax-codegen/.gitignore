@@ -1,0 +1,9 @@
+_build
+_opam
+*.exe
+
+docs/
+.env
+!*.json
+
+*local*
