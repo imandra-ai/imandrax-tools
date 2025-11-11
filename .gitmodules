@@ -1,0 +1,3 @@
+[submodule "vendor/imandrax-api"]
+	path = vendor/imandrax-api
+	url = git@github.com:imandra-ai/imandrax-api.git
