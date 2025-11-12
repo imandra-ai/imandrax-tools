@@ -130,7 +130,8 @@ type region_meta_value = (
 def unwrap_region_str(
     regions: list[Common_Region_t_poly[Mir_Term, Mir_Type]],
 ) -> list[RegionStr]:
-    """Get `RegionStr`s from a list of `Region.t`.
+    """
+    Get `RegionStr`s from a list of `Region.t`.
 
     A region object looks like:
     {

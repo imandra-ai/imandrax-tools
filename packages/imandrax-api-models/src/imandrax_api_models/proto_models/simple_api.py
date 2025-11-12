@@ -82,7 +82,8 @@ class DecomposeRes(DecomposeResProto):
 
     @property
     def iml_test_cases(self) -> list[dict[str, Any]]:
-        """Format region strings as test cases.
+        """
+        Format region strings as test cases.
 
         Eg: [
             {"args": {"x": "1", "y": "2"}, "expected_output": "3"},
