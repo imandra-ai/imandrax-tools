@@ -1,0 +1,17 @@
+(version base)
+
+(depends ocaml)
+
+(extra_sources
+ (META.atomic
+  (fetch
+   (url
+    https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/atomic/META.atomic)
+   (checksum
+    sha256=c3ace6e10359313a80d8075c30207e8692614198ca888a3ff0266d593492c7b8)))
+ (atomic.install
+  (fetch
+   (url
+    https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/atomic/atomic.install)
+   (checksum
+    sha256=a48a2a7dc1e8d8cb4fb87c7661bc1af0ad0731f9479133737de5a0cb8e499d2c))))

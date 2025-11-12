@@ -1,0 +1,11 @@
+(version dev)
+
+(dune)
+
+(depends ocaml imandrakit hmap dune moonpool logs thread-local-storage)
+
+(source
+ (fetch
+  (url git+https://github.com/imandra-ai/imandrakit)))
+
+(dev)

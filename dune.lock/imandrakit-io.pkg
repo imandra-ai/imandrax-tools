@@ -1,0 +1,11 @@
+(version dev)
+
+(dune)
+
+(depends ocaml imandrakit imandrakit-log moonpool)
+
+(source
+ (fetch
+  (url git+https://github.com/imandra-ai/imandrakit)))
+
+(dev)

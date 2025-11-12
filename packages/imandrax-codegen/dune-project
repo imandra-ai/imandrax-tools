@@ -21,7 +21,7 @@
   (yaml (>= 3.0))
   (base64 (>= 3.0))
   (fmt (>= 0.8))
-  (imandrakit (>= 0.1))
+  imandrakit
   ppx_deriving
   ppx_deriving_yojson
   ppx_expect))
