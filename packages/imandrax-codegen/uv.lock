@@ -404,6 +404,41 @@ async = [
 ]
 
 [[package]]
+name = "imandrax-codegen-py"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "devtools" },
+    { name = "dotenv" },
+    { name = "imandrax-api", extra = ["async"] },
+    { name = "iml-query" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "ipykernel" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.2.1" },
+    { name = "iml-query", specifier = ">=0.3.4" },
+    { name = "pydantic", specifier = ">=2.12.3" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "rich", specifier = ">=14.2.0" },
+    { name = "ruff", specifier = ">=0.14.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ipykernel", specifier = ">=7.0.1" }]
+
+[[package]]
 name = "iml-query"
 version = "0.3.4"
 source = { registry = "https://pypi.org/simple" }
@@ -808,41 +843,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a57
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842, upload-time = "2024-07-21T12:58:20.04Z" },
 ]
-
-[[package]]
-name = "py-gen"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "devtools" },
-    { name = "dotenv" },
-    { name = "imandrax-api", extra = ["async"] },
-    { name = "iml-query" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "ruff" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "ipykernel" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "devtools", specifier = ">=0.12.2" },
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.2.1" },
-    { name = "iml-query", specifier = ">=0.3.4" },
-    { name = "pydantic", specifier = ">=2.12.3" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "rich", specifier = ">=14.2.0" },
-    { name = "ruff", specifier = ">=0.14.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "ipykernel", specifier = ">=7.0.1" }]
 
 [[package]]
 name = "pycparser"
