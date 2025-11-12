@@ -1104,7 +1104,6 @@ let%expect_test "parse fun decomp art" =
            }]
       }
     Parsed AST:
-    test_names: test_1, test_2
     (Ast.FunctionDef
        { Ast.name = "test_1";
          args =

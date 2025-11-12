@@ -1,7 +1,7 @@
 Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
-  >    cd $DUNE_SOURCEROOT && \
+  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    py-gen-parse-fun-decomp "test/data/fun_decomp/$1" - \
   >    | uv run py-gen - \
   >    | fence
@@ -761,4 +761,3 @@ with_guards
       assert result == expected
   
   ```
-

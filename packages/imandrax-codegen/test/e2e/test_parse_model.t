@@ -1,7 +1,7 @@
 Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
-  >    cd $DUNE_SOURCEROOT && \
+  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    py-gen-parse-model "test/data/model/$1" - \
   >    | uv run py-gen - \
   >    | fence
@@ -257,4 +257,3 @@ variant3
   w: status = Waitlist(2, True)
   
   ```
-
