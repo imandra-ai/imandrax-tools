@@ -12,3 +12,4 @@ wheels/
 node_modules/
 
 _build/
+_opam/
