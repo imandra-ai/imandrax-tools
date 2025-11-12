@@ -6,12 +6,14 @@ from typing import Literal, Self
 from devtools import pformat
 from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
 
-from ..decode_artifact import RegionStr, decode_artifact
+from ..decode_artifact import RegionStr as RegionStr_, decode_artifact
 from .artmsg import Art
 from .error import Error
 from .session import Session
 from .task import Origin, Task
 from .utils import Empty, StringMsg
+
+RegionStr = TypeAdapter(RegionStr_)
 
 
 class SessionCreateReq(BaseModel):
