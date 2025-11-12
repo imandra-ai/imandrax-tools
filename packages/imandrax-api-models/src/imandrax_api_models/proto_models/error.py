@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from enum import Enum
 from typing import Self
@@ -86,7 +88,7 @@ class ErrorKind(str, Enum):
 class ErrorMessage(BaseModel):
     msg: str
     locs: list[Location] = Field(
-        default_factory=list, description='Locations for this message'
+        default_factory=lambda: [], description='Locations for this message'
     )
     backtrace: str | None = Field(default=None, description='Captured backtrace')
 
@@ -97,6 +99,6 @@ class Error(BaseModel):
     )
     kind: str = Field(description='A string description of the kind of error')
     stack: list[ErrorMessage] = Field(
-        default_factory=list, description='Context for the error'
+        default_factory=lambda: [], description='Context for the error'
     )
     process: str | None = Field(default=None)

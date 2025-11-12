@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -22,5 +24,5 @@ class Art(BaseModel):
         )
     )
     storage: list[StorageEntry] = Field(
-        default_factory=list, description='Additional definitions on the side'
+        default_factory=lambda: [], description='Additional definitions on the side'
     )

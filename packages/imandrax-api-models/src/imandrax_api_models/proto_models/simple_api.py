@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from devtools import pformat
 from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
 
-from ..decode_artifact import RegionStr as RegionStr_, decode_artifact
+from ..decode_artifact import RegionStr, decode_artifact
 from .artmsg import Art
 from .error import Error
 from .session import Session
 from .task import Origin, Task
 from .utils import Empty, StringMsg
-
-RegionStr = TypeAdapter(RegionStr_)
 
 
 class SessionCreateReq(BaseModel):
@@ -45,7 +43,7 @@ class DecomposeReq(BaseModel):
 class DecomposeResProto(BaseModel):
     artifact: Art | None = Field(default=None)
     err: Empty | None = Field(default=None)
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None)
 
     @model_validator(mode='after')
@@ -75,6 +73,7 @@ class DecomposeRes(DecomposeResProto):
         elif self.errors:
             return self
         else:
+            assert self.artifact is not None, 'artifact must be present when no errors'
             regions_str = decode_artifact(self.artifact.data, self.artifact.kind)
             return self.model_copy(update={'regions_str': regions_str})
 
@@ -82,7 +81,7 @@ class DecomposeRes(DecomposeResProto):
         return pformat(self)
 
     @property
-    def iml_test_cases(self) -> list[dict[str, str]]:
+    def iml_test_cases(self) -> list[dict[str, Any]]:
         """Format region strings as test cases.
 
         Eg: [
@@ -92,7 +91,7 @@ class DecomposeRes(DecomposeResProto):
         """
         if not self.regions_str:
             return []
-        test_cases = []
+        test_cases: list[dict[str, Any]] = []
         for region_str in self.regions_str:
             if (model_eval_str := region_str.model_eval_str) is None:
                 continue
@@ -103,7 +102,7 @@ class DecomposeRes(DecomposeResProto):
 
     @property
     def test_docstrs(self) -> list[str]:
-        docstrs = []
+        docstrs: list[str] = []
         if not self.regions_str:
             return docstrs
         for region_str in self.regions_str:
@@ -136,21 +135,25 @@ class EvalOutput(BaseModel):
     value_as_ocaml: str | None = Field(
         default=None, description='result as a OCaml value, if any'
     )
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
 
 
 class EvalRes(BaseModel):
     success: bool = Field()
-    messages: list[str] = Field(default_factory=list, description='"normal" messages')
-    errors: list[Error] = Field(default_factory=list, description='akin to stderr')
+    messages: list[str] = Field(
+        default_factory=lambda: [], description='"normal" messages'
+    )
+    errors: list[Error] = Field(
+        default_factory=lambda: [], description='akin to stderr'
+    )
 
     # All tasks started during eval
     tasks: list[Task] = Field(
-        default_factory=list, description='all tasks started during eval'
+        default_factory=lambda: [], description='all tasks started during eval'
     )
-    po_results: list[PO_Res] = Field(default_factory=list)
-    eval_results: list[EvalOutput] = Field(default_factory=list)
-    decomp_results: list[DecomposeRes] = Field(default_factory=list)
+    po_results: list[PO_Res] = Field(default_factory=lambda: [])
+    eval_results: list[EvalOutput] = Field(default_factory=lambda: [])
+    decomp_results: list[DecomposeRes] = Field(default_factory=lambda: [])
 
     def __repr__(self) -> str:
         return pformat(self, indent=2)
@@ -234,7 +237,7 @@ class PO_Res(BaseModel):
     instance: CounterSat | None = Field(default=None)
     verified_upto: Verified_upto | None = Field(default=None)
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
     origin: Origin | None = Field(
         default=None, description='where did the task originate?'
@@ -268,7 +271,7 @@ class VerifyRes(BaseModel):
     refuted: Refuted | None = Field(default=None)
     verified_upto: Verified_upto | None = Field(default=None)
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
 
     @property
@@ -330,7 +333,7 @@ class InstanceRes(BaseModel):
     unsat: Unsat | None = Field(default=None)
     sat: Sat | None = Field(default=None)
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
 
     @model_validator(mode='after')
@@ -351,7 +354,7 @@ class TypecheckReq(BaseModel):
 class TypecheckResProto(BaseModel):
     success: bool
     types: str = Field(description='JSON string of inferred types')
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=lambda: [])
 
 
 class InferredType(BaseModel):
@@ -365,7 +368,7 @@ InferredTypes = TypeAdapter(list[InferredType])
 
 
 class TypecheckRes(TypecheckResProto):
-    types: list[InferredType] = Field(description='Parsed inferred types')
+    types: list[InferredType] = Field(description='Parsed inferred types')  # type: ignore[assignment]
 
     @field_validator('types', mode='before')
     @classmethod
