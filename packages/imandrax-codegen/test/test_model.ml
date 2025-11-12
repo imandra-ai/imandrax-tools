@@ -1,6 +1,6 @@
 open Printf
-open Py_gen
-open Py_gen.Parse
+open Imandrax_codegen
+open Imandrax_codegen.Parse
 module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term

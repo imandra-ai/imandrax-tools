@@ -1,0 +1,27 @@
+(lang dune 3.0)
+
+(generate_opam_files true)
+
+(name imandrax-codegen)
+
+(version 0.1)
+
+(authors "Hongyu Lin")
+
+(maintainers "imandra.ai")
+
+(package
+ (name imandrax-codegen)
+ (synopsis "Code generator for ImandraX artifacts")
+ (depends
+  (ocaml (>= 4.12.0))
+  (imandrax-api (>= 0.17))
+  (containers (>= 3.4))
+  (yojson (>= 1.6))
+  (yaml (>= 3.0))
+  (base64 (>= 3.0))
+  (fmt (>= 0.8))
+  (imandrakit (>= 0.1))
+  ppx_deriving
+  ppx_deriving_yojson
+  ppx_expect))

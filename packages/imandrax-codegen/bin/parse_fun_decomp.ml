@@ -55,14 +55,14 @@ let parse_yaml_input input use_stdout =
   let yaml_str = read_content input in
   validate_content yaml_str;
   let yaml = Yaml.of_string_exn yaml_str in
-  Py_gen.Util.yaml_to_fun_decomp ~debug:false yaml
+  Imandrax_codegen.Util.yaml_to_fun_decomp ~debug:false yaml
 
 let parse_json_input input use_stdout =
   log use_stdout "Parsing JSON file...\n";
   let content = read_content input in
   validate_content content;
   let json = Yojson.Safe.from_string content in
-  Py_gen.Util.json_to_fun_decomp ~debug:false json
+  Imandrax_codegen.Util.json_to_fun_decomp ~debug:false json
 
 let parse_input config =
   let use_stdout =
@@ -76,10 +76,10 @@ let parse_input config =
 
 let convert_to_ast parsed_input use_stdout output_as_dict =
   log use_stdout "Converting to Python AST...\n";
-  Py_gen.Parse.parse_fun_decomp ~output_as_dict parsed_input
+  Imandrax_codegen.Parse.parse_fun_decomp ~output_as_dict parsed_input
 
 let write_output output stmts =
-  let json_out = `List (List.map Py_gen.Ast.stmt_to_yojson stmts) in
+  let json_out = `List (List.map Imandrax_codegen.Ast.stmt_to_yojson stmts) in
   match output with
   | Stdout ->
     Yojson.Safe.to_channel stdout json_out;

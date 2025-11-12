@@ -1,7 +1,7 @@
 (library
  (name test)
  (libraries
-  py_gen
+  imandrax_codegen
   imandrax-api
   imandrax-api.artifact
   imandrax-api.mir

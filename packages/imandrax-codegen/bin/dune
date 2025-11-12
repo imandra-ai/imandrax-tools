@@ -2,10 +2,10 @@
 (executable
  (name parse_model)
  (public_name py-gen-parse-model)
- (package imandrax-api)
+ (package imandrax-codegen)
  (modules parse_model)
  (libraries
-  py_gen
+  imandrax_codegen
   imandrax-api
   imandrax-api.mir
   imandrax-api.artifact
@@ -17,10 +17,10 @@
 (executable
   (name parse_fun_decomp)
   (public_name py-gen-parse-fun-decomp)
-  (package imandrax-api)
+  (package imandrax-codegen)
   (modules parse_fun_decomp)
   (libraries
-  py_gen
+  imandrax_codegen
   imandrax-api
   imandrax-api.mir
   imandrax-api.artifact

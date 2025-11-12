@@ -1,8 +1,9 @@
 ; Library for artifact loading and Python code generation
 
 (library
- (name py_gen)
+ (name imandrax_codegen)
  (modules parse ast util pretty_print)
+ (flags (:standard -w -30))
  (libraries
   imandrax-api
   imandrax-api.artifact
