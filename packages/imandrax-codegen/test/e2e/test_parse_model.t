@@ -1,7 +1,7 @@
 Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
-  >    cd $DUNE_SOURCEROOT/src/py-gen && \
+  >    cd $DUNE_SOURCEROOT && \
   >    py-gen-parse-model "test/data/model/$1" - \
   >    | uv run py-gen - \
   >    | fence
