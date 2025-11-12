@@ -7,8 +7,73 @@ authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "devtools>=0.12.2",
+    "imandrax-api[async]>=0.17",
+    "pydantic>=2.12.4",
+]
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.1.0",
+    "pytest>=9.0.1",
+]
+
+[tool.ruff.lint]
+extend-select = [
+    "Q",
+    "RUF100",
+    "RUF018", # https://docs.astral.sh/ruff/rules/assignment-in-assert/
+    "C90",
+    "UP",
+    "I",
+    "D",
+    "TID251",
+]
+flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
+mccabe = { max-complexity = 15 }
+ignore = [
+    "D100", # ignore missing docstring in module
+    "D101", # ignore missing docstring in public class
+    "D102", # ignore missing docstring in public method
+    "D103", # ignore missing docstring in public function
+    "D104", # ignore missing docstring in public package
+    "D105", # ignore missing docstring in magic methods
+    "D106", # ignore missing docstring in public nested class
+    "D107", # ignore missing docstring in __init__ methods
+]
+pycodestyle.ignore-overlong-task-comments = true
+isort.combine-as-imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**/*.py" = ["F401", "RUF100", "D", "E402", "B018"]
+"data/**/*.py" = ["F401", "RUF100", "D", "E402", "B018"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ty]
+environment.python = "./.venv"
+
+[tool.ty.rules]
+# Handled by pyright
+unsupported-operator = "ignore"
+invalid-argument-type = "ignore"
+invalid-return-type = "ignore"
+possibly-missing-attribute = "ignore"
+unresolved-import = "ignore"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.13"
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryTypeIgnoreComment = true
+reportUnusedImport = "none"
+reportUnusedExpression = false
