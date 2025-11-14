@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "devtools>=0.12.2",
-    "imandrax-api[async]>=0.17",
+    "imandrax-api[async]>=0.17.3.1",
     "pydantic>=2.12.4",
 ]
 
@@ -19,7 +19,13 @@ build-backend = "uv_build"
 
 
 [tool.uv.sources]
-imandrax-api = { path = "../../../imandrax-api/src/py" }
+
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
+explicit = true
 
 [dependency-groups]
 dev = [
