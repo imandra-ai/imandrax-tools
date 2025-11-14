@@ -258,6 +258,7 @@ def insert_lines(
     tree: Tree,
     lines: list[str],
     insert_after: int,
+    ensure_trailing_newline: bool = True,
 ) -> tuple[str, Tree]:
     r"""
     Insert lines of code after the given line number.
@@ -270,6 +271,8 @@ def insert_lines(
         lines: list of lines to insert (without trailing newlines)
         insert_after: line number to insert after
             (0-based, must be < len(lines))
+        ensure_trailing_newline: whether to ensure that the there's a trailing
+            newline at the end of the code.
 
     Returns:
         new IML code and new tree
@@ -339,7 +342,9 @@ def insert_lines(
         need_leading_newline = not iml_lines[insert_after].endswith('\n')
 
     # Prepare the text to insert (ensure lines end with newlines)
-    insert_text = '\n'.join(lines) + '\n'
+    insert_text = '\n'.join(lines)
+    if ensure_trailing_newline:
+        insert_text += '\n'
     if need_leading_newline:
         insert_text = '\n' + insert_text
 

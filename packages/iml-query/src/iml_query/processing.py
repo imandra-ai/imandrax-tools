@@ -708,9 +708,19 @@ def update_top_definition(
         iml_1 = iml
         tree_1 = tree
         insert_after_line = func_def_end_row
+        # When keeping previous definition, add trailing newline to separate
+        add_trailing_newline = True
     else:
         iml_1, tree_1 = delete_nodes(iml, tree, nodes=[func_def_node])
         insert_after_line = func_def_start_row - 1
+        # When replacing, add trailing newline if this will be the last
+        # definition in the file (i.e., file will end with this definition)
+        # Check if we're inserting after the last content
+        last_line_with_content = -1
+        for i, line in enumerate(iml_1.split('\n')):
+            if line.strip():
+                last_line_with_content = i
+        add_trailing_newline = insert_after_line >= last_line_with_content
 
     if new_definition == '':
         return iml_1, tree_1
@@ -720,5 +730,6 @@ def update_top_definition(
             tree_1,
             lines=[new_definition],
             insert_after=insert_after_line,
+            ensure_trailing_newline=add_trailing_newline,
         )
         return iml_2, tree_2
