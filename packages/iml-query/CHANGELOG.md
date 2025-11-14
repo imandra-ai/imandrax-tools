@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## v0.4.0 - 2025.10.17
+## [v0.4.1] - 2025.11.14
+- fixed:
+  - incorrect trailing newline insertion
+  
+## [v0.4.0] - 2025.10.17
 - added:
   - a function to replace, add, or delete a definition
 - changed:
