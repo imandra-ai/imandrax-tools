@@ -321,7 +321,7 @@ def insert_lines(
     # Calculate byte position for insertion
     # Find the end of the line we're inserting after
     if insert_after == -1:
-        # Inserting at the end of the file
+        # Inserting at the start of the file
         insert_byte_pos = 0
         need_leading_newline = False
     elif insert_after >= len(iml_lines):

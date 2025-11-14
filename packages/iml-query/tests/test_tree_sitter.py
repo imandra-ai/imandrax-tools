@@ -217,9 +217,9 @@ let y = 2
     except ValueError as e:
         assert 'out of range' in str(e)
 
-    # Also test with negative line number
+    # Also test with negative line number lower than -1
     try:
-        insert_lines(iml, tree, lines=['let z = 3'], insert_after=-1)
+        insert_lines(iml, tree, lines=['let z = 3'], insert_after=-2)
         raise AssertionError('Expected ValueError')
     except ValueError as e:
         assert 'out of range' in str(e)
