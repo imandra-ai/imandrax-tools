@@ -35,7 +35,7 @@ let simple_branch2  = simple_branch
 let simple_branch3 x =
 if x = 1 || x = 2 then x + 1 else x - 1
 [@@decomp top ~prune: true ()]\
-"""  # noqa: E501
+"""
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
@@ -83,7 +83,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     decomp_req_2 = decomp_reqs[1]
 
     assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
-        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()'  # noqa: E501
+        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()'
     )
 
     # %%
@@ -92,7 +92,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
         '<Node type=value_definition, start_point=(5, 0), end_point=(5, 35)>'
     )
     assert str(func_def) == snapshot(
-        '(value_definition (let_binding pattern: (value_name) body: (value_path (value_name))))'  # noqa: E501
+        '(value_definition (let_binding pattern: (value_name) body: (value_path (value_name))))'
     )
 
     # %%
@@ -113,7 +113,7 @@ let simple_branch2  = simple_branch
 
 let simple_branch3 x =
 if x = 1 || x = 2 then x + 1 else x - 1
-""")  # noqa: E501
+""")
 
     # %%
     iml4, _tree4 = insert_decomp_req(iml2, tree2, decomp_req_2)
@@ -129,7 +129,7 @@ let simple_branch2  = simple_branch
 
 let simple_branch3 x =
 if x = 1 || x = 2 then x + 1 else x - 1
-""")  # noqa: E501
+""")
 
     # %%
     assert iml3 == iml4

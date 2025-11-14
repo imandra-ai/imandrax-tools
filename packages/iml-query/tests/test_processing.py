@@ -264,7 +264,7 @@ let external_api_call x = if x mod 2 = 0 then x / 2 else 3 * x + 1
 verify double_non_negative_is_increasing
 
 instance positive_predicate\
-"""  # noqa: E501
+"""
     outline = iml_outline(iml)
     assert outline == snapshot(
         {
@@ -479,7 +479,8 @@ let rec normal_rec x =
 
 
 def test_update_top_definition():
-    """Test update_top_definition with various scenarios.
+    """
+    Test update_top_definition with various scenarios.
 
     - replacement
     - addition by setting keep_previous_definition to True (it's False by

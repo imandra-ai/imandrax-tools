@@ -49,7 +49,8 @@ def find_func_definition(tree: Tree, function_name: str) -> Node | None:
 
 
 def find_nested_measures(root_node: Node) -> list[dict[str, Any]]:
-    """Find nested measures.
+    """
+    Find nested measures.
 
     Reurns:
         list of dicts with keys:
@@ -199,7 +200,8 @@ def resolve_nesting_definitions(
 
 
 def find_nested_rec(iml: str) -> list[Nesting]:
-    """Find nested recursive function definitions in IML code.
+    """
+    Find nested recursive function definitions in IML code.
 
     Returns:
         a list of dictionary for the name and location of each function
@@ -657,7 +659,8 @@ def update_top_definition(
     new_definition: str,
     keep_previous_definition: bool = False,
 ) -> tuple[str, Tree]:
-    """Update the definition of a top-level function.
+    """
+    Update the definition of a top-level function.
 
     Args:
         iml: input IML code

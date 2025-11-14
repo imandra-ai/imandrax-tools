@@ -50,7 +50,8 @@ def run_query(
     code: str | bytes | None = None,
     node: Node | None = None,
 ) -> list[tuple[int, dict[str, list[Node]]]]:
-    """Run a Tree-sitter query on the given code or node.
+    """
+    Run a Tree-sitter query on the given code or node.
 
     Return:
         A list of tuples where the first element is the pattern index and
@@ -76,7 +77,8 @@ def run_query(
 
 
 def merge_queries(queries: dict[str, str]) -> str:
-    """Merge multiple queries into one query.
+    """
+    Merge multiple queries into one query.
 
     Args:
         queries (dict[str, str]): A dictionary of query names to queries.
@@ -102,7 +104,8 @@ def run_queries(
     queries: dict[str, str],
     node: Node,
 ) -> dict[str, list[dict[str, list[Node]]]]:
-    """Run multiple queries.
+    """
+    Run multiple queries.
 
     Returns:
     dict[str, list[dict[str, list[Node]]]]: A dictionary of query names to
@@ -132,7 +135,8 @@ def unwrap_bytes(node_text: bytes | None) -> bytes:
 
 
 def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
-    """Get nesting relationship between two nodes.
+    """
+    Get nesting relationship between two nodes.
 
     Returns:
         -1: nested_node is not contained within top_level_node
@@ -187,7 +191,8 @@ def delete_nodes(
     *,
     nodes: list[Node],
 ) -> tuple[str, Tree | None]:
-    """Delete nodes from IML string and return updated string and tree.
+    """
+    Delete nodes from IML string and return updated string and tree.
 
     Return new tree if old_tree is provided.
 
@@ -254,7 +259,8 @@ def insert_lines(
     lines: list[str],
     insert_after: int,
 ) -> tuple[str, Tree]:
-    r"""Insert lines of code after the given line number.
+    r"""
+    Insert lines of code after the given line number.
 
     AI: this is implemented by AI
 
@@ -398,7 +404,8 @@ def get_node_sexpr_with_leaf_text(
     depth: int = 0,
     max_depth: int | None = None,
 ) -> list[str]:
-    """Print node type in sexpr format.
+    """
+    Print node type in sexpr format.
 
     Include 'text' only for leaf nodes.
     """
@@ -486,7 +493,7 @@ def get_node_sexpr_with_field_name(s_expr: str, indent_size: int = 2):
 
 if __name__ == '__main__':
     # Test with your example
-    s_expr = """(attribute_payload (expression_item (application_expression function: (value_path (value_name)) argument: (labeled_argument (label_name) expression: (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name)))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))) (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (constructor_path (constructor_name))) argument: (unit))))"""  # noqa: E501
+    s_expr = """(attribute_payload (expression_item (application_expression function: (value_path (value_name)) argument: (labeled_argument (label_name) expression: (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name)))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))) (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (constructor_path (constructor_name))) argument: (unit))))"""
 
     formatted = get_node_sexpr_with_field_name(s_expr)
     print(formatted)

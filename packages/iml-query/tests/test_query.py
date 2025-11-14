@@ -95,7 +95,7 @@ end_point=(31, 43)>
         ]
     }
 ]\
-""")  # noqa: E501
+""")
 
 
 def test_complex_decomp_with_composition():

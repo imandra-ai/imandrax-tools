@@ -12,7 +12,8 @@ from tree_sitter import Node
 class BaseCapture:
     @classmethod
     def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
-        """Create a new instance of the class from tree-sitter capture dict.
+        """
+        Create a new instance of the class from tree-sitter capture dict.
 
         Args:
             capture (dict[str, list[Node]]): Tree-sitter capture dict.
