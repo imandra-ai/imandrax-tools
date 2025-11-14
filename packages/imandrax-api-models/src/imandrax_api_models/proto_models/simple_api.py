@@ -165,6 +165,11 @@ class EvalRes(BaseModel):
 
     @property
     def all_errors(self) -> list[Error]:
+        """
+        Non-proof-obligation errors and proof-obligation errors.
+
+        Non-proof-obligation errors always come first
+        """
         return self.errors + self.po_errors
 
     @property
