@@ -1,12 +1,23 @@
 import os
 
 import pytest
+from dirty_equals import IsBytes, IsStr
 from google.protobuf.message import Message
 from imandrax_api import Client, url_prod
 from inline_snapshot import snapshot
 
 from imandrax_api_models.proto_models import EvalRes
 from imandrax_api_models.proto_utils import proto_to_dict
+
+
+class IsArtifact(IsBytes):
+    def __init__(self):
+        super().__init__(min_length=1)
+
+
+class IsTaskID(IsStr):
+    def __init__(self):
+        super().__init__(regex=r'task:decomp:.*')
 
 
 @pytest.fixture
