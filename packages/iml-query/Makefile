@@ -20,29 +20,35 @@ test:
 
 .PHONY: build
 build:
-	rm -rf ../dist/iml_query-*
+	rm -rf ./dist/iml_query-*
 	uv build --no-sources
 
 .PHONY: test-wheel
 test-wheel:
-	uv run --isolated --no-project --with ../dist/iml_query-*.whl --with ../dist/tree_sitter_iml-*.whl tests/smoke_test.py
+	uv run --isolated --no-project --with ./dist/iml_query-*.whl tests/smoke_test.py
 
 .PHONY: test-source-dist
 test-source-dist:
-	uv run --isolated --no-project --with ../dist/iml_query-*.tar.gz --with ../dist/tree_sitter_iml-*.tar.gz tests/smoke_test.py
+	uv run --isolated --no-project --with ./dist/iml_query-*.tar.gz tests/smoke_test.py
+
+.PHONY: pre-release-test
+pre-release-test:
+	make build
+	make test-wheel
+	make test-source-dist
 
 .PHONY: publish-testpypi
-publish-testpypi:
+publish-testpypi: pre-release-test
 	uv publish \
 	--index testpypi \
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
-	../dist/iml_query-*
+	./dist/iml_query-*
 
 .PHONY: publish-pypi
-publish-pypi:
+publish-pypi: pre-release-test
 	uv publish \
 	--index pypi \
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
-	../dist/iml_query-*
+	./dist/iml_query-*
