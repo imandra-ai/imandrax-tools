@@ -8,8 +8,14 @@ from imandrax_api.lib import (
     RegionStr,
     get_region_str_from_decomp_artifact,
 )
-from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
+from pydantic import (
+    Field,
+    TypeAdapter,
+    field_validator,
+    model_validator,
+)
 
+from ..proto_utils import BaseModel
 from .artmsg import Art
 from .error import Error
 from .session import Session

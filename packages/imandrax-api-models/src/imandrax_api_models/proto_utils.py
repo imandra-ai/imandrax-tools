@@ -2,7 +2,7 @@ from typing import Any
 
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel as PydanticBaseModel, model_validator
 
 
 def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
@@ -13,7 +13,7 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
     )
 
 
-class BaseProtoModel(BaseModel):
+class BaseModel(PydanticBaseModel):
     @model_validator(mode='before')
     def validate_proto(cls, v: Any) -> dict[Any, Any]:
         if isinstance(v, Message):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from ..proto_utils import BaseModel
 
 
 class Empty(BaseModel):

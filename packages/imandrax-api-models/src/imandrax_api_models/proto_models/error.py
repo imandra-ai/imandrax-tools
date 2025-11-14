@@ -4,8 +4,9 @@ import re
 from enum import Enum
 from typing import Self
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from ..proto_utils import BaseModel
 from .locs import Location
 
 

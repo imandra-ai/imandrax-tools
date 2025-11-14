@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ..proto_utils import BaseModel
 
 
 class StorageEntry(BaseModel):
