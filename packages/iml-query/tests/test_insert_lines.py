@@ -71,3 +71,73 @@ let z = 3
 let w = 4
 """)
     assert not tree6.root_node.has_error
+
+
+def test_insert_lines_at_end():
+    """Test inserting lines at the end of file."""
+    iml = """\
+let x = 1
+let y = 2"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    iml2, tree2 = insert_lines(iml, tree, lines=['let z = 3'], insert_after=1)
+    assert iml2 == snapshot("""\
+let x = 1
+let y = 2
+let z = 3
+""")
+    assert not tree2.root_node.has_error
+
+
+def test_insert_lines_in_middle():
+    """Test inserting lines in the middle of file."""
+    iml = """\
+let x = 1
+let y = 2
+let z = 3"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    iml2, tree2 = insert_lines(iml, tree, lines=['let a = 0'], insert_after=1)
+    assert iml2 == snapshot("""\
+let x = 1
+let y = 2
+let a = 0
+let z = 3
+""")
+    assert not tree2.root_node.has_error
+
+
+def test_insert_lines_at_beginning():
+    """Test inserting lines at the beginning of file."""
+    iml = """\
+let x = 1
+let y = 2"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    iml2, tree2 = insert_lines(iml, tree, lines=['let b = 0'], insert_after=-1)
+    assert iml2 == snapshot("""\
+let b = 0
+let x = 1
+let y = 2
+""")
+    assert not tree2.root_node.has_error
+
+
+def test_insert_lines_after_first_line():
+    """Test inserting lines after the first line."""
+    iml = """\
+let x = 1
+let y = 2"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    iml2, tree2 = insert_lines(iml, tree, lines=['let c = 5'], insert_after=0)
+    assert iml2 == snapshot("""\
+let x = 1
+let c = 5
+let y = 2
+""")
+    assert not tree2.root_node.has_error
