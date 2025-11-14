@@ -388,13 +388,6 @@ def insert_lines(
     parser = create_parser(ocaml=False)
     new_tree = parser.parse(new_iml_bytes, old_tree=tree)
 
-    # Ensure file ends with newline
-    if not new_iml.endswith('\n'):
-        new_iml += '\n'
-        new_iml_bytes = new_iml.encode('utf-8')
-        # Re-parse with the updated content
-        new_tree = parser.parse(new_iml_bytes)
-
     return new_iml, new_tree
 
 

@@ -104,8 +104,7 @@ let z = 3"""
 let x = 1
 let y = 2
 let a = 0
-let z = 3
-""")
+let z = 3""")
     assert not tree2.root_node.has_error
 
 
@@ -121,8 +120,7 @@ let y = 2"""
     assert iml2 == snapshot("""\
 let b = 0
 let x = 1
-let y = 2
-""")
+let y = 2""")
     assert not tree2.root_node.has_error
 
 
@@ -138,6 +136,5 @@ let y = 2"""
     assert iml2 == snapshot("""\
 let x = 1
 let c = 5
-let y = 2
-""")
+let y = 2""")
     assert not tree2.root_node.has_error
