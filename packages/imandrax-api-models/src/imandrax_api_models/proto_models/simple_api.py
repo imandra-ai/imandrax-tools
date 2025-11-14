@@ -4,9 +4,12 @@ from enum import Enum
 from typing import Any, Literal, Self
 
 from devtools import pformat
+from imandrax_api.lib import (
+    RegionStr,
+    get_region_str_from_decomp_artifact,
+)
 from pydantic import BaseModel, Field, TypeAdapter, field_validator, model_validator
 
-from ..decode_artifact import RegionStr, decode_artifact
 from .artmsg import Art
 from .error import Error
 from .session import Session
@@ -67,14 +70,15 @@ class DecomposeRes(DecomposeResProto):
 
     @model_validator(mode='after')
     def unwrap_region_str(self) -> Self:
-        # Unwrap the regionsStr from the artifact to the old format
         if self.regions_str is not None:
             return self
         elif self.errors:
             return self
         else:
             assert self.artifact is not None, 'artifact must be present when no errors'
-            regions_str = decode_artifact(self.artifact.data, self.artifact.kind)
+            regions_str = get_region_str_from_decomp_artifact(
+                data=self.artifact.data, kind=self.artifact.kind
+            )
             return self.model_copy(update={'regions_str': regions_str})
 
     def __repr__(self) -> str:
