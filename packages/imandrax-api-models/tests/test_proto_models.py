@@ -6,7 +6,7 @@ from google.protobuf.message import Message
 from imandrax_api import Client, url_prod
 from inline_snapshot import snapshot
 
-from imandrax_api_models.proto_models import (
+from imandrax_api_models import (
     DecomposeRes,
     EvalRes,
     InstanceRes,
