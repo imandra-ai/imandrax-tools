@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "imandrax-api-models>=1.0.0",
-    "iml-query>=0.4.1",
+    "iml-query>=0.4.2",
 ]
 
 [build-system]
