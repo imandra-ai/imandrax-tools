@@ -1,0 +1,65 @@
+# $schema: https://json.schemastore.org/github-workflow.json
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      working-directory:
+        required: true
+        type: string
+        description: the working directory to run the release in
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    outputs:
+      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
+      version: ${{ steps.check-version.outputs.version }}
+      tag: ${{ steps.check-version.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Build
+        run: uv build
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Upload build
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Check version
+        id: check-version
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: |
+          version_data=$(uv version --output-format=json)
+          version=$(echo "$version_data" | jq -r '.version')
+          package_name=$(echo "$version_data" | jq -r '.package_name')
+          tag="${package_name}==${version}"
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+  test-pypi-publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
