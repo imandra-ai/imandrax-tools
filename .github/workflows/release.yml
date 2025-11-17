@@ -48,7 +48,7 @@ jobs:
           echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
-  test-pypi-publish:
+  pypi-publish:
     needs: build
     permissions:
       id-token: write
@@ -61,10 +61,9 @@ jobs:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Publish to Test PyPI
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
           print-hash: true
-          repository-url: https://test.pypi.org/legacy/
