@@ -21,12 +21,6 @@ build-backend = "uv_build"
 [tool.uv.sources]
 
 
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-explicit = true
-
 [dependency-groups]
 dev = [
     "inline-snapshot[dirty-equals]>=0.31.1",
