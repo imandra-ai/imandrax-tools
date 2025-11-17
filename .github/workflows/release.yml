@@ -84,3 +84,24 @@ jobs:
           packages-dir: ${{ inputs.working-directory }}/dist/
           verbose: true
           print-hash: true
+
+  github-release:
+    needs: [build, pypi-publish]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: ${{ needs.build.outputs.pkg-name }} ${{ needs.build.outputs.version }}
+          files: ${{ inputs.working-directory }}/dist/*
+          generate_release_notes: true
