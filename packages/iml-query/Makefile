@@ -40,7 +40,7 @@ pre-release-test:
 .PHONY: publish-testpypi
 publish-testpypi: pre-release-test
 	uv publish \
-	--index testpypi \
+	--publish-url https://test.pypi.org/legacy/ \
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
 	./dist/iml_query-*
@@ -48,7 +48,7 @@ publish-testpypi: pre-release-test
 .PHONY: publish-pypi
 publish-pypi: pre-release-test
 	uv publish \
-	--index pypi \
+	--publish-url https://upload.pypi.org/legacy/ \
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
 	./dist/iml_query-*
