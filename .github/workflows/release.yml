@@ -48,8 +48,25 @@ jobs:
           echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
-  pypi-publish:
+  pre-release-test:
     needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Run pre-release tests
+        run: make pre-release-test
+        working-directory: ${{ inputs.working-directory }}
+
+  pypi-publish:
+    needs: [build, pre-release-test]
     permissions:
       id-token: write
     runs-on: ubuntu-latest
