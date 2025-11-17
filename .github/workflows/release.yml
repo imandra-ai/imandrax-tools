@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       working-directory:
+        description: the package to release
         required: true
-        type: string
-        description: the working directory to run the release in
+        type: choice
+        options:
+          - packages/imandrax-api-models
+          - packages/iml-query
 jobs:
   build:
     runs-on: ubuntu-latest
