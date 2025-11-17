@@ -1,0 +1,53 @@
+def test_package_import():
+    """Test that the package can be imported."""
+    import imandrax_api_models  # noqa: F401
+
+
+def test_all_exports_import():
+    """Test that all exported models can be imported."""
+    from imandrax_api_models import (  # noqa: F401
+        Art,
+        CounterSat,
+        DecomposeReq,
+        DecomposeRes,
+        Empty,
+        Error,
+        ErrorKind,
+        ErrorMessage,
+        EvalOutput,
+        EvalRes,
+        EvalSrcReq,
+        InferredType,
+        InstanceNameReq,
+        InstanceRes,
+        InstanceSrcReq,
+        LiftBool,
+        Location,
+        Model,
+        ModelType,
+        OneshotReq,
+        OneshotRes,
+        Origin,
+        PO_Res,
+        Position,
+        Proved,
+        Refuted,
+        RegionStr,
+        Sat,
+        Session,
+        SessionCreate,
+        SessionCreateReq,
+        SessionOpen,
+        StorageEntry,
+        StringMsg,
+        Task,
+        TaskID,
+        TaskKind,
+        TypecheckReq,
+        TypecheckRes,
+        Unsat,
+        Verified_upto,
+        VerifyNameReq,
+        VerifyRes,
+        VerifySrcReq,
+    )
