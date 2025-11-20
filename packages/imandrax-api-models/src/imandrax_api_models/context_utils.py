@@ -64,7 +64,7 @@ def format_code_snippet_with_error(
     return '\n'.join(output)
 
 
-def error_msg_to_llm_context(
+def format_error_msg(
     error_msg: ErrorMessage,
     iml_src: str | None = None,
     max_backtrace_len: int = 0,
@@ -101,18 +101,15 @@ def error_msg_to_llm_context(
     return res
 
 
-def error_to_llm_context(
+def format_error(
     error: Error, iml_src: str | None = None, max_stack_depth: int = 3
 ) -> str:
     err_kind = error.kind
     top_msg: str | None = None
     if error.msg is not None:
-        top_msg = error_msg_to_llm_context(error.msg, iml_src)
+        top_msg = format_error_msg(error.msg, iml_src)
     stack_strs = (
-        [
-            error_msg_to_llm_context(msg, iml_src)
-            for msg in error.stack[:max_stack_depth]
-        ]
+        [format_error_msg(msg, iml_src) for msg in error.stack[:max_stack_depth]]
         if error.stack
         else []
     )
@@ -126,7 +123,7 @@ def error_to_llm_context(
     return s
 
 
-def eval_res_errors_to_llm_context(
+def format_eval_res_errors(
     eval_res: EvalRes,
     iml_src: str | None = None,
     max_errors: int = 3,
@@ -142,7 +139,7 @@ def eval_res_errors_to_llm_context(
         is_po_error = True
         errs = eval_res.po_errors[:max_errors]
 
-    err_strs: list[str] = [error_to_llm_context(err, iml_src) for err in errs]
+    err_strs: list[str] = [format_error(err, iml_src) for err in errs]
 
     def add_tag(s: str, i: int) -> str:
         if is_po_error:
@@ -158,7 +155,7 @@ def eval_res_errors_to_llm_context(
     return res
 
 
-def eval_res_to_llm_context(eval_res: EvalRes, iml_src: str | None = None) -> str:
+def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     if not eval_res.has_errors:
         s = 'Success!'
         if eval_res.eval_results:
@@ -173,5 +170,5 @@ def eval_res_to_llm_context(eval_res: EvalRes, iml_src: str | None = None) -> st
     else:
         s = ''
         s += 'Evaluation errors:\n\n'
-        s += cast(str, eval_res_errors_to_llm_context(eval_res, iml_src))
+        s += cast(str, format_eval_res_errors(eval_res, iml_src))
         return s
