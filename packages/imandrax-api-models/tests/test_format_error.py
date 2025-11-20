@@ -15,12 +15,11 @@ def calculate(a, b):
     )
     assert res == snapshot(
         """\
-Lines: 3:13-3:14
 Error: undefined variable 'x'
 
   1 | def calculate(a, b):
   2 |     total = a + b
-→ 3 |     result = x + total
+* 3 |     result = x + total
     |              ^
   4 |     return result\
 """
@@ -43,15 +42,14 @@ def calculate(a, b):
     )
     assert res == snapshot(
         """\
-Lines: 2:4-4:17
 Error: unreachable code detected
 
   1 | def calculate(a, b):
-→ 2 |     if a > 0:
+* 2 |     if a > 0:
     |     ^~~~~~~~~~
-→ 3 |         result = a + b
+* 3 |         result = a + b
     | ~~~~~~~~~~~~~~~~~~~~~~
-→ 4 |         return result
+* 4 |         return result
     | ~~~~~~~~~~~~~~~~~
   5 |     else:
   6 |         return 0\
@@ -67,10 +65,9 @@ def foo():
     pass"""
     res = format_code_snippet_with_error(code, (1, 7), (1, 21), 'module not found')
     assert res == snapshot("""\
-Lines: 1:7-1:21
 Error: module not found
 
-→ 1 | import unknown_module
+* 1 | import unknown_module
     |        ^^^^^^^^^^^^^^
   2 | def foo():
   3 |     pass\
@@ -85,12 +82,11 @@ def foo():
     return undefined"""
     res = format_code_snippet_with_error(code, (3, 11), (3, 20), 'undefined variable')
     assert res == snapshot("""\
-Lines: 3:11-3:20
 Error: undefined variable
 
   1 | def foo():
   2 |     x = 1
-→ 3 |     return undefined
+* 3 |     return undefined
     |            ^^^^^^^^^\
 """)
 
@@ -103,12 +99,11 @@ def calculate():
 invalid syntax here"""
     res = format_code_snippet_with_error(code, (3, 0), (3, 7), 'invalid syntax')
     assert res == snapshot("""\
-Lines: 3:0-3:7
 Error: invalid syntax
 
   1 | def calculate():
   2 |     return 42
-→ 3 | invalid syntax here
+* 3 | invalid syntax here
     | ^^^^^^^\
 """)
 
@@ -125,10 +120,9 @@ line5"""
         code, (3, 6), (3, 10), 'syntax error', context_line=0
     )
     assert res == snapshot("""\
-Lines: 3:6-3:10
 Error: syntax error
 
-→ 3 | line3 with error
+* 3 | line3 with error
     |       ^^^^\
 """)
 
@@ -142,11 +136,10 @@ def foo():
         code, (2, 11), (2, 12), 'undefined variable', context_line=10
     )
     assert res == snapshot("""\
-Lines: 2:11-2:12
 Error: undefined variable
 
   1 | def foo():
-→ 2 |     return x
+* 2 |     return x
     |            ^\
 """)
 
@@ -160,14 +153,13 @@ def broken():
     end"""
     res = format_code_snippet_with_error(code, (2, 4), (4, 7), 'incomplete block')
     assert res == snapshot("""\
-Lines: 2:4-4:7
 Error: incomplete block
 
   1 | def broken():
-→ 2 |     start
+* 2 |     start
     |     ^~~~~~
-→ 3 | \n\
+* 3 | \n\
     | \n\
-→ 4 |     end
+* 4 |     end
     | ~~~~~~~\
 """)

@@ -42,7 +42,7 @@ def format_code_snippet_with_error(
 
         # Mark lines within error range
         if start_line <= line_no <= end_line:
-            marker = '→'
+            marker = '*'
         else:
             marker = ' '
 
