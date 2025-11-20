@@ -1,3 +1,4 @@
+import os
 import sys
 from pathlib import Path
 
@@ -5,8 +6,17 @@ import typer
 
 from imandrax_api_models.client import get_imandrax_client
 from imandrax_api_models.context_utils import format_eval_res
+from imandrax_api_models.logging_utils import configure_logging
 
 app = typer.Typer(name='ImandraX')
+
+
+DEBUG = os.environ.get('DEBUG', '0') == '1'
+
+if DEBUG:
+    configure_logging('debug')
+else:
+    configure_logging('warning')
 
 
 @app.command(
