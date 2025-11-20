@@ -7,9 +7,11 @@ from iml_query.processing import (
     extract_decomp_reqs,
     extract_instance_reqs,
     extract_opaque_function_names,
-    find_nested_rec,
     iml_outline,
     insert_instance_req,
+)
+from iml_query.processing.base import find_nested_rec
+from iml_query.processing.vg import (
     instance_capture_to_req,
     verify_capture_to_req,
 )
