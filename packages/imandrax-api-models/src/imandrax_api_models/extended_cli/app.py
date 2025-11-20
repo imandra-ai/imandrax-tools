@@ -64,3 +64,19 @@ def eval(
     c = get_imandrax_client()
     eval_res = c.eval_src(src=iml)
     typer.echo(format_eval_res(eval_res, iml))
+
+
+@app.command(name='list-vg')
+def list_vg(): ...
+
+
+@app.command(name='check-vg')
+def check_vg(): ...
+
+
+@app.command(name='list-decomp')
+def list_decomp(): ...
+
+
+@app.command(name='check-decomp')
+def check_decomp(): ...
