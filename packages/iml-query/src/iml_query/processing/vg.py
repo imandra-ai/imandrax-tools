@@ -1,6 +1,6 @@
-"""verify, instance, and decomp requests."""
+"""verify and instance requests related."""
 
-from typing import Any
+from typing import NotRequired, Required, TypedDict, cast
 
 from tree_sitter import Tree
 
@@ -19,7 +19,12 @@ from iml_query.tree_sitter_utils import (
 )
 
 
-def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
+class VerifyReqArgs(TypedDict):
+    src: Required[str]
+    hints: NotRequired[str | None]
+
+
+def verify_capture_to_req(capture: VerifyCapture) -> VerifyReqArgs:
     """Extract ImandraX request from a verify statement node."""
     node = capture.verify
     req: dict[str, str] = {}
@@ -37,10 +42,10 @@ def verify_capture_to_req(capture: VerifyCapture) -> dict[str, str]:
         verify_src = verify_src[1:-1].strip()
 
     req['src'] = verify_src
-    return req
+    return cast(VerifyReqArgs, req)
 
 
-def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
+def instance_capture_to_req(capture: InstanceCapture) -> VerifyReqArgs:
     """Extract ImandraX request from an instance statement node."""
     node = capture.instance
     req: dict[str, str] = {}
@@ -57,10 +62,10 @@ def instance_capture_to_req(capture: InstanceCapture) -> dict[str, str]:
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()
     req['src'] = instance_src
-    return req
+    return cast(VerifyReqArgs, req)
 
 
-def remove_verify_reqs(
+def _remove_verify_reqs(
     iml: str,
     tree: Tree,
     captures: list[VerifyCapture],
@@ -73,7 +78,7 @@ def remove_verify_reqs(
 
 def extract_verify_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, list[dict[str, Any]]]:
+) -> tuple[str, Tree, list[VerifyReqArgs]]:
     root = tree.root_node
     matches = run_query(
         mk_query(VERIFY_QUERY_SRC),
@@ -83,14 +88,14 @@ def extract_verify_reqs(
     verify_captures = [
         VerifyCapture.from_ts_capture(capture) for _, capture in matches
     ]
-    reqs: list[dict[str, Any]] = [
+    reqs: list[VerifyReqArgs] = [
         verify_capture_to_req(capture) for capture in verify_captures
     ]
-    new_iml, new_tree = remove_verify_reqs(iml, tree, verify_captures)
+    new_iml, new_tree = _remove_verify_reqs(iml, tree, verify_captures)
     return new_iml, new_tree, reqs
 
 
-def remove_instance_reqs(
+def _remove_instance_reqs(
     iml: str,
     tree: Tree,
     captures: list[InstanceCapture],
@@ -103,7 +108,7 @@ def remove_instance_reqs(
 
 def extract_instance_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, list[dict[str, Any]]]:
+) -> tuple[str, Tree, list[VerifyReqArgs]]:
     root = tree.root_node
     matches = run_query(
         mk_query(INSTANCE_QUERY_SRC),
@@ -114,10 +119,10 @@ def extract_instance_reqs(
         InstanceCapture.from_ts_capture(capture) for _, capture in matches
     ]
 
-    reqs: list[dict[str, Any]] = [
+    reqs: list[VerifyReqArgs] = [
         instance_capture_to_req(capture) for capture in instance_captures
     ]
-    new_iml, new_tree = remove_instance_reqs(iml, tree, instance_captures)
+    new_iml, new_tree = _remove_instance_reqs(iml, tree, instance_captures)
     return new_iml, new_tree, reqs
 
 
