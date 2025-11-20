@@ -89,19 +89,21 @@ def format_error_msg(
         stop = cast(Position, stop)
         loc_str = f'Lines: {start.line}:{start.col}-{stop.line}:{stop.col}'
 
-        error_src: str | None = None
         if iml_src is not None:
             start_pos = (start.line, start.col)
             end_pos = (stop.line, stop.col)
             error_src = format_code_snippet_with_error(
                 iml_src, start_pos, end_pos, error_msg.msg
             )
+    else:
+        # No location information
+        error_src = error_msg.msg
 
     res = ''
     if loc_str:
         res += loc_str
-    if error_src:
         res += '\n'
+    if error_src:
         res += error_src
     if max_backtrace_len > 0 and error_msg.backtrace:
         res += f'\nbacktrace: {error_msg.backtrace[:max_backtrace_len]}'
@@ -164,6 +166,7 @@ def format_eval_res_errors(
         res += 'Proof obligation errors (including termination proving errors):\n\n'
     for i, err_str in enumerate(err_strs, 1):
         res += add_tag(err_str, i)
+        res += '\n'
     return res
 
 
