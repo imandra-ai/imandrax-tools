@@ -1,0 +1,5 @@
+let good = fun x -> x + 1
+
+let bad : int = true
+
+let good_again = fun x -> x
