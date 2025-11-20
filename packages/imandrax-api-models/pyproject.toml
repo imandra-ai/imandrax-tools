@@ -15,8 +15,12 @@ dependencies = [
 
 [project.optional-dependencies]
 cli = [
+    "iml-query>=0.4.2",
     "typer>=0.20.0",
 ]
+
+[project.scripts]
+imandrax = "imandrax_api_models.extended_cli.app:app"
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
