@@ -1,4 +1,4 @@
-"""Query source strings and definitions for IML tree-sitter queries."""
+"""Query source strings and capture types."""
 
 from __future__ import annotations
 

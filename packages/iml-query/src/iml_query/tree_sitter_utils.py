@@ -1,3 +1,5 @@
+"""General tree-sitter utilities (language-agnostic)."""
+
 from collections import defaultdict
 from typing import cast, overload
 
@@ -254,7 +256,7 @@ def delete_nodes(
 
 
 def insert_lines(
-    iml: str,
+    code: str,
     tree: Tree,
     lines: list[str],
     insert_after: int,
@@ -266,7 +268,7 @@ def insert_lines(
     AI: this is implemented by AI
 
     Arguments:
-        iml: old IML code
+        code: old code
         tree: old parsed tree
         lines: list of lines to insert (without trailing newlines)
         insert_after: line number to insert after
@@ -275,7 +277,7 @@ def insert_lines(
             newline at the end of the code.
 
     Returns:
-        new IML code and new tree
+        new, modified code and new tree
 
     Implementation notes:
         Leading newline handling:
@@ -301,13 +303,13 @@ def insert_lines(
 
     """
     if not lines:
-        return iml, tree
+        return code, tree
 
     tree = tree.copy()
 
     # Split into lines to find insertion point
     # TODO: use line info in tree to determine line number
-    iml_lines = iml.splitlines(keepends=True)
+    iml_lines = code.splitlines(keepends=True)
 
     # Validate line number
     # Allow insert_after == len(iml_lines) when last line ends with \n
@@ -383,17 +385,24 @@ def insert_lines(
     )
 
     # Apply text insertion
-    iml_bytes = iml.encode('utf-8')
-    new_iml_bytes = (
-        iml_bytes[:insert_byte_pos] + insert_bytes + iml_bytes[insert_byte_pos:]
+    code_bytes = code.encode('utf-8')
+    new_code_bytes = (
+        code_bytes[:insert_byte_pos]
+        + insert_bytes
+        + code_bytes[insert_byte_pos:]
     )
-    new_iml = new_iml_bytes.decode('utf-8')
+    new_code = new_code_bytes.decode('utf-8')
 
     # Parse new tree
     parser = create_parser(ocaml=False)
-    new_tree = parser.parse(new_iml_bytes, old_tree=tree)
+    new_tree = parser.parse(new_code_bytes, old_tree=tree)
 
-    return new_iml, new_tree
+    return new_code, new_tree
+
+
+# ====================
+# Pretty-printing
+# ====================
 
 
 def fmt_node_with_leaf_text(node: Node) -> str:
@@ -497,7 +506,6 @@ def get_node_sexpr_with_field_name(s_expr: str, indent_size: int = 2):
 
 
 if __name__ == '__main__':
-    # Test with your example
     s_expr = """(attribute_payload (expression_item (application_expression function: (value_path (value_name)) argument: (labeled_argument (label_name) expression: (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name)))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))) (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (constructor_path (constructor_name))) argument: (unit))))"""
 
     formatted = get_node_sexpr_with_field_name(s_expr)
