@@ -163,7 +163,7 @@ def format_eval_res_errors(
 
     res = ''
     if is_po_error:
-        res += 'Proof obligation errors (including termination proving errors):\n\n'
+        res += 'Proof obligation errors (including termination proving errors):\n'
     for i, err_str in enumerate(err_strs, 1):
         res += add_tag(err_str, i)
         res += '\n'

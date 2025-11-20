@@ -24,11 +24,12 @@ else:
 )
 def eval(
     iml_path: str | None = typer.Argument(
-        None, help='Path of the IML file to evaluate'
+        None,
+        help='Path of the IML file to evaluate. Set to "-" to read from stdin.',
     ),
 ):
     iml: str
-    if iml_path is None:
+    if (iml_path is None) or (iml_path == '-'):
         # Read from stdin if no path is provided
         iml = sys.stdin.read()
     else:
@@ -38,5 +39,4 @@ def eval(
 
     c = get_imandrax_client()
     eval_res = c.eval_src(src=iml)
-    # breakpoint()
     typer.echo(format_eval_res(eval_res, iml))
