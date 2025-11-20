@@ -72,7 +72,7 @@ environment.python = "./.venv"
 unsupported-operator = "ignore"
 invalid-argument-type = "ignore"
 invalid-return-type = "ignore"
-possibly-missing-attribute = "ignore"
+possibly-missing-import = "ignore"
 unresolved-import = "ignore"
 
 [tool.pyright]
