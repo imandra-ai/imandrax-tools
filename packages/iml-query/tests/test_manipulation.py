@@ -52,12 +52,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
 """)
     assert decomp_reqs == snapshot(
         [
-            {
-                'name': 'simple_branch',
-                'basis': [],
-                'rule_specs': [],
-                'prune': False,
-            },
+            {'name': 'simple_branch'},
             {
                 'name': 'simple_branch2',
                 'basis': ['simple_branch', 'f'],
@@ -69,8 +64,6 @@ if x = 1 || x = 2 then x + 1 else x - 1
             },
             {
                 'name': 'simple_branch3',
-                'basis': [],
-                'rule_specs': [],
                 'prune': True,
             },
         ]
@@ -79,7 +72,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     # Decomp request to decomp attribute
     decomp_req_2 = decomp_reqs[1]
     assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
-        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()'
+        'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()'
     )
 
     # %%
@@ -104,7 +97,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
 
 
 let simple_branch3 x =
@@ -120,7 +113,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
 
 
 let simple_branch3 x =

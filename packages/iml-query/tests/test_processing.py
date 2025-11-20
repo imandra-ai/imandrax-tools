@@ -278,12 +278,7 @@ instance positive_predicate\
                 {'src': 'positive_predicate'},
             ],
             'decompose_req': [
-                {
-                    'name': 'simple_branch',
-                    'basis': [],
-                    'rule_specs': [],
-                    'prune': False,
-                },
+                {'name': 'simple_branch'},
                 {
                     'name': 'simple_branch2',
                     'basis': ['simple_branch', 'f'],
@@ -331,14 +326,9 @@ let context_sensitive x y z =
             {
                 'name': 'business_logic',
                 'basis': ['expensive_computation', 'external_api_call'],
-                'rule_specs': [],
-                'prune': False,
             },
             {
                 'name': 'context_sensitive',
-                'basis': [],
-                'rule_specs': [],
-                'prune': False,
                 'ctx_simp': True,
             },
         ]
@@ -435,8 +425,6 @@ fun ys ->
             'decomp_reqs': [
                 {
                     'name': 'conditional_fn',
-                    'basis': [],
-                    'rule_specs': [],
                     'prune': True,
                 }
             ],

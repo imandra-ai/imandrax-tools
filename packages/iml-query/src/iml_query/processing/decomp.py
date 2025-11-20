@@ -1,6 +1,13 @@
-"""verify, instance, and decomp requests."""
+"""
+decomp requests related.
 
-from typing import Any
+Pipeline:
+1. IML code -> decomp attribute capture
+2. decomp attribute capture -> decomp top application capture
+3. decomp top application capture -> decomp request
+"""
+
+from typing import Any, Required, TypedDict, cast
 
 from tree_sitter import Node, Tree
 
@@ -22,7 +29,26 @@ class DecompParsingError(Exception):
     pass
 
 
-def top_application_to_decomp(node: Node) -> dict[str, Any]:
+class DecompTopLabels(TypedDict, total=False):
+    assuming: str | None
+    basis: list[str] | None
+    rule_specs: list[str] | None
+    prune: bool | None
+    ctx_simp: bool | None
+    lift_bool: str | None
+
+
+class DecompReqArgs(TypedDict, total=False):
+    name: Required[str]
+    assuming: str | None
+    basis: list[str] | None
+    rule_specs: list[str] | None
+    prune: bool | None
+    ctx_simp: bool | None
+    lift_bool: str | None
+
+
+def top_application_to_decomp(node: Node) -> DecompTopLabels:
     """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
@@ -40,6 +66,7 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
     """)
 
     matches = run_query(query=extract_top_arg_query, node=node)
+
     res: dict[str, Any] = {}
 
     # Process each labeled argument based on its label
@@ -139,58 +166,61 @@ def top_application_to_decomp(node: Node) -> dict[str, Any]:
             case _:
                 assert 'False', 'Never'
 
-    default_res: dict[str, Any] = {
-        'basis': [],
-        'rule_specs': [],
-        'prune': False,
-    }
-
-    res = default_res | res
-
-    return res
+    return DecompTopLabels(**res)
 
 
-def decomp_req_to_top_appl_text(req: dict[str, Any]) -> str:
+def decomp_req_to_top_appl_text(req: DecompTopLabels) -> str:
     """Convert a decomp request to a top application source string."""
 
     def mk_id(identifier_name: str) -> str:
         return f'[%id {identifier_name}]'
 
     labels: list[str] = []
-    for k, v in req.items():
-        if k == 'assuming':
-            if v is None:
-                continue
-            labels.append(f'~assuming:{mk_id(v[0])}')
-        if k == 'basis':
-            if len(v) == 0:
-                continue
-            s = '~basis:'
-            items_str = ' ; '.join(map(mk_id, v))
-            s += f'[{items_str}]'
-            labels.append(s)
-        if k == 'rule_specs':
-            if len(v) == 0:
-                continue
-            s = '~rule_specs:'
-            items_str = ' ; '.join(map(mk_id, v))
-            s += f'[{items_str}]'
-            labels.append(s)
-        if k == 'prune':
-            if v:
-                labels.append(f'~prune:{"true" if v else "false"}')
-        if k == 'ctx_simp':
-            labels.append(f'~ctx_simp:{"true" if v else "false"}')
-        if k == 'lift_bool':
-            if v is None:
-                continue
-            s = '~lift_bool:'
-            s += f'{v} ()'
+
+    # Handle assuming
+    assuming = req.get('assuming')
+    if assuming is not None:
+        labels.append(f'~assuming:{mk_id(assuming)}')
+
+    # Handle basis
+    basis = req.get('basis')
+    if basis is not None and len(basis) > 0:
+        s = '~basis:'
+        items_str = ' ; '.join(map(mk_id, basis))
+        s += f'[{items_str}]'
+        labels.append(s)
+
+    # Handle rule_specs
+    rule_specs = req.get('rule_specs')
+    if rule_specs is not None and len(rule_specs) > 0:
+        s = '~rule_specs:'
+        items_str = ' ; '.join(map(mk_id, rule_specs))
+        s += f'[{items_str}]'
+        labels.append(s)
+
+    # Handle prune
+    prune = req.get('prune')
+    if prune is not None and prune:
+        labels.append(f'~prune:{"true" if prune else "false"}')
+
+    # Handle ctx_simp
+    ctx_simp = req.get('ctx_simp')
+    if ctx_simp is not None:
+        labels.append(f'~ctx_simp:{"true" if ctx_simp else "false"}')
+
+    # Handle lift_bool
+    lift_bool = req.get('lift_bool')
+    if lift_bool is not None:
+        s = '~lift_bool:'
+        s += f'{lift_bool} ()'
+        labels.append(s)
 
     return f'top {" ".join(labels) + " "}()'
 
 
-def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
+def decomp_attribute_payload_to_decomp_req_labels(
+    node: Node,
+) -> DecompTopLabels:
     assert node.type == 'attribute_payload'
 
     expect_appl = node.children[0].children[0]
@@ -200,17 +230,17 @@ def decomp_attribute_payload_to_decomp_req_labels(node: Node) -> dict[str, Any]:
     return top_application_to_decomp(expect_appl)
 
 
-def decomp_capture_to_req(capture: DecompCapture) -> dict[str, Any]:
+def decomp_capture_to_req(capture: DecompCapture) -> DecompReqArgs:
     req: dict[str, Any] = {}
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = decomp_attribute_payload_to_decomp_req_labels(
         capture.decomp_payload
     )
     req |= req_labels
-    return req
+    return cast(DecompReqArgs, req)
 
 
-def remove_decomp_reqs(
+def _remove_decomp_reqs(
     iml: str,
     tree: Tree,
     captures: list[DecompCapture],
@@ -223,7 +253,7 @@ def remove_decomp_reqs(
 
 def extract_decomp_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, list[dict[str, Any]]]:
+) -> tuple[str, Tree, list[DecompReqArgs]]:
     root = tree.root_node
     matches = run_query(
         mk_query(DECOMP_QUERY_SRC),
@@ -235,14 +265,14 @@ def extract_decomp_reqs(
     ]
 
     reqs = [decomp_capture_to_req(capture) for capture in decomp_captures]
-    new_iml, new_tree = remove_decomp_reqs(iml, tree, decomp_captures)
+    new_iml, new_tree = _remove_decomp_reqs(iml, tree, decomp_captures)
     return new_iml, new_tree, reqs
 
 
 def insert_decomp_req(
     iml: str,
     tree: Tree,
-    req: dict[str, Any],
+    req: DecompReqArgs,
 ) -> tuple[str, Tree]:
     func_def_node = find_func_definition(tree, req['name'])
     if func_def_node is None:
