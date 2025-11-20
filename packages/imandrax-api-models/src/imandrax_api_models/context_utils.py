@@ -2,7 +2,15 @@
 
 from typing import cast
 
-from imandrax_api_models import Error, ErrorMessage, EvalRes, Location, Position
+from imandrax_api_models import (
+    Error,
+    ErrorMessage,
+    EvalOutput,
+    EvalRes,
+    Location,
+    PO_Res,
+    Position,
+)
 
 
 def format_code_snippet_with_error(
@@ -22,7 +30,6 @@ def format_code_snippet_with_error(
     visible_end = min(len(lines), end_line + context_line)
 
     output: list[str] = []
-    output.append(f'Lines: {start_line}:{start_col}-{end_line}:{end_col}')
     output.append(f'Error: {message}')
     output.append('')
 
@@ -71,28 +78,28 @@ def format_error_msg(
 ) -> str:
     locs: list[Location] = error_msg.locs or []
     locs = [loc for loc in locs if (loc.start is not None and loc.stop is not None)]
-    loc_str: str
-    loc_strs: list[str] = [
-        (f'({loc.start.line}, {loc.start.col}) - ({loc.stop.line}, {loc.stop.col})')
-        for loc in locs
-        if (loc.start is not None and loc.stop is not None)
-    ]
-    loc_str = '; '.join(loc_strs) if loc_strs else ''
 
+    assert len(locs) <= 1
+
+    loc_str: str | None = None
     error_src: str | None = None
-    if iml_src is not None and locs:
+    if locs:
         start, stop = locs[0].start, locs[0].stop
         start = cast(Position, start)
         stop = cast(Position, stop)
-        start_pos = (start.line, start.col)
-        end_pos = (stop.line, stop.col)
-        error_src = format_code_snippet_with_error(
-            iml_src, start_pos, end_pos, error_msg.msg
-        )
+        loc_str = f'Lines: {start.line}:{start.col}-{stop.line}:{stop.col}'
 
-    res = f'{error_msg.msg}'
+        error_src: str | None = None
+        if iml_src is not None:
+            start_pos = (start.line, start.col)
+            end_pos = (stop.line, stop.col)
+            error_src = format_code_snippet_with_error(
+                iml_src, start_pos, end_pos, error_msg.msg
+            )
+
+    res = ''
     if loc_str:
-        res += f'\nlocs: {loc_str}'
+        res += loc_str
     if error_src:
         res += '\n'
         res += error_src
@@ -106,8 +113,10 @@ def format_error(
 ) -> str:
     err_kind = error.kind
     top_msg: str | None = None
+
     if error.msg is not None:
         top_msg = format_error_msg(error.msg, iml_src)
+
     stack_strs = (
         [format_error_msg(msg, iml_src) for msg in error.stack[:max_stack_depth]]
         if error.stack
@@ -116,8 +125,11 @@ def format_error(
     stack_str = '\n'.join(stack_strs)
 
     s = ''
+    # Top message
     s += f'{top_msg}' if top_msg else ''
     s += f'\n<kind>{err_kind}</kind>' if err_kind else ''
+
+    # Stack trace
     s += f'\n<stack>\n{stack_str}\n</stack>' if stack_str else ''
 
     return s
@@ -153,6 +165,12 @@ def format_eval_res_errors(
     for i, err_str in enumerate(err_strs, 1):
         res += add_tag(err_str, i)
     return res
+
+
+def format_eval_output(eval_output: EvalOutput) -> str: ...
+
+
+def format_po_res(po_res: PO_Res) -> str: ...
 
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
