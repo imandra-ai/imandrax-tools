@@ -2,7 +2,7 @@
 
 from typing import Any, cast
 
-from devtools import pformat
+import yaml
 
 from imandrax_api_models import (
     DecomposeRes,
@@ -16,6 +16,7 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
+from imandrax_api_models.yaml_utils import ImandraXAPIModelDumper
 
 
 def format_code_snippet_with_error(
@@ -228,11 +229,11 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
     data = res.model_dump()
 
     data = _remove_artifact(data)
-    return pformat(data, indent=4)
+    return yaml.dump(data, Dumper=ImandraXAPIModelDumper)
 
 
 def format_decomp_res(decomp_res: DecomposeRes) -> str:
     data = decomp_res.model_dump()
 
     data = _remove_artifact(data)
-    return pformat(data, indent=4)
+    return yaml.dump(data, Dumper=ImandraXAPIModelDumper)
