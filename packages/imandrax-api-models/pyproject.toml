@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 client = [
-    "iml-query>=0.4.2",
+    "iml-query>=0.5.0",
 ]
 
 [project.scripts]

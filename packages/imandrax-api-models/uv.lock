@@ -508,7 +508,7 @@ dev = [
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.3.1" },
-    { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.4.2" },
+    { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
     { name = "pydantic", specifier = ">=2.12.4" },
 ]
 provides-extras = ["client"]
@@ -524,7 +524,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.4.2"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -534,9 +534,9 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/1b/0b8b99812b4eb43c1a2b0d0cc55d62183eef103f61113da7439fb219cc89/iml_query-0.4.2.tar.gz", hash = "sha256:43b80e48b17ea9a7bd607fd42c09bdbdcb50ac3fe2e923604517a7f2f81a4696", size = 95963, upload-time = "2025-11-17T17:55:40.456Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/cf/6eb8d2b3046d1594e1f5e34ac92f1892e6630892e273246df0f2fe66ca4a/iml_query-0.5.0.tar.gz", hash = "sha256:59d9e99350d82308edd7add8dc05fbcce67f19aa883190cfd087eeef5b70065e", size = 95674, upload-time = "2025-11-21T17:30:39.008Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/ed/66e5831710e36aa23e01c669c73ac321c9fc7e92b1bc54689d303636adec/iml_query-0.4.2-py3-none-any.whl", hash = "sha256:2d2128c8ef3bc45b807c1198b687c4323e21cdf89b1e8a150ecf587e030df787", size = 13310, upload-time = "2025-11-17T17:55:38.985Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/36/17e2570925d85c2120d50aa7d3b53342e88e77867f1fe031347d00b0a19d/iml_query-0.5.0-py3-none-any.whl", hash = "sha256:c6e6f72728d428a8c85327218155706184cd7c45e24d78f006f0ebe940461f6c", size = 16010, upload-time = "2025-11-21T17:30:37.577Z" },
 ]
 
 [[package]]
