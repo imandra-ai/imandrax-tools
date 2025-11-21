@@ -1,6 +1,6 @@
 .PHONY: test
 test:
-	uv --env-file .env pytest .
+	uv run --env-file .env pytest .
 
 .PHONY: build
 build:
