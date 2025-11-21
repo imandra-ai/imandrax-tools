@@ -205,7 +205,8 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
 def _remove_artifact(data: dict[str, Any]) -> dict[str, Any]:
     """Resursively look side a dict for 'artifact' key and remove it."""
     data = data.copy()
-    for k, v in data.items():
+    for k in list(data.keys()):
+        v = data[k]
         if k == 'artifact':
             data.pop(k)
         elif isinstance(v, dict):
