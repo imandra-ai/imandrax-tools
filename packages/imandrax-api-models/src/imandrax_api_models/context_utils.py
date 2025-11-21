@@ -5,6 +5,7 @@ from typing import Any, cast
 from devtools import pformat
 
 from imandrax_api_models import (
+    DecomposeRes,
     Error,
     ErrorMessage,
     EvalOutput,
@@ -203,7 +204,7 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
 
 
 def _remove_artifact(data: dict[str, Any]) -> dict[str, Any]:
-    """Resursively look side a dict for 'artifact' key and remove it."""
+    """Resursively look inside a dict for 'artifact' key and remove it."""
     data = data.copy()
     for k in list(data.keys()):
         v = data[k]
@@ -217,6 +218,13 @@ def _remove_artifact(data: dict[str, Any]) -> dict[str, Any]:
 
 def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
     data = vg_res.model_dump()
+
+    data = _remove_artifact(data)
+    return pformat(data, indent=4)
+
+
+def format_decomp_res(decomp_res: DecomposeRes) -> str:
+    data = decomp_res.model_dump()
 
     data = _remove_artifact(data)
     return pformat(data, indent=4)

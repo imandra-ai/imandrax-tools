@@ -11,6 +11,7 @@ from iml_query.processing import (
     extract_instance_reqs,
     extract_verify_reqs,
 )
+from iml_query.processing.decomp import DecompReqArgs
 from iml_query.tree_sitter_utils import get_parser
 
 from imandrax_api_models.client import (
@@ -19,6 +20,7 @@ from imandrax_api_models.client import (
     get_imandrax_client,
 )
 from imandrax_api_models.context_utils import (
+    format_decomp_res,
     format_eval_res,
     format_vg_res,
 )
@@ -73,7 +75,7 @@ def eval(
             iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
             iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
         if strip_decomp_requests:
-            iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
+            iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
 
     c = get_imandrax_client()
     eval_res = c.eval_src(src=iml)
@@ -97,7 +99,7 @@ def collect_vgs(iml: str) -> list[VGItem]:
 
     # Collect
     vg_items: list[VGItem] = []
-    for req, req_range in zip(verify_reqs, verify_req_ranges):
+    for req, req_range in zip(verify_reqs, verify_req_ranges, strict=True):
         vg_items.append(
             {
                 'kind': 'verify',
@@ -192,23 +194,90 @@ def check_vg(
     asyncio.run(_async_check_vg())
 
 
+# ====================
+
+
+class DecompItem(TypedDict):
+    req_args: DecompReqArgs
+    start_point: tuple[int, int]
+    end_point: tuple[int, int]
+
+
+def collect_decomps(iml: str) -> list[DecompItem]:
+    tree = get_parser().parse(iml.encode('utf-8'))
+    iml, tree, decomp_reqs, ranges = extract_decomp_reqs(iml, tree)
+
+    decomp_items: list[DecompItem] = [
+        DecompItem(
+            req_args=req,
+            start_point=range_.start_point,
+            end_point=range_.end_point,
+        )
+        for req, range_ in zip(decomp_reqs, ranges, strict=True)
+    ]
+
+    decomp_items.sort(key=lambda x: x['start_point'])
+    return decomp_items
+
+
 @app.command(name='list-decomp')
 def list_decomp(
     file: str | None = typer.Argument(
         None,
         help='Path of the IML file to check. Set to "-" to read from stdin.',
     ),
-): ...
+):
+    iml = _load_iml(file)
+    decomps = collect_decomps(iml)
+
+    for i, item in enumerate(decomps, 1):
+        typer.echo(f'{i}: {item["req_args"]["name"]}')
 
 
 @app.command(name='check-decomp')
-async def check_decomp(
-    name: str | None = typer.Option(
+def check_decomp(
+    file: str | None = typer.Argument(
         None,
-        help='Name of the decomp request to check.',
+        help='Path of the IML file to check. Set to "-" to read from stdin.',
+    ),
+    index: list[int] = typer.Option(
+        [],
+        help='Index of the decomposition request to check.',
     ),
     check_all: bool = typer.Option(
         False,
         help='Whether to check all decomp requests in the IML file.',
     ),
-): ...
+):
+    async def _async_check_decomp():
+        iml = _load_iml(file)
+        decomps = collect_decomps(iml)
+
+        index_: list[int] = (
+            list(range(1, len(decomps) + 1))
+            if check_all or (len(index) == 0)
+            else index
+        )
+
+        decomp_with_idx: list[tuple[int, DecompItem]] = [
+            (i, decomp) for (i, decomp) in enumerate(decomps, 1) if i in index_
+        ]
+
+        async def _check_decomp(decomp: DecompItem, i: int, c: ImandraXAsyncClient):
+            typer.echo(f'{i}: decompose {decomp["req_args"]["name"]}')
+            res = await c.decompose(**decomp['req_args'])
+            typer.echo(format_decomp_res(res))
+
+        async with get_imandrax_async_client() as c:
+            eval_res = await c.eval_model(src=iml)
+            typer.echo(format_eval_res(eval_res, iml))
+            if eval_res.has_errors:
+                typer.echo('Error(s) found in IML file. Exiting.')
+                sys.exit(1)
+                return
+
+            typer.echo('\n' + '=' * 5 + 'Decomp' + '=' * 5 + '\n')
+            tasks = [_check_decomp(decomp, i, c) for (i, decomp) in decomp_with_idx]
+            await asyncio.gather(*tasks)
+
+    asyncio.run(_async_check_decomp())
