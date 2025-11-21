@@ -1,4 +1,5 @@
 # TODO(refactor): use Annotated
+import asyncio
 import os
 import sys
 from pathlib import Path
@@ -12,7 +13,11 @@ from iml_query.processing import (
 )
 from iml_query.tree_sitter_utils import get_parser
 
-from imandrax_api_models.client import get_imandrax_async_client, get_imandrax_client
+from imandrax_api_models.client import (
+    ImandraXAsyncClient,
+    get_imandrax_async_client,
+    get_imandrax_client,
+)
 from imandrax_api_models.context_utils import format_eval_res
 from imandrax_api_models.logging_utils import configure_logging
 
@@ -57,6 +62,7 @@ def eval(
 ):
     iml = _load_iml(file)
 
+    # TODO(refactor): use eval_model
     if strip_vg_requests or strip_decomp_requests:
         tree = get_parser().parse(iml.encode('utf-8'))
 
@@ -132,12 +138,13 @@ def list_vg(
 
 
 @app.command(name='check-vg')
-async def check_vg(
+def check_vg(
     file: str | None = typer.Argument(
         None,
         help='Path of the IML file to check. Set to "-" to read from stdin.',
     ),
     index: list[int] = typer.Option(
+        [],
         help='Name of the verification goal to check.',
     ),
     check_all: bool = typer.Option(
@@ -145,22 +152,41 @@ async def check_vg(
         help='Whether to check all verify requests in the IML file.',
     ),
 ):
-    check_all = check_all or len(index) == 0
+    async def _async_check_vg():
+        iml = _load_iml(file)
+        vgs = collect_vgs(iml)
 
-    iml = _load_iml(file)
-    vgs = collect_vgs(iml)
+        index_: list[int] = (
+            list(range(1, len(vgs) + 1)) if check_all or (len(index) == 0) else index
+        )
 
-    vgs: list[VGItem] = vgs if check_all else [vgs[i + 1] for i in index]
-    async with get_imandrax_async_client() as c:
-        tasks = []
-        for vg in vgs:
+        vg_with_idx: list[tuple[int, VGItem]] = [
+            (i, vg) for (i, vg) in enumerate(vgs, 1) if i in index_
+        ]
+
+        async def _check_vg(vg: VGItem, i: int, c: ImandraXAsyncClient):
             match vg['kind']:
                 case 'verify':
-                    tasks.append(c.verify_src(src=vg['src']))
+                    res = await c.verify_src(src=vg['src'])
                 case 'instance':
-                    tasks.append(c.instance_src(src=vg['src']))
+                    res = await c.instance_src(src=vg['src'])
                 case _:
-                    assert_never(vg)
+                    assert_never(vg['kind'])
+            typer.echo(f'{i}: {vg["kind"]} ({vg["src"]})')
+            typer.echo(res.model_dump())
+
+        async with get_imandrax_async_client() as c:
+            eval_res = await c.eval_model(src=iml)
+            typer.echo(format_eval_res(eval_res, iml))
+            if eval_res.has_errors:
+                typer.echo('Error(s) found in IML file. Exiting.')
+                sys.exit(1)
+                return
+            typer.echo('\n' + '=' * 5 + 'VG' + '=' * 5 + '\n')
+            tasks = [_check_vg(vg, i, c) for (i, vg) in vg_with_idx]
+            await asyncio.gather(*tasks)
+
+    asyncio.run(_async_check_vg())
 
 
 @app.command(name='list-decomp')
