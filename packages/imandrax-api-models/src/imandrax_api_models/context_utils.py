@@ -229,11 +229,11 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
     data = res.model_dump()
 
     data = _remove_artifact(data)
-    return yaml.dump(data, Dumper=ImandraXAPIModelDumper)
+    return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
 
 
 def format_decomp_res(decomp_res: DecomposeRes) -> str:
     data = decomp_res.model_dump()
 
     data = _remove_artifact(data)
-    return yaml.dump(data, Dumper=ImandraXAPIModelDumper)
+    return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)

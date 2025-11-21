@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import yaml
 from pydantic import BaseModel
-from yaml import Dumper
 
 from imandrax_api_models.proto_models import task
 
@@ -36,8 +35,15 @@ class ImandraXAPIModelDumper(Dumper):
 
 
 def str_representer(dumper: Dumper, data: str):
-    """If the string contains newlines, represent it as a literal block."""
+    """
+    If the string contains newlines, represent it as a literal block.
+
+    Note: PyYAML refuses to use literal block style for strings with trailing
+    whitespace on any line, so we strip trailing whitespace to enable literal blocks.
+    """
     if '\n' in data:
+        # Strip trailing whitespace from each line to allow literal block style
+        data = '\n'.join(line.rstrip() for line in data.split('\n'))
         return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
