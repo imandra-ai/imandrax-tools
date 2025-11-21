@@ -62,6 +62,11 @@ else:
 logger = structlog.get_logger(__name__)
 
 
+# ====================
+# Extended client definition
+# ====================
+
+
 class ImandraXClient(imandrax_api.Client):
     """Extended sync client with Pydantic model validation."""
 
@@ -267,6 +272,11 @@ class ImandraXAsyncClient(AsyncClient):
             iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
 
         return await self.eval_src(src=iml, timeout=timeout)
+
+
+# ====================
+# Helpers for creating client
+# ====================
 
 
 def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:

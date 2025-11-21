@@ -1,4 +1,5 @@
 import asyncio
+import json as jsonlib
 import os
 import sys
 from pathlib import Path
@@ -29,6 +30,7 @@ app = typer.Typer(name='ImandraX')
 
 
 DEBUG = os.environ.get('DEBUG', '0') == '1'
+"""Env var to enable debug logging."""
 
 if DEBUG:
     configure_logging('debug')
@@ -100,7 +102,7 @@ class VGItem(TypedDict):
     end_point: tuple[int, int]
 
 
-def collect_vgs(iml: str) -> list[VGItem]:
+def _collect_vgs(iml: str) -> list[VGItem]:
     tree = get_parser().parse(iml.encode('utf-8'))
     iml, tree, verify_reqs, verify_req_ranges = extract_verify_reqs(iml, tree)
     iml, tree, instance_reqs, instance_req_ranges = extract_instance_reqs(iml, tree)
@@ -138,7 +140,6 @@ def list_vg(
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
-    # TODO(feature)
     json: Annotated[
         bool,
         typer.Option(
@@ -149,11 +150,15 @@ def list_vg(
 ):
     iml = _load_iml(file)
 
-    vgs = collect_vgs(iml)
+    vgs: list[VGItem] = _collect_vgs(iml)
 
-    for i, item in enumerate(vgs, 1):
-        loc_str = f'{item["start_point"][0]}:{item["start_point"][1]}-{item["end_point"][0]}:{item["end_point"][1]}'
-        typer.echo(f'{i}: {item["kind"]} ({loc_str}): {item["src"]}')
+    if not json:
+        for i, item in enumerate(vgs, 1):
+            loc_str = f'{item["start_point"][0]}:{item["start_point"][1]}-{item["end_point"][0]}:{item["end_point"][1]}'
+            typer.echo(f'{i}: {item["kind"]} ({loc_str}): {item["src"]}')
+    else:
+        json_s = jsonlib.dumps(vgs, indent=2)
+        typer.echo(json_s)
 
 
 @app.command(name='check-vg')
@@ -179,10 +184,17 @@ def check_vg(
             help='Whether to check all verify requests in the IML file.',
         ),
     ] = False,
+    json: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to output the results in JSON format.',
+        ),
+    ] = False,
 ):
     async def _async_check_vg():
         iml = _load_iml(file)
-        vgs = collect_vgs(iml)
+        vgs = _collect_vgs(iml)
 
         index_: list[int] = (
             list(range(1, len(vgs) + 1)) if check_all or (len(index) == 0) else index
@@ -226,7 +238,7 @@ class DecompItem(TypedDict):
     end_point: tuple[int, int]
 
 
-def collect_decomps(iml: str) -> list[DecompItem]:
+def _collect_decomps(iml: str) -> list[DecompItem]:
     tree = get_parser().parse(iml.encode('utf-8'))
     iml, tree, decomp_reqs, ranges = extract_decomp_reqs(iml, tree)
 
@@ -252,12 +264,23 @@ def list_decomp(
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
+    json: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to output the results in JSON format.',
+        ),
+    ] = False,
 ):
     iml = _load_iml(file)
-    decomps = collect_decomps(iml)
+    decomps = _collect_decomps(iml)
 
-    for i, item in enumerate(decomps, 1):
-        typer.echo(f'{i}: {item["req_args"]["name"]}')
+    if not json:
+        for i, item in enumerate(decomps, 1):
+            typer.echo(f'{i}: {item["req_args"]["name"]}')
+    else:
+        json_s = jsonlib.dumps(decomps, indent=2)
+        typer.echo(json_s)
 
 
 @app.command(name='check-decomp')
@@ -286,7 +309,7 @@ def check_decomp(
 ):
     async def _async_check_decomp():
         iml = _load_iml(file)
-        decomps = collect_decomps(iml)
+        decomps = _collect_decomps(iml)
 
         index_: list[int] = (
             list(range(1, len(decomps) + 1))
