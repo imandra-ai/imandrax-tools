@@ -1,3 +1,6 @@
+# Dev-doc
+# Most commands have a `--json` option that outputs the results in JSON format.
+# The implmentation is done by making `typer.echo` a injected dependency.
 import asyncio
 import json as jsonlib
 import os
@@ -14,7 +17,7 @@ from iml_query.processing import (
 from iml_query.processing.decomp import DecompReqArgs
 from iml_query.tree_sitter_utils import get_parser
 
-from imandrax_api_models import InstanceRes, VerifyRes
+from imandrax_api_models import DecomposeRes, InstanceRes, VerifyRes
 from imandrax_api_models.client import (
     ImandraXAsyncClient,
     get_imandrax_async_client,
@@ -48,6 +51,11 @@ def _load_iml(path: str | None) -> str:
             raise typer.BadParameter(f'IML file {path} does not exist')
         iml = Path(path).read_text()
     return iml
+
+
+def ifprintf(message: Any | None) -> None:
+    """Similar to OCmal's `ifprintf` function."""
+    pass
 
 
 @app.command(
@@ -93,7 +101,10 @@ def eval(
 
     c = get_imandrax_client()
     eval_res = c.eval_src(src=iml)
-    typer.echo(format_eval_res(eval_res, iml))
+    if not json:
+        typer.echo(format_eval_res(eval_res, iml))
+    else:
+        typer.echo(jsonlib.dumps(eval_res, indent=2))
 
 
 # ====================
@@ -195,9 +206,7 @@ def check_vg(
     if not json:
         echo = typer.echo
     else:
-
-        def echo(message: Any | None) -> None:
-            pass
+        echo = ifprintf
 
     async def _async_check_vg() -> list[VerifyRes | InstanceRes]:
         iml = _load_iml(file)
@@ -324,7 +333,12 @@ def check_decomp(
         ),
     ] = False,
 ):
-    async def _async_check_decomp():
+    if not json:
+        echo = typer.echo
+    else:
+        echo = ifprintf
+
+    async def _async_check_decomp() -> list[DecomposeRes]:
         iml = _load_iml(file)
         decomps = _collect_decomps(iml)
 
@@ -338,21 +352,26 @@ def check_decomp(
             (i, decomp) for (i, decomp) in enumerate(decomps, 1) if i in index_
         ]
 
-        async def _check_decomp(decomp: DecompItem, i: int, c: ImandraXAsyncClient):
-            typer.echo(f'{i}: decompose {decomp["req_args"]["name"]}')
+        async def _check_decomp(
+            decomp: DecompItem, i: int, c: ImandraXAsyncClient
+        ) -> DecomposeRes:
+            echo(f'{i}: decompose {decomp["req_args"]["name"]}')
             res = await c.decompose(**decomp['req_args'])
-            typer.echo(format_decomp_res(res))
+            echo(format_decomp_res(res))
+            return res
 
         async with get_imandrax_async_client() as c:
             eval_res = await c.eval_model(src=iml)
-            typer.echo(format_eval_res(eval_res, iml))
+            echo(format_eval_res(eval_res, iml))
             if eval_res.has_errors:
                 typer.echo('Error(s) found in IML file. Exiting.')
                 sys.exit(1)
                 return
 
-            typer.echo('\n' + '=' * 5 + 'Decomp' + '=' * 5 + '\n')
+            echo('\n' + '=' * 5 + 'Decomp' + '=' * 5 + '\n')
             tasks = [_check_decomp(decomp, i, c) for (i, decomp) in decomp_with_idx]
-            await asyncio.gather(*tasks)
+            return await asyncio.gather(*tasks)
 
-    asyncio.run(_async_check_decomp())
+    decomp_res_list = asyncio.run(_async_check_decomp())
+    if json:
+        typer.echo(jsonlib.dumps(decomp_res_list, indent=2))
