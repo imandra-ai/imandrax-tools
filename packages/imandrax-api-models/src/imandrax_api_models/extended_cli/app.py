@@ -3,7 +3,7 @@ import json as jsonlib
 import os
 import sys
 from pathlib import Path
-from typing import Annotated, Literal, TypedDict, assert_never
+from typing import Annotated, Any, Literal, TypedDict, assert_never
 
 import typer
 from iml_query.processing import (
@@ -14,6 +14,7 @@ from iml_query.processing import (
 from iml_query.processing.decomp import DecompReqArgs
 from iml_query.tree_sitter_utils import get_parser
 
+from imandrax_api_models import InstanceRes, VerifyRes
 from imandrax_api_models.client import (
     ImandraXAsyncClient,
     get_imandrax_async_client,
@@ -95,6 +96,8 @@ def eval(
     typer.echo(format_eval_res(eval_res, iml))
 
 
+# ====================
+# vg
 # ====================
 
 
@@ -189,7 +192,14 @@ def check_vg(
         ),
     ] = False,
 ):
-    async def _async_check_vg():
+    if not json:
+        echo = typer.echo
+    else:
+
+        def echo(message: Any | None) -> None:
+            pass
+
+    async def _async_check_vg() -> list[VerifyRes | InstanceRes]:
         iml = _load_iml(file)
         vgs = _collect_vgs(iml)
 
@@ -201,7 +211,11 @@ def check_vg(
             (i, vg) for (i, vg) in enumerate(vgs, 1) if i in index_
         ]
 
-        async def _check_vg(vg: VGItem, i: int, c: ImandraXAsyncClient):
+        async def _check_vg(
+            vg: VGItem,
+            i: int,
+            c: ImandraXAsyncClient,
+        ) -> VerifyRes | InstanceRes:
             match vg['kind']:
                 case 'verify':
                     res = await c.verify_src(src=vg['src'])
@@ -209,23 +223,28 @@ def check_vg(
                     res = await c.instance_src(src=vg['src'])
                 case _:
                     assert_never(vg['kind'])
-            typer.echo(f'{i}: {vg["kind"]} ({vg["src"]})')
-            typer.echo(format_vg_res(res))
+            echo(f'{i}: {vg["kind"]} ({vg["src"]})')
+            echo(format_vg_res(res))
+            return res
 
         async with get_imandrax_async_client() as c:
             eval_res = await c.eval_model(src=iml)
-            typer.echo(format_eval_res(eval_res, iml))
+            echo(format_eval_res(eval_res, iml))
             if eval_res.has_errors:
-                typer.echo('Error(s) found in IML file. Exiting.')
+                echo('Error(s) found in IML file. Exiting.')
                 sys.exit(1)
                 return
-            typer.echo('\n' + '=' * 5 + 'VG' + '=' * 5 + '\n')
+            echo('\n' + '=' * 5 + 'VG' + '=' * 5 + '\n')
             tasks = [_check_vg(vg, i, c) for (i, vg) in vg_with_idx]
-            await asyncio.gather(*tasks)
+            return await asyncio.gather(*tasks)
 
-    asyncio.run(_async_check_vg())
+    vg_res_list = asyncio.run(_async_check_vg())
+    if json:
+        typer.echo(jsonlib.dumps(vg_res_list, indent=2))
 
 
+# ====================
+# decomp
 # ====================
 
 
