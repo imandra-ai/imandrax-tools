@@ -217,7 +217,15 @@ def _remove_artifact(data: dict[str, Any]) -> dict[str, Any]:
 
 
 def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
-    data = vg_res.model_dump()
+    if vg_res.errors:
+        s = ''
+        s += 'VG error:\n'
+        for i, err in enumerate(vg_res.errors, 1):
+            s += f'\nError {i}:\n'
+            s += format_error(err)
+        return s
+    res = vg_res.res
+    data = res.model_dump()
 
     data = _remove_artifact(data)
     return pformat(data, indent=4)

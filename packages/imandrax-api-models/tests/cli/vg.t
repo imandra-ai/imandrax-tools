@@ -17,26 +17,17 @@ check_vg - check specific verification goal
   
   1: verify (fun x -> g x <= 0)
   {
-          'unknown': None,
-          'err': None,
-          'proved': None,
-          'refuted': {
-              'model': {
-                  'm_type': <ModelType.Counter_example: 'Counter_example'>,
-                  'src': (
-                      'module M = struct\n'
-                      '\n'
-                      '  let x = 0\n'
-                      '\n'
-                      ' end\n'
-                  ),
-              },
+          'model': {
+              'm_type': <ModelType.Counter_example: 'Counter_example'>,
+              'src': (
+                  'module M = struct\n'
+                  '\n'
+                  '  let x = 0\n'
+                  '\n'
+                  ' end\n'
+              ),
           },
-          'verified_upto': None,
-          'errors': [],
-          'task': None,
       }
-
 
 
 
@@ -49,55 +40,40 @@ check_vg - with --check-all flag
   
   1: verify (fun x -> x > 0 ==> double x > x)
   {
-          'unknown': None,
-          'err': None,
-          'proved': {
-              'proof_pp': (
-                  '{ id = 1;\n'
-                  '  concl =\n'
-                  '  \n'
-                  '  |----------------------------------------------------------------------\n'
-                  '   x > 0 ==> double x > x\n'
-                  '  ;\n'
-                  '  view =\n'
-                  '  T_deduction {\n'
-                  '    premises =\n'
-                  '    [("p",\n'
-                  '      [{ id = 0;\n'
-                  '         concl =\n'
-                  '         \n'
-                  '         |----------------------------------------------------------------------\n'
-                  '          x > 0 ==> double x > x\n'
-                  '         ; view = T_deduction {premises = []} }\n'
-                  '        ])\n'
-                  '      ]}\n'
-                  '  }'
-              ),
-          },
-          'refuted': None,
-          'verified_upto': None,
-          'errors': [],
-          'task': None,
+          'proof_pp': (
+              '{ id = 1;\n'
+              '  concl =\n'
+              '  \n'
+              '  |----------------------------------------------------------------------\n'
+              '   x > 0 ==> double x > x\n'
+              '  ;\n'
+              '  view =\n'
+              '  T_deduction {\n'
+              '    premises =\n'
+              '    [("p",\n'
+              '      [{ id = 0;\n'
+              '         concl =\n'
+              '         \n'
+              '         |----------------------------------------------------------------------\n'
+              '          x > 0 ==> double x > x\n'
+              '         ; view = T_deduction {premises = []} }\n'
+              '        ])\n'
+              '      ]}\n'
+              '  }'
+          ),
       }
   2: instance (fun x -> x > 0 && x < 100)
   {
-          'unknown': None,
-          'err': None,
-          'unsat': None,
-          'sat': {
-              'model': {
-                  'm_type': <ModelType.Instance: 'Instance'>,
-                  'src': (
-                      'module M = struct\n'
-                      '\n'
-                      '  let x = 1\n'
-                      '\n'
-                      ' end\n'
-                  ),
-              },
+          'model': {
+              'm_type': <ModelType.Instance: 'Instance'>,
+              'src': (
+                  'module M = struct\n'
+                  '\n'
+                  '  let x = 1\n'
+                  '\n'
+                  ' end\n'
+              ),
           },
-          'errors': [],
-          'task': None,
       }
 
 
