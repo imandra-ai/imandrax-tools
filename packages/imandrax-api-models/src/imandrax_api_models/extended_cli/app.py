@@ -74,6 +74,13 @@ def eval(
             help='Whether to decomp requests before evaluating.',
         ),
     ] = True,
+    json: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to output the results in JSON format.',
+        ),
+    ] = False,
 ):
     iml = _load_iml(file)
 
@@ -89,7 +96,11 @@ def eval(
 
     c = get_imandrax_client()
     eval_res = c.eval_src(src=iml)
-    typer.echo(format_eval_res(eval_res, iml))
+
+    if json:
+        typer.echo(jsonlib.dumps(eval_res.model_dump(), indent=2))
+    else:
+        typer.echo(format_eval_res(eval_res, iml))
 
 
 # ====================
@@ -204,27 +215,59 @@ def check_vg(
             (i, vg) for (i, vg) in enumerate(vgs, 1) if i in index_
         ]
 
-        async def _check_vg(vg: VGItem, i: int, c: ImandraXAsyncClient):
-            match vg['kind']:
-                case 'verify':
-                    res = await c.verify_src(src=vg['src'])
-                case 'instance':
-                    res = await c.instance_src(src=vg['src'])
-                case _:
-                    assert_never(vg['kind'])
-            typer.echo(f'{i}: {vg["kind"]} ({vg["src"]})')
-            typer.echo(format_vg_res(res))
-
         async with get_imandrax_async_client() as c:
             eval_res = await c.eval_model(src=iml)
-            typer.echo(format_eval_res(eval_res, iml))
-            if eval_res.has_errors:
-                typer.echo('Error(s) found in IML file. Exiting.')
-                sys.exit(1)
-                return
-            typer.echo('\n' + '=' * 5 + 'VG' + '=' * 5 + '\n')
-            tasks = [_check_vg(vg, i, c) for (i, vg) in vg_with_idx]
-            await asyncio.gather(*tasks)
+
+            if json:
+                output = {
+                    'eval_result': eval_res.model_dump(),
+                    'has_errors': eval_res.has_errors,
+                }
+                if eval_res.has_errors:
+                    typer.echo(jsonlib.dumps(output, indent=2))
+                    sys.exit(1)
+                    return
+
+                async def _check_vg_json(vg: VGItem, i: int, c: ImandraXAsyncClient):
+                    match vg['kind']:
+                        case 'verify':
+                            res = await c.verify_src(src=vg['src'])
+                        case 'instance':
+                            res = await c.instance_src(src=vg['src'])
+                        case _:
+                            assert_never(vg['kind'])
+                    return {
+                        'index': i,
+                        'kind': vg['kind'],
+                        'src': vg['src'],
+                        'result': res.model_dump(),
+                    }
+
+                tasks = [_check_vg_json(vg, i, c) for (i, vg) in vg_with_idx]
+                vg_results = await asyncio.gather(*tasks)
+                output['vg_results'] = vg_results
+                typer.echo(jsonlib.dumps(output, indent=2))
+            else:
+                typer.echo(format_eval_res(eval_res, iml))
+                if eval_res.has_errors:
+                    typer.echo('Error(s) found in IML file. Exiting.')
+                    sys.exit(1)
+                    return
+
+                async def _check_vg(vg: VGItem, i: int, c: ImandraXAsyncClient):
+                    match vg['kind']:
+                        case 'verify':
+                            res = await c.verify_src(src=vg['src'])
+                        case 'instance':
+                            res = await c.instance_src(src=vg['src'])
+                        case _:
+                            assert_never(vg['kind'])
+                    typer.echo(f'{i}: {vg["kind"]} ({vg["src"]})')
+                    typer.echo(format_vg_res(res))
+
+                typer.echo('\n' + '=' * 5 + 'VG' + '=' * 5 + '\n')
+                tasks = [_check_vg(vg, i, c) for (i, vg) in vg_with_idx]
+                await asyncio.gather(*tasks)
 
     asyncio.run(_async_check_vg())
 
@@ -306,6 +349,13 @@ def check_decomp(
             help='Whether to check all decomp requests in the IML file.',
         ),
     ] = False,
+    json: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to output the results in JSON format.',
+        ),
+    ] = False,
 ):
     async def _async_check_decomp():
         iml = _load_iml(file)
@@ -321,21 +371,51 @@ def check_decomp(
             (i, decomp) for (i, decomp) in enumerate(decomps, 1) if i in index_
         ]
 
-        async def _check_decomp(decomp: DecompItem, i: int, c: ImandraXAsyncClient):
-            typer.echo(f'{i}: decompose {decomp["req_args"]["name"]}')
-            res = await c.decompose(**decomp['req_args'])
-            typer.echo(format_decomp_res(res))
-
         async with get_imandrax_async_client() as c:
             eval_res = await c.eval_model(src=iml)
-            typer.echo(format_eval_res(eval_res, iml))
-            if eval_res.has_errors:
-                typer.echo('Error(s) found in IML file. Exiting.')
-                sys.exit(1)
-                return
 
-            typer.echo('\n' + '=' * 5 + 'Decomp' + '=' * 5 + '\n')
-            tasks = [_check_decomp(decomp, i, c) for (i, decomp) in decomp_with_idx]
-            await asyncio.gather(*tasks)
+            if json:
+                output = {
+                    'eval_result': eval_res.model_dump(),
+                    'has_errors': eval_res.has_errors,
+                }
+                if eval_res.has_errors:
+                    typer.echo(jsonlib.dumps(output, indent=2))
+                    sys.exit(1)
+                    return
+
+                async def _check_decomp_json(
+                    decomp: DecompItem, i: int, c: ImandraXAsyncClient
+                ):
+                    res = await c.decompose(**decomp['req_args'])
+                    return {
+                        'index': i,
+                        'name': decomp['req_args']['name'],
+                        'result': res.model_dump(),
+                    }
+
+                tasks = [
+                    _check_decomp_json(decomp, i, c) for (i, decomp) in decomp_with_idx
+                ]
+                decomp_results = await asyncio.gather(*tasks)
+                output['decomp_results'] = decomp_results
+                typer.echo(jsonlib.dumps(output, indent=2))
+            else:
+                typer.echo(format_eval_res(eval_res, iml))
+                if eval_res.has_errors:
+                    typer.echo('Error(s) found in IML file. Exiting.')
+                    sys.exit(1)
+                    return
+
+                async def _check_decomp(
+                    decomp: DecompItem, i: int, c: ImandraXAsyncClient
+                ):
+                    typer.echo(f'{i}: decompose {decomp["req_args"]["name"]}')
+                    res = await c.decompose(**decomp['req_args'])
+                    typer.echo(format_decomp_res(res))
+
+                typer.echo('\n' + '=' * 5 + 'Decomp' + '=' * 5 + '\n')
+                tasks = [_check_decomp(decomp, i, c) for (i, decomp) in decomp_with_idx]
+                await asyncio.gather(*tasks)
 
     asyncio.run(_async_check_decomp())
