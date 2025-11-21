@@ -56,28 +56,24 @@ def eval(
     file: Annotated[
         str | None,
         typer.Argument(
-            None,
             help='Path of the IML file to evaluate. Set to "-" to read from stdin.',
         ),
-    ],
+    ] = None,
     strip_vg_requests: Annotated[
         bool,
         typer.Option(
-            True,
             help='Whether to strip verify and instance requests before evaluating.',
         ),
     ] = True,
     strip_decomp_requests: Annotated[
         bool,
         typer.Option(
-            True,
             help='Whether to decomp requests before evaluating.',
         ),
     ] = True,
     json: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to output the results in JSON format.',
         ),
     ] = False,
@@ -147,14 +143,12 @@ def list_vg(
     file: Annotated[
         str | None,
         typer.Argument(
-            None,
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
     json: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to output the results in JSON format.',
         ),
     ] = False,
@@ -177,28 +171,24 @@ def check_vg(
     file: Annotated[
         str | None,
         typer.Argument(
-            None,
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
     index: Annotated[
         list[int],
         typer.Option(
-            [],
             help='Name of the verification goal to check.',
         ),
     ] = [],
     check_all: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to check all verify requests in the IML file.',
         ),
     ] = False,
     json: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to output the results in JSON format.',
         ),
     ] = False,
@@ -303,14 +293,12 @@ def list_decomp(
     file: Annotated[
         str | None,
         typer.Argument(
-            None,
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
     json: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to output the results in JSON format.',
         ),
     ] = False,
@@ -331,28 +319,24 @@ def check_decomp(
     file: Annotated[
         str | None,
         typer.Argument(
-            None,
             help='Path of the IML file to check. Set to "-" to read from stdin.',
         ),
     ] = None,
     index: Annotated[
         list[int],
         typer.Option(
-            [],
             help='Index of the decomposition request to check.',
         ),
     ] = [],
     check_all: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to check all decomp requests in the IML file.',
         ),
     ] = False,
     json: Annotated[
         bool,
         typer.Option(
-            False,
             help='Whether to output the results in JSON format.',
         ),
     ] = False,
