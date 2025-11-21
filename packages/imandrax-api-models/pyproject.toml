@@ -14,9 +14,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cli = [
+client = [
     "iml-query>=0.4.2",
-    "typer>=0.20.0",
 ]
 
 [project.scripts]
