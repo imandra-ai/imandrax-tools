@@ -18,7 +18,10 @@ from imandrax_api_models.client import (
     get_imandrax_async_client,
     get_imandrax_client,
 )
-from imandrax_api_models.context_utils import format_eval_res
+from imandrax_api_models.context_utils import (
+    format_eval_res,
+    format_vg_res,
+)
 from imandrax_api_models.logging_utils import configure_logging
 
 app = typer.Typer(name='ImandraX')
@@ -173,7 +176,7 @@ def check_vg(
                 case _:
                     assert_never(vg['kind'])
             typer.echo(f'{i}: {vg["kind"]} ({vg["src"]})')
-            typer.echo(res.model_dump())
+            typer.echo(format_vg_res(res))
 
         async with get_imandrax_async_client() as c:
             eval_res = await c.eval_model(src=iml)

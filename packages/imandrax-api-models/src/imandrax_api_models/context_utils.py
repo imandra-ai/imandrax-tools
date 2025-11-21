@@ -1,15 +1,19 @@
 """Utility functions for formatting ImandraX models to LLM context."""
 
-from typing import cast
+from typing import Any, cast
+
+from devtools import pformat
 
 from imandrax_api_models import (
     Error,
     ErrorMessage,
     EvalOutput,
     EvalRes,
+    InstanceRes,
     Location,
     PO_Res,
     Position,
+    VerifyRes,
 )
 
 
@@ -178,7 +182,7 @@ def format_po_res(po_res: PO_Res) -> str: ...
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     if not eval_res.has_errors:
-        s = 'Success!'
+        s = 'Eval success!'
         if eval_res.eval_results:
             s += '\n'
         for i, eval_result in enumerate(eval_res.eval_results, 1):
@@ -193,3 +197,25 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
         s += 'Evaluation errors:\n\n'
         s += cast(str, format_eval_res_errors(eval_res, iml_src))
         return s
+
+
+# ====================
+
+
+def _remove_artifact(data: dict[str, Any]) -> dict[str, Any]:
+    """Resursively look side a dict for 'artifact' key and remove it."""
+    data = data.copy()
+    for k, v in data.items():
+        if k == 'artifact':
+            data.pop(k)
+        elif isinstance(v, dict):
+            v = cast(dict[str, Any], v)
+            data[k] = _remove_artifact(v)
+    return data
+
+
+def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
+    data = vg_res.model_dump()
+
+    data = _remove_artifact(data)
+    return pformat(data, indent=4)
