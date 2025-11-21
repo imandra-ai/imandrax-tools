@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "1.0.0"
+version = "1.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -12,6 +12,14 @@ dependencies = [
     "imandrax-api[async]>=0.17.3.1",
     "pydantic>=2.12.4",
 ]
+
+[project.optional-dependencies]
+client = [
+    "iml-query>=0.4.2",
+]
+
+[project.scripts]
+imandrax = "imandrax_api_models.extended_cli.app:app"
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
@@ -25,6 +33,7 @@ build-backend = "uv_build"
 dev = [
     "inline-snapshot[dirty-equals]>=0.31.1",
     "ipykernel>=7.1.0",
+    "pdbpp>=0.11.7",
     "pytest>=9.0.1",
     "pyyaml>=6.0.3",
 ]
@@ -72,7 +81,7 @@ environment.python = "./.venv"
 unsupported-operator = "ignore"
 invalid-argument-type = "ignore"
 invalid-return-type = "ignore"
-possibly-missing-attribute = "ignore"
+possibly-missing-import = "ignore"
 unresolved-import = "ignore"
 
 [tool.pyright]

@@ -7,9 +7,11 @@ from iml_query.processing import (
     extract_decomp_reqs,
     extract_instance_reqs,
     extract_opaque_function_names,
-    find_nested_rec,
     iml_outline,
     insert_instance_req,
+)
+from iml_query.processing.base import find_nested_rec
+from iml_query.processing.vg import (
     instance_capture_to_req,
     verify_capture_to_req,
 )
@@ -46,10 +48,11 @@ verify (
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
 
-    reqs = [
+    req_and_ranges = [
         verify_capture_to_req(VerifyCapture.from_ts_capture(capture))
         for _, capture in matches
     ]
+    reqs = [req for req, _range in req_and_ranges]
     assert reqs == snapshot(
         [
             {'src': 'fun x -> x > 0 ==> double x > x'},
@@ -81,10 +84,11 @@ instance (
     tree = parser.parse(bytes(iml, encoding='utf8'))
     matches = run_query(mk_query(INSTANCE_QUERY_SRC), node=tree.root_node)
 
-    reqs = [
+    req_and_ranges = [
         instance_capture_to_req(InstanceCapture.from_ts_capture(capture))
         for _, capture in matches
     ]
+    reqs = [req for req, _range in req_and_ranges]
     assert reqs == snapshot(
         [
             {'src': 'fun x -> x > 0 && x < 10'},
@@ -176,7 +180,9 @@ instance (fun x y -> x + y > 0 && x - y < 10)
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
-    new_iml, _new_tree, instance_reqs = extract_instance_reqs(iml, tree)
+    new_iml, _new_tree, instance_reqs, _ranges = extract_instance_reqs(
+        iml, tree
+    )
 
     assert instance_reqs == snapshot(
         [
@@ -276,12 +282,7 @@ instance positive_predicate\
                 {'src': 'positive_predicate'},
             ],
             'decompose_req': [
-                {
-                    'name': 'simple_branch',
-                    'basis': [],
-                    'rule_specs': [],
-                    'prune': False,
-                },
+                {'name': 'simple_branch'},
                 {
                     'name': 'simple_branch2',
                     'basis': ['simple_branch', 'f'],
@@ -322,21 +323,16 @@ let context_sensitive x y z =
 
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
-    _, _, decomp_reqs = extract_decomp_reqs(iml, tree)
+    _, _, decomp_reqs, _ranges = extract_decomp_reqs(iml, tree)
 
     assert decomp_reqs == snapshot(
         [
             {
                 'name': 'business_logic',
                 'basis': ['expensive_computation', 'external_api_call'],
-                'rule_specs': [],
-                'prune': False,
             },
             {
                 'name': 'context_sensitive',
-                'basis': [],
-                'rule_specs': [],
-                'prune': False,
                 'ctx_simp': True,
             },
         ]
@@ -367,7 +363,7 @@ let infeasible_branches x =
 
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
-    _, _, _decomp_reqs = extract_decomp_reqs(iml, tree)
+    _, _, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
 
 
 def test_mixed_requests_extraction():
@@ -405,9 +401,9 @@ verify (fun ys ->
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Test each extraction function individually
-    _, _, verify_reqs = extract_verify_reqs(iml, tree)
-    _, _, instance_reqs = extract_instance_reqs(iml, tree)
-    _, _, decomp_reqs = extract_decomp_reqs(iml, tree)
+    _, _, verify_reqs, _verify_ranges = extract_verify_reqs(iml, tree)
+    _, _, instance_reqs, _instance_ranges = extract_instance_reqs(iml, tree)
+    _, _, decomp_reqs, _decomp_ranges = extract_decomp_reqs(iml, tree)
     opaque_funcs = extract_opaque_function_names(iml)
 
     combined_results = {
@@ -433,8 +429,6 @@ fun ys ->
             'decomp_reqs': [
                 {
                     'name': 'conditional_fn',
-                    'basis': [],
-                    'rule_specs': [],
                     'prune': True,
                 }
             ],

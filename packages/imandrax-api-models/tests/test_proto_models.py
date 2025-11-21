@@ -56,7 +56,7 @@ let f (x : int) : int =
     true\
 """
 VERIFY_SRC = 'fun x -> g x > 0'
-VERIFY_SRC_REFUTED = 'fun x -> g x > 0'
+VERIFY_SRC_REFUTED = 'fun x -> g x <= 0'
 DECOMPOSE_NAME = 'g'
 
 
@@ -160,49 +160,10 @@ def test_verify_refuted(c: Client):
         {
             'unknown': None,
             'err': None,
-            'proved': {
-                'proof_pp': """\
-{ id = 1;
-  concl =
-  \n\
-  |----------------------------------------------------------------------
-   g x > 0
-  ;
-  view =
-  T_deduction {
-    premises =
-    [("p",
-      [{ id = 0;
-         concl =
-         \n\
-         |----------------------------------------------------------------------
-          g x > 0
-         ; view = T_deduction {premises = []} }
-        ])
-      ]}
-  }\
-"""
-            },
-            'refuted': None,
-            'verified_upto': None,
-            'errors': [],
-            'task': None,
-        }
-    )
-
-
-def test_instance_src(c: Client):
-    _ = c.eval_src(IML_CODE)
-    instance_res_msg = c.instance_src(VERIFY_SRC_REFUTED)
-    instance_res = InstanceRes.model_validate(instance_res_msg)
-    assert instance_res.model_dump() == snapshot(
-        {
-            'unknown': None,
-            'err': None,
-            'unsat': None,
-            'sat': {
+            'proved': None,
+            'refuted': {
                 'model': {
-                    'm_type': ModelType.Instance,
+                    'm_type': ModelType.Counter_example,
                     'src': """\
 module M = struct
 
@@ -218,6 +179,45 @@ module M = struct
                     },
                 }
             },
+            'verified_upto': None,
+            'errors': [],
+            'task': None,
+        }
+    )
+
+
+def test_instance_src(c: Client):
+    _ = c.eval_src(IML_CODE)
+    instance_res_msg = c.instance_src(VERIFY_SRC_REFUTED)
+    instance_res = InstanceRes.model_validate(instance_res_msg)
+    assert instance_res.model_dump() == snapshot(
+        {
+            'unknown': None,
+            'err': None,
+            'unsat': {
+                'proof_pp': """\
+{ id = 1;
+  concl =
+  \n\
+  |----------------------------------------------------------------------
+   not (g x <= 0)
+  ;
+  view =
+  T_deduction {
+    premises =
+    [("p",
+      [{ id = 0;
+         concl =
+         \n\
+         |----------------------------------------------------------------------
+          not (g x <= 0)
+         ; view = T_deduction {premises = []} }
+        ])
+      ]}
+  }\
+"""
+            },
+            'sat': None,
             'errors': [],
             'task': None,
         }

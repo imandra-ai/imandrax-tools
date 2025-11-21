@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Literal, Self
+from typing import Any, Literal, Never, Self, assert_never, cast
 
 from devtools import pformat
 from imandrax_api.lib import (
@@ -281,6 +281,7 @@ class PO_Res(BaseModel):
 
 
 class VerifyRes(BaseModel):
+    # One of the following will be returned
     unknown: StringMsg | None = Field(default=None)
     err: Empty | None = Field(default=None)
     proved: Proved | None = Field(default=None)
@@ -305,7 +306,8 @@ class VerifyRes(BaseModel):
         elif self.verified_upto is not None:
             return 'verified_upto'
         else:
-            raise AssertionError('Never')
+            self = cast(Never, self)
+            assert_never(self)
 
     @property
     def res(self) -> StringMsg | Empty | Proved | Refuted | Verified_upto:
@@ -320,7 +322,8 @@ class VerifyRes(BaseModel):
         elif self.verified_upto is not None:
             return self.verified_upto
         else:
-            raise AssertionError('Never')
+            self = cast(Never, self)
+            assert_never(self)
 
     @model_validator(mode='after')
     def one_of_res(self) -> Self:
@@ -344,6 +347,7 @@ class VerifyRes(BaseModel):
 
 
 class InstanceRes(BaseModel):
+    # One of the following will be returned
     unknown: StringMsg | None = Field(default=None)
     err: Empty | None = Field(default=None)
     unsat: Unsat | None = Field(default=None)
@@ -351,6 +355,36 @@ class InstanceRes(BaseModel):
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
+
+    @property
+    def res_type(
+        self,
+    ) -> Literal['unknown', 'err', 'unsat', 'sat']:
+        if self.unknown is not None:
+            return 'unknown'
+        elif self.err is not None:
+            return 'err'
+        elif self.unsat is not None:
+            return 'unsat'
+        elif self.sat is not None:
+            return 'sat'
+        else:
+            self = cast(Never, self)
+            assert_never(self)
+
+    @property
+    def res(self) -> StringMsg | Empty | Unsat | Sat:
+        if self.unknown is not None:
+            return self.unknown
+        elif self.err is not None:
+            return self.err
+        elif self.unsat is not None:
+            return self.unsat
+        elif self.sat is not None:
+            return self.sat
+        else:
+            self = cast(Never, self)
+            assert_never(self)
 
     @model_validator(mode='after')
     def one_of_res(self) -> Self:

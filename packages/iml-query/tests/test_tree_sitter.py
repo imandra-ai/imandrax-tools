@@ -131,7 +131,7 @@ let f (x : int) : int =
     file_end_row = tree.root_node.end_point[0]
     req_str = 'verify (fun x -> f x > 0)'
     new_iml, new_tree = insert_lines(
-        iml=iml, tree=tree, lines=[req_str], insert_after=file_end_row
+        code=iml, tree=tree, lines=[req_str], insert_after=file_end_row
     )
 
     # Should have a newline separating the last line and the inserted line

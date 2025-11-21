@@ -1,17 +1,14 @@
 from inline_snapshot import snapshot
 
 from iml_query.processing import (
-    decomp_req_to_top_appl_text,
     extract_decomp_reqs,
     extract_verify_reqs,
-    find_func_definition,
     insert_decomp_req,
     insert_verify_req,
 )
-from iml_query.queries import (
-    DECOMP_QUERY_SRC,
-    VERIFY_QUERY_SRC,
-)
+from iml_query.processing.decomp import decomp_req_to_top_appl_text
+from iml_query.processing.utils import find_func_definition
+from iml_query.queries import DECOMP_QUERY_SRC, VERIFY_QUERY_SRC
 from iml_query.tree_sitter_utils import (
     delete_nodes,
     get_parser,
@@ -40,7 +37,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Remove decomp requests
-    iml2, tree2, decomp_reqs = extract_decomp_reqs(iml, tree)
+    iml2, tree2, decomp_reqs, _ranges = extract_decomp_reqs(iml, tree)
     assert iml2 == snapshot("""\
 let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 
@@ -55,12 +52,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
 """)
     assert decomp_reqs == snapshot(
         [
-            {
-                'name': 'simple_branch',
-                'basis': [],
-                'rule_specs': [],
-                'prune': False,
-            },
+            {'name': 'simple_branch'},
             {
                 'name': 'simple_branch2',
                 'basis': ['simple_branch', 'f'],
@@ -72,8 +64,6 @@ if x = 1 || x = 2 then x + 1 else x - 1
             },
             {
                 'name': 'simple_branch3',
-                'basis': [],
-                'rule_specs': [],
                 'prune': True,
             },
         ]
@@ -82,7 +72,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     # Decomp request to decomp attribute
     decomp_req_2 = decomp_reqs[1]
     assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
-        'top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()'
+        'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()'
     )
 
     # %%
@@ -107,7 +97,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
 
 
 let simple_branch3 x =
@@ -123,7 +113,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~assuming:[%id s] ~ctx_simp:true ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
 
 
 let simple_branch3 x =
@@ -152,7 +142,7 @@ verify double_non_negative_is_increasing\
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # %%
-    iml2, tree2, verify_reqs = extract_verify_reqs(iml, tree)
+    iml2, tree2, verify_reqs, _ranges = extract_verify_reqs(iml, tree)
     assert verify_reqs == snapshot(
         [
             {'src': 'fun x -> x > 0 ==> double x > x'},
