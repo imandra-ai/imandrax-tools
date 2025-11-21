@@ -35,6 +35,7 @@ _parser: Parser | None = None
 
 
 def get_parser() -> Parser:
+    """Get the global IML tree-sitter parser instance."""
     global _parser
     if _parser is None:
         _parser = create_parser()
