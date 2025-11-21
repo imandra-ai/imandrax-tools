@@ -1,12 +1,8 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
-# ruff: noqa: RUF100, F401
 
 from typing import TYPE_CHECKING
 
-import yaml
 from pydantic import BaseModel
-
-from imandrax_api_models.proto_models import task
 
 if TYPE_CHECKING:
     from yaml import Dumper
