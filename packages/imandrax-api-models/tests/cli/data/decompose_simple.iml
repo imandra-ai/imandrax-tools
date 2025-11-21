@@ -1,7 +1,0 @@
-let simple_branch (x: int) : int =
-  if x = 1 || x = 2 then x + 1 else x - 1
-[@@decomp top ()]
-
-let conditional_fn (y: int) : int =
-  if y > 10 then y else 0
-[@@decomp top ~prune:true ()]

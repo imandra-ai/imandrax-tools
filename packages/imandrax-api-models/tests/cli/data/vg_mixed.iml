@@ -1,9 +1,0 @@
-let double (x: int) : int = x * 2
-
-let is_positive (x: int) : bool = x > 0
-
-let triple (x: int) : int = x * 3
-
-verify (fun x -> x > 0 ==> double x > x)
-
-instance (fun x -> x > 0 && x < 100)
