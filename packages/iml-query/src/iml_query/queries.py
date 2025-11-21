@@ -76,6 +76,16 @@ DECOMP_QUERY_SRC = r"""
 
 @dataclass(slots=True, frozen=True)
 class DecompCapture(BaseCapture):
+    """
+    Result of `DECOMP_QUERY_SRC`.
+
+    Attributes:
+        decomposed_func_name (Node): the name of the decomposed function
+        decomp_attr (Node): `[@@decomp top ~prune : true ()]` attribute
+        decomp_payload (Node): `top ~prune : true ()` payload
+
+    """
+
     decomposed_func_name: Node
     decomp_attr: Node
     decomp_payload: Node
