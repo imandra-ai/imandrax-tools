@@ -5,10 +5,10 @@ import structlog
 
 
 class NamedPrintLoggerFactory(structlog.PrintLoggerFactory):
-    def __call__(self, *args):
+    def __call__(self, *args: Any) -> Any:
         logger = super().__call__(*args)
         # Store the name (first argument) on the logger
-        logger.name = args[0] if args else 'root'
+        setattr(logger, 'name', args[0] if args else 'root')
         return logger
 
 
