@@ -6,6 +6,12 @@ from typing import TYPE_CHECKING, Any, Literal, Self
 
 import imandrax_api
 import structlog
+from iml_query.processing import (
+    extract_decomp_reqs,
+    extract_instance_reqs,
+    extract_verify_reqs,
+)
+from iml_query.tree_sitter_utils import get_parser
 
 from imandrax_api_models import (
     DecomposeRes,
@@ -140,6 +146,24 @@ class ImandraXClient(imandrax_api.Client):
     def __exit__(self, *_: Any) -> None:
         super().__exit__()
 
+    def eval_model(
+        self,
+        src: str,
+        timeout: float | None = None,
+        with_vgs: bool = False,
+        with_decomps: bool = False,
+    ) -> EvalRes:
+        """Eval without VGs and decomps."""
+        iml = src
+        tree = get_parser().parse(iml.encode('utf-8'))
+        if not with_vgs:
+            iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
+            iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
+        if not with_decomps:
+            iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
+
+        return self.eval_src(src=iml, timeout=timeout)
+
 
 class ImandraXAsyncClient(AsyncClient):
     """Extended async client with Pydantic model validation."""
@@ -225,6 +249,24 @@ class ImandraXAsyncClient(AsyncClient):
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         await super().__aexit__(exc_type, exc_val, exc_tb)
+
+    async def eval_model(
+        self,
+        src: str,
+        timeout: float | None = None,
+        with_vgs: bool = False,
+        with_decomps: bool = False,
+    ) -> EvalRes:
+        """Eval without VGs and decomps."""
+        iml = src
+        tree = get_parser().parse(iml.encode('utf-8'))
+        if not with_vgs:
+            iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
+            iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
+        if not with_decomps:
+            iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
+
+        return await self.eval_src(src=iml, timeout=timeout)
 
 
 def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
