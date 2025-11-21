@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.5.0 - 2025.11.21
+- improved documentations
+- changed:
+  - nested measure detection is moved to private repo
+  - VG / decomp requests extraction now contains location information
+
 ## [v0.4.1] - 2025.11.14
 - fixed:
   - incorrect trailing newline insertion
