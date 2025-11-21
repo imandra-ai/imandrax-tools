@@ -1,7 +1,8 @@
+# TODO(refactor): use Annotated
 import os
 import sys
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal, TypedDict, assert_never
 
 import typer
 from iml_query.processing import (
@@ -11,7 +12,7 @@ from iml_query.processing import (
 )
 from iml_query.tree_sitter_utils import get_parser
 
-from imandrax_api_models.client import get_imandrax_client
+from imandrax_api_models.client import get_imandrax_async_client, get_imandrax_client
 from imandrax_api_models.context_utils import format_eval_res
 from imandrax_api_models.logging_utils import configure_logging
 
@@ -60,8 +61,8 @@ def eval(
         tree = get_parser().parse(iml.encode('utf-8'))
 
         if strip_vg_requests:
-            iml, tree, _verify_reqs = extract_verify_reqs(iml, tree)
-            iml, tree, _instance_reqs = extract_instance_reqs(iml, tree)
+            iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
+            iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
         if strip_decomp_requests:
             iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
 
@@ -80,14 +81,7 @@ class VGItem(TypedDict):
     end_point: tuple[int, int]
 
 
-@app.command(name='list-vg')
-def list_vg(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to check. Set to "-" to read from stdin.',
-    ),
-):
-    iml = _load_iml(file)
+def collect_vgs(iml: str) -> list[VGItem]:
     tree = get_parser().parse(iml.encode('utf-8'))
     iml, tree, verify_reqs, verify_req_ranges = extract_verify_reqs(iml, tree)
     iml, tree, instance_reqs, instance_req_ranges = extract_instance_reqs(iml, tree)
@@ -113,10 +107,28 @@ def list_vg(
             }
         )
     vg_items.sort(key=lambda x: x['start_point'])
+    return vg_items
 
-    for item in vg_items:
+
+@app.command(name='list-vg')
+def list_vg(
+    file: str | None = typer.Argument(
+        None,
+        help='Path of the IML file to check. Set to "-" to read from stdin.',
+    ),
+    # TODO(feature)
+    json: bool = typer.Option(
+        False,
+        help='Whether to output the results in JSON format.',
+    ),
+):
+    iml = _load_iml(file)
+
+    vgs = collect_vgs(iml)
+
+    for i, item in enumerate(vgs, 1):
         loc_str = f'{item["start_point"][0]}:{item["start_point"][1]}-{item["end_point"][0]}:{item["end_point"][1]}'
-        typer.echo(f'{item["kind"]} at {loc_str}: {item["src"]}')
+        typer.echo(f'{i}: {item["kind"]} ({loc_str}): {item["src"]}')
 
 
 @app.command(name='check-vg')
@@ -125,15 +137,30 @@ async def check_vg(
         None,
         help='Path of the IML file to check. Set to "-" to read from stdin.',
     ),
-    name: str | None = typer.Option(
-        None,
+    index: list[int] = typer.Option(
         help='Name of the verification goal to check.',
     ),
     check_all: bool = typer.Option(
         False,
         help='Whether to check all verify requests in the IML file.',
     ),
-): ...
+):
+    check_all = check_all or len(index) == 0
+
+    iml = _load_iml(file)
+    vgs = collect_vgs(iml)
+
+    vgs: list[VGItem] = vgs if check_all else [vgs[i + 1] for i in index]
+    async with get_imandrax_async_client() as c:
+        tasks = []
+        for vg in vgs:
+            match vg['kind']:
+                case 'verify':
+                    tasks.append(c.verify_src(src=vg['src']))
+                case 'instance':
+                    tasks.append(c.instance_src(src=vg['src']))
+                case _:
+                    assert_never(vg)
 
 
 @app.command(name='list-decomp')
