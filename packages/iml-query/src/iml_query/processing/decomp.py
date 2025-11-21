@@ -7,9 +7,10 @@ Pipeline:
 3. decomp top application capture -> decomp request
 """
 
+from collections.abc import Iterable
 from typing import Any, Required, TypedDict, cast
 
-from tree_sitter import Node, Tree
+from tree_sitter import Node, Range, Tree
 
 from iml_query.queries import DECOMP_QUERY_SRC, DecompCapture
 from iml_query.tree_sitter_utils import (
@@ -221,6 +222,7 @@ def decomp_req_to_top_appl_text(req: DecompTopLabels) -> str:
 def decomp_attribute_payload_to_decomp_req_labels(
     node: Node,
 ) -> DecompTopLabels:
+    """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
     expect_appl = node.children[0].children[0]
@@ -230,14 +232,16 @@ def decomp_attribute_payload_to_decomp_req_labels(
     return top_application_to_decomp(expect_appl)
 
 
-def decomp_capture_to_req(capture: DecompCapture) -> DecompReqArgs:
+def decomp_capture_to_req(
+    capture: DecompCapture,
+) -> tuple[DecompReqArgs, Range]:
     req: dict[str, Any] = {}
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = decomp_attribute_payload_to_decomp_req_labels(
         capture.decomp_payload
     )
     req |= req_labels
-    return cast(DecompReqArgs, req)
+    return (cast(DecompReqArgs, req), capture.decomp_attr.range)
 
 
 def _remove_decomp_reqs(
@@ -253,7 +257,7 @@ def _remove_decomp_reqs(
 
 def extract_decomp_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, list[DecompReqArgs]]:
+) -> tuple[str, Tree, Iterable[DecompReqArgs], Iterable[Range]]:
     root = tree.root_node
     matches = run_query(
         mk_query(DECOMP_QUERY_SRC),
@@ -264,9 +268,12 @@ def extract_decomp_reqs(
         DecompCapture.from_ts_capture(capture) for _, capture in matches
     ]
 
-    reqs = [decomp_capture_to_req(capture) for capture in decomp_captures]
+    req_and_range = [
+        decomp_capture_to_req(capture) for capture in decomp_captures
+    ]
+    reqs, ranges = zip(*req_and_range)
     new_iml, new_tree = _remove_decomp_reqs(iml, tree, decomp_captures)
-    return new_iml, new_tree, reqs
+    return new_iml, new_tree, reqs, ranges
 
 
 def insert_decomp_req(
