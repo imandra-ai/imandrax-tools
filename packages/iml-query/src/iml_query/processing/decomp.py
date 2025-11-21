@@ -7,7 +7,6 @@ Pipeline:
 3. decomp top application capture -> decomp request
 """
 
-from collections.abc import Iterable
 from typing import Any, Required, TypedDict, cast
 
 from tree_sitter import Node, Range, Tree
@@ -257,7 +256,7 @@ def _remove_decomp_reqs(
 
 def extract_decomp_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, Iterable[DecompReqArgs], Iterable[Range]]:
+) -> tuple[str, Tree, list[DecompReqArgs], list[Range]]:
     root = tree.root_node
     matches = run_query(
         mk_query(DECOMP_QUERY_SRC),
@@ -271,9 +270,12 @@ def extract_decomp_reqs(
     req_and_range = [
         decomp_capture_to_req(capture) for capture in decomp_captures
     ]
-    reqs, ranges = zip(*req_and_range)
+    if not req_and_range:
+        return iml, tree, [], []
+    else:
+        reqs, ranges = zip(*req_and_range)
     new_iml, new_tree = _remove_decomp_reqs(iml, tree, decomp_captures)
-    return new_iml, new_tree, reqs, ranges
+    return new_iml, new_tree, list(reqs), list(ranges)
 
 
 def insert_decomp_req(

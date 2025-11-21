@@ -37,7 +37,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Remove decomp requests
-    iml2, tree2, decomp_reqs = extract_decomp_reqs(iml, tree)
+    iml2, tree2, decomp_reqs, _ranges = extract_decomp_reqs(iml, tree)
     assert iml2 == snapshot("""\
 let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 
@@ -142,7 +142,7 @@ verify double_non_negative_is_increasing\
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # %%
-    iml2, tree2, verify_reqs = extract_verify_reqs(iml, tree)
+    iml2, tree2, verify_reqs, _ranges = extract_verify_reqs(iml, tree)
     assert verify_reqs == snapshot(
         [
             {'src': 'fun x -> x > 0 ==> double x > x'},

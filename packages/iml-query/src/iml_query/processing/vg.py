@@ -1,6 +1,5 @@
 """verify and instance requests related."""
 
-from collections.abc import Iterable
 from typing import NotRequired, Required, TypedDict, cast
 
 from tree_sitter import Range, Tree
@@ -83,7 +82,7 @@ def _remove_verify_reqs(
 
 def extract_verify_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, Iterable[VerifyReqArgs], Iterable[Range]]:
+) -> tuple[str, Tree, list[VerifyReqArgs], list[Range]]:
     root = tree.root_node
     matches = run_query(
         mk_query(VERIFY_QUERY_SRC),
@@ -101,7 +100,7 @@ def extract_verify_reqs(
     else:
         reqs, ranges = zip(*req_and_range)
     new_iml, new_tree = _remove_verify_reqs(iml, tree, verify_captures)
-    return new_iml, new_tree, reqs, ranges
+    return new_iml, new_tree, list(reqs), list(ranges)
 
 
 def _remove_instance_reqs(
@@ -117,7 +116,7 @@ def _remove_instance_reqs(
 
 def extract_instance_reqs(
     iml: str, tree: Tree
-) -> tuple[str, Tree, Iterable[VerifyReqArgs], Iterable[Range]]:
+) -> tuple[str, Tree, list[VerifyReqArgs], list[Range]]:
     root = tree.root_node
     matches = run_query(
         mk_query(INSTANCE_QUERY_SRC),
@@ -136,7 +135,7 @@ def extract_instance_reqs(
     else:
         reqs, ranges = zip(*req_and_range)
     new_iml, new_tree = _remove_instance_reqs(iml, tree, instance_captures)
-    return new_iml, new_tree, reqs, ranges
+    return new_iml, new_tree, list(reqs), list(ranges)
 
 
 def insert_verify_req(
