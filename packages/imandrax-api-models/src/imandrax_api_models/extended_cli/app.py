@@ -1,9 +1,8 @@
-# TODO(refactor): use Annotated
 import asyncio
 import os
 import sys
 from pathlib import Path
-from typing import Literal, TypedDict, assert_never
+from typing import Annotated, Literal, TypedDict, assert_never
 
 import typer
 from iml_query.processing import (
@@ -52,18 +51,27 @@ def _load_iml(path: str | None) -> str:
     name='eval',
 )
 def eval(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to evaluate. Set to "-" to read from stdin.',
-    ),
-    strip_vg_requests: bool = typer.Option(
-        True,
-        help='Whether to strip verify and instance requests before evaluating.',
-    ),
-    strip_decomp_requests: bool = typer.Option(
-        True,
-        help='Whether to decomp requests before evaluating.',
-    ),
+    file: Annotated[
+        str | None,
+        typer.Argument(
+            None,
+            help='Path of the IML file to evaluate. Set to "-" to read from stdin.',
+        ),
+    ],
+    strip_vg_requests: Annotated[
+        bool,
+        typer.Option(
+            True,
+            help='Whether to strip verify and instance requests before evaluating.',
+        ),
+    ] = True,
+    strip_decomp_requests: Annotated[
+        bool,
+        typer.Option(
+            True,
+            help='Whether to decomp requests before evaluating.',
+        ),
+    ] = True,
 ):
     iml = _load_iml(file)
 
@@ -123,15 +131,21 @@ def collect_vgs(iml: str) -> list[VGItem]:
 
 @app.command(name='list-vg')
 def list_vg(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to check. Set to "-" to read from stdin.',
-    ),
+    file: Annotated[
+        str | None,
+        typer.Argument(
+            None,
+            help='Path of the IML file to check. Set to "-" to read from stdin.',
+        ),
+    ] = None,
     # TODO(feature)
-    json: bool = typer.Option(
-        False,
-        help='Whether to output the results in JSON format.',
-    ),
+    json: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to output the results in JSON format.',
+        ),
+    ] = False,
 ):
     iml = _load_iml(file)
 
@@ -144,18 +158,27 @@ def list_vg(
 
 @app.command(name='check-vg')
 def check_vg(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to check. Set to "-" to read from stdin.',
-    ),
-    index: list[int] = typer.Option(
-        [],
-        help='Name of the verification goal to check.',
-    ),
-    check_all: bool = typer.Option(
-        False,
-        help='Whether to check all verify requests in the IML file.',
-    ),
+    file: Annotated[
+        str | None,
+        typer.Argument(
+            None,
+            help='Path of the IML file to check. Set to "-" to read from stdin.',
+        ),
+    ] = None,
+    index: Annotated[
+        list[int],
+        typer.Option(
+            [],
+            help='Name of the verification goal to check.',
+        ),
+    ] = [],
+    check_all: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to check all verify requests in the IML file.',
+        ),
+    ] = False,
 ):
     async def _async_check_vg():
         iml = _load_iml(file)
@@ -222,10 +245,13 @@ def collect_decomps(iml: str) -> list[DecompItem]:
 
 @app.command(name='list-decomp')
 def list_decomp(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to check. Set to "-" to read from stdin.',
-    ),
+    file: Annotated[
+        str | None,
+        typer.Argument(
+            None,
+            help='Path of the IML file to check. Set to "-" to read from stdin.',
+        ),
+    ] = None,
 ):
     iml = _load_iml(file)
     decomps = collect_decomps(iml)
@@ -236,18 +262,27 @@ def list_decomp(
 
 @app.command(name='check-decomp')
 def check_decomp(
-    file: str | None = typer.Argument(
-        None,
-        help='Path of the IML file to check. Set to "-" to read from stdin.',
-    ),
-    index: list[int] = typer.Option(
-        [],
-        help='Index of the decomposition request to check.',
-    ),
-    check_all: bool = typer.Option(
-        False,
-        help='Whether to check all decomp requests in the IML file.',
-    ),
+    file: Annotated[
+        str | None,
+        typer.Argument(
+            None,
+            help='Path of the IML file to check. Set to "-" to read from stdin.',
+        ),
+    ] = None,
+    index: Annotated[
+        list[int],
+        typer.Option(
+            [],
+            help='Index of the decomposition request to check.',
+        ),
+    ] = [],
+    check_all: Annotated[
+        bool,
+        typer.Option(
+            False,
+            help='Whether to check all decomp requests in the IML file.',
+        ),
+    ] = False,
 ):
     async def _async_check_decomp():
         iml = _load_iml(file)
