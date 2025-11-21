@@ -160,7 +160,7 @@ class ImandraXClient(imandrax_api.Client):
             iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
             iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
         if not with_decomps:
-            iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
+            iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
 
         return self.eval_src(src=iml, timeout=timeout)
 
@@ -264,7 +264,7 @@ class ImandraXAsyncClient(AsyncClient):
             iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
             iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
         if not with_decomps:
-            iml, tree, _decomp_reqs = extract_decomp_reqs(iml, tree)
+            iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
 
         return await self.eval_src(src=iml, timeout=timeout)
 
