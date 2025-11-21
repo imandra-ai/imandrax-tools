@@ -6,12 +6,22 @@ from typing import TYPE_CHECKING, Any, Literal, Self
 
 import imandrax_api
 import structlog
-from iml_query.processing import (
-    extract_decomp_reqs,
-    extract_instance_reqs,
-    extract_verify_reqs,
-)
-from iml_query.tree_sitter_utils import get_parser
+
+try:
+    from iml_query.processing import (
+        extract_decomp_reqs,
+        extract_instance_reqs,
+        extract_verify_reqs,
+    )
+    from iml_query.tree_sitter_utils import get_parser
+except ImportError:
+    msg = """\
+To use extended ImandraX API client, optional dependency `iml-query` is required.
+Install it with `pip install "imandrax-api-models[client]"`
+
+For regular API client without Pydantic model validation, use `imandrax-api` instead.\
+"""
+    raise ImportError(msg)
 
 from imandrax_api_models import (
     DecomposeRes,
