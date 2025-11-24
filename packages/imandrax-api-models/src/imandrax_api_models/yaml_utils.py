@@ -13,7 +13,7 @@ else:
     except ImportError:
         from yaml import Dumper
 
-from imandrax_api_models import Art, ModelType, Task
+from imandrax_api_models import ModelType
 
 
 class ImandraXAPIModelDumper(Dumper):
@@ -49,16 +49,6 @@ def model_type_representer(dumper: Dumper, data: ModelType):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data.value)
 
 
-def artifact_representer(dumper: Dumper, data: Art):
-    """Remove artifact."""
-    return dumper.represent_none(None)
-
-
-def task_representer(dumper: Dumper, data: Task):
-    """Remove task."""
-    return dumper.represent_none(None)
-
-
 def basemodel_representer(dumper: Dumper, data: BaseModel):
     return dumper.represent_dict(data.model_dump())
 
@@ -70,6 +60,4 @@ def basemodel_representer(dumper: Dumper, data: BaseModel):
 
 ImandraXAPIModelDumper.add_representer(str, str_representer)
 ImandraXAPIModelDumper.add_representer(ModelType, model_type_representer)
-ImandraXAPIModelDumper.add_representer(Art, artifact_representer)
-ImandraXAPIModelDumper.add_representer(Task, task_representer)
 ImandraXAPIModelDumper.add_representer(BaseModel, basemodel_representer)
