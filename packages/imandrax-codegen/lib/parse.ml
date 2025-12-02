@@ -785,8 +785,8 @@ let%expect_test "parse fun decomp art" =
     {
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
       f_args =
-        [{ id = x/16869; ty = { view = (Constr (int,[]));
-                                generation = 1 } }];
+        [{ id = x/116441; ty = { view = (Constr (int,[]));
+                                 generation = 1 } }];
       regions =
         [(2 elements)
          {
@@ -830,7 +830,7 @@ let%expect_test "parse fun decomp art" =
                          l =
                            [{ view =
                                 (Var
-                                  { id = x/16869;
+                                  { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
                                       generation = 1 }
@@ -889,7 +889,7 @@ let%expect_test "parse fun decomp art" =
                         l =
                           [{ view =
                                (Var
-                                 { id = x/16869;
+                                 { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
                                      generation = 1 }
@@ -931,13 +931,13 @@ let%expect_test "parse fun decomp art" =
                            generation = 1 };
                     generation = 0;
                     sub_anchor = None };
-              "id": String "d1134cdc-0654-49b8-8a05-1fb763fe9fb3"];
+              "id": String "403df3c1-816f-4d4a-9414-877a974b6548"];
            status =
              Feasible
                { tys = [];
                  consts =
-                 [((x/16869 : { view = (Constr (int,[]));
-                                generation = 1 }),
+                 [((x/116441 : { view = (Constr (int,[]));
+                                 generation = 1 }),
                    { view = (Const 1);
                      ty = { view = (Constr (int,[]));
                             generation = 1 };
@@ -988,7 +988,7 @@ let%expect_test "parse fun decomp art" =
                          l =
                            [{ view =
                                 (Var
-                                  { id = x/16869;
+                                  { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
                                       generation = 1 }
@@ -1052,7 +1052,7 @@ let%expect_test "parse fun decomp art" =
                              sub_anchor = None };
                            { view =
                                (Var
-                                 { id = x/16869;
+                                 { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
                                      generation = 1 }
@@ -1089,13 +1089,13 @@ let%expect_test "parse fun decomp art" =
                            generation = 1 };
                     generation = 0;
                     sub_anchor = None };
-              "id": String "8d762a3d-a005-4489-8dfb-7221823f063c"];
+              "id": String "7c9c52f3-519f-47a5-934c-d7dede67083d"];
            status =
              Feasible
                { tys = [];
                  consts =
-                 [((x/16869 : { view = (Constr (int,[]));
-                                generation = 1 }),
+                 [((x/116441 : { view = (Constr (int,[]));
+                                 generation = 1 }),
                    { view = (Const 0);
                      ty = { view = (Constr (int,[]));
                             generation = 1 };
@@ -1206,7 +1206,8 @@ let%expect_test "parse model art" =
   let yaml_str =
     (* CCIO.File.read_exn "../test/data/model/composite/map_default_value_only.yaml" *)
     (* CCIO.File.read_exn "../test/data/model/primitive/empty_list.yaml" *)
-    CCIO.File.read_exn "../test/data/model/polymorphic/annotated_list.yaml"
+    CCIO.File.read_exn
+      "../test/data/model/polymorphic/annotated_polymorphic.yaml"
     (* CCIO.File.read_exn "../test/data/model/polymorphic/ambiguous_type_name.yaml" *)
   in
   let yaml = Yaml.of_string_exn yaml_str in
@@ -1290,21 +1291,21 @@ let%expect_test "parse model art" =
 
   [%expect
     {|
-    name: annotated_list
+    name: annotated_polymorphic
     code: let v =  (fun (w: _ list) -> if w = [] then true else false)
 
     <><><><><><><><><><>
 
     Applied symbol:
-    (w/16003 : { view = (Constr (list, [{ view = (Var a/16002); generation = 3 }])); generation = 3 })
+    (w/97332 : { view = (Constr (list, [{ view = (Var a/97331); generation = 3 }])); generation = 3 })
 
     <><><><><><><><><><>
 
     Term:
-    { view = Construct {c = ([] : { view = (Constr (list,[{ view = (Constr (_a_0/0[temp],[]));
+    { view = Construct {c = ([] : { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
                                                             generation = 3 }]));
                                     generation = 3 });args = []};
-      ty = { view = (Constr (list,[{ view = (Constr (_a_0/0[temp],[]));
+      ty = { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
                                      generation = 3 }]));
              generation = 3 };
       generation = 1; sub_anchor = None }
