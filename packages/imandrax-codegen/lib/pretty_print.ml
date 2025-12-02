@@ -201,3 +201,90 @@ let pp_fun_decomp
     fd.f_args (List.length fd.regions)
     (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_region)
     fd.regions
+
+let pp_decl out (decl : (Term.term, Type.t) Decl.t_poly) =
+  let open Format in
+  match decl with
+  | Decl.Ty ty_def ->
+    (* Pretty print ADT row *)
+    let pp_adt_row out (row : (Uid.t, Type.t) Ty_view.adt_row) =
+      let pp_labels out = function
+        | None -> fprintf out "None"
+        | Some lbls ->
+          fprintf out "@[<hv 2>(Some@ [@[<hv>%a@]])@]"
+            (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
+            lbls
+      in
+      let pp_doc out = function
+        | None -> fprintf out "None"
+        | Some d -> fprintf out "(Some %S)" d
+      in
+      fprintf out
+        "@[<v 2>{ @,\
+         @[<hv 2>c =@ %a@];@,\
+         @[<hv 2>labels =@ %a@];@,\
+         @[<hv 2>args =@ [@[<hv>%a@]]@];@,\
+         @[<hv 2>doc =@ %a@]@,\
+         }@]"
+        Uid.pp row.c pp_labels row.labels
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_type)
+        row.args pp_doc row.doc
+    in
+
+    (* Pretty print record row *)
+    let pp_rec_row out (row : (Uid.t, Type.t) Ty_view.rec_row) =
+      let pp_doc out = function
+        | None -> fprintf out "None"
+        | Some d -> fprintf out "(Some %S)" d
+      in
+      fprintf out
+        "@[<v 2>{ @,\
+         @[<hv 2>f =@ %a@];@,\
+         @[<hv 2>ty =@ %a@];@,\
+         @[<hv 2>doc =@ %a@]@,\
+         }@]"
+        Uid.pp row.f pp_type row.ty pp_doc row.doc
+    in
+
+    (* Pretty print decl *)
+    let pp_ty_decl out (d : (Uid.t, Type.t, Imandrax_api.Void.t) Ty_view.decl)
+        =
+      match d with
+      | Ty_view.Algebraic rows ->
+        fprintf out "@[<hv 2>Algebraic@ [@[<v>%a@]]@]"
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_adt_row)
+          rows
+      | Ty_view.Record rows ->
+        fprintf out "@[<hv 2>Record@ [@[<v>%a@]]@]"
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_rec_row)
+          rows
+      | Ty_view.Alias _ -> .
+      | Ty_view.Skolem -> fprintf out "Skolem"
+      | Ty_view.Builtin bt ->
+        fprintf out "@[<hv 2>Builtin@ %a@]" Imandrax_api.Builtin.Ty.pp bt
+      | Ty_view.Other -> fprintf out "Other"
+    in
+
+    let pp_clique out = function
+      | None -> fprintf out "None"
+      | Some c -> fprintf out "@[<hv 2>(Some@ %a)@]" Imandrax_api.Clique.pp c
+    in
+
+    let pp_timeout out = function
+      | None -> fprintf out "None"
+      | Some t -> fprintf out "(Some %d)" t
+    in
+
+    fprintf out
+      "@[<v 2>Ty@ { @,\
+       @[<hv 2>name =@ %a@];@,\
+       @[<hv 2>params =@ [@[<hv>%a@]]@];@,\
+       @[<hv 2>decl =@ %a@];@,\
+       @[<hv 2>clique =@ %a@];@,\
+       @[<hv 2>timeout =@ %a@]@,\
+       }@]"
+      Uid.pp ty_def.name
+      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
+      ty_def.params pp_ty_decl ty_def.decl pp_clique ty_def.clique pp_timeout
+      ty_def.timeout
+  | _ -> fprintf out "(* Other Decl variants not implemented yet *)"

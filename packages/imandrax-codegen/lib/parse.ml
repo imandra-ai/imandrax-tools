@@ -625,6 +625,13 @@ let format_invariant_constraints_as_markdown_list
   |> String.concat "\n"
   |> fun s -> s ^ "\n"
 
+(*
+
+Arguments:
+  - output_as_dict: whether to output the test data as a dictionary
+    instead of test function definitions
+  - ...
+*)
 let parse_fun_decomp
     ?(output_as_dict : bool = false)
     (fun_decomp : Mir.Fun_decomp.t) : Ast.stmt list =
@@ -733,7 +740,9 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 -------------------- *)
 
 let%expect_test "parse decl art" =
-  let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in
+  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
+  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
+  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
     match yaml with
@@ -771,31 +780,23 @@ let%expect_test "parse decl art" =
   printf "code:\n %s\n" code;
   printf "<><><><><><><><><>\n";
 
-  List.iter (fun decl -> print_endline (Mir.Decl.show decl)) decls;
+  let fmt = Format.str_formatter in
+  List.iter (fun decl -> (Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)) decls;
   ();
   [%expect
     {|
-    name: record
+    name: variant_with_data
     code:
-     type point = { x: int; y: int }
+     type shape =
+      | Circle of int
+      | Rectangle of int * int
 
-    let distance_category = fun p ->
-      let sum = p.x + p.y in
-      if sum < 0 then "negative"
-      else if sum = 0 then "origin"
-      else "positive"
+    let area = fun s ->
+      match s with
+      | Circle r -> r * r
+      | Rectangle (w, h) -> w * h
 
     <><><><><><><><><>
-    (Ty
-       { name = point/4N82zNFBEhrlrmHNKK_4jDYtpXt8hvmRWC4-N437xp8; params = [];
-         decl =
-         (Record
-            [{ f = x/40plBYPa-nKP5TMortqhgELkBB1Ekmxx-T83mnr6Rlk;
-               ty = { view = (Constr (int, [])); generation = 1 }; doc = None };
-              { f = y/2q8uB6Fb8Uwf-NuF89IsRU8PWpxeLPDxZB2Kk_W6oqE;
-                ty = { view = (Constr (int, [])); generation = 1 }; doc = None }
-              ]);
-         clique = None; timeout = None })
     |}]
 
 (* Decomp
@@ -855,7 +856,32 @@ let%expect_test "parse fun decomp art" =
     let f = fun x -> if x > 0 then x + 2 else g x
 
     Fun decomp:
-    {
+    Ty
+      {
+      name = shape/v_i3bLLE-uDuzDsq0PP6ZlOd3BpxRihJWXKha-SQ5ZE;
+      params = [];
+      decl =
+        Algebraic
+          [{
+             c = Circle/S_Cmpwoi8d1foHX9rOJm3zWVQipeHLWH5HjimJ6oDt8;
+             labels = None;
+             args = [{ view = (Constr (int,[]));
+                       generation = 1 }];
+             doc = None
+             };
+           {
+             c = Rectangle/rkX3Qq3NXp4EFP5Js2YdOCcAKeXLgAMN6gmGAE4C7Xk;
+             labels = None;
+             args =
+               [{ view = (Constr (int,[]));
+                  generation = 1 };
+                { view = (Constr (int,[]));
+                  generation = 1 }];
+             doc = None
+             }];
+      clique = None;
+      timeout = None
+      }{
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
       f_args =
         [{ id = x/116441; ty = { view = (Constr (int,[]));
