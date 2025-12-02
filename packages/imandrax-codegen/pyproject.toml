@@ -33,6 +33,11 @@ package = true
 # imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 imandrax-api = { path = "../../../imandrax-api/src/py" }
 
+[tool.uv.workspace]
+members = [
+    "scripts",
+]
+
 [tool.setuptools]
 package-dir = {"" = "python"}
 
