@@ -1,3 +1,17 @@
+"""
+A script to generate the artifact of decomposition results.
+
+- read IML code and decomp params from `data.yaml`
+- eval
+- decompose
+- decode decomp artifact to get regions
+- store results in `result/`
+    - each result contains
+    - input (IML code and decomp params)
+    - regions
+    - decomp result
+"""
+
 # pyright: basic
 # %%
 import base64
@@ -14,12 +28,13 @@ if ip := get_ipython():
     ip.run_line_magic('reload_ext', 'autoreload')
     ip.run_line_magic('autoreload', '2')
 import os
-from typing import Any, Final
+from typing import Any, Final, cast
 
 import dotenv
-from decode_artifact import decode_artifact
+from decode_artifact import RegionStr, decode_artifact
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
+from rich.progress import track
 
 curr_dir = Path.cwd() if ip else Path(__file__).parent
 dotenv.load_dotenv()
@@ -62,18 +77,21 @@ with (curr_dir / 'data.yaml').open('r') as f:
 # %%
 decomp_res_by_eg = []
 regions_by_eg = []
-for i, item in enumerate(inputs):
+for item in track(inputs):
+    name = item['name']
     iml = item['iml']
     decomp_kwargs = item['decomp_kwargs']
     _eval_res = c.eval_src(iml)
     decomp_res = c.decompose(**decomp_kwargs)
+
     decomp_res_by_eg.append(proto_to_dict(decomp_res))
     regions = decode_artifact(
         data=decomp_res.artifact.data, kind=decomp_res.artifact.kind
     )
+    regions = cast(list[RegionStr], regions)
+
     regions = [r.to_dict() for r in regions]
     regions_by_eg.append(regions)
-
 
 # %%
 out_dir = curr_dir / 'result'
