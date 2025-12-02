@@ -741,8 +741,8 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 
 let%expect_test "parse decl art" =
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
-  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
-  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in
+  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in
+  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
     match yaml with
@@ -781,22 +781,48 @@ let%expect_test "parse decl art" =
   printf "<><><><><><><><><>\n";
 
   let fmt = Format.str_formatter in
-  List.iter (fun decl -> (Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)) decls;
-  ();
+  List.iter (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl) decls;
+  print_endline (Format.flush_str_formatter ());
   [%expect
     {|
-    name: variant_with_data
+    name: variant_simple
     code:
-     type shape =
-      | Circle of int
-      | Rectangle of int * int
+     type color = Red | Green | Blue
 
-    let area = fun s ->
-      match s with
-      | Circle r -> r * r
-      | Rectangle (w, h) -> w * h
+    let color_value = fun c ->
+      match c with
+      | Red -> 1
+      | Green -> 2
+      | Blue -> 3
 
     <><><><><><><><><>
+    Ty
+      {
+      name = color/F4SPDE2sKlxgLCvuIygJ3Xu9_raARZm5NXlFWbdGNF8;
+      params = [];
+      decl =
+        Algebraic
+          [{
+             c = Red/b3EDduPBruW2iDiWhTH6G72f6NMLBDYAG4-DMIPHYus;
+             labels = None;
+             args = [];
+             doc = None
+             };
+           {
+             c = Green/t3jid_c6VQ5vHs9oYXUjFgbtTBJJ0-Y0m2uMhqgXW_8;
+             labels = None;
+             args = [];
+             doc = None
+             };
+           {
+             c = Blue/Xc53fcwfmIy2rEGLTK5zFZRfpw-v5m6AXhRLrz4tbzY;
+             labels = None;
+             args = [];
+             doc = None
+             }];
+      clique = None;
+      timeout = None
+      }
     |}]
 
 (* Decomp
@@ -856,32 +882,7 @@ let%expect_test "parse fun decomp art" =
     let f = fun x -> if x > 0 then x + 2 else g x
 
     Fun decomp:
-    Ty
-      {
-      name = shape/v_i3bLLE-uDuzDsq0PP6ZlOd3BpxRihJWXKha-SQ5ZE;
-      params = [];
-      decl =
-        Algebraic
-          [{
-             c = Circle/S_Cmpwoi8d1foHX9rOJm3zWVQipeHLWH5HjimJ6oDt8;
-             labels = None;
-             args = [{ view = (Constr (int,[]));
-                       generation = 1 }];
-             doc = None
-             };
-           {
-             c = Rectangle/rkX3Qq3NXp4EFP5Js2YdOCcAKeXLgAMN6gmGAE4C7Xk;
-             labels = None;
-             args =
-               [{ view = (Constr (int,[]));
-                  generation = 1 };
-                { view = (Constr (int,[]));
-                  generation = 1 }];
-             doc = None
-             }];
-      clique = None;
-      timeout = None
-      }{
+    {
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
       f_args =
         [{ id = x/116441; ty = { view = (Constr (int,[]));
