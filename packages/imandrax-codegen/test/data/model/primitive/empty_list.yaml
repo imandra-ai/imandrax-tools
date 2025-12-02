@@ -1,10 +1,12 @@
 name: empty list
+category: primitive
 iml: |-
   let v =
     fun w ->
       if w = [] then true else false
-instance_src: v
-data: YMACEKFiRF9hXzD5wwL4/l8R6vs47frpASL5+M8E8YUTM+U7RfzgPc3rzwVM2XrH0TxjRF9hXzD/GAGG+bLyYkRfYV8w92L3/yxgwwL982L/AfZi/fVgYf88sUd0eS5saXN0s/liRGxpc3T3wwL4/whgYf9XwAIfJ6BiQWH3sPRh8sMC/w/1Yf1i8vixRWMubmlss/diQltd9WL1/wNj9P8e/ybFAvf/JmP1/y8CwAIf8dwBoGJBYfmw9GHywwL/SvVh+WH/AGLz+8ACH/LcAaBiQXf5YvT/AGP0/wn/EGL2/yhh9GCxR3R5LnVuaXSz+WJEdW5pdPfDAvj/BrH1Yv839GBgYGLx/+wBwAIRoWJJQ19kdW1teV8w/mL8/wdj9P8N/4cCxQL4/xZj9f+RAgJh9rDyYv+aAvVi/yz3ZvT/Tf/cAQEB/+QBCw==
-api_version: v17
+instance_src_kwargs:
+  src: v
+data: YF8R6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOJjRF9hXzD/GAGG+bLyYkRfYV8w98MC+P8qXxHq+zjt+ukBIvn4zwTxhRMz5TtF/OA9zevPBUzZesfRPGNEX2FfMP8YAYb5svJiRF9hXzD3Yvf/LWDDAv3zYv8B9mL99WBh/z2xR3R5Lmxpc3Sz+WJEbGlzdPfDAvj/CGBh/1jAAh8noGJBYfew9GHywwL/D/Vh/WLy+LFFYy5uaWyz92JCW131YvX/A2P0/x7/JsUD9/8mAmP2/zACwAIfytMFoGJBYfmw9GHywwL/S/Vh+WH/AGLz+8ACH8vTBaBiQXf5YvT/AGP0/wn/EGL2/yhh9GCxR3R5LnVuaXSz+WJEdW5pdPfDAvj/BrH1Yv839GBgYGLx/+4BXxHEMMrfeUMjm6TsxCQaZylXtp5pyYhdzouBzCMj61kUe2NJQ19kdW1teV8w/x0Ahv6y8mJJQ19kdW1teV8w/GL8/zdj9P89/7kCxQP4/0YCY/b/xAICYfaw8mL/zQL1Yv9d92b0/37/jgIBAf+WAgs=
+api_version: v18
 kind: mir.model
 storage: []
