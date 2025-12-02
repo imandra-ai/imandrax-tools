@@ -156,6 +156,7 @@ let rec parse_term (term : Term.term) :
         {
           c = (_ : Type.t Applied_symbol.t_poly);
           args = (construct_args : Term.term list);
+          labels = _;
         },
       {
         view =
@@ -188,6 +189,7 @@ let rec parse_term (term : Term.term) :
         {
           c = (_ : Type.t Applied_symbol.t_poly);
           args = (construct_args : Term.term list);
+          labels = _;
         },
       {
         view =
@@ -255,6 +257,7 @@ let rec parse_term (term : Term.term) :
         {
           c = (construct : Type.t Applied_symbol.t_poly);
           args = (construct_args : Term.term list);
+          labels = _;
         },
       (_ : Type.t) ) ->
       (* Flatten the arrow type view to a list of types *)
