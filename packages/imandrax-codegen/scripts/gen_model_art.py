@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import yaml
-from imandrax_api import Client, url_prod
+from imandrax_api import Client, url_dev, url_prod
 from imandrax_api.lib import read_artifact_data
 from IPython.core.getipython import get_ipython
 from rich import print
@@ -24,7 +24,7 @@ curr_dir = Path.cwd() if ip else Path(__file__).parent
 dotenv.load_dotenv()
 
 
-ONE_YAML: Final = False
+ONE_YAML: Final[bool] = False
 
 
 class LiteralString(str):
@@ -49,7 +49,7 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
 
 
 # %%
-c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_prod)
+c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_dev)
 
 # out_dir = curr_dir.parent / 'examples' / 'art'
 out_dir = curr_dir
@@ -134,10 +134,11 @@ let v =
 ]
 
 
-values: list[tuple[str, str]] = [
-    (
-        'variant_and_record',
-        """\
+values.extend(
+    [
+        (
+            'variant_and_record',
+            """\
 type direction = North | South | East | West
 
 type position = { x: int; y: int; z: real }
@@ -150,13 +151,15 @@ let v =
   fun w ->
       if w = Move ({x=1; y=2; z=3.0}, North) then true else false\
 """,
-    ),
-]
+        ),
+    ]
+)
 
-values: list[tuple[str, str]] = [
-    (
-        'inline_record',
-        """\
+values.extend(
+    [
+        (
+            'inline_record',
+            """\
 type event =
     | Click of { x: int; y: int }
     | Keypress of { key: LChar.t; modifiers: LString.t list }
@@ -166,87 +169,97 @@ let v = Scroll {delta = 2.0}\
 
 let v = fun w -> if w = v then true else false\
 """,
-    ),
-]
-values = [
-    (
-        'map_int_bool',
-        """\
+        ),
+    ]
+)
+values.extend(
+    [
+        (
+            'map_int_bool',
+            """\
 let v : (int, bool) Map.t =
   Map.const false
 
 let v = fun w -> if w = v then true else false\
 """,
-    ),
-]
+        ),
+    ]
+)
 
-values = [
-    (
-        'multiset_nonempty',
-        """\
+values.extend(
+    [
+        (
+            'multiset_nonempty',
+            """\
 let v = Multiset.of_list [1; 2; 3; 2; 1]
 
 let v = fun w -> if w = v then true else false\
 """,
-    ),
-    (
-        'multiset_empty',
-        """\
+        ),
+        (
+            'multiset_empty',
+            """\
 let v = Multiset.of_list []
 
 let v = fun w -> if w = v then true else false
 instance v\
 """,
-    ),
-    (
-        'set_nonempty',
-        """\
+        ),
+        (
+            'set_nonempty',
+            """\
 let v = Set.of_list [1; 2; 3; 2; 1]
 
 let v = fun w -> if w = v then true else false\
 """,
-    ),
-    (
-        'set_empty',
-        """\
+        ),
+        (
+            'set_empty',
+            """\
 let v = Set.of_list []
 
 let v = fun w -> if w = v then true else false\
 """,
-    ),
-]
-
-values = [
-    (
-        'map_default_value_only',
-        """\
+        ),
+    ]
+)
+values.extend(
+    [
+        (
+            'map_default_value_only',
+            """\
 let v = Map.const false
 
 let v = fun w -> if w = v then true else false\
 """,
-    )
-]
+        )
+    ]
+)
 
-values = [
-    (
-        'annotated_polymorphic',
-        """\
+values.extend(
+    [
+        (
+            'annotated_polymorphic',
+            """\
 let v =  (fun (w: _ list) -> if w = [] then true else false)\
 """,
-    )
-]
+        )
+    ]
+)
 
 
-values = [
-    (
-        'annotated_polymorphic_weird_type_name',
-        """\
+values.extend(
+    [
+        (
+            'annotated_polymorphic_weird_type_name',
+            """\
 type _a_0 = My_dummy_0
 
 let v =  (fun (w: _a_0 list) -> if w = [] then true else false)\
 """,
-    )
-]
+        )
+    ]
+)
 # iml = r"""
 # let v = function
 #   | {v} -> true
