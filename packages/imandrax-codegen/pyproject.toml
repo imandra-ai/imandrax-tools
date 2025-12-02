@@ -39,6 +39,11 @@ members = [
     "scripts",
 ]
 
+[tool.uv.workspace]
+members = [
+    "scripts",
+]
+
 [tool.setuptools]
 package-dir = {"" = "python"}
 
