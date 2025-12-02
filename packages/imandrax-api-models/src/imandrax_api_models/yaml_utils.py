@@ -1,5 +1,6 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
 
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
@@ -13,7 +14,7 @@ else:
     except ImportError:
         from yaml import Dumper
 
-from imandrax_api_models import ModelType
+from imandrax_api_models import ErrorKind, ModelType
 
 
 class ImandraXAPIModelDumper(Dumper):
@@ -44,8 +45,7 @@ def str_representer(dumper: Dumper, data: str):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 
-def model_type_representer(dumper: Dumper, data: ModelType):
-    """Represent a ModelType as the enum name."""
+def enum_representer(dumper: Dumper, data: Enum):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data.value)
 
 
@@ -59,5 +59,6 @@ def basemodel_representer(dumper: Dumper, data: BaseModel):
 
 
 ImandraXAPIModelDumper.add_representer(str, str_representer)
-ImandraXAPIModelDumper.add_representer(ModelType, model_type_representer)
+ImandraXAPIModelDumper.add_representer(ModelType, enum_representer)
+ImandraXAPIModelDumper.add_representer(ErrorKind, enum_representer)
 ImandraXAPIModelDumper.add_representer(BaseModel, basemodel_representer)
