@@ -1,4 +1,3 @@
-# yaml-language-server: $schema=./data_schema.json
 - name: basic
   iml: |
     let g = fun x -> x + 1
