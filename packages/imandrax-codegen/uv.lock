@@ -388,7 +388,7 @@ wheels = [
 [[package]]
 name = "imandrax-api"
 version = "0.18"
-source = { directory = "../../vendor/imandrax-api/src/py" }
+source = { directory = "../../../imandrax-api/src/py" }
 dependencies = [
     { name = "protobuf" },
     { name = "requests" },
@@ -436,7 +436,7 @@ dev = [
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], directory = "../../vendor/imandrax-api/src/py" },
+    { name = "imandrax-api", extras = ["async"], directory = "../../../imandrax-api/src/py" },
     { name = "iml-query", specifier = ">=0.3.4" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },

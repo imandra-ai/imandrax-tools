@@ -30,7 +30,8 @@ dev = [
 package = true
 
 [tool.uv.sources]
-imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
+# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
+imandrax-api = { path = "../../../imandrax-api/src/py" }
 
 [tool.setuptools]
 package-dir = {"" = "python"}
