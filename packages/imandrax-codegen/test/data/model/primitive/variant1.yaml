@@ -1,4 +1,5 @@
 name: variant1
+category: primitive
 iml: |-
   type status =
       | Active
@@ -9,8 +10,9 @@ iml: |-
   let v =
     fun w ->
       if w = v then true else false
-instance_src: v
-data: YGBgXxHFHfkNPT/MI42krRlVmL/XSPJ50rNQNPOoFkEHXF75MWNGc3RhdHVz/xoBhvuy8mJGc3RhdHVz+cMC+v8uYGBgYvH5XxEbSo9Kb9nPHFOYOyTZ2bVlS4U1fHwYjZy96ljAxaMAX2NGQWN0aXZl/xoAhvuy8mJGQWN0aXZl+WL5/y9j9P81/z3FAvf/PWP1/0YCYGBi8f9NwAIfyd0BoGJBd/li9P8BY/T/B/9iYvb/EmH0YGbx9P+qAQEB/7ABCg==
-api_version: v17
+instance_src_kwargs:
+  src: v
+data: YGBgXxHFHfkNPT/MI42krRlVmL/XSPJ50rNQNPOoFkEHXF75MWNGc3RhdHVz/xoBhvuy8mJGc3RhdHVz+cMC+v8uYGBgYvH5XxEbSo9Kb9nPHFOYOyTZ2bVlS4U1fHwYjZy96ljAxaMAX2NGQWN0aXZl/xoAhvuy8mJGQWN0aXZl+WL5/y9j9P81/z3FA/f/PQJj9v9HAmBgYvH/TsACH6LUBaBiQXf5YvT/AWP0/wf/Y2L2/xJh9GBm8fT/qwEBAf+xAQo=
+api_version: v18
 kind: mir.model
 storage: []
