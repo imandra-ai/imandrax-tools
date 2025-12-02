@@ -1,0 +1,18 @@
+name: variant2
+category: primitive
+iml: |-
+  type status =
+      | Active
+      | Waitlist of int
+
+  let v = Waitlist 1
+
+  let v =
+    fun w ->
+      if w = v then true else false
+instance_src_kwargs:
+  src: v
+data: YGBgXxHFHfkNPT/MI42krRlVmL/XSPJ50rNQNPOoFkEHXF75MWNGc3RhdHVz/xoBhvuy8mJGc3RhdHVz+cMC+v8uYLBIbWtfc19pbnSz+mJDaW509sMC9/8GslgCAAAAAAAAALD6Y/L/AwJh9cEDAv8L/yVgYGLx+l8R660Y/bgBvqk9Xe1F+l9jcPX5hyd3hCs6mcRM0nhyFQRjSFdhaXRsaXN0/xwAhv2y8mJIV2FpdGxpc3T7Yvv/M2P0/zn/QsUD9/9JAmP2/3wCYGBi8f+DAcACH7jUBaBiQXf5YvT/AmP0/wj/mQFi9/8UYfRgZvH0/+IBAQH/6AEK
+api_version: v18
+kind: mir.model
+storage: []
