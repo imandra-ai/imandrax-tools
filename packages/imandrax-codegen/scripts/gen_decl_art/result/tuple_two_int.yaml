@@ -1,0 +1,12 @@
+name: tuple_two_int
+iml: |
+  type two_int = int * int
+
+  let diff: two_int -> int = fun (a, b) -> a - b
+req_kwargs:
+  names:
+  - two_int
+get_decls_res:
+  not_found:
+  - two_int
+  decls: []

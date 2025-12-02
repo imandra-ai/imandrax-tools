@@ -1,0 +1,10 @@
+name: tuple
+iml: |
+  type two_int = int * int
+req_kwargs:
+  names:
+  - two_int
+get_decls_res:
+  not_found:
+  - two_int
+  decls: []
