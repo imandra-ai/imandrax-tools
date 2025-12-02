@@ -10,9 +10,9 @@ module Model = Imandrax_api_mir.Model
 let load_artifact (sub_dir : string option) (name : string) : Model.t =
   let yaml_str =
     match sub_dir with
-    | None -> CCIO.File.read_exn (sprintf "data/model/%s.yaml" name)
+    | None -> CCIO.File.read_exn (sprintf "../data/model/%s.yaml" name)
     | Some sub_dir ->
-      CCIO.File.read_exn (sprintf "data/model/%s/%s.yaml" sub_dir name)
+      CCIO.File.read_exn (sprintf "../data/model/%s/%s.yaml" sub_dir name)
   in
   let yaml = Yaml.of_string_exn yaml_str in
   let name, iml_code =
