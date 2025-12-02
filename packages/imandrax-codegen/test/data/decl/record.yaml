@@ -1,0 +1,21 @@
+name: record
+iml: |
+  type point = { x: int; y: int }
+
+  let distance_category = fun p ->
+    let sum = p.x + p.y in
+    if sum < 0 then "negative"
+    else if sum = 0 then "origin"
+    else "positive"
+req_kwargs:
+  names:
+  - point
+get_decls_res:
+  decls:
+  - name: point
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GXxHjSmUFg9r6co/lMyiu2qGAQuQEHUSSbHH5PzeaevpGWWNBeP8VAIb2svJiQXj0Y/T/JwJfEdqvLgehW/FMH/jbhfPSLEVPD1qcXizw8WQdipP1uqKhY0F5/xUAhvay8mJBefRj9P9cAmL/K/ex9GBfEeDfNszRQRIa5a5hzSiv+Iw2LaV7fIb5kVguPjeN+8afY0Vwb2ludP8ZAYb6svJiRXBvaW50+GX4/yv/LwICsfgB
+      api_version: v18
+      storage: []
+  not_found: []
