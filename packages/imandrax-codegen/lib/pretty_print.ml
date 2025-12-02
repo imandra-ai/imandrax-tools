@@ -46,7 +46,7 @@ let pp_term_view pp_t out (v : (_, _) Term.view) =
     fprintf out "@[<hv 2>(Sym@ %a)@]"
       (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
       s
-  | Term.Construct { c; args } ->
+  | Term.Construct { c; args; labels = _ } ->
     fprintf out
       "@[<hv 2>Construct@ {@,\
        @[<hv 2>c =@ %a@];@,\
@@ -117,6 +117,11 @@ let pp_term_view pp_t out (v : (_, _) Term.view) =
       pp_t u
       (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_case)
       cases pp_default default
+  | Term.Sequence (ts, u) ->
+    fprintf out
+      "@[<hv 2>Sequence@ (@,@[<hv 2>[%a]@],@ %a@,)@]"
+      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
+      ts pp_t u
 
 (* Pretty print a term with custom view printer *)
 let rec pp_term out (term : Term.term) =
@@ -150,6 +155,8 @@ let pp_fun_decomp
       fprintf out "@[<hv 2>Feasible@ %a@]"
         (Model.pp_t_poly pp_term pp_type)
         model
+    | Region.Feasibility_check_failed msg ->
+      fprintf out "@[<hv 2>Feasibility_check_failed@ %S@]" msg
   in
 
   (* Pretty print meta value *)
