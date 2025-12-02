@@ -40,7 +40,7 @@
     names:
       - color
 
-- name: variant_with_data
+- name: variant_with_payload
   iml: |
     type shape =
       | Circle of int
@@ -53,6 +53,45 @@
   req_kwargs:
     names:
       - shape
+
+- name: variant_with_multiple_payloads
+  iml: |
+    type shape =
+      | Circle of float
+      | Rectangle of float * float
+      | Triangle of { base: float; height: float } ;;
+  req_kwargs:
+    names:
+      - shape
+
+- name: variant_recursive
+  iml: |
+    type tree =
+      | Leaf of int
+      | Node of tree * tree ;;
+  req_kwargs:
+    names:
+      - tree
+
+- name: variant_polymorphic
+  iml: |
+    type 'a expr =
+      | Int of int
+      | Add of 'a expr * 'a expr
+  req_kwargs:
+    names:
+      - expr
+
+- name: GADT_monomorphic
+  iml: |
+    type _ expr =
+      | Int: int -> int expr
+      | Add: int expr * int expr -> int expr
+  req_kwargs:
+    names:
+      - expr
+
+# - name: polymorphic?
 
 ---
 - name: basic

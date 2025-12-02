@@ -1,0 +1,17 @@
+name: variant_polymorphic
+iml: |
+  type 'a expr =
+    | Int of int
+    | Add of 'a expr * 'a expr
+req_kwargs:
+  names:
+  - expr
+get_decls_res:
+  decls:
+  - name: expr
+    artifact:
+      kind: mir.decl
+      data: XxE41Um5Rvhc+1MtOKyAvyIXjM+YmnLgmimHV63Jm9akfGNEZXhwcv8YAYb5svJiRGV4cHL3Yfdh8mCwSG1rX3NfaW50s/piQ2ludPbDAvf/BmH1XxEbqyu9ZERFaKTSiLoX69nhBgRhXOVeo76s2RZEp8gTZmNDSW50/xcAhviy8mJDSW509mT2Av8pAsACH4oyoGJBYfiw9GHywwL/X/Vi9fZfEV9SYO0pPPrFhcQqwIzQSrjeLJKmyn9kZKeOcy2/2rpFY0NBZGT/FwCG+LLyYkNBZGT2ZPYC/yoCYv9H+LD0Yf9BZf+pAfb5/6UBArH6AQ==
+      api_version: v18
+      storage: []
+  not_found: []

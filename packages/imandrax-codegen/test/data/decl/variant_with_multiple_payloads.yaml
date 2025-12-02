@@ -1,0 +1,18 @@
+name: variant_with_multiple_payloads
+iml: |
+  type shape =
+    | Circle of float
+    | Rectangle of float * float
+    | Triangle of { base: float; height: float } ;;
+req_kwargs:
+  names:
+  - shape
+get_decls_res:
+  decls:
+  - name: shape
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfVfEUvwpqcKIvHdX6B1/aziZt81lUIqXhy1h+R44pieqA7fY0ZDaXJjbGX/GgCG+7LyYkZDaXJjbGX5ZPkC/y8CYv84/zpfEa5F90KtzV6eBBT+SbNmHTgnACnly4ADDeoJhgBOAu15Y0lSZWN0YW5nbGX/HQCG/rLyYklSZWN0YW5nbGX8ZPwC/zgCYv9C+LD0YF8Rv/i3bLLE+uDuzDsq0PP6ZlOd3BpxRihJWXKha+SQ5ZFjRXNoYXBl/xkBhvqy8mJFc2hhcGX4Zfj/K/8vAgKx+AE=
+      api_version: v18
+      storage: []
+  not_found: []
