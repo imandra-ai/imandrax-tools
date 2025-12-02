@@ -7,15 +7,16 @@ let pp_ty_view pp_lbl pp_var pp_t out (v : ('lbl, 'var, 't) Ty_view.view) =
   match v with
   | Ty_view.Var v -> fprintf out "(Var %a)" pp_var v
   | Ty_view.Arrow (lbl, a, b) ->
-    fprintf out "@[<v>(Arrow (@[<v>%a,@,%a,@,%a@]))@]" pp_lbl lbl pp_t a pp_t b
+      fprintf out "@[<v>(Arrow (@[<v>%a,@,%a,@,%a@]))@]" pp_lbl lbl pp_t a pp_t
+        b
   | Ty_view.Tuple ts ->
-    fprintf out "@[<hv 2>(Tuple@ @[<hv 2>[%a]@])@]"
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
-      ts
+      fprintf out "@[<hv 2>(Tuple@ @[<hv 2>[%a]@])@]"
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
+        ts
   | Ty_view.Constr (uid, args) ->
-    fprintf out "@[<hv 2>(Constr@ (@[<hv>%a,@,@[<v 1>[%a]@]@]))@]" Uid.pp uid
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_t)
-      args
+      fprintf out "@[<hv 2>(Constr@ (@[<hv>%a,@,@[<v 1>[%a]@]@]))@]" Uid.pp uid
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_t)
+        args
 
 (* Custom pretty-printer for Type.t with better Arrow formatting *)
 let rec pp_type out (ty : Type.t) =
@@ -31,97 +32,96 @@ let pp_term_view pp_t out (v : (_, _) Term.view) =
   match v with
   | Term.Const c -> fprintf out "(Const %a)" Imandrax_api.Const.pp c
   | Term.If (a, b, c) ->
-    fprintf out "@[<hv 2>If@ (@,%a,@ %a,@ %a@,)@]" pp_t a pp_t b pp_t c
+      fprintf out "@[<hv 2>If@ (@,%a,@ %a,@ %a@,)@]" pp_t a pp_t b pp_t c
   | Term.Apply { f; l } ->
-    fprintf out
-      "Apply {@[<hv>@[<hv 2>f = %a@];@,@[<hv 2>l =@ @[<hv 1>[%a]@]@]@,@]}" pp_t
-      f
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_t)
-      l
+      fprintf out
+        "Apply {@[<hv>@[<hv 2>f = %a@];@,@[<hv 2>l =@ @[<hv 1>[%a]@]@]@,@]}"
+        pp_t f
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_t)
+        l
   | Term.Var v ->
-    fprintf out "@[<hv 2>(Var@ %a)@]"
-      (Imandrax_api_common.Var.pp_t_poly pp_type)
-      v
+      fprintf out "@[<hv 2>(Var@ %a)@]"
+        (Imandrax_api_common.Var.pp_t_poly pp_type)
+        v
   | Term.Sym s ->
-    fprintf out "@[<hv 2>(Sym@ %a)@]"
-      (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-      s
+      fprintf out "@[<hv 2>(Sym@ %a)@]"
+        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+        s
   | Term.Construct { c; args; labels = _ } ->
-    fprintf out
-      "@[<hv 2>Construct@ {@,\
-       @[<hv 2>c =@ %a@];@,\
-       @[<hv 2>args =@ @[<hv 2>[%a]@]@]@,\
-       }@]"
-      (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-      c
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
-      args
+      fprintf out
+        "@[<hv 2>Construct@ {@,\
+         @[<hv 2>c =@ %a@];@,\
+         @[<hv 2>args =@ @[<hv 2>[%a]@]@]@,\
+         }@]"
+        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+        c
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
+        args
   | Term.Destruct { c; i; t } ->
-    fprintf out
-      "@[<hv 2>Destruct@ {@,\
-       @[<hv 2>c =@ %a@];@,\
-       @[<hv 2>i =@ %d@];@,\
-       @[<hv 2>t =@ %a@]@,\
-       }@]"
-      (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-      c i pp_t t
+      fprintf out
+        "@[<hv 2>Destruct@ {@,\
+         @[<hv 2>c =@ %a@];@,\
+         @[<hv 2>i =@ %d@];@,\
+         @[<hv 2>t =@ %a@]@,\
+         }@]"
+        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+        c i pp_t t
   | Term.Is_a { c; t } ->
-    fprintf out "@[<hv 2>Is_a@ {@,@[<hv 2>c =@ %a@];@,@[<hv 2>t =@ %a@]@,}@]"
-      (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-      c pp_t t
+      fprintf out "@[<hv 2>Is_a@ {@,@[<hv 2>c =@ %a@];@,@[<hv 2>t =@ %a@]@,}@]"
+        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+        c pp_t t
   | Term.Tuple { l } ->
-    fprintf out "@[<hv 2>Tuple@ {@,@[<hv 2>l =@ @[<hv 2>[%a]@]@]@,}@]"
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
-      l
+      fprintf out "@[<hv 2>Tuple@ {@,@[<hv 2>l =@ @[<hv 2>[%a]@]@]@,}@]"
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
+        l
   | Term.Field { f; t } ->
-    fprintf out "@[<hv 2>Field@ {@,@[<hv 2>f =@ %a@];@,@[<hv 2>t =@ %a@]@,}@]"
-      (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-      f pp_t t
+      fprintf out "@[<hv 2>Field@ {@,@[<hv 2>f =@ %a@];@,@[<hv 2>t =@ %a@]@,}@]"
+        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+        f pp_t t
   | Term.Tuple_field { i; t } ->
-    fprintf out
-      "@[<hv 2>Tuple_field@ {@,@[<hv 2>i =@ %d@];@,@[<hv 2>t =@ %a@]@,}@]" i
-      pp_t t
+      fprintf out
+        "@[<hv 2>Tuple_field@ {@,@[<hv 2>i =@ %d@];@,@[<hv 2>t =@ %a@]@,}@]" i
+        pp_t t
   | Term.Record { rows; rest } ->
-    let pp_row out (sym, t) =
-      fprintf out "@[<hv 2>(@,%a,@ %a@,)@]"
-        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-        sym pp_t t
-    in
-    let pp_rest out = function
-      | None -> fprintf out "None"
-      | Some t -> fprintf out "@[<hv 2>(Some@ %a)@]" pp_t t
-    in
-    fprintf out
-      "@[<hv 2>Record@ {@,\
-       @[<hv 2>rows =@ @[<hv 2>[%a]@]@];@,\
-       @[<hv 2>rest =@ %a@]@,\
-       }@]"
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_row)
-      rows pp_rest rest
+      let pp_row out (sym, t) =
+        fprintf out "@[<hv 2>(@,%a,@ %a@,)@]"
+          (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+          sym pp_t t
+      in
+      let pp_rest out = function
+        | None -> fprintf out "None"
+        | Some t -> fprintf out "@[<hv 2>(Some@ %a)@]" pp_t t
+      in
+      fprintf out
+        "@[<hv 2>Record@ {@,\
+         @[<hv 2>rows =@ @[<hv 2>[%a]@]@];@,\
+         @[<hv 2>rest =@ %a@]@,\
+         }@]"
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_row)
+        rows pp_rest rest
   | Term.Case { u; cases; default } ->
-    let pp_case out (sym, t) =
-      fprintf out "@[<hv 2>(@,%a,@ %a@,)@]"
-        (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
-        sym pp_t t
-    in
-    let pp_default out = function
-      | None -> fprintf out "None"
-      | Some t -> fprintf out "@[<hv 2>(Some@ %a)@]" pp_t t
-    in
-    fprintf out
-      "@[<hv 2>Case@ {@,\
-       @[<hv 2>u =@ %a@];@,\
-       @[<hv 2>cases =@ @[<hv 2>[%a]@]@];@,\
-       @[<hv 2>default =@ %a@]@,\
-       }@]"
-      pp_t u
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_case)
-      cases pp_default default
+      let pp_case out (sym, t) =
+        fprintf out "@[<hv 2>(@,%a,@ %a@,)@]"
+          (Imandrax_api_common.Applied_symbol.pp_t_poly pp_type)
+          sym pp_t t
+      in
+      let pp_default out = function
+        | None -> fprintf out "None"
+        | Some t -> fprintf out "@[<hv 2>(Some@ %a)@]" pp_t t
+      in
+      fprintf out
+        "@[<hv 2>Case@ {@,\
+         @[<hv 2>u =@ %a@];@,\
+         @[<hv 2>cases =@ @[<hv 2>[%a]@]@];@,\
+         @[<hv 2>default =@ %a@]@,\
+         }@]"
+        pp_t u
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_case)
+        cases pp_default default
   | Term.Sequence (ts, u) ->
-    fprintf out
-      "@[<hv 2>Sequence@ (@,@[<hv 2>[%a]@],@ %a@,)@]"
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
-      ts pp_t u
+      fprintf out "@[<hv 2>Sequence@ (@,@[<hv 2>[%a]@],@ %a@,)@]"
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_t)
+        ts pp_t u
 
 (* Pretty print a term with custom view printer *)
 let rec pp_term out (term : Term.term) =
@@ -152,11 +152,11 @@ let pp_fun_decomp
   let pp_status out = function
     | Region.Unknown -> fprintf out "Unknown"
     | Region.Feasible model ->
-      fprintf out "@[<hv 2>Feasible@ %a@]"
-        (Model.pp_t_poly pp_term pp_type)
-        model
+        fprintf out "@[<hv 2>Feasible@ %a@]"
+          (Model.pp_t_poly pp_term pp_type)
+          model
     | Region.Feasibility_check_failed msg ->
-      fprintf out "@[<hv 2>Feasibility_check_failed@ %S@]" msg
+        fprintf out "@[<hv 2>Feasibility_check_failed@ %S@]" msg
   in
 
   (* Pretty print meta value *)
@@ -168,14 +168,14 @@ let pp_fun_decomp
     | Region.String s -> fprintf out "String %S" s
     | Region.Term t -> fprintf out "@[<hv 2>Term@ %a@]" pp_term t
     | Region.List l ->
-      fprintf out "@[<hv 2>List@ [@[<hv>%a@]]@]"
-        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_meta)
-        l
+        fprintf out "@[<hv 2>List@ [@[<hv>%a@]]@]"
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_meta)
+          l
     | Region.Assoc assoc ->
-      let pp_pair out (k, v) = fprintf out "@[<hv 2>%S:@ %a@]" k pp_meta v in
-      fprintf out "@[<hv 2>Assoc@ {@[<hv>%a@]}@]"
-        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_pair)
-        assoc
+        let pp_pair out (k, v) = fprintf out "@[<hv 2>%S:@ %a@]" k pp_meta v in
+        fprintf out "@[<hv 2>Assoc@ {@[<hv>%a@]}@]"
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_pair)
+          assoc
   in
 
   (* Pretty print a region *)
@@ -206,85 +206,89 @@ let pp_decl out (decl : (Term.term, Type.t) Decl.t_poly) =
   let open Format in
   match decl with
   | Decl.Ty ty_def ->
-    (* Pretty print ADT row *)
-    let pp_adt_row out (row : (Uid.t, Type.t) Ty_view.adt_row) =
-      let pp_labels out = function
-        | None -> fprintf out "None"
-        | Some lbls ->
-          fprintf out "@[<hv 2>(Some@ [@[<hv>%a@]])@]"
-            (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
-            lbls
+      (* Pretty print ADT row *)
+      let pp_adt_row out (row : (Uid.t, Type.t) Ty_view.adt_row) =
+        let pp_labels out = function
+          | None -> fprintf out "None"
+          | Some lbls ->
+              fprintf out "@[<hv 2>(Some@ [@[<hv>%a@]])@]"
+                (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
+                lbls
+        in
+        let pp_doc out = function
+          | None -> fprintf out "None"
+          | Some d -> fprintf out "(Some %S)" d
+        in
+        fprintf out
+          "@[<v 2>{ @,\
+           @[<hv 2>c =@ %a@];@,\
+           @[<hv 2>labels =@ %a@];@,\
+           @[<hv 2>args =@ [@[<hv>%a@]]@];@,\
+           @[<hv 2>doc =@ %a@]@,\
+           }@]"
+          Uid.pp row.c pp_labels row.labels
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_type)
+          row.args pp_doc row.doc
       in
-      let pp_doc out = function
-        | None -> fprintf out "None"
-        | Some d -> fprintf out "(Some %S)" d
+
+      (* Pretty print record row *)
+      let pp_rec_row out (row : (Uid.t, Type.t) Ty_view.rec_row) =
+        let pp_doc out = function
+          | None -> fprintf out "None"
+          | Some d -> fprintf out "(Some %S)" d
+        in
+        fprintf out
+          "@[<v 2>{ @,\
+           @[<hv 2>f =@ %a@];@,\
+           @[<hv 2>ty =@ %a@];@,\
+           @[<hv 2>doc =@ %a@]@,\
+           }@]"
+          Uid.pp row.f pp_type row.ty pp_doc row.doc
       in
+
+      (* Pretty print decl *)
+      let pp_ty_decl out (d : (Uid.t, Type.t, Imandrax_api.Void.t) Ty_view.decl)
+          =
+        match d with
+        | Ty_view.Algebraic rows ->
+            fprintf out "@[<hv 2>Algebraic@ [@[<v>%a@]]@]"
+              (pp_print_list
+                 ~pp_sep:(fun out () -> fprintf out ";@,")
+                 pp_adt_row)
+              rows
+        | Ty_view.Record rows ->
+            fprintf out "@[<hv 2>Record@ [@[<v>%a@]]@]"
+              (pp_print_list
+                 ~pp_sep:(fun out () -> fprintf out ";@,")
+                 pp_rec_row)
+              rows
+        | Ty_view.Alias _ -> .
+        | Ty_view.Skolem -> fprintf out "Skolem"
+        | Ty_view.Builtin bt ->
+            fprintf out "@[<hv 2>Builtin@ %a@]" Imandrax_api.Builtin.Ty.pp bt
+        | Ty_view.Other -> fprintf out "Other"
+      in
+
+      let pp_clique out = function
+        | None -> fprintf out "None"
+        | Some c -> fprintf out "@[<hv 2>(Some@ %a)@]" Imandrax_api.Clique.pp c
+      in
+
+      let pp_timeout out = function
+        | None -> fprintf out "None"
+        | Some t -> fprintf out "(Some %d)" t
+      in
+
       fprintf out
-        "@[<v 2>{ @,\
-         @[<hv 2>c =@ %a@];@,\
-         @[<hv 2>labels =@ %a@];@,\
-         @[<hv 2>args =@ [@[<hv>%a@]]@];@,\
-         @[<hv 2>doc =@ %a@]@,\
+        "@[<v 2>Ty@ { @,\
+         @[<hv 2>name =@ %a@];@,\
+         @[<hv 2>params =@ [@[<hv>%a@]]@];@,\
+         @[<hv 2>decl =@ %a@];@,\
+         @[<hv 2>clique =@ %a@];@,\
+         @[<hv 2>timeout =@ %a@]@,\
          }@]"
-        Uid.pp row.c pp_labels row.labels
-        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_type)
-        row.args pp_doc row.doc
-    in
-
-    (* Pretty print record row *)
-    let pp_rec_row out (row : (Uid.t, Type.t) Ty_view.rec_row) =
-      let pp_doc out = function
-        | None -> fprintf out "None"
-        | Some d -> fprintf out "(Some %S)" d
-      in
-      fprintf out
-        "@[<v 2>{ @,\
-         @[<hv 2>f =@ %a@];@,\
-         @[<hv 2>ty =@ %a@];@,\
-         @[<hv 2>doc =@ %a@]@,\
-         }@]"
-        Uid.pp row.f pp_type row.ty pp_doc row.doc
-    in
-
-    (* Pretty print decl *)
-    let pp_ty_decl out (d : (Uid.t, Type.t, Imandrax_api.Void.t) Ty_view.decl)
-        =
-      match d with
-      | Ty_view.Algebraic rows ->
-        fprintf out "@[<hv 2>Algebraic@ [@[<v>%a@]]@]"
-          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_adt_row)
-          rows
-      | Ty_view.Record rows ->
-        fprintf out "@[<hv 2>Record@ [@[<v>%a@]]@]"
-          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@,") pp_rec_row)
-          rows
-      | Ty_view.Alias _ -> .
-      | Ty_view.Skolem -> fprintf out "Skolem"
-      | Ty_view.Builtin bt ->
-        fprintf out "@[<hv 2>Builtin@ %a@]" Imandrax_api.Builtin.Ty.pp bt
-      | Ty_view.Other -> fprintf out "Other"
-    in
-
-    let pp_clique out = function
-      | None -> fprintf out "None"
-      | Some c -> fprintf out "@[<hv 2>(Some@ %a)@]" Imandrax_api.Clique.pp c
-    in
-
-    let pp_timeout out = function
-      | None -> fprintf out "None"
-      | Some t -> fprintf out "(Some %d)" t
-    in
-
-    fprintf out
-      "@[<v 2>Ty@ { @,\
-       @[<hv 2>name =@ %a@];@,\
-       @[<hv 2>params =@ [@[<hv>%a@]]@];@,\
-       @[<hv 2>decl =@ %a@];@,\
-       @[<hv 2>clique =@ %a@];@,\
-       @[<hv 2>timeout =@ %a@]@,\
-       }@]"
-      Uid.pp ty_def.name
-      (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
-      ty_def.params pp_ty_decl ty_def.decl pp_clique ty_def.clique pp_timeout
-      ty_def.timeout
+        Uid.pp ty_def.name
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
+        ty_def.params pp_ty_decl ty_def.decl pp_clique ty_def.clique pp_timeout
+        ty_def.timeout
   | _ -> fprintf out "(* Other Decl variants not implemented yet *)"
