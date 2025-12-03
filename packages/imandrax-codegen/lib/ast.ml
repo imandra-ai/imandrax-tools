@@ -428,7 +428,8 @@ let def_union (name : string) (union_names : string list) : stmt =
   - Each variant constructor is a dataclass with anonymous fields
   - The variant is a union of the dataclasses
 
-  variants: A list of variant constructor name, and types of its arguments
+  Args:
+    - variants: A list of variant constructor name, and types of its arguments
 *)
 let variant_dataclass (name : string) (variants : (string * string list) list) :
     stmt list =
