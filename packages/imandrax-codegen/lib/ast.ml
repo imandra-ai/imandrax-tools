@@ -28,6 +28,9 @@ and keyword = {
   value: expr;
 }
 
+(* Expressions
+==================== *)
+
 and expr =
   | Constant of constant
   | BoolOp of bool_op
@@ -169,7 +172,9 @@ and dict_expr = {
   values: expr list;
 }
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Statements
+==================== *)
+
 and stmt =
   | FunctionDef of function_def_stmt
   | Assign of assign_stmt
@@ -236,7 +241,9 @@ and arg = {
   type_comment: string option;
 }
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Type params
+==================== *)
+
 and type_param =
   | TypeVar of type_var
   | ParamSepc of {
@@ -255,7 +262,8 @@ and type_var = {
 }
 [@@deriving show, eq, yojson]
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Constructor helpers
+==================== *)
 
 (* Placeholder for ctx *)
 let mk_ctx () = Load
@@ -345,7 +353,9 @@ let empty_arguments () : arguments =
     defaults = [];
   }
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Constructor APIs
+==================== *)
+
 
 (* Type view constructor name to Python type name *)
 let ty_view_constr_name_mapping : (string * string) list =
@@ -487,7 +497,8 @@ let init_defaultdict (default_value : expr) (key_val_pairs : (expr * expr) list)
       keywords = [];
     }
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Test function related constructors
+-------------------- *)
 
 let mk_assert_eq (left : expr) (right : expr) : stmt =
   Assert
@@ -661,9 +672,11 @@ let mk_test_data_dict
       annotation = agg_dict_type_annot;
       value = Some agg_dict;
       simple = 1;
-    }
+    };;
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Expect test
+==================== *)
+
 
 let%expect_test "bool list expr to string" =
   let bools = [ false; true; false; false; false; false; false; true ] in
