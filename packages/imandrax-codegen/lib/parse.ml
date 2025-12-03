@@ -47,7 +47,7 @@ let%expect_test "parse decl art" =
 
   let _ = arts in
 
-  let decls = arts |> List.map Util.yaml_to_decl in
+  let decls = arts |> List.map Art_utils.yaml_to_decl in
 
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
@@ -135,7 +135,7 @@ let%expect_test "parse fun decomp art" =
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
 
-  let (fun_decomp : Mir.Fun_decomp.t) = Util.yaml_to_fun_decomp art in
+  let (fun_decomp : Mir.Fun_decomp.t) = Art_utils.yaml_to_fun_decomp art in
 
   printf "Fun decomp:\n";
   let fmt = Format.str_formatter in
@@ -607,7 +607,7 @@ let%expect_test "parse model art" =
   printf "name: %s\n" name;
   printf "code: %s\n" code;
 
-  let model = Util.yaml_to_model yaml in
+  let model = Art_utils.yaml_to_model yaml in
   let app_sym, term = unpack_model model in
 
   (* Create a custom formatter with wider margin *)
