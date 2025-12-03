@@ -13,10 +13,11 @@ Specifically:
 - simple = 0 when the target is an Attribute or Subscript (e.g., obj.x: int = 5 or list[0]: int = 5)
 *)
 let mk_ann_assign_simple_flat () = 1
-let bool_expr (b : bool) : expr = Constant { value = Bool b; kind = None }
-let string_expr (s : string) : expr = Constant { value = String s; kind = None }
+let mk_bool_expr (b : bool) : expr = Constant { value = Bool b; kind = None }
+let mk_string_expr (s : string) : expr = Constant { value = String s; kind = None }
 let mk_name_expr (id : string) : expr = Name { id; ctx = mk_ctx () }
 
+(* Convert 8-bit bool list to a char *)
 let bools_to_char (bools : bool list) : char =
   if List.length bools <> 8 then
     invalid_arg "bools_to_char: list must contain exactly 8 booleans"
@@ -36,7 +37,8 @@ let bools_to_char (bools : bool list) : char =
     Char.chr ascii_value
   )
 
-let char_to_bools (c : char) : bool list =
+(* Convert a char to a list of bools *)
+let bools_of_char (c : char) : bool list =
   let ascii_value = Char.code c in
   let rec int_to_bools acc n bit_pos =
     if bit_pos < 0 then
@@ -48,7 +50,8 @@ let char_to_bools (c : char) : bool list =
   in
   int_to_bools [] ascii_value 7
 
-let bool_list_expr_to_char_expr (exprs : expr list) : expr =
+(* Convert a list of expressions of bools to a char expression *)
+let char_expr_of_bool_list_expr (exprs : expr list) : expr =
   let bools =
     List.map
       (function
@@ -57,11 +60,17 @@ let bool_list_expr_to_char_expr (exprs : expr list) : expr =
       exprs
   in
   let char = bools_to_char bools in
-  string_expr (String.make 1 char)
+  mk_string_expr (String.make 1 char)
 
+(* Convert a list of expressions to a tuple expression *)
 let tuple_of_exprs (exprs : expr list) : expr =
   Tuple { elts = exprs; ctx = Load; dims = [] }
 
+(* Create a tuple type annotation from a list of type annotation
+
+Example:
+  - `(int, str)` -> `tuple[int, str]`
+*)
 let tuple_annot_of_annots (annots : expr list) : expr =
   Subscript
     {
@@ -70,11 +79,20 @@ let tuple_annot_of_annots (annots : expr list) : expr =
       ctx = mk_ctx ();
     }
 
+(* Empty list expression: `[]` *)
 let empty_list_expr () : expr = List { elts = []; ctx = mk_ctx () }
 
+(* Create a list expression from a list of expressions
+
+Example: `1`, `2`, `3` -> `[1, 2, 3]`
+*)
 let list_of_exprs (exprs : expr list) : expr =
   List { elts = exprs; ctx = mk_ctx () }
 
+(* Create a list expresion from a singleton expression head and a list expression (tail)
+
+Example: `1`, `[2, 3]` -> `[1, 2, 3]`
+*)
 let cons_list_expr (head : expr) (tail : expr) : expr =
   match tail with
   | List { elts; _ } -> List { elts = head :: elts; ctx = mk_ctx () }
@@ -99,6 +117,11 @@ let empty_arguments () : arguments =
 let ty_view_constr_name_mapping : (string * string) list =
   [ "int", "int"; "bool", "bool"; "string", "str" ]
 
+(* Create an assign statement from a target (LHS), an optional type annotation, and a value (RHS)
+
+Example:
+- `x`, `int`, `5` -> `x: int = 5`
+*)
 let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
     stmt =
   match type_annotation with
@@ -112,8 +135,18 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
         simple = mk_ann_assign_simple_flat ();
       }
 
-(* AST for define a dataclass *)
-let def_dataclass (name : string) (rows : (string * string) list) : stmt =
+(* Create a dataclass definition statement from its name and rows of fields
+
+Example:
+- `Foo`, `x: int`, `y: str`: |
+  ```
+  @dataclass
+  class Foo:
+    x: int
+    y: str
+  ```
+*)
+let mk_dataclass_def (name : string) (rows : (string * string) list) : stmt =
   let body : stmt list =
     match rows with
     | [] -> [ Pass ]
@@ -138,8 +171,11 @@ let def_dataclass (name : string) (rows : (string * string) list) : stmt =
       decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
     }
 
-(* AST for initiate a dataclass instance *)
-let init_dataclass
+(* Initiate a dataclass instance from its name and arguments (both pos and kw)
+
+Example: `Foo`, `5`, `y='hello'` -> `Foo(5, y='hello')`
+*)
+let mk_dataclass_value
     (dataclass_name : string)
     ~(args : expr list)
     ~(kwargs : (string * expr) list) : expr =
@@ -148,7 +184,12 @@ let init_dataclass
   in
   Call { func = Name { id = dataclass_name; ctx = mk_ctx () }; args; keywords }
 
-let def_union (name : string) (union_names : string list) : stmt =
+(* Create an union definition statement from a list of member names
+
+Example:
+- `Status`, `str`, `int` -> `Status = str | int`
+*)
+let mk_union_def (name : string) (union_names : string list) : stmt =
   let left_targets = [ Name { id = name; ctx = mk_ctx () } ] in
   let right_value =
     match union_names with
@@ -191,14 +232,15 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
         (fun i type_name -> "arg" ^ string_of_int i, type_name)
         (snd variant)
     in
-    def_dataclass name rows
+    mk_dataclass_def name rows
   in
   let constructor_defs =
     List.map def_variant_constructor_as_dataclass variants
   in
-  constructor_defs @ [ def_union name variant_names ]
+  constructor_defs @ [ mk_union_def name variant_names ]
 
-let defaultdict_type_annotation (key_type : string) (value_type : string) : expr
+(* Create a defaultdict type annotation from its key and value types *)
+let mk_defaultdict_type_annotation (key_type : string) (value_type : string) : expr
     =
   Subscript
     {
@@ -212,7 +254,8 @@ let defaultdict_type_annotation (key_type : string) (value_type : string) : expr
       ctx = mk_ctx ();
     }
 
-let init_defaultdict (default_value : expr) (key_val_pairs : (expr * expr) list)
+(* Initiate a defaultdict instance *)
+let mk_defaultdict_value (default_value : expr) (key_val_pairs : (expr * expr) list)
     : expr =
   let mk_no_arg_lambda ret : expr =
     Lambda { args = empty_arguments (); body = ret }
@@ -238,6 +281,7 @@ let init_defaultdict (default_value : expr) (key_val_pairs : (expr * expr) list)
 (* Test function related constructors
 -------------------- *)
 
+(* Create an assert statement from a left and right expressions *)
 let mk_assert_eq (left : expr) (right : expr) : stmt =
   Assert
     {
@@ -246,6 +290,17 @@ let mk_assert_eq (left : expr) (right : expr) : stmt =
     }
 
 (*
+Create a test function definition statement
+
+Args:
+  - test_name: The name of the test function
+  - f_name: The name of the function to be tested
+  - docstr: The docstring of the test function
+  - f_args: The arguments of the function to be tested
+  - output_type_annot: The type annotation of the output of the function to be tested
+  - expected: The expected value of the output of the function to be tested
+
+Example:
 ```python
 def name():
     """docstr"""
@@ -254,7 +309,7 @@ def name():
     assert result == expected
 ```
 *)
-let def_test_function
+let mk_test_function_def
     ~(test_name : string)
     ~(f_name : string)
     ~(docstr : string option)
@@ -314,6 +369,8 @@ let def_test_function
     }
 
 (*
+Create a test data dictionary item (one test case) from its arguments and expected value
+
 ```python
 {
     'input_kwargs': {'x': 4},
@@ -342,6 +399,7 @@ let mk_test_data_dict_item (args : (string * expr) list) (expected : expr) :
     }
 
 (*
+Create a test data dictionary (multiple test cases)
 ```python
 tests: dict[str, dict[str, Any]] = {
   "test_1": {
@@ -424,12 +482,12 @@ let%expect_test "bool list expr to string" =
 
 let%expect_test "char to bools" =
   let c = '0' in
-  let bools = char_to_bools c in
+  let bools = bools_of_char c in
   List.iter (Printf.printf "%b ") bools;
   [%expect {| false false false false true true false false |}]
 
 let%expect_test "build union" =
-  let union_stmt = def_union "Status" [ "str"; "int" ] in
+  let union_stmt = mk_union_def "Status" [ "str"; "int" ] in
   print_endline (show_stmt union_stmt);
   [%expect
     {|
