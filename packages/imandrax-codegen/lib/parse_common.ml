@@ -5,9 +5,10 @@ module Artifact = Imandrax_api_artifact.Artifact
 module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term
-module Region = Imandrax_api_mir.Region
 module Ty_view = Imandrax_api.Ty_view
+module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
+module Region = Imandrax_api_mir.Region
 module Ast = Ast
 
 (* Shared exception *)
