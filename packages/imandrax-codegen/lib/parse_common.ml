@@ -2,6 +2,7 @@
 
 (* Module aliases *)
 module Artifact = Imandrax_api_artifact.Artifact
+module Uid = Imandrax_api__Uid
 module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term

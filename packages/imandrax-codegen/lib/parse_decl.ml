@@ -1,8 +1,34 @@
 open Printf
-(* open Parse_common *)
+open Parse_common
 
 (* let parse_term = Parse_term.parse_term *)
 
+
+(*
+Parse one row of an Algebraic type declaration
+
+- Handle the Algebraic case of Delc.t where payload is a list of adt_row
+- Each adt_row should maps to a dataclass definition in Python (a list of statements)
+
+Mapping
+- Each adt_row contains
+  - constructor id (name) :: Uid.t
+  - labels :: Uid.t list option: a list of labels for inline records
+    - when this exists, we should generate a dataclass with non-anonymous fields
+  - args: Type.t list
+    - the type annotation for a row
+    - Q: what if this is another ADT?
+  - doc :: string option: ?
+
+- In Python
+  - Each row of dataclass is a type annotation, `arg0: int` or `a: int`
+
+*)
+let parse_adt_row (adt_row: (Uid.t, Type.t) Ty_view.adt_row) : (Ast.stmt list, string) result =
+  let _ = adt_row in
+
+
+  Ok([])
 
 (* let parse_decl (decl: Decl.t) : (Ast.stmt list, string) result =
   _ *)
@@ -20,6 +46,7 @@ let%expect_test "parse decl art" =
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
   let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" in
+  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_two.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
     match yaml with
