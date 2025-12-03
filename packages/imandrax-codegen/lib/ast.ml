@@ -433,12 +433,15 @@ let%expect_test "build union" =
   print_endline (show_stmt union_stmt);
   [%expect
     {|
-    (Ast.Assign
-       { Ast.targets = [(Ast.Name { Ast.id = "Status"; ctx = Ast.Load })];
+    (Ast_types.Assign
+       { Ast_types.targets =
+         [(Ast_types.Name { Ast_types.id = "Status"; ctx = Ast_types.Load })];
          value =
-         (Ast.BinOp
-            { Ast.left = (Ast.Name { Ast.id = "str"; ctx = Ast.Load });
-              op = Ast.BitOr;
-              right = (Ast.Name { Ast.id = "int"; ctx = Ast.Load }) });
+         (Ast_types.BinOp
+            { Ast_types.left =
+              (Ast_types.Name { Ast_types.id = "str"; ctx = Ast_types.Load });
+              op = Ast_types.BitOr;
+              right =
+              (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load }) });
          type_comment = None })
     |}]

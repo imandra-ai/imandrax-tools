@@ -19,7 +19,7 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 let%expect_test "parse decl art" =
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
-  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in
+  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" in
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
     match yaml with
@@ -61,38 +61,56 @@ let%expect_test "parse decl art" =
     (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
     decls;
   print_endline (Format.flush_str_formatter ());
-  [%expect
-    {|
-    name: variant_with_data
+  [%expect {|
+    name: variant_with_payload
     code:
      type shape =
-      | Circle of int
-      | Rectangle of int * int
-
-    let area = fun s ->
-      match s with
-      | Circle r -> r * r
-      | Rectangle (w, h) -> w * h
+    | Point
+    | Circle of int
+    | Rectangle of int * int
+    | Triangle of {a: int; b: int; c: int}
 
     <><><><><><><><><>
     Ty
       {
-      name = shape/v_i3bLLE-uDuzDsq0PP6ZlOd3BpxRihJWXKha-SQ5ZE;
+      name = shape/LRvMhhEHMdTSx76rtFLbuIIlQvd6pf-4f4moqBZzlLk;
       params = [];
       decl =
         Algebraic
           [{
-             c = Circle/S_Cmpwoi8d1foHX9rOJm3zWVQipeHLWH5HjimJ6oDt8;
+             c = Point/zmf0aqMC_axCmK7HHULw_vLRRPsZcYSY0rDnEfsNBH4;
+             labels = None;
+             args = [];
+             doc = None
+             };
+           {
+             c = Circle/SMNwkTSaN2qWlbF6hzAjvEZgnq8GAChMuxuLVuuQ0CI;
              labels = None;
              args = [{ view = (Constr (int,[]));
                        generation = 1 }];
              doc = None
              };
            {
-             c = Rectangle/rkX3Qq3NXp4EFP5Js2YdOCcAKeXLgAMN6gmGAE4C7Xk;
+             c = Rectangle/MhV0gfbrP5fVL3HBRcv_kIpiDQpIDYUqTG5xZPeKBFE;
              labels = None;
              args =
                [{ view = (Constr (int,[]));
+                  generation = 1 };
+                { view = (Constr (int,[]));
+                  generation = 1 }];
+             doc = None
+             };
+           {
+             c = Triangle/m10MbB_wDF6lzCDu31fUAid6KYjDtZfaoKdwopYRWMs;
+             labels =
+               (Some
+                 [a/LW4xXxrPKQVl9T6AgQwQ0vT7qFQVSzZ9_croJJv7CPs;
+                  b/XYqiqHuwZfky9w3RIahW_9PWastTQo_ux3y-7BJ5V6s;
+                  c/s7ipAMnTq9Um_H-PZpC39hw_wYNr2F5pDCJBknvEX4k]);
+             args =
+               [{ view = (Constr (int,[]));
+                  generation = 1 };
+                { view = (Constr (int,[]));
                   generation = 1 };
                 { view = (Constr (int,[]));
                   generation = 1 }];
