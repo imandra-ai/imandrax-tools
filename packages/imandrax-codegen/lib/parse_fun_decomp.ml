@@ -191,7 +191,7 @@ let parse_fun_decomp
                        model,
                        model_eval_type_annot,
                        model_eval ) ->
-                  Ast.def_test_function ~test_name ~f_name:f_id_name
+                  Ast.mk_test_function_def ~test_name ~f_name:f_id_name
                     ~docstr:(Some docstr) ~f_args:model
                     ~output_type_annot:model_eval_type_annot
                     ~expected:model_eval)
