@@ -50,6 +50,41 @@
   req_kwargs:
     names:
       - shape
+  expected_python_code: |
+    @dataclass
+    class Point:
+        pass
+
+    @dataclass
+    class Circle:
+        arg0: int  # anonymous field
+
+    @dataclass
+    class Rectangle:
+        arg0: int
+        arg1: int
+
+    @dataclass
+    class Triangle:
+        a: int
+        b: int
+        c: int
+
+    # Note: we keep the original name (lower case)
+    shape = Point | Circle | Rectangle | Triangle
+
+- name: variant_two
+  iml: |
+    type rect =
+    | Rectangle of int * int
+    | Square of int
+
+    type shape =
+    | Circle of int
+    | Polygon of rect
+  req_kwargs:
+    names:
+      - shape
 
 - name: variant_poly
   iml: |

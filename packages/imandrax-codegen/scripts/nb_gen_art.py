@@ -45,6 +45,15 @@ type shape =
 | Rectangle of int * int
 | Triangle of {a: int; b: int; c: int}"""
 
+iml = """\
+type rect =
+| Rectangle of int * int
+| Square of int
+
+type shape =
+| Circle of int
+| Polygon of rect"""
+
 
 name = 'movement'
 eval_res = c.eval_src(iml)
