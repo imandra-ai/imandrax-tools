@@ -43,13 +43,10 @@
 - name: variant_with_payload
   iml: |
     type shape =
-      | Circle of int
-      | Rectangle of int * int
-
-    let area = fun s ->
-      match s with
-      | Circle r -> r * r
-      | Rectangle (w, h) -> w * h
+    | Point
+    | Circle of int
+    | Rectangle of int * int
+    | Triangle of {a: int; b: int; c: int}
   req_kwargs:
     names:
       - shape
