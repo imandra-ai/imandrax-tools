@@ -235,6 +235,8 @@ let mk_union_def (name : string) (union_names : string list) : stmt =
 
   Args:
     - variants: A list of variant constructor name, and types of its arguments
+
+  TODO: this should be deprecated
 *)
 let variant_dataclass (name : string) (variants : (string * string list) list) :
     stmt list =
