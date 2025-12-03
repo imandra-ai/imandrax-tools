@@ -8,6 +8,11 @@ iml: |
 req_kwargs:
   names:
   - shape
+expected_python_code: "@dataclass\nclass Point:\n    pass\n\n@dataclass\nclass Circle:\n\
+  \    arg0: int  # anonymous field\n\n@dataclass\nclass Rectangle:\n    arg0: int\n\
+  \    arg1: int\n\n@dataclass\nclass Triangle:\n    a: int\n    b: int\n    c: int\n\
+  \n# Note: we keep the original name (lower case)\nshape = Point | Circle | Rectangle\
+  \ | Triangle\n"
 get_decls_res:
   decls:
   - name: shape
