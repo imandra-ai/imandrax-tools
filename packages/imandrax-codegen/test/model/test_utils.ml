@@ -35,7 +35,7 @@ let load_artifact (sub_dir : string option) (name : string) : Model.t =
   printf "name: %s\n" name;
   printf "iml_code:\n%s\n\n" iml_code;
 
-  Util.yaml_to_model yaml
+  Art_utils.yaml_to_model yaml
 
 let test_parse_model (sub_dir : string option) (name : string) : unit =
   let model = load_artifact sub_dir name in

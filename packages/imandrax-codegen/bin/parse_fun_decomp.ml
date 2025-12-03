@@ -55,14 +55,14 @@ let parse_yaml_input input use_stdout =
   let yaml_str = read_content input in
   validate_content yaml_str;
   let yaml = Yaml.of_string_exn yaml_str in
-  Imandrax_codegen.Util.yaml_to_fun_decomp ~debug:false yaml
+  Imandrax_codegen.Art_utils.yaml_to_fun_decomp ~debug:false yaml
 
 let parse_json_input input use_stdout =
   log use_stdout "Parsing JSON file...\n";
   let content = read_content input in
   validate_content content;
   let json = Yojson.Safe.from_string content in
-  Imandrax_codegen.Util.json_to_fun_decomp ~debug:false json
+  Imandrax_codegen.Art_utils.json_to_fun_decomp ~debug:false json
 
 let parse_input config =
   let use_stdout =
