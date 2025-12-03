@@ -33,9 +33,37 @@ let unwrap : ('a, 'b) result -> 'a = function
 
 (*
 Return:
-  type definition statements
-  expression option (type-annotation)
-  expression (term)
+  - | Ok of:
+    - type definition statements (statement list)
+    - type-annotation (expression option)
+    - expression (term)
+  - | Error of string
+
+A term has fields of:
+  - view ((Term.t, Type.t) Term.view)
+  - ty (Type.t)
+
+(Term.t, Type.t) Term.view is a variant of
+- | Const of Const.t
+- | Apply of { f : Term.t; l : Term.t list }
+- | Construct of {
+  - c: Type.t Applied_symbol.t_poly
+  - args: Term.t list
+  - labels: Uid.t list option
+  - }
+- | Tuple of { l : Term.t list }
+- | Record of {
+  - rows: (Type.t Applied_symbol.t_poly * Term.t) list
+  - rest: Term.t option
+  - }
+
+Type definition
+  - Const: no type definition
+  - Tuple: aggregated from the type of each element
+  - Record: corresponses to a dataclass
+  - Variant
+    - each variant is a dataclass with anonymous fields (`arg0`, `arg1`, ...)
+    - the final type is an union of all the dataclasses
 *)
 let rec parse_term (term : Term.term) :
     (Ast.stmt list * Ast.expr option * Ast.expr, string) result =
@@ -151,7 +179,7 @@ let rec parse_term (term : Term.term) :
         ( type_def_of_rows @ [ def_dataclass ty_name def_rows ],
           Some (Ast.mk_name_expr ty_name),
           init_dataclass ty_name ~args:row_val_exprs ~kwargs:[] )
-  (* Construct LChar.t *)
+  (* Construct - LChar.t *)
   | ( Term.Construct
         {
           c = (_ : Type.t Applied_symbol.t_poly);
@@ -184,7 +212,7 @@ let rec parse_term (term : Term.term) :
       let char_expr = Ast.bool_list_expr_to_char_expr bool_terms in
       (* NOTE: Python has no char type, so we use str *)
       Ok ([], Some (Ast.mk_name_expr "str"), char_expr)
-  (* Construct list *)
+  (* Construct - list *)
   | ( Term.Construct
         {
           c = (_ : Type.t Applied_symbol.t_poly);
@@ -257,6 +285,7 @@ let rec parse_term (term : Term.term) :
         {
           c = (construct : Type.t Applied_symbol.t_poly);
           args = (construct_args : Term.term list);
+          (* TODO: labels are for inline records; handle them *)
           labels = _;
         },
       (_ : Type.t) ) ->
@@ -485,7 +514,7 @@ let rec parse_term (term : Term.term) :
 
 (* <><><><><><><><><><><><><><><><><><><><> *)
 
-(* Model to applied symbol and term *)
+(* Model |-> applied symbol and term *)
 let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
     : Type.t Applied_symbol.t_poly * Term.term =
   match model.Mir.Model.consts with
@@ -500,6 +529,13 @@ let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
       in
       failwith s
 
+(*
+A model consists of an applied symbol and a term
+- term can be extracted to
+  - type definition statements
+  - a value expression
+  - a type annotation for the value expression
+*)
 let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
     Ast.stmt list =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
@@ -533,7 +569,7 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
 (* <><><><><><><><><><><><><><><><><><><><> *)
 
 (* Return a tuple of
-  - a list of model terms
+  - a list of model terms, which are the model "inputs"
   - the model eval term
   - invariant string
   - constraints string list
@@ -582,7 +618,6 @@ let parse_region (region : (Term.term, Type.t) Mir.Region.t_poly) :
     | _ -> failwith "Never: meta_str should be an Assoc"
   in
 
-  (* NOTE: for now, we return empty list of model terms *)
   (model, model_eval_term, (invariant, constraints))
 
 let uniq_stmts (stmts : Ast.stmt list) : Ast.stmt list =
@@ -741,8 +776,8 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 
 let%expect_test "parse decl art" =
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
-  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in
-  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in *)
+  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
+  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_data.yaml" in
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
     match yaml with
@@ -775,49 +810,50 @@ let%expect_test "parse decl art" =
 
   let decls = arts |> List.map Util.yaml_to_decl in
 
-
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
   printf "<><><><><><><><><>\n";
 
   let fmt = Format.str_formatter in
-  List.iter (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl) decls;
+  List.iter
+    (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
+    decls;
   print_endline (Format.flush_str_formatter ());
   [%expect
     {|
-    name: variant_simple
+    name: variant_with_data
     code:
-     type color = Red | Green | Blue
+     type shape =
+      | Circle of int
+      | Rectangle of int * int
 
-    let color_value = fun c ->
-      match c with
-      | Red -> 1
-      | Green -> 2
-      | Blue -> 3
+    let area = fun s ->
+      match s with
+      | Circle r -> r * r
+      | Rectangle (w, h) -> w * h
 
     <><><><><><><><><>
     Ty
       {
-      name = color/F4SPDE2sKlxgLCvuIygJ3Xu9_raARZm5NXlFWbdGNF8;
+      name = shape/v_i3bLLE-uDuzDsq0PP6ZlOd3BpxRihJWXKha-SQ5ZE;
       params = [];
       decl =
         Algebraic
           [{
-             c = Red/b3EDduPBruW2iDiWhTH6G72f6NMLBDYAG4-DMIPHYus;
+             c = Circle/S_Cmpwoi8d1foHX9rOJm3zWVQipeHLWH5HjimJ6oDt8;
              labels = None;
-             args = [];
+             args = [{ view = (Constr (int,[]));
+                       generation = 1 }];
              doc = None
              };
            {
-             c = Green/t3jid_c6VQ5vHs9oYXUjFgbtTBJJ0-Y0m2uMhqgXW_8;
+             c = Rectangle/rkX3Qq3NXp4EFP5Js2YdOCcAKeXLgAMN6gmGAE4C7Xk;
              labels = None;
-             args = [];
-             doc = None
-             };
-           {
-             c = Blue/Xc53fcwfmIy2rEGLTK5zFZRfpw-v5m6AXhRLrz4tbzY;
-             labels = None;
-             args = [];
+             args =
+               [{ view = (Constr (int,[]));
+                  generation = 1 };
+                { view = (Constr (int,[]));
+                  generation = 1 }];
              doc = None
              }];
       clique = None;
