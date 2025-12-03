@@ -1,5 +1,15 @@
 include Ast_types
 
+
+(* Create a list of anonymous argument names *)
+let anonymous_arg_names (i: int) : string list =
+  List.init i (fun i -> "arg" ^ string_of_int i)
+
+let%expect_test "anonymous_arg_names" =
+  let names = anonymous_arg_names 3 in
+  List.iter (Printf.printf "%s ") names;
+  [%expect {| arg0 arg1 arg2 |}]
+
 (* Constructor helpers
 ==================== *)
 
@@ -136,6 +146,12 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
       }
 
 (* Create a dataclass definition statement from its name and rows of fields
+
+
+Args:
+  - name: The name of the dataclass
+  - rows :: (string * string) list
+    - (variable_name, type_name) pairs
 
 Example:
 - `Foo`, `x: int`, `y: str`: |

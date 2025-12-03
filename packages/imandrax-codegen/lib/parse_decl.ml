@@ -3,7 +3,6 @@ open Parse_common
 
 (* let parse_term = Parse_term.parse_term *)
 
-
 (*
 Parse one row of an Algebraic type declaration
 
@@ -20,19 +19,69 @@ Mapping
     - Q: what if this is another ADT?
   - doc :: string option: ?
 
-- In Python
-  - Each row of dataclass is a type annotation, `arg0: int` or `a: int`
+In Python
+- Each row of dataclass is a type annotation, `arg0: int` or `a: int`
 
+- dev
+  - gen anonymous args if labels is None
+  - Q
+    - what about polymorphic types? `args` field?
 *)
-let parse_adt_row (adt_row: (Uid.t, Type.t) Ty_view.adt_row) : (Ast.stmt list, string) result =
-  let _ = adt_row in
+let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
+    (Ast.stmt list, string) result =
+  let { Ty_view.c; labels; args; doc } = adt_row in
+  let dc_name = c.name in
+  let dc_arg_names =
+    match labels with
+    | None -> Ast.anonymous_arg_names (List.length args)
+    | Some id_list -> List.map (fun (id : Uid.t) -> id.name) id_list
+  in
 
+  printf "Dataclass name: %s\n" dc_name;
+  print_endline "Arg names:";
+  List.iter (fun n -> print_endline n) dc_arg_names;
+  print_endline "";
 
-  Ok([])
+  let _ = (labels, args, doc, dc_name) in
 
-(* let parse_decl (decl: Decl.t) : (Ast.stmt list, string) result =
-  _ *)
+  Ok []
 
+let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
+    (Ast.stmt list, string) result =
+  let _ =
+    match decl with
+    | Ty (ty_view_def : Type.t Ty_view.def_poly) ->
+        (* Unpack ty view *)
+        let {
+          Ty_view.name = decl_name_uid;
+          params = _;
+          decl = ty_view_decl;
+          clique = _;
+          timeout = _;
+        } =
+          ty_view_def
+        in
+
+        (* Root name of the decl *)
+        let { Uid.name = decl_name; view = _ } = decl_name_uid in
+
+        (* TODO: move above to single pattern match *)
+
+        (* Handle rows *)
+        let dcs =
+          match ty_view_decl with
+          | Algebraic adt_rows ->
+              let dcs = adt_rows |> List.map parse_adt_row_to_dataclass_def in
+              Ok dcs
+          | _ -> failwith "WIP: not Algebraic"
+        in
+
+        printf "Root name: %s\n" decl_name;
+        dcs
+    | _ -> invalid_arg "parse_decl: expected Ty"
+  in
+
+  Ok []
 
 (* Expect tests
 ==================== *)
@@ -45,7 +94,9 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 let%expect_test "parse decl art" =
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
-  let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" in
+  let yaml_str =
+    CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml"
+  in
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_two.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
   let name, code, arts =
@@ -77,18 +128,28 @@ let%expect_test "parse decl art" =
 
   let _ = arts in
 
-  let decls = arts |> List.map Art_utils.yaml_to_decl in
+  let (decls : Decl.t list) = arts |> List.map Art_utils.yaml_to_decl in
 
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
   printf "<><><><><><><><><>\n";
+  (* Print parsed
+  -------------------- *)
+  let decl =
+    match decls with [ decl ] -> decl | _ -> failwith "Expected one decl"
+  in
+  let _parsed = decl |> parse_decl in
 
+  printf "<><><><><><><><><>\n";
+  (* Print decls
+  -------------------- *)
   let fmt = Format.str_formatter in
   List.iter
     (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
     decls;
   print_endline (Format.flush_str_formatter ());
-  [%expect {|
+  [%expect
+    {|
     name: variant_with_payload
     code:
      type shape =
@@ -97,6 +158,26 @@ let%expect_test "parse decl art" =
     | Rectangle of int * int
     | Triangle of {a: int; b: int; c: int}
 
+    <><><><><><><><><>
+    Dataclass name: Point
+    Arg names:
+
+    Dataclass name: Circle
+    Arg names:
+    arg0
+
+    Dataclass name: Rectangle
+    Arg names:
+    arg0
+    arg1
+
+    Dataclass name: Triangle
+    Arg names:
+    a
+    b
+    c
+
+    Root name: shape
     <><><><><><><><><>
     Ty
       {
