@@ -6,6 +6,11 @@ open Parse_common
 (*
 Parse one row of an Algebraic type declaration
 
+
+Return:
+- dataclass name :: string
+- dataclass definition statement :: Ast.stmt
+
 - Handle the Algebraic case of Delc.t where payload is a list of adt_row
 - Each adt_row should maps to a dataclass definition in Python (a list of statements)
 
@@ -23,32 +28,55 @@ In Python
 - Each row of dataclass is a type annotation, `arg0: int` or `a: int`
 
 - dev
-  - gen anonymous args if labels is None
   - Q
     - what about polymorphic types? `args` field?
 *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
-    (Ast.stmt list, string) result =
-  let { Ty_view.c; labels; args; doc } = adt_row in
+    (string * Ast.stmt) =
+  let Ty_view.{ c; labels; args; doc = _ } = adt_row in
   let dc_name = c.name in
+
+  (* labels -> dataclass field names *)
   let dc_arg_names =
     match labels with
     | None -> Ast.anonymous_arg_names (List.length args)
     | Some id_list -> List.map (fun (id : Uid.t) -> id.name) id_list
   in
 
+  (* args ::  *)
+  let dc_arg_constr_names =
+    args
+    |> List.map (fun (arg : Type.t) ->
+           let Type.{ view = arg_ty_view; generation = _ } = arg in
+           match arg_ty_view with
+           | Constr ((constr_uid: Uid.t), (constr_args: Type.t list)) -> (
+               let constr_name = constr_uid.name in
+               let _todo = constr_args in
+               constr_name
+           )
+           | _ ->
+               let msg =
+                 "parse_adt_row_to_dataclass_def: expected Constr for \
+                  adt_row.args.[] | view"
+               in
+               failwith msg)
+  in
+
+  let dataclass_def_stmt = Ast.mk_dataclass_def dc_name (List.combine dc_arg_names dc_arg_constr_names) in
+
   printf "Dataclass name: %s\n" dc_name;
   print_endline "Arg names:";
   List.iter (fun n -> print_endline n) dc_arg_names;
+  print_endline "Arg constr names:";
+  List.iter (fun n -> print_endline n) dc_arg_constr_names;
   print_endline "";
+  print_endline (Ast.show_stmt dataclass_def_stmt);
 
-  let _ = (labels, args, doc, dc_name) in
-
-  Ok []
+  (dc_name, dataclass_def_stmt)
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
-  let _ =
+  let parsed_decl =
     match decl with
     | Ty (ty_view_def : Type.t Ty_view.def_poly) ->
         (* Unpack ty view *)
@@ -65,23 +93,26 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
         (* Root name of the decl *)
         let { Uid.name = decl_name; view = _ } = decl_name_uid in
 
-        (* TODO: move above to single pattern match *)
+        printf "Root name: %s\n" decl_name;
+
+        (* TODO: move above extraction to single pattern match *)
 
         (* Handle rows *)
-        let dcs =
+        let ((dc_names: string list), (dc_defs: Ast.stmt list)) =
           match ty_view_decl with
           | Algebraic adt_rows ->
-              let dcs = adt_rows |> List.map parse_adt_row_to_dataclass_def in
-              Ok dcs
+              let (dc_names, dc_defs) = adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split in
+              (dc_names, dc_defs)
           | _ -> failwith "WIP: not Algebraic"
         in
 
-        printf "Root name: %s\n" decl_name;
-        dcs
+        let union_def = Ast.mk_union_def decl_name dc_names in
+        let all_defs = dc_defs @ [ union_def ] in
+        all_defs
     | _ -> invalid_arg "parse_decl: expected Ty"
   in
 
-  Ok []
+  Ok parsed_decl
 
 (* Expect tests
 ==================== *)
@@ -138,9 +169,14 @@ let%expect_test "parse decl art" =
   let decl =
     match decls with [ decl ] -> decl | _ -> failwith "Expected one decl"
   in
-  let _parsed = decl |> parse_decl in
+  let parsed = decl |> parse_decl |> unwrap in
 
   printf "<><><><><><><><><>\n";
+
+  List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
+
+  printf "<><><><><><><><><>\n";
+
   (* Print decls
   -------------------- *)
   let fmt = Format.str_formatter in
@@ -159,25 +195,189 @@ let%expect_test "parse decl art" =
     | Triangle of {a: int; b: int; c: int}
 
     <><><><><><><><><>
+    Root name: shape
     Dataclass name: Point
     Arg names:
+    Arg constr names:
 
+    (Ast_types.ClassDef
+       { Ast_types.name = "Point"; bases = []; keywords = [];
+         body = [Ast_types.Pass];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
     Dataclass name: Circle
     Arg names:
     arg0
+    Arg constr names:
+    int
 
+    (Ast_types.ClassDef
+       { Ast_types.name = "Circle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
     Dataclass name: Rectangle
     Arg names:
     arg0
     arg1
+    Arg constr names:
+    int
+    int
 
+    (Ast_types.ClassDef
+       { Ast_types.name = "Rectangle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
     Dataclass name: Triangle
     Arg names:
     a
     b
     c
+    Arg constr names:
+    int
+    int
+    int
 
-    Root name: shape
+    (Ast_types.ClassDef
+       { Ast_types.name = "Triangle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "c"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    <><><><><><><><><>
+    (Ast_types.ClassDef
+       { Ast_types.name = "Point"; bases = []; keywords = [];
+         body = [Ast_types.Pass];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Circle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Rectangle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Triangle"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "c"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.Assign
+       { Ast_types.targets =
+         [(Ast_types.Name { Ast_types.id = "shape"; ctx = Ast_types.Load })];
+         value =
+         (Ast_types.BinOp
+            { Ast_types.left =
+              (Ast_types.BinOp
+                 { Ast_types.left =
+                   (Ast_types.BinOp
+                      { Ast_types.left =
+                        (Ast_types.Name
+                           { Ast_types.id = "Point"; ctx = Ast_types.Load });
+                        op = Ast_types.BitOr;
+                        right =
+                        (Ast_types.Name
+                           { Ast_types.id = "Circle"; ctx = Ast_types.Load })
+                        });
+                   op = Ast_types.BitOr;
+                   right =
+                   (Ast_types.Name
+                      { Ast_types.id = "Rectangle"; ctx = Ast_types.Load })
+                   });
+              op = Ast_types.BitOr;
+              right =
+              (Ast_types.Name { Ast_types.id = "Triangle"; ctx = Ast_types.Load })
+              });
+         type_comment = None })
     <><><><><><><><><>
     Ty
       {
