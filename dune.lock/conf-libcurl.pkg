@@ -1,6 +1,0 @@
-(version 2)
-
-(build
- (run curl-config --libs))
-
-(depexts curl)
