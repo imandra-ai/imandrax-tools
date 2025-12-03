@@ -1099,6 +1099,24 @@ wheels = [
 name = "scripts"
 version = "0.1.0"
 source = { editable = "scripts" }
+dependencies = [
+    { name = "imandrax-codegen-py" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "dotenv" },
+    { name = "ipykernel" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "imandrax-codegen-py", editable = "." }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "ipykernel", specifier = ">=7.0.1" },
+]
 
 [[package]]
 name = "sexpdata"
