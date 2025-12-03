@@ -76,7 +76,7 @@ let%expect_test "parse fun decomp art" =
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
       f_args =
         [{ id = x/116441; ty = { view = (Constr (int,[]));
-                                 generation = 3 } }];
+                                 generation = 1 } }];
       regions =
         [(2 elements)
          {
@@ -87,35 +87,35 @@ let%expect_test "parse fun decomp art" =
                                    (>= : { view =
                                              (Arrow ((),
                                                      { view = (Constr (int,[]));
-                                                       generation = 3 },
+                                                       generation = 1 },
                                                      { view =
                                                          (Arrow ((),
                                                                  { view =
                                                                      (Constr
                                                                        (int,[]));
-                                                                   generation = 3 },
+                                                                   generation = 1 },
                                                                  { view =
                                                                      (Constr
                                                                        (bool,[]));
-                                                                   generation = 3 }));
-                                                       generation = 3 }));
-                                           generation = 3 }));
+                                                                   generation = 1 }));
+                                                       generation = 1 }));
+                                           generation = 1 }));
                                ty =
                                  { view =
                                      (Arrow ((),
                                              { view = (Constr (int,[]));
-                                               generation = 3 },
+                                               generation = 1 },
                                              { view =
                                                  (Arrow ((),
                                                          { view =
                                                              (Constr (int,[]));
-                                                           generation = 3 },
+                                                           generation = 1 },
                                                          { view =
                                                              (Constr (bool,[]));
-                                                           generation = 3 }));
-                                               generation = 3 }));
-                                   generation = 3 };
-                               generation = 1;
+                                                           generation = 1 }));
+                                               generation = 1 }));
+                                   generation = 1 };
+                               generation = 0;
                                sub_anchor = None };
                          l =
                            [{ view =
@@ -123,21 +123,21 @@ let%expect_test "parse fun decomp art" =
                                   { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
-                                      generation = 3 }
+                                      generation = 1 }
                                     });
                               ty = { view = (Constr (int,[]));
-                                     generation = 3 };
-                              generation = 1;
+                                     generation = 1 };
+                              generation = 0;
                               sub_anchor = None };
                             { view = (Const 1);
                               ty = { view = (Constr (int,[]));
-                                     generation = 3 };
-                              generation = 1;
+                                     generation = 1 };
+                              generation = 0;
                               sub_anchor = None }]
                          };
                 ty = { view = (Constr (bool,[]));
-                       generation = 3 };
-                generation = 1;
+                       generation = 1 };
+                generation = 0;
                 sub_anchor = None }];
            invariant =
              { view =
@@ -146,35 +146,35 @@ let%expect_test "parse fun decomp art" =
                                   (+ : { view =
                                            (Arrow ((),
                                                    { view = (Constr (int,[]));
-                                                     generation = 3 },
+                                                     generation = 1 },
                                                    { view =
                                                        (Arrow ((),
                                                                { view =
                                                                    (Constr
                                                                      (int,[]));
-                                                                 generation = 3 },
+                                                                 generation = 1 },
                                                                { view =
                                                                    (Constr
                                                                      (int,[]));
-                                                                 generation = 3 }));
-                                                     generation = 3 }));
-                                         generation = 3 }));
+                                                                 generation = 1 }));
+                                                     generation = 1 }));
+                                         generation = 1 }));
                               ty =
                                 { view =
                                     (Arrow ((),
                                             { view = (Constr (int,[]));
-                                              generation = 3 },
+                                              generation = 1 },
                                             { view =
                                                 (Arrow ((),
                                                         { view =
                                                             (Constr (int,[]));
-                                                          generation = 3 },
+                                                          generation = 1 },
                                                         { view =
                                                             (Constr (int,[]));
-                                                          generation = 3 }));
-                                              generation = 3 }));
-                                  generation = 3 };
-                              generation = 1;
+                                                          generation = 1 }));
+                                              generation = 1 }));
+                                  generation = 1 };
+                              generation = 0;
                               sub_anchor = None };
                         l =
                           [{ view =
@@ -182,21 +182,21 @@ let%expect_test "parse fun decomp art" =
                                  { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
-                                     generation = 3 }
+                                     generation = 1 }
                                    });
                              ty = { view = (Constr (int,[]));
-                                    generation = 3 };
-                             generation = 1;
+                                    generation = 1 };
+                             generation = 0;
                              sub_anchor = None };
                            { view = (Const 2);
                              ty = { view = (Constr (int,[]));
-                                    generation = 3 };
-                             generation = 1;
+                                    generation = 1 };
+                             generation = 0;
                              sub_anchor = None }]
                         };
                ty = { view = (Constr (int,[]));
-                      generation = 3 };
-               generation = 1;
+                      generation = 1 };
+               generation = 0;
                sub_anchor = None };
            meta =
              ["str":
@@ -211,15 +211,15 @@ let%expect_test "parse fun decomp art" =
                      Term
                        { view = (Const 1);
                          ty = { view = (Constr (int,[]));
-                                generation = 3 };
-                         generation = 1;
+                                generation = 1 };
+                         generation = 0;
                          sub_anchor = None }};
               "model_eval":
                 Term
                   { view = (Const 3);
                     ty = { view = (Constr (int,[]));
-                           generation = 3 };
-                    generation = 1;
+                           generation = 1 };
+                    generation = 0;
                     sub_anchor = None };
               "id": String "403df3c1-816f-4d4a-9414-877a974b6548"];
            status =
@@ -227,11 +227,11 @@ let%expect_test "parse fun decomp art" =
                { tys = [];
                  consts =
                  [((x/116441 : { view = (Constr (int,[]));
-                                 generation = 3 }),
+                                 generation = 1 }),
                    { view = (Const 1);
                      ty = { view = (Constr (int,[]));
-                            generation = 3 };
-                     generation = 1;
+                            generation = 1 };
+                     generation = 0;
                      sub_anchor = None })
                    ];
                  funs = []; representable = true; completed = false;
@@ -245,35 +245,35 @@ let%expect_test "parse fun decomp art" =
                                    (<= : { view =
                                              (Arrow ((),
                                                      { view = (Constr (int,[]));
-                                                       generation = 3 },
+                                                       generation = 1 },
                                                      { view =
                                                          (Arrow ((),
                                                                  { view =
                                                                      (Constr
                                                                        (int,[]));
-                                                                   generation = 3 },
+                                                                   generation = 1 },
                                                                  { view =
                                                                      (Constr
                                                                        (bool,[]));
-                                                                   generation = 3 }));
-                                                       generation = 3 }));
-                                           generation = 3 }));
+                                                                   generation = 1 }));
+                                                       generation = 1 }));
+                                           generation = 1 }));
                                ty =
                                  { view =
                                      (Arrow ((),
                                              { view = (Constr (int,[]));
-                                               generation = 3 },
+                                               generation = 1 },
                                              { view =
                                                  (Arrow ((),
                                                          { view =
                                                              (Constr (int,[]));
-                                                           generation = 3 },
+                                                           generation = 1 },
                                                          { view =
                                                              (Constr (bool,[]));
-                                                           generation = 3 }));
-                                               generation = 3 }));
-                                   generation = 3 };
-                               generation = 1;
+                                                           generation = 1 }));
+                                               generation = 1 }));
+                                   generation = 1 };
+                               generation = 0;
                                sub_anchor = None };
                          l =
                            [{ view =
@@ -281,21 +281,21 @@ let%expect_test "parse fun decomp art" =
                                   { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
-                                      generation = 3 }
+                                      generation = 1 }
                                     });
                               ty = { view = (Constr (int,[]));
-                                     generation = 3 };
-                              generation = 1;
+                                     generation = 1 };
+                              generation = 0;
                               sub_anchor = None };
                             { view = (Const 0);
                               ty = { view = (Constr (int,[]));
-                                     generation = 3 };
-                              generation = 1;
+                                     generation = 1 };
+                              generation = 0;
                               sub_anchor = None }]
                          };
                 ty = { view = (Constr (bool,[]));
-                       generation = 3 };
-                generation = 1;
+                       generation = 1 };
+                generation = 0;
                 sub_anchor = None }];
            invariant =
              { view =
@@ -304,57 +304,57 @@ let%expect_test "parse fun decomp art" =
                                   (+ : { view =
                                            (Arrow ((),
                                                    { view = (Constr (int,[]));
-                                                     generation = 3 },
+                                                     generation = 1 },
                                                    { view =
                                                        (Arrow ((),
                                                                { view =
                                                                    (Constr
                                                                      (int,[]));
-                                                                 generation = 3 },
+                                                                 generation = 1 },
                                                                { view =
                                                                    (Constr
                                                                      (int,[]));
-                                                                 generation = 3 }));
-                                                     generation = 3 }));
-                                         generation = 3 }));
+                                                                 generation = 1 }));
+                                                     generation = 1 }));
+                                         generation = 1 }));
                               ty =
                                 { view =
                                     (Arrow ((),
                                             { view = (Constr (int,[]));
-                                              generation = 3 },
+                                              generation = 1 },
                                             { view =
                                                 (Arrow ((),
                                                         { view =
                                                             (Constr (int,[]));
-                                                          generation = 3 },
+                                                          generation = 1 },
                                                         { view =
                                                             (Constr (int,[]));
-                                                          generation = 3 }));
-                                              generation = 3 }));
-                                  generation = 3 };
-                              generation = 1;
+                                                          generation = 1 }));
+                                              generation = 1 }));
+                                  generation = 1 };
+                              generation = 0;
                               sub_anchor = None };
                         l =
                           [{ view = (Const 1);
                              ty = { view = (Constr (int,[]));
-                                    generation = 3 };
-                             generation = 1;
+                                    generation = 1 };
+                             generation = 0;
                              sub_anchor = None };
                            { view =
                                (Var
                                  { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
-                                     generation = 3 }
+                                     generation = 1 }
                                    });
                              ty = { view = (Constr (int,[]));
-                                    generation = 3 };
-                             generation = 1;
+                                    generation = 1 };
+                             generation = 0;
                              sub_anchor = None }]
                         };
                ty = { view = (Constr (int,[]));
-                      generation = 3 };
-               generation = 1;
+                      generation = 1 };
+               generation = 0;
                sub_anchor = None };
            meta =
              ["str":
@@ -369,15 +369,15 @@ let%expect_test "parse fun decomp art" =
                      Term
                        { view = (Const 0);
                          ty = { view = (Constr (int,[]));
-                                generation = 3 };
-                         generation = 1;
+                                generation = 1 };
+                         generation = 0;
                          sub_anchor = None }};
               "model_eval":
                 Term
                   { view = (Const 1);
                     ty = { view = (Constr (int,[]));
-                           generation = 3 };
-                    generation = 1;
+                           generation = 1 };
+                    generation = 0;
                     sub_anchor = None };
               "id": String "7c9c52f3-519f-47a5-934c-d7dede67083d"];
            status =
@@ -385,11 +385,11 @@ let%expect_test "parse fun decomp art" =
                { tys = [];
                  consts =
                  [((x/116441 : { view = (Constr (int,[]));
-                                 generation = 3 }),
+                                 generation = 1 }),
                    { view = (Const 0);
                      ty = { view = (Constr (int,[]));
-                            generation = 3 };
-                     generation = 1;
+                            generation = 1 };
+                     generation = 0;
                      sub_anchor = None })
                    ];
                  funs = []; representable = true; completed = false;
@@ -397,92 +397,118 @@ let%expect_test "parse fun decomp art" =
            }]
       }
     Parsed AST:
-    (Ast.FunctionDef
-       { Ast.name = "test_1";
+    (Ast_types.FunctionDef
+       { Ast_types.name = "test_1";
          args =
-         { Ast.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
+         { Ast_types.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
            kw_defaults = []; kwarg = None; defaults = [] };
          body =
-         [Ast.ExprStmt {
+         [Ast_types.ExprStmt {
             value =
-            (Ast.Constant
-               { Ast.value =
-                 (Ast.String
+            (Ast_types.Constant
+               { Ast_types.value =
+                 (Ast_types.String
                     "test_1\n\n- invariant: x + 2\n- constraints:\n    - x >= 1\n");
                  kind = None })};
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Call
-                         { Ast.func = (Ast.Name { Ast.id = "f"; ctx = Ast.Load });
+                (Some (Ast_types.Call
+                         { Ast_types.func =
+                           (Ast_types.Name
+                              { Ast_types.id = "f"; ctx = Ast_types.Load });
                            args = [];
                            keywords =
-                           [{ Ast.arg = (Some "x");
+                           [{ Ast_types.arg = (Some "x");
                               value =
-                              (Ast.Constant
-                                 { Ast.value = (Ast.Int 1); kind = None })
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 1);
+                                   kind = None })
                               }
                              ]
                            }));
                 simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "expected"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Constant { Ast.value = (Ast.Int 3); kind = None }));
+                (Some (Ast_types.Constant
+                         { Ast_types.value = (Ast_types.Int 3); kind = None }));
                 simple = 1 });
-           Ast.Assert {
+           Ast_types.Assert {
              test =
-             Ast.Compare {
-               left = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-               ops = [Ast.Eq];
-               comparators = [(Ast.Name { Ast.id = "expected"; ctx = Ast.Load })]};
+             Ast_types.Compare {
+               left =
+               (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+               ops = [Ast_types.Eq];
+               comparators =
+               [(Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load })
+                 ]};
              msg = None}
            ];
          decorator_list = []; returns = None; type_comment = None;
          type_params = [] })
-    (Ast.FunctionDef
-       { Ast.name = "test_2";
+    (Ast_types.FunctionDef
+       { Ast_types.name = "test_2";
          args =
-         { Ast.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
+         { Ast_types.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
            kw_defaults = []; kwarg = None; defaults = [] };
          body =
-         [Ast.ExprStmt {
+         [Ast_types.ExprStmt {
             value =
-            (Ast.Constant
-               { Ast.value =
-                 (Ast.String
+            (Ast_types.Constant
+               { Ast_types.value =
+                 (Ast_types.String
                     "test_2\n\n- invariant: 1 + x\n- constraints:\n    - x <= 0\n");
                  kind = None })};
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Call
-                         { Ast.func = (Ast.Name { Ast.id = "f"; ctx = Ast.Load });
+                (Some (Ast_types.Call
+                         { Ast_types.func =
+                           (Ast_types.Name
+                              { Ast_types.id = "f"; ctx = Ast_types.Load });
                            args = [];
                            keywords =
-                           [{ Ast.arg = (Some "x");
+                           [{ Ast_types.arg = (Some "x");
                               value =
-                              (Ast.Constant
-                                 { Ast.value = (Ast.Int 0); kind = None })
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 0);
+                                   kind = None })
                               }
                              ]
                            }));
                 simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "expected"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Constant { Ast.value = (Ast.Int 1); kind = None }));
+                (Some (Ast_types.Constant
+                         { Ast_types.value = (Ast_types.Int 1); kind = None }));
                 simple = 1 });
-           Ast.Assert {
+           Ast_types.Assert {
              test =
-             Ast.Compare {
-               left = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-               ops = [Ast.Eq];
-               comparators = [(Ast.Name { Ast.id = "expected"; ctx = Ast.Load })]};
+             Ast_types.Compare {
+               left =
+               (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+               ops = [Ast_types.Eq];
+               comparators =
+               [(Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load })
+                 ]};
              msg = None}
            ];
          decorator_list = []; returns = None; type_comment = None;
@@ -588,18 +614,18 @@ let%expect_test "parse model art" =
     <><><><><><><><><><>
 
     Applied symbol:
-    (w/97332 : { view = (Constr (list, [{ view = (Var a/97331); generation = 5 }])); generation = 5 })
+    (w/97332 : { view = (Constr (list, [{ view = (Var a/97331); generation = 3 }])); generation = 3 })
 
     <><><><><><><><><><>
 
     Term:
     { view = Construct {c = ([] : { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
-                                                            generation = 5 }]));
-                                    generation = 5 });args = []};
+                                                            generation = 3 }]));
+                                    generation = 3 });args = []};
       ty = { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
-                                     generation = 5 }]));
-             generation = 5 };
-      generation = 2; sub_anchor = None }
+                                     generation = 3 }]));
+             generation = 3 };
+      generation = 1; sub_anchor = None }
 
     <><><><><><><><><><>
 
@@ -609,7 +635,7 @@ let%expect_test "parse model art" =
     Type annot: None
 
     Expr:
-    (Ast.List { Ast.elts = []; ctx = Ast.Load })
+    (Ast_types.List { Ast_types.elts = []; ctx = Ast_types.Load })
 
     <><><><><><><><><><>
 
