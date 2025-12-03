@@ -144,11 +144,10 @@ let rec parse_term (term : Term.term) :
       in
 
       let type_def_of_rows = List.flatten type_defs_of_rows in
-      let open Ast in
       Ok
-        ( type_def_of_rows @ [ def_dataclass ty_name def_rows ],
+        ( type_def_of_rows @ [ Ast.mk_dataclass_def ty_name def_rows ],
           Some (Ast.mk_name_expr ty_name),
-          init_dataclass ty_name ~args:row_val_exprs ~kwargs:[] )
+          Ast.mk_dataclass_value ty_name ~args:row_val_exprs ~kwargs:[] )
   (* Construct - LChar.t *)
   | ( Term.Construct
         {
@@ -179,7 +178,7 @@ let rec parse_term (term : Term.term) :
          (* Why would bool need type def? *)
          | _ -> failwith "Never: bool_type_defs should be empty");
 
-      let char_expr = Ast.bool_list_expr_to_char_expr bool_terms in
+      let char_expr = Ast.char_expr_of_bool_list_expr bool_terms in
       (* NOTE: Python has no char type, so we use str *)
       Ok ([], Some (Ast.mk_name_expr "str"), char_expr)
   (* Construct - list *)
@@ -339,7 +338,7 @@ let rec parse_term (term : Term.term) :
         let constr_arg_type_stmts = List.flatten constr_arg_type_stmt_lists in
 
         let term =
-          Ast.init_dataclass variant_constr_name ~args:constr_arg_terms
+          Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
             ~kwargs:[]
         in
         Ok
@@ -374,7 +373,7 @@ let rec parse_term (term : Term.term) :
         (* printf "key_ty_name: %s\n" key_ty_name;
        printf "val_ty_name: %s\n" val_ty_name; *)
         let type_annot =
-          Ast.defaultdict_type_annotation key_ty_name val_ty_name
+          Ast.mk_defaultdict_type_annotation key_ty_name val_ty_name
         in
 
         (* Parse the [l] of Map.add'
@@ -468,7 +467,7 @@ let rec parse_term (term : Term.term) :
         in
 
         let defaultdict_expr =
-          Ast.init_defaultdict default_val_expr
+          Ast.mk_defaultdict_value default_val_expr
             (CCList.combine key_exprs val_exprs)
         in
 
