@@ -578,14 +578,11 @@ let%expect_test "parse model art" =
   print_endline (Format.flush_str_formatter ());
   printf "%s\n" sep; *)
   print_endline "Parsing term:\n";
-  let ty_defs, type_annot, expr =
+  let type_annot, expr =
     match parse_term term with
-    | Ok (ty_defs, type_annot, expr) -> (ty_defs, type_annot, expr)
+    | Ok (type_annot, expr) -> (type_annot, expr)
     | Error msg -> failwith msg
   in
-
-  printf "Type defs:\n";
-  List.iter (fun ty_def -> print_endline (Ast.show_stmt ty_def)) ty_defs;
 
   printf "Type annot: ";
   (match type_annot with
@@ -632,7 +629,6 @@ let%expect_test "parse model art" =
 
     Parsing term:
 
-    Type defs:
     Type annot: None
 
     Expr:

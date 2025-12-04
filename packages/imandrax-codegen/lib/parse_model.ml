@@ -28,9 +28,9 @@ A model consists of an applied symbol and a term
 let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
     Ast.stmt list =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
-  let ty_defs, type_annot, term_expr =
+  let type_annot, term_expr =
     match parse_term term with
-    | Ok (ty_defs, type_annot, term_expr) -> (ty_defs, type_annot, term_expr)
+    | Ok (type_annot, term_expr) -> (type_annot, term_expr)
     | Error msg -> failwith msg
   in
 
@@ -53,4 +53,7 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
             simple = 1;
           }
   in
+
+  let ty_defs = [] in
+
   List.append ty_defs [ assign_stmt ]

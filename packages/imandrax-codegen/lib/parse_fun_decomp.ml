@@ -121,7 +121,7 @@ let parse_fun_decomp
         regions |> List.map parse_region |> unzip3
       in
 
-      let ( (models_type_defs : (string * Ast.stmt list) list list),
+      let (
             (* We have no place to use type annots for input args*)
             (_models_type_annots : (string * Ast.expr option) list list),
             (models_terms : (string * Ast.expr) list list) ) =
@@ -129,15 +129,15 @@ let parse_fun_decomp
         |> List.map (fun (model_by_arg : (string * Term.term) list) ->
                List.map
                  (fun (arg_name, model) ->
-                   let type_defs, type_annot, term_expr =
+                   let type_annot, term_expr =
                      parse_term model |> unwrap
                    in
                    (* bind arg name again *)
-                   ( (arg_name, type_defs),
+                   (
                      (arg_name, type_annot),
                      (arg_name, term_expr) ))
                  model_by_arg)
-        |> List.map unzip3 |> unzip3
+        |> List.map List.split |> List.split
       in
 
       let test_names =
@@ -157,14 +157,16 @@ let parse_fun_decomp
           test_names docstr_body_by_region
       in
 
-      let model_eval_type_defs_s, model_eval_type_annots, model_eval_exprs =
+      let model_eval_type_annots, model_eval_exprs =
         model_evals
         |> List.map (fun model_eval -> parse_term model_eval |> unwrap)
-        |> unzip3
+        |> List.split
       in
 
       (* Deduplicate type definitions *)
-      let type_defs : Ast.stmt list =
+      let type_defs = [] in
+
+      (* let type_defs : Ast.stmt list =
         let model_type_defs_flattened : Ast.stmt list =
           let model_type_defs_by_arg = models_type_defs |> List.flatten in
           model_type_defs_by_arg
@@ -173,7 +175,7 @@ let parse_fun_decomp
         in
         model_type_defs_flattened @ (model_eval_type_defs_s |> List.flatten)
         |> uniq_stmts
-      in
+      in *)
 
       let tests : Ast.stmt list =
         match output_as_dict with

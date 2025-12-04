@@ -1,6 +1,12 @@
 open Printf
 open Parse_common
 
+(* [x, y, z] -> ([x; y], z) *)
+let split_last (xs : 'a list) : 'a list * 'a =
+  match List.rev xs with
+  | [] -> failwith "Never: empty list"
+  | x :: xs -> (List.rev xs, x)
+
 (*
 Return:
   - | Ok of:
@@ -234,63 +240,44 @@ let rec parse_term (term : Term.term) :
         helper [] ty_view
       in
 
-      let res : (Ast.expr option * Ast.expr, string) result =
-        let variant_constr_name = construct.sym.id.name in
-        (* the last arg is the variant name *)
-        let variant_constr_args_and_variant_name : string list =
-          unpack_arrows construct.ty.view
-        in
+      let variant_constr_name = construct.sym.id.name in
 
-        (* print_endline
-          (CCString.concat "->" variant_constr_args_and_variant_name);
-        printf "variant constructor name: %s\n" variant_constr_name; *)
-        let split_last xs =
-          match List.rev xs with
-          | [] -> failwith "Never: empty list"
-          | x :: xs -> (List.rev xs, x)
-        in
-
-        let variant_constr_args, variant_name =
-          let constr_args_, name =
-            split_last variant_constr_args_and_variant_name
-          in
-          (* Map Ocaml type names to Python type names *)
-          let constr_args =
-            List.map
-              (fun (caml_type : string) : string ->
-                let py_type_opt =
-                  CCList.assoc_opt ~eq:( = ) caml_type
-                    Ast.ty_view_constr_name_mapping
-                in
-                match py_type_opt with
-                | Some py_type -> py_type
-                | None -> caml_type)
-              constr_args_
-          in
-          (constr_args, name)
-        in
-
-        let ty_defs =
-          Ast.variant_dataclass variant_name
-            [ (variant_constr_name, variant_constr_args) ]
-        in
-
-        let parsed_constr_args =
-          List.map (fun arg -> parse_term arg |> unwrap) construct_args
-        in
-
-        let _constr_arg_type_annot_lists, constr_arg_terms =
-          List.split parsed_constr_args
-        in
-
-        let term =
-          Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
-            ~kwargs:[]
-        in
-        Ok (Some Ast.(Name { id = variant_name; ctx = Load }), term)
+      (* the last arg is the variant name *)
+      let variant_constr_args_and_variant_name : string list =
+        unpack_arrows construct.ty.view
       in
 
-      res
+      (* Variant name, used in type annotation *)
+      let variant_type_name : string =
+        let constr_args_, name =
+          split_last variant_constr_args_and_variant_name
+        in
+        (* Map Ocaml type names to Python type names *)
+        let _constr_args =
+          List.map
+            (fun (caml_type : string) : string ->
+              let py_type_opt =
+                CCList.assoc_opt ~eq:( = ) caml_type
+                  Ast.ty_view_constr_name_mapping
+              in
+              match py_type_opt with
+              | Some py_type -> py_type
+              | None -> caml_type)
+            constr_args_
+        in
+        name
+      in
+
+      let _constr_arg_type_annot_lists, constr_arg_terms =
+        List.map (fun arg -> parse_term arg |> unwrap) construct_args
+        |> List.split
+      in
+
+      let term =
+        Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
+          ~kwargs:[]
+      in
+      Ok (Some Ast.(Name { id = variant_type_name; ctx = Load }), term)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
       try
         (* Extract Map key and value type from ty *)
