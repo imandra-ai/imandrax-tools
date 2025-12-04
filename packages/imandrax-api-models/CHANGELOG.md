@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+## [1.1.1] - 2025-12-04
+- Changed
+  - remove task field in formatting
+- Fixed
+  - allow multiple location information in error
+
 ## [1.1.0] - 2025-11-21
 - Added
   - context utils for formatting models as LLM-friendly strings
