@@ -291,4 +291,50 @@ let pp_decl out (decl : (Term.term, Type.t) Decl.t_poly) =
         (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
         ty_def.params pp_ty_decl ty_def.decl pp_clique ty_def.clique pp_timeout
         ty_def.timeout
+  | Decl.Fun fun_def ->
+      (* Pretty print a variable *)
+      let pp_var out (v : Type.t Imandrax_api_common.Var.t_poly) =
+        fprintf out "@[<hv 2>{ id =@ %a;@ ty =@ %a }@]" Imandrax_api.Uid.pp v.id
+          pp_type v.ty
+      in
+
+      (* Pretty print fun_kind *)
+      let pp_fun_kind out = function
+        | Imandrax_api_common.Fun_def.Fun_defined { is_macro; from_lambda } ->
+            fprintf out
+              "@[<hv 2>Fun_defined@ { is_macro =@ %b;@ from_lambda =@ %b }@]"
+              is_macro from_lambda
+        | Imandrax_api_common.Fun_def.Fun_builtin bf ->
+            fprintf out "@[<hv 2>Fun_builtin@ %a@]" Imandrax_api.Builtin.Fun.pp
+              bf
+        | Imandrax_api_common.Fun_def.Fun_opaque -> fprintf out "Fun_opaque"
+      in
+
+      (* Pretty print type schema *)
+      let pp_type_schema out (ts : Type.t Imandrax_api_common.Type_schema.t_poly)
+          =
+        fprintf out "@[<hv 2>{ @[<hv 2>params =@ [@[<hv>%a@]]@];@ @[<hv 2>ty =@ %a@] }@]"
+          (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
+          ts.params pp_type ts.ty
+      in
+
+      let pp_clique out = function
+        | None -> fprintf out "None"
+        | Some c -> fprintf out "@[<hv 2>(Some@ %a)@]" Imandrax_api.Clique.pp c
+      in
+
+      fprintf out
+        "@[<v 2>Fun@ { @,\
+         @[<hv 2>f_name =@ %a@];@,\
+         @[<hv 2>f_ty =@ %a@];@,\
+         @[<hv 2>f_args =@ [@[<hv>%a@]]@];@,\
+         @[<hv 2>f_body =@ %a@];@,\
+         @[<hv 2>f_clique =@ %a@];@,\
+         @[<hv 2>f_kind =@ %a@];@,\
+         @[<hv 2>f_hints =@ ...@]@,\
+         }@]"
+        Uid.pp fun_def.f_name pp_type_schema fun_def.f_ty
+        (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_var)
+        fun_def.f_args pp_term fun_def.f_body pp_clique fun_def.f_clique
+        pp_fun_kind fun_def.f_kind
   | _ -> fprintf out "(* Other Decl variants not implemented yet *)"
