@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
-    "imandrax-api[async]>=0.17.3.1",
+    "imandrax-api[async]>=0.18",
     "pydantic>=2.12.4",
 ]
 
@@ -27,6 +27,7 @@ build-backend = "uv_build"
 
 
 [tool.uv.sources]
+imandrax-api = { path = "../../../imandrax-api/src/py" }
 
 
 [dependency-groups]
@@ -52,16 +53,38 @@ extend-select = [
 flake8-quotes = { inline-quotes = "single", multiline-quotes = "double" }
 mccabe = { max-complexity = 15 }
 ignore = [
-    "D100", # ignore missing docstring in module
-    "D101", # ignore missing docstring in public class
-    "D102", # ignore missing docstring in public method
-    "D103", # ignore missing docstring in public function
-    "D104", # ignore missing docstring in public package
-    "D105", # ignore missing docstring in magic methods
-    "D106", # ignore missing docstring in public nested class
-    "D107", # ignore missing docstring in __init__ methods
-    "D203",
-    "D212",
+  "SIM103",  # needless-bool
+  "SIM108", # if-else-block-instead-of-if-exp
+  "N801",   # Class name should use CapWords
+  "PTH123", # `open()` should be replaced by `Path.open()`
+  "C417",   # Unnecessary `map()` usage (rewrite using a generator expression)
+  "D100", # ignore missing docstring in module
+  "D101", # ignore missing docstring in public class
+  "D102", # ignore missing docstring in public method
+  "D103", # ignore missing docstring in public function
+  "D104", # ignore missing docstring in public package
+  "D105", # ignore missing docstring in magic methods
+  "D106", # ignore missing docstring in public nested class
+  "D107", # ignore missing docstring in __init__ methods
+  "D203",
+  "D212",
+  # These are all enforced by, or incompatible with, the ruff formatter:
+  "E203",
+  "E501",
+  "W291",
+  "W293",
+  # It's often necessary to compare types instead of using isinstance()
+  "E721",
+  "RUF005",
+  # Let mypy/pyright complain about blanket type ignores or implicit optional
+  "PGH004",
+  "RUF013",
+  "E266",
+  "RUF036",
+  "RUF027", # TODO: remove
+  "RUF029", # TODO: remove
+  "UP042",  # TODO: remove
+  "RUF052", # TODO: remove
 ]
 pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true

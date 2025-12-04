@@ -32,8 +32,8 @@ package = true
 
 [tool.uv.sources]
 imandrax-api-model = { path = "../imandrax-api-model" }
-# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 imandrax-api = { path = "../../../imandrax-api/src/py" }
+# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 
 [tool.uv.workspace]
 members = [
@@ -99,7 +99,7 @@ isort.combine-as-imports = true
 quote-style = "single"
 
 [tool.ty]
-environment.python = "../.venv"
+environment.python = "./.venv"
 
 [tool.ty.rules]
 # Handled by pyright
