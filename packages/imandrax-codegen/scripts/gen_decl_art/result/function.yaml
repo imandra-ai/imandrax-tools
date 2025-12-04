@@ -1,0 +1,36 @@
+name: function
+iml: |2
+
+  type direction = North | South | East | West
+
+  type position = { x: int; y: int; z: real }
+
+  type movement =
+    | Stay of position
+    | Move of position * direction
+
+  let move = fun w ->
+    match w with
+    | Stay p -> p
+    | Move (p, d) ->
+      let x, y, z = p.x, p.y, p.z in
+      let x, y, z =
+        match d with
+        | North -> (x, y+1, z)
+        | South -> (x, y-1, z)
+        | East -> (x+1, y, z)
+        | West -> (x-1, y, z)
+      in
+      { x; y; z }
+req_kwargs:
+  names:
+  - move
+get_decls_res:
+  decls:
+  - name: move
+    artifact:
+      kind: mir.decl
+      data: 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
+      api_version: v18
+      storage: []
+  not_found: []

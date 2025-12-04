@@ -136,6 +136,34 @@
 
 # - name: polymorphic?
 
+- name: function
+  iml: |
+
+    type direction = North | South | East | West
+
+    type position = { x: int; y: int; z: real }
+
+    type movement =
+      | Stay of position
+      | Move of position * direction
+
+    let move = fun w ->
+      match w with
+      | Stay p -> p
+      | Move (p, d) ->
+        let x, y, z = p.x, p.y, p.z in
+        let x, y, z =
+          match d with
+          | North -> (x, y+1, z)
+          | South -> (x, y-1, z)
+          | East -> (x+1, y, z)
+          | West -> (x-1, y, z)
+        in
+        { x; y; z }
+  req_kwargs:
+    names:
+      - move
+
 ---
 - name: basic
   iml: |
