@@ -85,7 +85,6 @@ let rec parse_term (term : Term.term) :
         |> Ast.tuple_annot_of_annots
       in
       Ok (Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
-
   (* Record *)
   | ( Term.Record
         {
@@ -93,38 +92,17 @@ let rec parse_term (term : Term.term) :
           rest = (_ : Term.term option);
         },
       (ty : Type.t) ) ->
-      (* Get dataclass name from ty *)
+      (* Get dataclass name (constructor) from ty *)
       let ty_name =
         match ty.view with
         | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
         | _ -> failwith "Never: ty should be a constr"
       in
 
-      (* For each row,
-      the first element applied_symbol gives dataclass definition
-      the second element gives the value
-      *)
-      let parse_row
-          (applied_symbol : Type.t Applied_symbol.t_poly)
-          (term : Term.term) =
-        let def_row_var_name = applied_symbol.sym.id.name in
-        let def_row_type_name =
-          match applied_symbol.ty.view with
-          | Ty_view.Arrow (_, _record_view, row_view) -> (
-              match row_view.view with
-              | Ty_view.Constr (constr_name_uid, _constr_args) ->
-                  constr_name_uid.name
-              | _ -> failwith "Never: row_view should be a constr")
-          | _ -> failwith "Never: applied_symbol.ty.view should be a arrow"
-        in
-        let _type_annot_of_row, row_val_expr = parse_term term |> unwrap in
-        (* TODO(ENH): maybe using kwargs is clearer? *)
-        ((def_row_var_name, def_row_type_name), row_val_expr)
-      in
-
-      let _def_rows, row_val_exprs =
-        List.map (fun (applied_sym, term) -> parse_row applied_sym term) rows
-        |> List.split
+      (* Extract values from rows, which will be used as arguments to the dataclass constructor *)
+      let row_val_exprs =
+        rows |> List.map snd
+        |> List.map (fun term -> term |> parse_term |> unwrap |> snd)
       in
 
       Ok
