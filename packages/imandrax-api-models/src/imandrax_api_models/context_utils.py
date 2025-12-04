@@ -85,11 +85,10 @@ def format_error_msg(
     locs: list[Location] = error_msg.locs or []
     locs = [loc for loc in locs if (loc.start is not None and loc.stop is not None)]
 
-    assert len(locs) <= 1
-
     loc_str: str | None = None
     error_src: str | None = None
     if locs:
+        # TODO: handle multiple locations
         start, stop = locs[0].start, locs[0].stop
         start = cast(Position, start)
         stop = cast(Position, stop)
