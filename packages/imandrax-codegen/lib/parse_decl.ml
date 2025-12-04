@@ -32,7 +32,7 @@ In Python
     - what about polymorphic types? `args` field?
 *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
-    (string * Ast.stmt) =
+    string * Ast.stmt =
   let Ty_view.{ c; labels; args; doc = _ } = adt_row in
   let dc_name = c.name in
 
@@ -48,11 +48,10 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     |> List.map (fun (arg : Type.t) ->
            let Type.{ view = arg_ty_view; generation = _ } = arg in
            match arg_ty_view with
-           | Constr ((constr_uid: Uid.t), (constr_args: Type.t list)) -> (
+           | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) ->
                let constr_name = constr_uid.name in
                let _todo = constr_args in
                constr_name
-           )
            | _ ->
                let msg =
                  "parse_adt_row_to_dataclass_def: expected Constr for \
@@ -61,7 +60,9 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
                failwith msg)
   in
 
-  let dataclass_def_stmt = Ast.mk_dataclass_def dc_name (List.combine dc_arg_names dc_arg_constr_names) in
+  let dataclass_def_stmt =
+    Ast.mk_dataclass_def dc_name (List.combine dc_arg_names dc_arg_constr_names)
+  in
 
   (* printf "Dataclass name: %s\n" dc_name;
   print_endline "Arg names:";
@@ -70,7 +71,6 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   List.iter (fun n -> print_endline n) dc_arg_constr_names;
   print_endline "";
   print_endline (Ast.show_stmt dataclass_def_stmt); *)
-
   (dc_name, dataclass_def_stmt)
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
@@ -92,20 +92,24 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
         (* Root name of the decl *)
         let { Uid.name = decl_name; view = _ } = decl_name_uid in
 
-        (* printf "Root name: %s\n" decl_name; *)
+        printf "Root name: %s\n" decl_name;
 
         (* TODO: move above extraction to single pattern match *)
 
         (* Handle rows *)
-        let ((dc_names: string list), (dc_defs: Ast.stmt list)) =
+        let (dc_names : string list), (dc_defs : Ast.stmt list) =
           match ty_view_decl with
-          | Algebraic (adt_rows: (Uid.t, Type.t) Ty_view.adt_row list) ->
-              let (dc_names, dc_defs) = adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split in
+          | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
+              let dc_names, dc_defs =
+                adt_rows
+                |> List.map parse_adt_row_to_dataclass_def
+                |> List.split
+              in
               (dc_names, dc_defs)
-          | Record (rec_rows: (Uid.t, Type.t) Ty_view.rec_row list) ->
-            let _ = rec_rows in
+          | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
+              let _ = rec_rows in
 
-            failwith "WIP"
+              failwith "WIP"
           | _ -> failwith "WIP: not Algebraic and not Tuple"
         in
 
@@ -129,7 +133,8 @@ let%expect_test "parse decl art" =
   let yaml_str =
     (* CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" *)
     (* CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" *)
-      CCIO.File.read_exn "../test/data/decl/variant_recursive.yaml"
+    (* CCIO.File.read_exn "../test/data/decl/variant_recursive.yaml" *)
+    CCIO.File.read_exn "../test/data/decl/record.yaml"
   in
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_two.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
@@ -167,6 +172,15 @@ let%expect_test "parse decl art" =
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
   printf "<><><><><><><><><>\n";
+
+  (* Print decls
+  -------------------- *)
+  let fmt = Format.str_formatter in
+  List.iter
+    (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
+    decls;
+  print_endline (Format.flush_str_formatter ());
+
   (* Print parsed
   -------------------- *)
   let decl =
@@ -179,142 +193,50 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  (Failure WIP)
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Imandrax_codegen__Parse_decl.parse_decl in file "packages/imandrax-codegen/lib/parse_decl.ml", line 112, characters 14-28
+  Called from Imandrax_codegen__Parse_decl.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 189, characters 15-33
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-  (* Print decls
-  -------------------- *)
-  let fmt = Format.str_formatter in
-  List.iter
-    (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
-    decls;
-  print_endline (Format.flush_str_formatter ());
-  [%expect {|
-    name: variant_recursive
-    code:
-     type tree =
-      | Leaf of int
-      | Node of tree * tree ;;
+  Trailing output
+  ---------------
+  name: record
+  code:
+   type point = { x: int; y: int }
 
-    <><><><><><><><><>
-    Root name: tree
-    Dataclass name: Leaf
-    Arg names:
-    arg0
-    Arg constr names:
-    int
+  let distance_category = fun p ->
+    let sum = p.x + p.y in
+    if sum < 0 then "negative"
+    else if sum = 0 then "origin"
+    else "positive"
 
-    (Ast_types.ClassDef
-       { Ast_types.name = "Leaf"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-               value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    Dataclass name: Node
-    Arg names:
-    arg0
-    arg1
-    Arg constr names:
-    tree
-    tree
-
-    (Ast_types.ClassDef
-       { Ast_types.name = "Node"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
-               value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    <><><><><><><><><>
-    (Ast_types.ClassDef
-       { Ast_types.name = "Leaf"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-               value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    (Ast_types.ClassDef
-       { Ast_types.name = "Node"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
-               value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    (Ast_types.Assign
-       { Ast_types.targets =
-         [(Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load })];
-         value =
-         (Ast_types.BinOp
-            { Ast_types.left =
-              (Ast_types.Name { Ast_types.id = "Leaf"; ctx = Ast_types.Load });
-              op = Ast_types.BitOr;
-              right =
-              (Ast_types.Name { Ast_types.id = "Node"; ctx = Ast_types.Load }) });
-         type_comment = None })
-    <><><><><><><><><>
-    Ty
-      {
-      name = tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ;
-      params = [];
-      decl =
-        Algebraic
-          [{
-             c = Leaf/pNHe6L6pvsfZE69W_N4yLtI5Q2EsG4ThVvhdFCRAESA;
-             labels = None;
-             args = [{ view = (Constr (int,[]));
-                       generation = 1 }];
-             doc = None
-             };
-           {
-             c = Node/N_11cpq64YpTIQVNdkSYceke7CPFm0zzOlN2tEI-k1c;
-             labels = None;
-             args =
-               [{ view =
-                    (Constr
-                      (tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ,[]));
+  <><><><><><><><><>
+  Ty
+    {
+    name = point/4N82zNFBEhrlrmHNKK_4jDYtpXt8hvmRWC4-N437xp8;
+    params = [];
+    decl =
+      Record
+        [{
+           f = x/40plBYPa-nKP5TMortqhgELkBB1Ekmxx-T83mnr6Rlk;
+           ty = { view = (Constr (int,[]));
                   generation = 1 };
-                { view =
-                    (Constr
-                      (tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ,[]));
-                  generation = 1 }];
-             doc = None
-             }];
-      clique = (Some {tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ});
-      timeout = None
-      }
-    |}]
+           doc = None
+           };
+         {
+           f = y/2q8uB6Fb8Uwf-NuF89IsRU8PWpxeLPDxZB2Kk_W6oqE;
+           ty = { view = (Constr (int,[]));
+                  generation = 1 };
+           doc = None
+           }];
+    clique = None;
+    timeout = None
+    }
+  Root name: point
+  |}]
