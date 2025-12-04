@@ -6,6 +6,8 @@ iml: |
 req_kwargs:
   names:
   - tree
+expected_python_code: "@dataclass\nclass Leaf:\n    arg0: int\n\n@dataclass\nclass\
+  \ Node:\n    arg0: tree\n    arg1: tree\n\ntree = Leaf | Node\n"
 get_decls_res:
   decls:
   - name: tree

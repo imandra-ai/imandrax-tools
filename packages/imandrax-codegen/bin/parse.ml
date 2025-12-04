@@ -17,6 +17,7 @@ type file_format =
 type parse_mode =
   | Model
   | FunDecomp
+  | Decl
 
 type config = {
   input: input_source;
@@ -70,6 +71,7 @@ let parse_yaml_input mode input use_stdout =
   match mode with
   | Model -> `Model (Codegen.Art_utils.yaml_to_model ~debug:false yaml)
   | FunDecomp -> `FunDecomp (Codegen.Art_utils.yaml_to_fun_decomp ~debug:false yaml)
+  | Decl -> `Decl (Codegen.Art_utils.yaml_to_decl ~debug:false yaml)
 
 (** Parse JSON input according to the specified mode (Model or FunDecomp). *)
 let parse_json_input mode input use_stdout =
@@ -80,6 +82,7 @@ let parse_json_input mode input use_stdout =
   match mode with
   | Model -> `Model (Codegen.Art_utils.json_to_model ~debug:false json)
   | FunDecomp -> `FunDecomp (Codegen.Art_utils.json_to_fun_decomp ~debug:false json)
+  | Decl -> `Decl (Codegen.Art_utils.json_to_decl ~debug:false json)
 
 (** Parse input based on configuration (delegates to YAML or JSON parser). *)
 let parse_input config =
@@ -98,6 +101,12 @@ let convert_to_ast parsed_input use_stdout output_as_dict =
   match parsed_input with
   | `Model model -> Codegen.Parse.parse_model model
   | `FunDecomp fun_decomp -> Codegen.Parse.parse_fun_decomp ~output_as_dict fun_decomp
+  | `Decl decl -> (
+    let parsed_decl = Codegen.Parse.parse_decl decl in
+    match parsed_decl with
+    | Ok ((stmts)) -> stmts
+    | Error msg -> failwith msg
+  )
 
 (** Write AST statements as JSON to stdout or a file. *)
 let write_output output stmts =
@@ -168,6 +177,7 @@ let () =
         (match mode_str with
         | "model" -> mode := Some Model
         | "fun-decomp" -> mode := Some FunDecomp
+        | "decl" -> mode := Some Decl
         | _ ->
           eprintf "Error: Invalid mode '%s'. Must be 'model' or 'fun-decomp'\n" mode_str;
           print_usage ());
@@ -261,7 +271,7 @@ let () =
     (match input with
     | Stdin -> printf "Reading from: stdin\n"
     | File path -> printf "Reading from: %s\n" path);
-    printf "Mode: %s\n" (match mode with Model -> "model" | FunDecomp -> "fun-decomp");
+    printf "Mode: %s\n" (match mode with Model -> "model" | FunDecomp -> "fun-decomp" | Decl -> "decl");
     printf "Output to: %s\n" output_file
   );
 

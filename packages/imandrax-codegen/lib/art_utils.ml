@@ -106,6 +106,11 @@ let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t) :
   let data_b64, kind_str = json_to_art_data ~debug json in
   art_data_to_fun_decomp ~debug data_b64 kind_str
 
+let json_to_decl ?(debug = false) (json : Yojson.Safe.t) :
+    Mir.Decl.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_decl ~debug data_b64 kind_str
+
 let yaml_to_art ?(debug = false) (yaml : Yaml.value) : string * string =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
 
