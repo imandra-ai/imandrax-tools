@@ -26,6 +26,7 @@ For regular API client without Pydantic model validation, use `imandrax-api` ins
 from imandrax_api_models import (
     DecomposeRes,
     EvalRes,
+    GetDeclsRes,
     InstanceRes,
     TypecheckRes,
     VerifyRes,
@@ -63,6 +64,11 @@ if TYPE_CHECKING:
             hints: str | None = None,
             timeout: float | None = None,
         ) -> InstanceRes: ...
+        async def get_decls(
+            self,
+            names: list[str],
+            timeout: float | None = None,
+        ) -> GetDeclsRes: ...
         async def __aenter__(self) -> Self: ...
         async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 else:
@@ -151,6 +157,14 @@ class ImandraXClient(imandrax_api.Client):
     ) -> InstanceRes:
         res = super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
+
+    def get_decls(  # type: ignore[override]
+        self,
+        names: list[str],
+        timeout: float | None = None,
+    ) -> GetDeclsRes:
+        res = super().get_decls(names=names, timeout=timeout)
+        return GetDeclsRes.model_validate(res)
 
     def __enter__(self) -> Self:  # type: ignore[override]
         super().__enter__()
@@ -255,6 +269,14 @@ class ImandraXAsyncClient(AsyncClient):
     ) -> InstanceRes:
         res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
+
+    async def get_decls(
+        self,
+        names: list[str],
+        timeout: float | None = None,
+    ) -> GetDeclsRes:
+        res = await super().get_decls(names=names, timeout=timeout)
+        return GetDeclsRes.model_validate(res)
 
     async def __aenter__(self, *_: Any) -> Self:
         await super().__aenter__()
