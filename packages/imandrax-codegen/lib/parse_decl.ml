@@ -107,7 +107,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
       let { Uid.name = decl_name; view = _ } = decl_name_uid in
       (* TODO: move above extraction to single pattern match *)
 
-      printf "Root name: %s\n" decl_name;
+      (* printf "Root name: %s\n" decl_name; *)
 
       (* Handle rows *)
       match ty_view_decl with
