@@ -1,11 +1,26 @@
 open Printf
 open Parse_common
 
-(* let parse_term = Parse_term.parse_term *)
+let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
+    string * string =
+  let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
+
+  let arg_name = f.name in
+  let Type.{ view = arg_ty_view; generation = _ } = ty in
+
+  let arg_type_name =
+    match arg_ty_view with
+    | Constr ((constr_uid : Uid.t), (_constr_args: Type.t list)) ->
+        constr_uid.name
+    | _ ->
+        invalid_arg
+          "parse_rec_row_to_dataclass_row: expected Constr in .ty.view"
+  in
+
+  (arg_name, arg_type_name)
 
 (*
 Parse one row of an Algebraic type declaration
-
 
 Return:
 - dataclass name :: string
@@ -75,51 +90,43 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
-  let parsed_decl =
-    match decl with
-    | Ty (ty_view_def : Type.t Ty_view.def_poly) ->
-        (* Unpack ty view *)
-        let {
-          Ty_view.name = decl_name_uid;
-          params = _;
-          decl = ty_view_decl;
-          clique = _;
-          timeout = _;
-        } =
-          ty_view_def
-        in
+  match decl with
+  | Ty (ty_view_def : Type.t Ty_view.def_poly) -> (
+      (* Unpack ty view *)
+      let {
+        Ty_view.name = decl_name_uid;
+        params = _;
+        decl = ty_view_decl;
+        clique = _;
+        timeout = _;
+      } =
+        ty_view_def
+      in
 
-        (* Root name of the decl *)
-        let { Uid.name = decl_name; view = _ } = decl_name_uid in
+      (* Root name of the decl *)
+      let { Uid.name = decl_name; view = _ } = decl_name_uid in
+      (* TODO: move above extraction to single pattern match *)
 
-        printf "Root name: %s\n" decl_name;
+      printf "Root name: %s\n" decl_name;
 
-        (* TODO: move above extraction to single pattern match *)
-
-        (* Handle rows *)
-        let (dc_names : string list), (dc_defs : Ast.stmt list) =
-          match ty_view_decl with
-          | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
-              let dc_names, dc_defs =
-                adt_rows
-                |> List.map parse_adt_row_to_dataclass_def
-                |> List.split
-              in
-              (dc_names, dc_defs)
-          | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
-              let _ = rec_rows in
-
-              failwith "WIP"
-          | _ -> failwith "WIP: not Algebraic and not Tuple"
-        in
-
-        let union_def = Ast.mk_union_def decl_name dc_names in
-        let all_defs = dc_defs @ [ union_def ] in
-        all_defs
-    | _ -> invalid_arg "parse_decl: expected Ty"
-  in
-
-  Ok parsed_decl
+      (* Handle rows *)
+      match ty_view_decl with
+      | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
+          let (dc_names : string list), (dc_defs : Ast.stmt list) =
+            adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
+          in
+          let union_def = Ast.mk_union_def decl_name dc_names in
+          let dc_and_union_defs = dc_defs @ [ union_def ] in
+          Ok dc_and_union_defs
+      | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
+          let dc_args: (string * string) list = rec_rows
+            |> List.map parse_rec_row_to_dataclass_row
+          in
+          let dc_def = Ast.mk_dataclass_def decl_name dc_args in
+          Ok [ dc_def ]
+      | _ -> failwith "WIP: not Algebraic and not Tuple")
+  | Fun _ -> failwith "WIP: Fun"
+  | _ -> invalid_arg "parse_decl: expected Ty | Fun"
 
 (* Expect tests
 ==================== *)
@@ -193,50 +200,59 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure WIP)
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Imandrax_codegen__Parse_decl.parse_decl in file "packages/imandrax-codegen/lib/parse_decl.ml", line 112, characters 14-28
-  Called from Imandrax_codegen__Parse_decl.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 189, characters 15-33
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  [%expect {|
+    name: record
+    code:
+     type point = { x: int; y: int }
 
-  Trailing output
-  ---------------
-  name: record
-  code:
-   type point = { x: int; y: int }
+    let distance_category = fun p ->
+      let sum = p.x + p.y in
+      if sum < 0 then "negative"
+      else if sum = 0 then "origin"
+      else "positive"
 
-  let distance_category = fun p ->
-    let sum = p.x + p.y in
-    if sum < 0 then "negative"
-    else if sum = 0 then "origin"
-    else "positive"
-
-  <><><><><><><><><>
-  Ty
-    {
-    name = point/4N82zNFBEhrlrmHNKK_4jDYtpXt8hvmRWC4-N437xp8;
-    params = [];
-    decl =
-      Record
-        [{
-           f = x/40plBYPa-nKP5TMortqhgELkBB1Ekmxx-T83mnr6Rlk;
-           ty = { view = (Constr (int,[]));
-                  generation = 1 };
-           doc = None
-           };
-         {
-           f = y/2q8uB6Fb8Uwf-NuF89IsRU8PWpxeLPDxZB2Kk_W6oqE;
-           ty = { view = (Constr (int,[]));
-                  generation = 1 };
-           doc = None
-           }];
-    clique = None;
-    timeout = None
-    }
-  Root name: point
-  |}]
+    <><><><><><><><><>
+    Ty
+      {
+      name = point/4N82zNFBEhrlrmHNKK_4jDYtpXt8hvmRWC4-N437xp8;
+      params = [];
+      decl =
+        Record
+          [{
+             f = x/40plBYPa-nKP5TMortqhgELkBB1Ekmxx-T83mnr6Rlk;
+             ty = { view = (Constr (int,[]));
+                    generation = 1 };
+             doc = None
+             };
+           {
+             f = y/2q8uB6Fb8Uwf-NuF89IsRU8PWpxeLPDxZB2Kk_W6oqE;
+             ty = { view = (Constr (int,[]));
+                    generation = 1 };
+             doc = None
+             }];
+      clique = None;
+      timeout = None
+      }
+    Root name: point
+    <><><><><><><><><>
+    (Ast_types.ClassDef
+       { Ast_types.name = "point"; bases = []; keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "x"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "y"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    <><><><><><><><><>
+    |}]
