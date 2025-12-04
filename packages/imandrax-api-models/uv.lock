@@ -464,21 +464,30 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.17.3.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.18"
+source = { directory = "../../../imandrax-api/src/py" }
 dependencies = [
     { name = "protobuf" },
     { name = "requests" },
     { name = "structlog" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/31/8d134ada9668b7acf065f0b98c0e245e670066a527706b4c5598f0bed53e/imandrax_api-0.17.3.1-py3-none-any.whl", hash = "sha256:ed09fdd5b3678ac63941bca88c3e3d863e739eb9d983ffb3355410ece92e471e", size = 60945, upload-time = "2025-11-14T17:25:40.144Z" },
 ]
 
 [package.optional-dependencies]
 async = [
     { name = "aiohttp" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", marker = "extra == 'async'" },
+    { name = "protobuf", specifier = "==5.29.5" },
+    { name = "requests" },
+    { name = "structlog" },
+]
+provides-extras = ["async"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "aiohttp", specifier = ">=3.13.2" }]
 
 [[package]]
 name = "imandrax-api-models"
@@ -507,7 +516,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.3.1" },
+    { name = "imandrax-api", extras = ["async"], directory = "../../../imandrax-api/src/py" },
     { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
     { name = "pydantic", specifier = ">=2.12.4" },
 ]
