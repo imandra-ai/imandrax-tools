@@ -26,18 +26,11 @@ A term has fields of:
   - rows: (Type.t Applied_symbol.t_poly * Term.t) list
   - rest: Term.t option
   - }
-
-Type definition
-  - Const: no type definition
-  - Tuple: aggregated from the type of each element
-  - Record: corresponses to a dataclass
-  - Variant
-    - each variant is a dataclass with anonymous fields (`arg0`, `arg1`, ...)
-    - the final type is an union of all the dataclasses
 *)
 let rec parse_term (term : Term.term) :
-    (Ast.stmt list * Ast.expr option * Ast.expr, string) result =
+    (Ast.expr option * Ast.expr, string) result =
   let debug = true in
+
   match ((term.view : (Term.term, Type.t) Term.view), (term.ty : Type.t)) with
   (* Constant *)
   | Term.Const const, _ -> (
@@ -45,15 +38,13 @@ let rec parse_term (term : Term.term) :
       | Const_bool b ->
           let open Ast in
           Ok
-            ( [],
-              Some (mk_name_expr "bool"),
+            ( Some (mk_name_expr "bool"),
               Constant { value = Bool b; kind = None } )
       | Const_float f ->
           (* printf "%f" f; *)
           let open Ast in
           Ok
-            ( [],
-              Some (mk_name_expr "float"),
+            ( Some (mk_name_expr "float"),
               Constant { value = Float f; kind = None } )
       | Const_q q ->
           let num = Q.num q in
@@ -62,8 +53,7 @@ let rec parse_term (term : Term.term) :
           let open Ast in
           (* Should we use Decimal instead? *)
           Ok
-            ( [],
-              Some (mk_name_expr "float"),
+            ( Some (mk_name_expr "float"),
               Constant
                 {
                   value = Float (Z.to_float num /. Z.to_float den);
@@ -72,14 +62,12 @@ let rec parse_term (term : Term.term) :
       | Const_z z ->
           let open Ast in
           Ok
-            ( [],
-              Some (mk_name_expr "int"),
+            ( Some (mk_name_expr "int"),
               Ast.Constant { value = Int (Z.to_int z); kind = None } )
       | Const_string s ->
           let open Ast in
           Ok
-            ( [],
-              Some (mk_name_expr "str"),
+            ( Some (mk_name_expr "str"),
               Constant { value = String s; kind = None } )
       | c ->
           (* Uid and real_approx *)
@@ -90,16 +78,14 @@ let rec parse_term (term : Term.term) :
       let parsed_elems =
         List.map (fun term -> parse_term term |> unwrap) terms
       in
-      let type_defs_of_elems, type_annot_of_elems, term_of_elems =
-        unzip3 parsed_elems
-      in
+      let type_annot_of_elems, term_of_elems = List.split parsed_elems in
       let tuple_annot =
         type_annot_of_elems
         |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
         |> Ast.tuple_annot_of_annots
       in
-      let type_def_of_elems = List.flatten type_defs_of_elems in
-      Ok (type_def_of_elems, Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
+      Ok (Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
+
   (* Record *)
   | ( Term.Record
         {
@@ -131,22 +117,18 @@ let rec parse_term (term : Term.term) :
               | _ -> failwith "Never: row_view should be a constr")
           | _ -> failwith "Never: applied_symbol.ty.view should be a arrow"
         in
-        let type_defs_of_row, _type_annot_of_row, row_val_expr =
-          parse_term term |> unwrap
-        in
+        let _type_annot_of_row, row_val_expr = parse_term term |> unwrap in
         (* TODO(ENH): maybe using kwargs is clearer? *)
-        (type_defs_of_row, (def_row_var_name, def_row_type_name), row_val_expr)
+        ((def_row_var_name, def_row_type_name), row_val_expr)
       in
 
-      let type_defs_of_rows, def_rows, row_val_exprs =
+      let _def_rows, row_val_exprs =
         List.map (fun (applied_sym, term) -> parse_row applied_sym term) rows
-        |> unzip3
+        |> List.split
       in
 
-      let type_def_of_rows = List.flatten type_defs_of_rows in
       Ok
-        ( type_def_of_rows @ [ Ast.mk_dataclass_def ty_name def_rows ],
-          Some (Ast.mk_name_expr ty_name),
+        ( Some (Ast.mk_name_expr ty_name),
           Ast.mk_dataclass_value ty_name ~args:row_val_exprs ~kwargs:[] )
   (* Construct - LChar.t *)
   | ( Term.Construct
@@ -166,21 +148,14 @@ let rec parse_term (term : Term.term) :
         failwith "Never: LChar.t should have no args"
       else ();
 
-      let bool_type_defs_s, _bool_type_annot_s, bool_terms =
-        List.map (fun arg -> parse_term arg |> unwrap) construct_args |> unzip3
+      let _bool_type_annot_s, bool_terms =
+        List.map (fun arg -> parse_term arg |> unwrap) construct_args
+        |> List.split
       in
-      let bool_type_defs = List.flatten bool_type_defs_s in
-
-      (if not debug then ()
-       else
-         match bool_type_defs with
-         | [] -> ()
-         (* Why would bool need type def? *)
-         | _ -> failwith "Never: bool_type_defs should be empty");
 
       let char_expr = Ast.char_expr_of_bool_list_expr bool_terms in
       (* NOTE: Python has no char type, so we use str *)
-      Ok ([], Some (Ast.mk_name_expr "str"), char_expr)
+      Ok (Some (Ast.mk_name_expr "str"), char_expr)
   (* Construct - list *)
   | ( Term.Construct
         {
@@ -209,17 +184,16 @@ let rec parse_term (term : Term.term) :
          in
          failwith msg);
 
-      let type_def_of_elems, type_annot_of_elems, term_of_elems =
+      let type_annot_of_elems, term_of_elems =
         match construct_args with
         | [] ->
             (* Nil *)
-            ([], None, Ast.empty_list_expr ())
+            (None, Ast.empty_list_expr ())
         | _ -> (
-            let type_defs_of_elems, type_annot_of_elems, term_of_elems =
+            let type_annot_of_elems, term_of_elems =
               List.map (fun arg -> parse_term arg |> unwrap) construct_args
-              |> unzip3
+              |> List.split
             in
-            let type_def_of_elems = List.flatten type_defs_of_elems in
             match term_of_elems with
             | [] -> failwith "Never: empty constuct arg for non-Nil"
             | [ _ ] -> failwith "Never: single element list for non-Nil"
@@ -239,16 +213,14 @@ let rec parse_term (term : Term.term) :
                       })
                 in
 
-                ( type_def_of_elems,
-                  Some type_annot,
-                  Ast.cons_list_expr head tail )
+                (Some type_annot, Ast.cons_list_expr head tail)
                 (* let n_elem = CCList.length elems in
           let except_last = CCList.take (n_elem - 1) elems in
           Some (Ast.list_of_exprs except_last) *)
             | _ -> failwith "Never: more than 2 elements list for non-Nil")
       in
 
-      Ok (type_def_of_elems, type_annot_of_elems, term_of_elems)
+      Ok (type_annot_of_elems, term_of_elems)
   (* Construct - other *)
   | ( Term.Construct
         {
@@ -284,7 +256,7 @@ let rec parse_term (term : Term.term) :
         helper [] ty_view
       in
 
-      let res : (Ast.stmt list * Ast.expr option * Ast.expr, string) result =
+      let res : (Ast.expr option * Ast.expr, string) result =
         let variant_constr_name = construct.sym.id.name in
         (* the last arg is the variant name *)
         let variant_constr_args_and_variant_name : string list =
@@ -329,22 +301,15 @@ let rec parse_term (term : Term.term) :
           List.map (fun arg -> parse_term arg |> unwrap) construct_args
         in
 
-        let ( constr_arg_type_stmt_lists,
-              _constr_arg_type_annot_lists,
-              constr_arg_terms ) =
-          unzip3 parsed_constr_args
+        let _constr_arg_type_annot_lists, constr_arg_terms =
+          List.split parsed_constr_args
         in
-
-        let constr_arg_type_stmts = List.flatten constr_arg_type_stmt_lists in
 
         let term =
           Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
             ~kwargs:[]
         in
-        Ok
-          ( constr_arg_type_stmts @ ty_defs,
-            Some Ast.(Name { id = variant_name; ctx = Load }),
-            term )
+        Ok (Some Ast.(Name { id = variant_name; ctx = Load }), term)
       in
 
       res
@@ -452,18 +417,18 @@ let rec parse_term (term : Term.term) :
         in
         let key_val_pairs, default = parse_map_term_view f l [] in
 
-        let default_val_ty_defs, _default_val_type_annot, default_val_expr =
+        let _default_val_type_annot, default_val_expr =
           default |> parse_term |> unwrap
         in
 
         let key_terms, val_terms = key_val_pairs |> List.rev |> List.split in
 
-        let keys_ty_defs, _key_type_annots, key_exprs =
-          key_terms |> List.map (fun k -> parse_term k |> unwrap) |> unzip3
+        let _key_type_annots, key_exprs =
+          key_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
         in
 
-        let vals_ty_defs, _val_type_annots, val_exprs =
-          val_terms |> List.map (fun k -> parse_term k |> unwrap) |> unzip3
+        let _val_type_annots, val_exprs =
+          val_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
         in
 
         let defaultdict_expr =
@@ -471,11 +436,7 @@ let rec parse_term (term : Term.term) :
             (CCList.combine key_exprs val_exprs)
         in
 
-        Ok
-          ( default_val_ty_defs @ List.flatten keys_ty_defs
-            @ List.flatten vals_ty_defs,
-            Some type_annot,
-            defaultdict_expr )
+        Ok (Some type_annot, defaultdict_expr)
       with Early_return msg -> Error msg)
   | _, _ ->
       let msg = "case other than const, construct, or apply" in
