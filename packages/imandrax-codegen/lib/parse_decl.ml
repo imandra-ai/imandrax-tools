@@ -43,7 +43,6 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     | Some id_list -> List.map (fun (id : Uid.t) -> id.name) id_list
   in
 
-  (* args ::  *)
   let dc_arg_constr_names =
     args
     |> List.map (fun (arg : Type.t) ->
@@ -64,13 +63,13 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
 
   let dataclass_def_stmt = Ast.mk_dataclass_def dc_name (List.combine dc_arg_names dc_arg_constr_names) in
 
-  printf "Dataclass name: %s\n" dc_name;
+  (* printf "Dataclass name: %s\n" dc_name;
   print_endline "Arg names:";
   List.iter (fun n -> print_endline n) dc_arg_names;
   print_endline "Arg constr names:";
   List.iter (fun n -> print_endline n) dc_arg_constr_names;
   print_endline "";
-  print_endline (Ast.show_stmt dataclass_def_stmt);
+  print_endline (Ast.show_stmt dataclass_def_stmt); *)
 
   (dc_name, dataclass_def_stmt)
 
@@ -93,17 +92,21 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
         (* Root name of the decl *)
         let { Uid.name = decl_name; view = _ } = decl_name_uid in
 
-        printf "Root name: %s\n" decl_name;
+        (* printf "Root name: %s\n" decl_name; *)
 
         (* TODO: move above extraction to single pattern match *)
 
         (* Handle rows *)
         let ((dc_names: string list), (dc_defs: Ast.stmt list)) =
           match ty_view_decl with
-          | Algebraic adt_rows ->
+          | Algebraic (adt_rows: (Uid.t, Type.t) Ty_view.adt_row list) ->
               let (dc_names, dc_defs) = adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split in
               (dc_names, dc_defs)
-          | _ -> failwith "WIP: not Algebraic"
+          | Record (rec_rows: (Uid.t, Type.t) Ty_view.rec_row list) ->
+            let _ = rec_rows in
+
+            failwith "WIP"
+          | _ -> failwith "WIP: not Algebraic and not Tuple"
         in
 
         let union_def = Ast.mk_union_def decl_name dc_names in
@@ -123,10 +126,10 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 -------------------- *)
 
 let%expect_test "parse decl art" =
-  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/record.yaml" in *)
-  (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" in *)
   let yaml_str =
-    CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml"
+    (* CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" *)
+    (* CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" *)
+      CCIO.File.read_exn "../test/data/decl/variant_recursive.yaml"
   in
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_two.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
@@ -184,36 +187,23 @@ let%expect_test "parse decl art" =
     (fun decl -> Format.fprintf fmt "%a@?" Pretty_print.pp_decl decl)
     decls;
   print_endline (Format.flush_str_formatter ());
-  [%expect
-    {|
-    name: variant_with_payload
+  [%expect {|
+    name: variant_recursive
     code:
-     type shape =
-    | Point
-    | Circle of int
-    | Rectangle of int * int
-    | Triangle of {a: int; b: int; c: int}
+     type tree =
+      | Leaf of int
+      | Node of tree * tree ;;
 
     <><><><><><><><><>
-    Root name: shape
-    Dataclass name: Point
-    Arg names:
-    Arg constr names:
-
-    (Ast_types.ClassDef
-       { Ast_types.name = "Point"; bases = []; keywords = [];
-         body = [Ast_types.Pass];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    Dataclass name: Circle
+    Root name: tree
+    Dataclass name: Leaf
     Arg names:
     arg0
     Arg constr names:
     int
 
     (Ast_types.ClassDef
-       { Ast_types.name = "Circle"; bases = []; keywords = [];
+       { Ast_types.name = "Leaf"; bases = []; keywords = [];
          body =
          [(Ast_types.AnnAssign
              { Ast_types.target =
@@ -225,63 +215,28 @@ let%expect_test "parse decl art" =
          decorator_list =
          [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
          })
-    Dataclass name: Rectangle
+    Dataclass name: Node
     Arg names:
     arg0
     arg1
     Arg constr names:
-    int
-    int
+    tree
+    tree
 
     (Ast_types.ClassDef
-       { Ast_types.name = "Rectangle"; bases = []; keywords = [];
+       { Ast_types.name = "Node"; bases = []; keywords = [];
          body =
          [(Ast_types.AnnAssign
              { Ast_types.target =
                (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
                annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
                value = None; simple = 1 });
            (Ast_types.AnnAssign
               { Ast_types.target =
                 (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
                 annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    Dataclass name: Triangle
-    Arg names:
-    a
-    b
-    c
-    Arg constr names:
-    int
-    int
-    int
-
-    (Ast_types.ClassDef
-       { Ast_types.name = "Triangle"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-               value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-                value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "c"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
                 value = None; simple = 1 })
            ];
          decorator_list =
@@ -289,13 +244,7 @@ let%expect_test "parse decl art" =
          })
     <><><><><><><><><>
     (Ast_types.ClassDef
-       { Ast_types.name = "Point"; bases = []; keywords = [];
-         body = [Ast_types.Pass];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    (Ast_types.ClassDef
-       { Ast_types.name = "Circle"; bases = []; keywords = [];
+       { Ast_types.name = "Leaf"; bases = []; keywords = [];
          body =
          [(Ast_types.AnnAssign
              { Ast_types.target =
@@ -308,44 +257,19 @@ let%expect_test "parse decl art" =
          [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
          })
     (Ast_types.ClassDef
-       { Ast_types.name = "Rectangle"; bases = []; keywords = [];
+       { Ast_types.name = "Node"; bases = []; keywords = [];
          body =
          [(Ast_types.AnnAssign
              { Ast_types.target =
                (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
                annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+               (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
                value = None; simple = 1 });
            (Ast_types.AnnAssign
               { Ast_types.target =
                 (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
                 annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    (Ast_types.ClassDef
-       { Ast_types.name = "Triangle"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-               value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-                value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "c"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load });
                 value = None; simple = 1 })
            ];
          decorator_list =
@@ -353,78 +277,44 @@ let%expect_test "parse decl art" =
          })
     (Ast_types.Assign
        { Ast_types.targets =
-         [(Ast_types.Name { Ast_types.id = "shape"; ctx = Ast_types.Load })];
+         [(Ast_types.Name { Ast_types.id = "tree"; ctx = Ast_types.Load })];
          value =
          (Ast_types.BinOp
             { Ast_types.left =
-              (Ast_types.BinOp
-                 { Ast_types.left =
-                   (Ast_types.BinOp
-                      { Ast_types.left =
-                        (Ast_types.Name
-                           { Ast_types.id = "Point"; ctx = Ast_types.Load });
-                        op = Ast_types.BitOr;
-                        right =
-                        (Ast_types.Name
-                           { Ast_types.id = "Circle"; ctx = Ast_types.Load })
-                        });
-                   op = Ast_types.BitOr;
-                   right =
-                   (Ast_types.Name
-                      { Ast_types.id = "Rectangle"; ctx = Ast_types.Load })
-                   });
+              (Ast_types.Name { Ast_types.id = "Leaf"; ctx = Ast_types.Load });
               op = Ast_types.BitOr;
               right =
-              (Ast_types.Name { Ast_types.id = "Triangle"; ctx = Ast_types.Load })
-              });
+              (Ast_types.Name { Ast_types.id = "Node"; ctx = Ast_types.Load }) });
          type_comment = None })
     <><><><><><><><><>
     Ty
       {
-      name = shape/LRvMhhEHMdTSx76rtFLbuIIlQvd6pf-4f4moqBZzlLk;
+      name = tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ;
       params = [];
       decl =
         Algebraic
           [{
-             c = Point/zmf0aqMC_axCmK7HHULw_vLRRPsZcYSY0rDnEfsNBH4;
-             labels = None;
-             args = [];
-             doc = None
-             };
-           {
-             c = Circle/SMNwkTSaN2qWlbF6hzAjvEZgnq8GAChMuxuLVuuQ0CI;
+             c = Leaf/pNHe6L6pvsfZE69W_N4yLtI5Q2EsG4ThVvhdFCRAESA;
              labels = None;
              args = [{ view = (Constr (int,[]));
                        generation = 1 }];
              doc = None
              };
            {
-             c = Rectangle/MhV0gfbrP5fVL3HBRcv_kIpiDQpIDYUqTG5xZPeKBFE;
+             c = Node/N_11cpq64YpTIQVNdkSYceke7CPFm0zzOlN2tEI-k1c;
              labels = None;
              args =
-               [{ view = (Constr (int,[]));
+               [{ view =
+                    (Constr
+                      (tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ,[]));
                   generation = 1 };
-                { view = (Constr (int,[]));
-                  generation = 1 }];
-             doc = None
-             };
-           {
-             c = Triangle/m10MbB_wDF6lzCDu31fUAid6KYjDtZfaoKdwopYRWMs;
-             labels =
-               (Some
-                 [a/LW4xXxrPKQVl9T6AgQwQ0vT7qFQVSzZ9_croJJv7CPs;
-                  b/XYqiqHuwZfky9w3RIahW_9PWastTQo_ux3y-7BJ5V6s;
-                  c/s7ipAMnTq9Um_H-PZpC39hw_wYNr2F5pDCJBknvEX4k]);
-             args =
-               [{ view = (Constr (int,[]));
-                  generation = 1 };
-                { view = (Constr (int,[]));
-                  generation = 1 };
-                { view = (Constr (int,[]));
+                { view =
+                    (Constr
+                      (tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ,[]));
                   generation = 1 }];
              doc = None
              }];
-      clique = None;
+      clique = (Some {tree/uuyiC6ZaWaRDm-BatXWHx9fXnlIUu6sCZgpmjUkMFAQ});
       timeout = None
       }
     |}]

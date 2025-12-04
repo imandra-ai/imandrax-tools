@@ -4,6 +4,7 @@ open Parse_common
 include Parse_term
 include Parse_model
 include Parse_fun_decomp
+include Parse_decl
 
 (* Expect tests
 ==================== *)

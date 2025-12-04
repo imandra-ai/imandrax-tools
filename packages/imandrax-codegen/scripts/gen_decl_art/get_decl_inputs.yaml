@@ -73,6 +73,14 @@
     # Note: we keep the original name (lower case)
     shape = Point | Circle | Rectangle | Triangle
 
+- name: variant_with_composite_payload
+  iml: |
+    type shape =
+    | Circle of int option
+  req_kwargs:
+    names:
+      - shape
+
 - name: variant_two
   iml: |
     type rect =
@@ -105,6 +113,17 @@
   req_kwargs:
     names:
       - tree
+  expected_python_code: |
+    @dataclass
+    class Leaf:
+        arg0: int
+
+    @dataclass
+    class Node:
+        arg0: tree
+        arg1: tree
+
+    tree = Leaf | Node
 
 - name: GADT_monomorphic
   iml: |
