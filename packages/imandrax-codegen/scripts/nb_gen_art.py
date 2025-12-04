@@ -6,6 +6,7 @@ from pathlib import Path
 
 from imandrax_api import Client, url_dev, url_prod
 from imandrax_api.lib import read_artifact_data
+from imandrax_api_models.client import ImandraXClient
 from IPython.core.getipython import get_ipython
 from rich import print
 

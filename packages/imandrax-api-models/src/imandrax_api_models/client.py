@@ -65,14 +65,12 @@ if TYPE_CHECKING:
         ) -> InstanceRes: ...
         async def __aenter__(self) -> Self: ...
         async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
-
 else:
     from imandrax_api import AsyncClient
 
 logger = structlog.get_logger(__name__)
 
 
-# ====================
 # Extended client definition
 # ====================
 
@@ -284,7 +282,6 @@ class ImandraXAsyncClient(AsyncClient):
         return await self.eval_src(src=iml, timeout=timeout)
 
 
-# ====================
 # Helpers for creating client
 # ====================
 
