@@ -1,3 +1,5 @@
+from imandrax_api.lib import RegionStr
+
 from .artmsg import Art, StorageEntry
 from .error import Error, ErrorKind, ErrorMessage
 from .locs import Location, Position
@@ -9,6 +11,8 @@ from .simple_api import (
     EvalOutput,
     EvalRes,
     EvalSrcReq,
+    GetDeclsReq,
+    GetDeclsRes,
     InferredType,
     InstanceNameReq,
     InstanceRes,
@@ -21,7 +25,6 @@ from .simple_api import (
     PO_Res,
     Proved,
     Refuted,
-    RegionStr,
     Sat,
     SessionCreateReq,
     TypecheckReq,
@@ -47,6 +50,8 @@ __all__ = [
     'EvalOutput',
     'EvalRes',
     'EvalSrcReq',
+    'GetDeclsReq',
+    'GetDeclsRes',
     'InferredType',
     'InstanceNameReq',
     'InstanceRes',

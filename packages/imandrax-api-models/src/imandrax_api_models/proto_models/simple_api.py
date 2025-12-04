@@ -430,6 +430,21 @@ class TypecheckRes(TypecheckResProto):
         return v
 
 
+class GetDeclsReq(BaseModel):
+    name: list[str]
+
+
+class DeclWithName(BaseModel):
+    name: str
+    artifact: Art
+    str_: str | None = Field(default=None, alias='str')
+
+
+class GetDeclsRes(BaseModel):
+    decls: list[DeclWithName]
+    not_found: list[str]
+
+
 class OneshotReq(BaseModel):
     input: str = Field(description='some iml code')
     timeout: float | None = Field(default=None)
