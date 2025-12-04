@@ -6,7 +6,7 @@ from pathlib import Path
 
 from imandrax_api import Client, url_dev, url_prod
 from imandrax_api.lib import read_artifact_data
-from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from IPython.core.getipython import get_ipython
 from rich import print
 
@@ -33,33 +33,48 @@ dotenv.load_dotenv('../.env')
 
 
 # %%
-c = Client(
+c = ImandraXClient(
     auth_token=os.environ['IMANDRAX_API_KEY'],
     url=url_dev,
 )
 
 # %%
 iml = """\
-type shape =
-| Point
-| Circle of int
-| Rectangle of int * int
-| Triangle of {a: int; b: int; c: int}"""
+type direction = North | South | East | West
 
-iml = """\
-type rect =
-| Rectangle of int * int
-| Square of int
+type position = { x: int; y: int; z: real }
 
-type shape =
-| Circle of int
-| Polygon of rect"""
+type movement =
+  | Stay of position
+  | Move of position * direction
 
+let move = fun w ->
+  match w with
+  | Stay p -> p
+  | Move (p, d) ->
+    let x, y, z = p.x, p.y, p.z in
+    let x, y, z =
+      match d with
+      | North -> (x, y+1, z)
+      | South -> (x, y-1, z)
+      | East -> (x+1, y, z)
+      | West -> (x-1, y, z)
+    in
+    { x; y; z }\
+"""
 
-name = 'movement'
+name = 'move'
 eval_res = c.eval_src(iml)
-gd_res_proto = c.get_decls(names=['shape'])
-gd_res = proto_to_dict(gd_res_proto)
+
+# %%
+tc_res = c.typecheck(iml)
+print(tc_res)
+
+# %%
+
+gd_res = c.get_decls(names=['movement'])
+gd_res
+
 
 # %%
 gd_res

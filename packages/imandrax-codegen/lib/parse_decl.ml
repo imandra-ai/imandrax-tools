@@ -141,7 +141,8 @@ let%expect_test "parse decl art" =
     (* CCIO.File.read_exn "../test/data/decl/variant_simple.yaml" *)
     (* CCIO.File.read_exn "../test/data/decl/variant_with_payload.yaml" *)
     (* CCIO.File.read_exn "../test/data/decl/variant_recursive.yaml" *)
-    CCIO.File.read_exn "../test/data/decl/record.yaml"
+    (* CCIO.File.read_exn "../test/data/decl/record.yaml" *)
+      CCIO.File.read_exn "../test/data/decl/function.yaml"
   in
   (* let yaml_str = CCIO.File.read_exn "../test/data/decl/variant_two.yaml" in *)
   let (yaml : Yaml.value) = Yaml.of_string_exn yaml_str in
@@ -200,58 +201,43 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
-  [%expect {|
-    name: record
-    code:
-     type point = { x: int; y: int }
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  (Failure "WIP: Fun")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Imandrax_codegen__Parse_decl.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 197, characters 15-33
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
 
-    let distance_category = fun p ->
-      let sum = p.x + p.y in
-      if sum < 0 then "negative"
-      else if sum = 0 then "origin"
-      else "positive"
+  Trailing output
+  ---------------
+  name: function
+  code:
 
-    <><><><><><><><><>
-    Ty
-      {
-      name = point/4N82zNFBEhrlrmHNKK_4jDYtpXt8hvmRWC4-N437xp8;
-      params = [];
-      decl =
-        Record
-          [{
-             f = x/40plBYPa-nKP5TMortqhgELkBB1Ekmxx-T83mnr6Rlk;
-             ty = { view = (Constr (int,[]));
-                    generation = 1 };
-             doc = None
-             };
-           {
-             f = y/2q8uB6Fb8Uwf-NuF89IsRU8PWpxeLPDxZB2Kk_W6oqE;
-             ty = { view = (Constr (int,[]));
-                    generation = 1 };
-             doc = None
-             }];
-      clique = None;
-      timeout = None
-      }
-    <><><><><><><><><>
-    (Ast_types.ClassDef
-       { Ast_types.name = "point"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "x"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-               value = None; simple = 1 });
-           (Ast_types.AnnAssign
-              { Ast_types.target =
-                (Ast_types.Name { Ast_types.id = "y"; ctx = Ast_types.Load });
-                annotation =
-                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    <><><><><><><><><>
-    |}]
+  type direction = North | South | East | West
+
+  type position = { x: int; y: int; z: real }
+
+  type movement =
+    | Stay of position
+    | Move of position * direction
+
+  let move = fun w ->
+    match w with
+    | Stay p -> p
+    | Move (p, d) ->
+      let x, y, z = p.x, p.y, p.z in
+      let x, y, z =
+        match d with
+        | North -> (x, y+1, z)
+        | South -> (x, y-1, z)
+        | East -> (x+1, y, z)
+        | West -> (x-1, y, z)
+      in
+      { x; y; z }
+
+  <><><><><><><><><>
+  (* Other Decl variants not implemented yet *)
+  |}]
