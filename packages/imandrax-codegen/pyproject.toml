@@ -31,18 +31,8 @@ dev = [
 package = true
 
 [tool.uv.sources]
-<<<<<<< HEAD
 # imandrax-api-model = { path = "../imandrax-api-model" }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
-=======
-imandrax-api-model = { path = "../imandrax-api-model" }
->>>>>>> 6b0ab2e (deps(py): add imandrax-api-model to dev)
-# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
-
-[tool.uv.workspace]
-members = [
-    "scripts",
-]
 
 [tool.uv.workspace]
 members = [
