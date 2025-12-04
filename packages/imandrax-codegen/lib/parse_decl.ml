@@ -233,7 +233,6 @@ let%expect_test "parse decl art" =
       clique = None;
       timeout = None
       }
-    Root name: point
     <><><><><><><><><>
     (Ast_types.ClassDef
        { Ast_types.name = "point"; bases = []; keywords = [];
