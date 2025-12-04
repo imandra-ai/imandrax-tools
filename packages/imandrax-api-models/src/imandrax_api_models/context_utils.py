@@ -203,7 +203,7 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
 # ====================
 
 
-def _remove_art_fields(data: dict[str, Any]) -> dict[str, Any]:
+def remove_art_and_task_fields(data: dict[str, Any]) -> dict[str, Any]:
     """Resursively look inside a dict for certain keys and remove it."""
     data = data.copy()
     remove_fields = ['artifact', 'task']
@@ -213,7 +213,7 @@ def _remove_art_fields(data: dict[str, Any]) -> dict[str, Any]:
             data.pop(k)
         elif isinstance(v, dict):
             v = cast(dict[str, Any], v)
-            data[k] = _remove_art_fields(v)
+            data[k] = remove_art_and_task_fields(v)
     return data
 
 
@@ -228,12 +228,12 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
     res = vg_res.res
     data = res.model_dump()
 
-    data = _remove_art_fields(data)
+    data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
 
 
 def format_decomp_res(decomp_res: DecomposeRes) -> str:
     data = decomp_res.model_dump()
 
-    data = _remove_art_fields(data)
+    data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
