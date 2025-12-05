@@ -51,6 +51,7 @@ exclude = [
 
 [tool.ruff.format]
 docstring-code-format = true
+quote-style = "single"
 
 [tool.ruff.lint]
 select = [
@@ -106,6 +107,8 @@ ignore = [
   "RUF013",
   "E266",
   "RUF036",
+  # ====================
+  "F401",
 ]
 task-tags = ["HACK"]
 pycodestyle.ignore-overlong-task-comments = true
