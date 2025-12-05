@@ -50,7 +50,9 @@ def instance_capture_to_req(
     node = capture.instance_statement
     req: dict[str, str] = {}
     assert node.type == 'instance_statement', 'not instance_statement'
-    instance_src = unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
+    instance_src = (
+        unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
+    )
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()

@@ -110,16 +110,24 @@ instance (fun x -> x > 0) [@@by auto]
     verify_capture = VerifyCapture.from_ts_capture(verify_matches[0][1])
 
     # verify_statement should include the attribute
-    assert verify_capture.verify_statement.text == b'verify (fun x y -> x > 0) [@@by auto]'
+    assert (
+        verify_capture.verify_statement.text
+        == b'verify (fun x y -> x > 0) [@@by auto]'
+    )
     # verify_expr should exclude the attribute
     assert verify_capture.verify_expr.text == b'(fun x y -> x > 0)'
 
     # Test INSTANCE query
-    instance_matches = run_query(mk_query(INSTANCE_QUERY_SRC), node=tree.root_node)
+    instance_matches = run_query(
+        mk_query(INSTANCE_QUERY_SRC), node=tree.root_node
+    )
     assert len(instance_matches) == 1
     instance_capture = InstanceCapture.from_ts_capture(instance_matches[0][1])
 
     # instance_statement should include the attribute
-    assert instance_capture.instance_statement.text == b'instance (fun x -> x > 0) [@@by auto]'
+    assert (
+        instance_capture.instance_statement.text
+        == b'instance (fun x -> x > 0) [@@by auto]'
+    )
     # instance_expr should exclude the attribute
     assert instance_capture.instance_expr.text == b'(fun x -> x > 0)'
