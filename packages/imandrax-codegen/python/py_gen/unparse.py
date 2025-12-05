@@ -36,6 +36,7 @@ def remove_unused_import(code: str) -> str:
     try:
         result = subprocess.run(
             [ruff_bin, 'check', '--select', 'F401', '--fix', '-'],
+            check=False,
             input=code,
             capture_output=True,
             text=True,
@@ -85,12 +86,18 @@ def unparse(
     """Convert custom AST to Python source code using stdlib ast.unparse."""
     stdlib_stmts: list[stdlib_ast.stmt] = to_stdlib(nodes)
 
+    future_annotations_import = stdlib_ast.ImportFrom(
+        module='__future__',
+        names=[stdlib_ast.alias(name='annotations', asname=None)],
+        level=0,
+    )
     dataclass_import = stdlib_ast.ImportFrom(
         module='dataclasses',
         names=[stdlib_ast.alias(name='dataclass', asname=None)],
         level=0,
     )
-    body = [dataclass_import, *stdlib_stmts]
+
+    body = [future_annotations_import, dataclass_import, *stdlib_stmts]
 
     module = stdlib_ast.Module(body=body, type_ignores=[])
     stdlib_ast.fix_missing_locations(module)
