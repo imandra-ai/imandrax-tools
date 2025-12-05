@@ -1,0 +1,13 @@
+let add x y = x + y
+
+
+let add_pos = (fun x y -> x > 0 ==> add x y > y)
+
+verify (fun x y -> x > 0 ==> add x y > y)
+
+verify add_pos
+
+verify (fun x y -> x > 0 ==> add x y > y) [@@by auto]
+
+
+verify (fun x y -> x > 0 ==> add x y > y) [@@by auto]
