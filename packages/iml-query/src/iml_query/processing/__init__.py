@@ -62,13 +62,7 @@ def extract_opaque_function_names(iml: str) -> list[str]:
 
 def eval_capture_to_src(capture: EvalCapture) -> str:
     """Extract str from an eval statement node."""
-    src = (
-        unwrap_bytes(capture.eval.text)
-        .decode('utf-8')
-        .strip()
-        .removeprefix('eval')
-        .strip()
-    )
+    src = unwrap_bytes(capture.eval_expr.text).decode('utf-8').strip()
     # Remove parentheses
     if src.startswith('(') and src.endswith(')'):
         src = src[1:-1].strip()

@@ -47,13 +47,21 @@ class VerifyCapture(BaseCapture):
 
 
 INSTANCE_QUERY_SRC = r"""
-(instance_statement) @instance
+(instance_statement
+    ; `.` means "immediately followed by"
+    "instance" .
+    ; `(_)` captures whatever named node
+    (_) @instance_expr
+) @instance_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
 class InstanceCapture(BaseCapture):
-    instance: Node
+    instance_statement: Node  # the entire `instance` statement
+    instance_expr: (
+        Node  # the expression after `instance`, excluding item attributes
+    )
 
 
 AXIOM_QUERY_SRC = r"""
@@ -100,13 +108,19 @@ class DecompCapture(BaseCapture):
 
 
 EVAL_QUERY_SRC = r"""
-(eval_statement) @eval
+(eval_statement
+    ; `.` means "immediately followed by"
+    "eval" .
+    ; `(_)` captures whatever named node
+    (_) @eval_expr
+) @eval_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
 class EvalCapture(BaseCapture):
-    eval: Node
+    eval_statement: Node  # the entire `eval` statement
+    eval_expr: Node  # the expression after `eval`, excluding item attributes
 
 
 # TODO:

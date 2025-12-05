@@ -47,17 +47,10 @@ def instance_capture_to_req(
     capture: InstanceCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from an instance statement node."""
-    node = capture.instance
+    node = capture.instance_statement
     req: dict[str, str] = {}
     assert node.type == 'instance_statement', 'not instance_statement'
-    assert node.text, 'None text'
-    instance_src = (
-        unwrap_bytes(node.text)
-        .decode('utf-8')
-        .strip()
-        .removeprefix('instance')
-        .strip()
-    )
+    instance_src = unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()
@@ -105,7 +98,7 @@ def _remove_instance_reqs(
     captures: list[InstanceCapture],
 ) -> tuple[str, Tree]:
     """Remove instance requests from IML code."""
-    instance_nodes = [capture.instance for capture in captures]
+    instance_nodes = [capture.instance_statement for capture in captures]
     new_iml, new_tree = delete_nodes(iml, tree, nodes=instance_nodes)
     return new_iml, new_tree
 
