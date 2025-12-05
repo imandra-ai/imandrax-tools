@@ -1,8 +1,7 @@
 include Ast_types
 
-
 (* Create a list of anonymous argument names *)
-let anonymous_arg_names (i: int) : string list =
+let anonymous_arg_names (i : int) : string list =
   List.init i (fun i -> "arg" ^ string_of_int i)
 
 let%expect_test "anonymous_arg_names" =
@@ -24,39 +23,34 @@ Specifically:
 *)
 let mk_ann_assign_simple_flat () = 1
 let mk_bool_expr (b : bool) : expr = Constant { value = Bool b; kind = None }
-let mk_string_expr (s : string) : expr = Constant { value = String s; kind = None }
+
+let mk_string_expr (s : string) : expr =
+  Constant { value = String s; kind = None }
+
 let mk_name_expr (id : string) : expr = Name { id; ctx = mk_ctx () }
 
 (* Convert 8-bit bool list to a char *)
 let bools_to_char (bools : bool list) : char =
   if List.length bools <> 8 then
     invalid_arg "bools_to_char: list must contain exactly 8 booleans"
-  else (
+  else
     let rec bools_to_int acc = function
       | [] -> acc
       | b :: rest ->
-        let bit =
-          if b then
-            1
-          else
-            0
-        in
-        bools_to_int ((acc lsl 1) lor bit) rest
+          let bit = if b then 1 else 0 in
+          bools_to_int ((acc lsl 1) lor bit) rest
     in
     let ascii_value = bools_to_int 0 bools in
     Char.chr ascii_value
-  )
 
 (* Convert a char to a list of bools *)
 let bools_of_char (c : char) : bool list =
   let ascii_value = Char.code c in
   let rec int_to_bools acc n bit_pos =
-    if bit_pos < 0 then
-      acc
-    else (
+    if bit_pos < 0 then acc
+    else
       let bit = (n lsr bit_pos) land 1 in
       int_to_bools ((bit = 1) :: acc) n (bit_pos - 1)
-    )
   in
   int_to_bools [] ascii_value 7
 
@@ -122,10 +116,9 @@ let empty_arguments () : arguments =
 (* Constructor APIs
 ==================== *)
 
-
 (* Type view constructor name to Python type name *)
 let ty_view_constr_name_mapping : (string * string) list =
-  [ "int", "int"; "bool", "bool"; "string", "str" ]
+  [ ("int", "int"); ("bool", "bool"); ("string", "str"); ("real", "float") ]
 
 (* Create an assign statement from a target (LHS), an optional type annotation, and a value (RHS)
 
@@ -137,13 +130,13 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
   match type_annotation with
   | None -> Assign { targets = [ target ]; value; type_comment = None }
   | Some type_annotation ->
-    AnnAssign
-      {
-        target;
-        annotation = type_annotation;
-        value = Some value;
-        simple = mk_ann_assign_simple_flat ();
-      }
+      AnnAssign
+        {
+          target;
+          annotation = type_annotation;
+          value = Some value;
+          simple = mk_ann_assign_simple_flat ();
+        }
 
 (* Create a dataclass definition statement from its name and rows of fields
 
@@ -167,16 +160,16 @@ let mk_dataclass_def (name : string) (rows : (string * string) list) : stmt =
     match rows with
     | [] -> [ Pass ]
     | _ ->
-      List.map
-        (fun (tgt, ann) ->
-          AnnAssign
-            {
-              target = Name { id = tgt; ctx = mk_ctx () };
-              annotation = Name { id = ann; ctx = mk_ctx () };
-              value = None;
-              simple = mk_ann_assign_simple_flat ();
-            })
-        rows
+        List.map
+          (fun (tgt, ann) ->
+            AnnAssign
+              {
+                target = Name { id = tgt; ctx = mk_ctx () };
+                annotation = Name { id = ann; ctx = mk_ctx () };
+                value = None;
+                simple = mk_ann_assign_simple_flat ();
+              })
+          rows
   in
   ClassDef
     {
@@ -212,20 +205,21 @@ let mk_union_def (name : string) (union_names : string list) : stmt =
     | [] -> invalid_arg "def_union: empty union"
     | [ single ] -> Name { id = single; ctx = mk_ctx () }
     | _ ->
-      let component_exprs : expr list =
-        List.map
-          (fun component_name -> Name { id = component_name; ctx = mk_ctx () })
-          union_names
-      in
-      let rec mk_union (components : expr list) : expr =
-        match components with
-        | [] | [ _ ] -> invalid_arg "mk_union: need at least 2 elements"
-        | [ left; right ] -> BinOp { left; op = BitOr; right }
-        | left :: right :: rest ->
-          let merged_left_and_right = BinOp { left; op = BitOr; right } in
-          mk_union (merged_left_and_right :: rest)
-      in
-      mk_union component_exprs
+        let component_exprs : expr list =
+          List.map
+            (fun component_name ->
+              Name { id = component_name; ctx = mk_ctx () })
+            union_names
+        in
+        let rec mk_union (components : expr list) : expr =
+          match components with
+          | [] | [ _ ] -> invalid_arg "mk_union: need at least 2 elements"
+          | [ left; right ] -> BinOp { left; op = BitOr; right }
+          | left :: right :: rest ->
+              let merged_left_and_right = BinOp { left; op = BitOr; right } in
+              mk_union (merged_left_and_right :: rest)
+        in
+        mk_union component_exprs
   in
   Assign { targets = left_targets; value = right_value; type_comment = None }
 
@@ -247,7 +241,7 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
     let name = fst variant in
     let rows : (string * string) list =
       List.mapi
-        (fun i type_name -> "arg" ^ string_of_int i, type_name)
+        (fun i type_name -> ("arg" ^ string_of_int i, type_name))
         (snd variant)
     in
     mk_dataclass_def name rows
@@ -258,8 +252,8 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
   constructor_defs @ [ mk_union_def name variant_names ]
 
 (* Create a defaultdict type annotation from its key and value types *)
-let mk_defaultdict_type_annotation (key_type : string) (value_type : string) : expr
-    =
+let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
+    expr =
   Subscript
     {
       value = Name { id = "defaultdict"; ctx = mk_ctx () };
@@ -273,8 +267,9 @@ let mk_defaultdict_type_annotation (key_type : string) (value_type : string) : e
     }
 
 (* Initiate a defaultdict instance *)
-let mk_defaultdict_value (default_value : expr) (key_val_pairs : (expr * expr) list)
-    : expr =
+let mk_defaultdict_value
+    (default_value : expr)
+    (key_val_pairs : (expr * expr) list) : expr =
   let mk_no_arg_lambda ret : expr =
     Lambda { args = empty_arguments (); body = ret }
   in
@@ -291,8 +286,7 @@ let mk_defaultdict_value (default_value : expr) (key_val_pairs : (expr * expr) l
       args =
         (if List.length key_val_pairs = 0 then
            [ mk_no_arg_lambda default_value ]
-         else
-           [ mk_no_arg_lambda default_value; mk_dict key_val_pairs ]);
+         else [ mk_no_arg_lambda default_value; mk_dict key_val_pairs ]);
       keywords = [];
     }
 
@@ -368,12 +362,12 @@ let mk_test_function_def
     match docstr with
     | None -> [ assign_call_result; assign_expected; assert_eq ]
     | Some docstr ->
-      [
-        ExprStmt { value = Constant { value = String docstr; kind = None } };
-        assign_call_result;
-        assign_expected;
-        assert_eq;
-      ]
+        [
+          ExprStmt { value = Constant { value = String docstr; kind = None } };
+          assign_call_result;
+          assign_expected;
+          assert_eq;
+        ]
   in
   FunctionDef
     {
@@ -486,11 +480,10 @@ let mk_test_data_dict
       annotation = agg_dict_type_annot;
       value = Some agg_dict;
       simple = 1;
-    };;
+    }
 
 (* Expect test
 ==================== *)
-
 
 let%expect_test "bool list expr to string" =
   let bools = [ false; true; false; false; false; false; false; true ] in
