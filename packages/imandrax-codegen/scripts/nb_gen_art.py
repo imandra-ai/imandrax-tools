@@ -1,7 +1,6 @@
 # pyright: basic
 # %%
 import subprocess
-from dataclasses import asdict
 from typing import cast
 
 from imandrax_api import url_dev
@@ -25,6 +24,8 @@ from rich import print
 if ip := get_ipython():
     ip.run_line_magic('reload_ext', 'autoreload')
     ip.run_line_magic('autoreload', '2')
+import base64
+import json
 import os
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,8 @@ from typing import Any
 import dotenv
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
+from py_gen.ast_deserialize import load_from_json_string
+from py_gen.unparse import unparse
 
 curr_dir = Path.cwd() if ip else Path(__file__).parent
 
@@ -42,6 +45,36 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
         preserving_proto_field_name=True,
         always_print_fields_with_no_presence=True,
     )
+
+
+def convert_to_standard_base64(data: str | bytes) -> str:
+    """Convert bytes or URL-safe base64 string to standard base64.
+
+    Handles two cases:
+    1. If data is bytes: directly encode to standard base64
+    2. If data is a URL-safe base64 string: convert to standard base64
+
+    Pydantic serializes bytes as URL-safe base64 (using - and _ instead of + and /),
+    but OCaml's Base64.decode_exn expects standard base64 encoding.
+
+    Args:
+        data: Either raw bytes or URL-safe base64 string
+
+    Returns:
+        Standard base64 string
+    """
+    if isinstance(data, bytes):
+        # Directly encode bytes to standard base64
+        return base64.b64encode(data).decode('ascii')
+
+    # It's a string - assume it's URL-safe base64
+    # Add padding if needed
+    padding = (4 - len(data) % 4) % 4
+    urlsafe_b64_padded = data + ('=' * padding)
+
+    # Decode URL-safe and re-encode as standard base64
+    decoded_bytes = base64.urlsafe_b64decode(urlsafe_b64_padded)
+    return base64.b64encode(decoded_bytes).decode('ascii')
 
 
 dotenv.load_dotenv()
@@ -88,7 +121,36 @@ decomp_res = c.decompose(fun_name)
 # %%
 art = decomp_res.artifact
 assert art
-art_json = art.model_dump_json()
+
+art_dict = art.model_dump()
+art_dict['data'] = convert_to_standard_base64(art_dict['data'])
+
+# Convert storage entries if any
+for entry in art_dict.get('storage', []):
+    if 'value' in entry:
+        entry['value'] = convert_to_standard_base64(entry['value'])
+
+art_json = json.dumps(art_dict)
+
+
+# %%
+
+# Pipe to the executable
+result = subprocess.run(
+    [
+        CODEGEN_EXE_PATH,
+        '-',
+        '-',
+        '--mode',
+        'fun-decomp',
+    ],
+    check=False,
+    input=art_json,
+    text=True,
+    capture_output=True,
+)
+ast_stmts = load_from_json_string(result.stdout)
+print(unparse(ast_stmts))
 
 
 # %%
@@ -126,7 +188,7 @@ func_ty_view: Ty_view_view[None, Mir_Type_var, Mir_Type] = func_ty.view
 
 
 # %%
-print(asdict(art).keys())
+# print(asdict(art).keys())  # art is not a dataclass
 
 
 # %%
