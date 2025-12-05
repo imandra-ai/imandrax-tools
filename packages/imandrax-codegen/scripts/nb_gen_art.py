@@ -1,5 +1,6 @@
 # pyright: basic
 # %%
+import subprocess
 from dataclasses import asdict
 from typing import cast
 
@@ -22,14 +23,17 @@ from IPython.core.getipython import get_ipython
 from rich import print
 
 if ip := get_ipython():
-    ip.run_line_magic("reload_ext", "autoreload")
-    ip.run_line_magic("autoreload", "2")
+    ip.run_line_magic('reload_ext', 'autoreload')
+    ip.run_line_magic('autoreload', '2')
 import os
+from pathlib import Path
 from typing import Any
 
 import dotenv
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
+
+curr_dir = Path.cwd() if ip else Path(__file__).parent
 
 
 def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
@@ -40,12 +44,12 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
     )
 
 
-dotenv.load_dotenv("../.env")
+dotenv.load_dotenv()
+PROJECT_DIR = curr_dir / '..'
+CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
 
-
-# %%
 c = ImandraXClient(
-    auth_token=os.environ["IMANDRAX_API_KEY"],
+    auth_token=os.environ['IMANDRAX_API_KEY'],
     url=url_dev,
 )
 
@@ -74,12 +78,20 @@ let move = fun w ->
     { x; y; z }\
 """
 
-name = "move"
+name = 'move'
 eval_res = c.eval_src(iml)
 
 # %%
-tc_res = c.typecheck(iml)
-print(tc_res)
+fun_name = 'move'
+decomp_res = c.decompose(fun_name)
+
+# %%
+art = decomp_res.artifact
+assert art
+art_json = art.model_dump_json()
+
+
+# %%
 
 
 # %%
@@ -88,17 +100,17 @@ def get_fun_arg_types(fun_name: str, iml: str) -> list[str] | None:
     name_ty_map = {ty.name: ty.ty for ty in tc_res.types}
     if fun_name not in name_ty_map:
         return None
-    return list(map(lambda s: s.strip(), name_ty_map[fun_name].split("->")))
+    return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
 
 
-get_fun_arg_types("move", iml)
-
-# %%
-
+get_fun_arg_types('move', iml)
 
 # %%
-gd_res = c.get_decls(names=["movement", "move"])
-decl = [decl for decl in gd_res.decls if decl.name == "move"][0]
+
+
+# %%
+gd_res = c.get_decls(names=['movement', 'move'])
+decl = [decl for decl in gd_res.decls if decl.name == 'move'][0]  # noqa: RUF015
 art = decl.artifact
 mir_decl: Artifact = read_artifact_data(art.data, art.kind)
 mir_decl = cast(Mir_Decl, mir_decl)
@@ -125,7 +137,7 @@ def parse_decl_fun(mir_decl: Artifact) -> tuple[str, list[str]]:
         tuple[str, list[str]]: The function name and the list of argument types.
     """
     if not isinstance(mir_decl, Common_Decl_t_poly_Fun):
-        raise TypeError(f"Expected Mir_Decl.Fun_def, got {type(mir_decl)}")
+        raise TypeError(f'Expected Mir_Decl.Fun_def, got {type(mir_decl)}')
     fun_def: Fun_def = mir_decl.arg
     func_name: str = fun_def.f_name.name
 
@@ -151,7 +163,7 @@ def unpack_arrow(
                 uid, _ = left_view.args
                 result.append(uid.name)
             else:
-                raise ValueError("Never: left of arrow type view should be a constr")
+                raise ValueError('Never: left of arrow type view should be a constr')
             # Recurse on right_t (which is a Mir_Type)
             helper(right_t.view)
         elif isinstance(view, Ty_view_view_Constr):
@@ -159,7 +171,7 @@ def unpack_arrow(
             result.append(uid.name)
         else:
             raise ValueError(
-                "Never: arrow type view should be either a constr or an arrow"
+                'Never: arrow type view should be either a constr or an arrow'
             )
 
     helper(ty_view)
