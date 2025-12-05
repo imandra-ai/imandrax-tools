@@ -29,13 +29,21 @@ class BaseCapture:
 
 
 VERIFY_QUERY_SRC = r"""
-(verify_statement) @verify
+(verify_statement
+    ; `.` means "immediately followed by"
+    "verify" .
+    ; `(_)` captures whatever named node
+    (_) @verify_expr
+) @verify_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
 class VerifyCapture(BaseCapture):
-    verify: Node
+    verify_statement: Node  # the entire `verify` statement
+    verify_expr: (
+        Node  # the expression after `verify`, excluding item attributes
+    )
 
 
 INSTANCE_QUERY_SRC = r"""

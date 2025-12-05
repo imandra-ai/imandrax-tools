@@ -218,7 +218,7 @@ verify (fun y -> y < 0 ==> double y < y)
 
     # Find all verify statements
     matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
-    verify_nodes = [capture['verify'][0] for _, capture in matches]
+    verify_nodes = [capture['verify_statement'][0] for _, capture in matches]
 
     # Delete all verify statements
     new_iml, _new_tree = delete_nodes(iml, tree, nodes=verify_nodes)
