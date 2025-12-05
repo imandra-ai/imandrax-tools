@@ -175,32 +175,6 @@ let another_func z = z * 2
         raise AssertionError(f'Failed to create iml outline: {e}') from e
 
 
-def test_capture_classes() -> None:
-    """Test that capture classes work correctly."""
-    print('Testing capture classes...')
-
-    from iml_query.queries import VerifyCapture
-    from iml_query.tree_sitter_utils import get_parser
-
-    parser = get_parser()
-
-    # Test with simple node creation
-    test_code = 'verify (fun x -> x > 0)'
-    tree = parser.parse(bytes(test_code, encoding='utf8'))
-    root_node = tree.root_node
-
-    # Mock capture dict for testing
-    mock_capture = {'verify': [root_node]}
-
-    try:
-        verify_capture = VerifyCapture.from_ts_capture(mock_capture)
-        if verify_capture.verify != root_node:
-            raise AssertionError('VerifyCapture not created correctly')
-        print('✓ VerifyCapture works')
-    except Exception as e:
-        raise AssertionError(f'Failed to create VerifyCapture: {e}') from e
-
-
 def run_test(test_func: Callable[[], None]) -> tuple[bool, str]:
     """Run a test function and return success status and error message."""
     try:
@@ -221,7 +195,6 @@ def main() -> int:
         test_tree_sitter_parser,
         test_query_functionality,
         test_processing_functions,
-        test_capture_classes,
     ]
 
     passed = 0

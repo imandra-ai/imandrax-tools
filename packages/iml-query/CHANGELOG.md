@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## v0.5.1 - 2025.11.21
+- fixed:
+  - exclude item attribute when extracting VG source 
+
 ## v0.5.0 - 2025.11.21
 - improved documentations
 - changed:

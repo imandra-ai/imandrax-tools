@@ -28,22 +28,18 @@ def verify_capture_to_req(
     capture: VerifyCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from a verify statement node."""
-    node = capture.verify
+    node = capture.verify_expr
     req: dict[str, str] = {}
-    assert node.type == 'verify_statement', 'not verify_statement'
-    assert node.text, 'None text'
-    verify_src = (
-        unwrap_bytes(node.text)
-        .decode('utf-8')
-        .strip()
-        .removeprefix('verify')
-        .strip()
-    )
-    # Remove parentheses
-    if verify_src.startswith('(') and verify_src.endswith(')'):
-        verify_src = verify_src[1:-1].strip()
+    src_raw = unwrap_bytes(node.text).decode('utf-8')
 
-    req['src'] = verify_src
+    # Trim and remove parentheses
+    src_trimmed = src_raw.strip()
+    if src_trimmed.startswith('(') and src_trimmed.endswith(')'):
+        src = src_trimmed[1:-1].strip()
+    else:
+        src = src_trimmed
+
+    req['src'] = src
     return (cast(VerifyReqArgs, req), node.range)
 
 
@@ -51,16 +47,11 @@ def instance_capture_to_req(
     capture: InstanceCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from an instance statement node."""
-    node = capture.instance
+    node = capture.instance_statement
     req: dict[str, str] = {}
     assert node.type == 'instance_statement', 'not instance_statement'
-    assert node.text, 'None text'
     instance_src = (
-        unwrap_bytes(node.text)
-        .decode('utf-8')
-        .strip()
-        .removeprefix('instance')
-        .strip()
+        unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
     )
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
@@ -75,8 +66,8 @@ def _remove_verify_reqs(
     captures: list[VerifyCapture],
 ) -> tuple[str, Tree]:
     """Remove verify requests from IML code."""
-    verify_nodes = [capture.verify for capture in captures]
-    new_iml, new_tree = delete_nodes(iml, tree, nodes=verify_nodes)
+    verify_stmt_nodes = [capture.verify_statement for capture in captures]
+    new_iml, new_tree = delete_nodes(iml, tree, nodes=verify_stmt_nodes)
     return new_iml, new_tree
 
 
@@ -109,7 +100,7 @@ def _remove_instance_reqs(
     captures: list[InstanceCapture],
 ) -> tuple[str, Tree]:
     """Remove instance requests from IML code."""
-    instance_nodes = [capture.instance for capture in captures]
+    instance_nodes = [capture.instance_statement for capture in captures]
     new_iml, new_tree = delete_nodes(iml, tree, nodes=instance_nodes)
     return new_iml, new_tree
 

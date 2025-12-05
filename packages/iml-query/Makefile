@@ -1,6 +1,5 @@
-.PHONY: write-example-trees
-write-example-trees:
-	uv run scripts/write_tree.py --examples-dir ../iml_examples --write-files
+.PHONY: check
+check: cicd-format cicd-lint cicd-type-check
 
 .PHONY: cicd-format
 cicd-format:
@@ -17,6 +16,10 @@ cicd-type-check:
 .PHONY: test
 test:
 	uv run pytest -vvv
+
+.PHONY: write-example-trees
+write-example-trees:
+	uv run scripts/write_tree.py --examples-dir ../iml_examples --write-files
 
 .PHONY: build
 build:
