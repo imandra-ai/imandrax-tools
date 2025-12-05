@@ -1,7 +1,8 @@
 # pyright: basic
 # %%
+import re
 import subprocess
-from typing import cast
+from typing import Literal, cast
 
 from imandrax_api import url_dev
 from imandrax_api.lib import (
@@ -17,6 +18,7 @@ from imandrax_api.lib import (
     Ty_view_view_Constr,
     read_artifact_data,
 )
+from imandrax_api_models import Art
 from imandrax_api_models.client import ImandraXClient
 from IPython.core.getipython import get_ipython
 from rich import print
@@ -31,6 +33,7 @@ from pathlib import Path
 from typing import Any
 
 import dotenv
+import py_gen.ast_types as ast_types
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
 from py_gen.ast_deserialize import load_from_json_string
@@ -39,6 +42,18 @@ from py_gen.unparse import unparse
 curr_dir = Path.cwd() if ip else Path(__file__).parent
 
 
+dotenv.load_dotenv()
+PROJECT_DIR = curr_dir / '..'
+CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
+
+
+c = ImandraXClient(
+    auth_token=os.environ['IMANDRAX_API_KEY'],
+    url=url_dev,
+)
+
+
+# %%
 def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
     return MessageToDict(
         proto_obj,
@@ -77,14 +92,75 @@ def convert_to_standard_base64(data: str | bytes) -> str:
     return base64.b64encode(decoded_bytes).decode('ascii')
 
 
-dotenv.load_dotenv()
-PROJECT_DIR = curr_dir / '..'
-CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
+def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] | None:
+    """Get the argument types of a function."""
+    tc_res = c.typecheck(iml)
+    name_ty_map = {ty.name: ty.ty for ty in tc_res.types}
+    if fun_name not in name_ty_map:
+        return None
 
-c = ImandraXClient(
-    auth_token=os.environ['IMANDRAX_API_KEY'],
-    url=url_dev,
-)
+    return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
+
+
+def extract_type_decl_names(ml_code: str) -> list[str]:
+    """
+    Extract all type definition names from OCaml code.
+
+    Args:
+        ocaml_code: String containing OCaml code
+
+    Returns:
+        List of type names defined in the code
+
+    Examples:
+        >>> code = 'type direction = North | South'
+        >>> extract_ocaml_type_names(code)
+        ['direction']
+    """
+    # Pattern matches: "type" keyword followed by type name
+    # Handles both regular types and recursive types (type ... and ...)
+    pattern = r'\btype\s+([a-z_][a-zA-Z0-9_]*(?:\s*,\s*[a-z_][a-zA-Z0-9_]*)*)'
+
+    matches = re.finditer(pattern, ml_code)
+    type_names = []
+
+    for match in matches:
+        # Extract the captured group (type name(s))
+        names = match.group(1)
+        # Split by comma in case of mutually recursive types: type t1, t2 = ...
+        for name in names.split(','):
+            type_names.append(name.strip())
+
+    return type_names
+
+
+def gen_ast(
+    art_json: str,
+    mode: Literal['fun-decomp', 'model', 'decl'],
+) -> list[ast_types.stmt]:
+    result = subprocess.run(
+        [
+            CODEGEN_EXE_PATH,
+            '-',
+            '-',
+            '--mode',
+            mode,
+        ],
+        check=False,
+        input=art_json,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f'Failed to run generate AST: {result.stderr}')
+    return load_from_json_string(result.stdout)
+
+
+def serialize_artifact(art: Art) -> str:
+    art_dict = art.model_dump()
+    art_dict['data'] = convert_to_standard_base64(art_dict['data'])
+    return json.dumps(art_dict)
+
 
 # %%
 iml = """\
@@ -111,16 +187,42 @@ let move = fun w ->
     { x; y; z }\
 """
 
-name = 'move'
-eval_res = c.eval_src(iml)
 
 # %%
 fun_name = 'move'
+
+eval_res = c.eval_src(iml)
 decomp_res = c.decompose(fun_name)
+typecheck_res = c.typecheck(iml)
+# arg_types = get_fun_arg_types(fun_name, iml, c)
+arg_types = extract_type_decl_names(iml)
+assert arg_types
+
+# %%
+decls = c.get_decls(arg_types)
+decl_arts: list[str] = [serialize_artifact(decl.artifact) for decl in decls.decls]
+type_def_stmts_by_decl = [gen_ast(decl_art, mode='decl') for decl_art in decl_arts]
+type_def_stmts = [stmt for stmts in type_def_stmts_by_decl for stmt in stmts]
+
+
+# %%
+decomp_art = decomp_res.artifact
+assert decomp_art
+test_def_stmts = gen_ast(serialize_artifact(decomp_art), mode='fun-decomp')
+
+# %%
+gen_code: str = unparse([
+    *type_def_stmts,
+    *test_def_stmts,
+])
+
+with Path('tmp.py').open('w') as f:
+    f.write(gen_code)
 
 # %%
 art = decomp_res.artifact
 assert art
+
 
 art_dict = art.model_dump()
 art_dict['data'] = convert_to_standard_base64(art_dict['data'])
@@ -132,40 +234,6 @@ for entry in art_dict.get('storage', []):
 
 art_json = json.dumps(art_dict)
 
-
-# %%
-
-# Pipe to the executable
-result = subprocess.run(
-    [
-        CODEGEN_EXE_PATH,
-        '-',
-        '-',
-        '--mode',
-        'fun-decomp',
-    ],
-    check=False,
-    input=art_json,
-    text=True,
-    capture_output=True,
-)
-ast_stmts = load_from_json_string(result.stdout)
-print(unparse(ast_stmts))
-
-
-# %%
-
-
-# %%
-def get_fun_arg_types(fun_name: str, iml: str) -> list[str] | None:
-    tc_res = c.typecheck(iml)
-    name_ty_map = {ty.name: ty.ty for ty in tc_res.types}
-    if fun_name not in name_ty_map:
-        return None
-    return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
-
-
-get_fun_arg_types('move', iml)
 
 # %%
 
