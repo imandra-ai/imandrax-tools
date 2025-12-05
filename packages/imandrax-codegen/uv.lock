@@ -421,15 +421,29 @@ dev = [{ name = "aiohttp", specifier = ">=3.13.2" }]
 [[package]]
 name = "imandrax-api-models"
 version = "1.1.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/48/b0d69a1e1cfe92e2d9ae67f711be3b0244761d2e3cda9282a66cd87005f3/imandrax_api_models-1.1.0.tar.gz", hash = "sha256:280552fb82863c72cd01a80feaa129da4b3eaa0154d76d0404f870e62dd6b9d3", size = 12204, upload-time = "2025-11-21T17:38:13.61Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/f3/4a9c32ae38718a6dad4101bf6839fcdade0b4cfbb8bd7efe5c153b178cf2/imandrax_api_models-1.1.0-py3-none-any.whl", hash = "sha256:59e1da722c0a285bd74f624568b6e8746d139288bc96c588d061d135c06ddf1c", size = 17229, upload-time = "2025-11-21T17:38:12.425Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "imandrax-api", extras = ["async"], directory = "../../../imandrax-api/src/py" },
+    { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+]
+provides-extras = ["client"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "inline-snapshot", extras = ["dirty-equals"], specifier = ">=0.31.1" },
+    { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
@@ -467,7 +481,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "imandrax-api-models", specifier = ">=1.1.0" },
+    { name = "imandrax-api-models", editable = "../imandrax-api-models" },
     { name = "ipykernel", specifier = ">=7.0.1" },
 ]
 
