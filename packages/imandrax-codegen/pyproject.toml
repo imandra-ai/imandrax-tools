@@ -31,8 +31,9 @@ dev = [
 package = true
 
 [tool.uv.sources]
-# imandrax-api-model = { path = "../imandrax-api-model" }
+imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
+# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 
 [tool.uv.workspace]
 members = [
