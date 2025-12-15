@@ -2,7 +2,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    py-gen-parse-model "test/data/model/$1" - \
+  >    py-gen-parse "test/data/model/$1" - --mode model \
   >    | uv run py-gen - \
   >    | fence
   > ); }
@@ -10,15 +10,8 @@ Setup: Define helper function
 inline_record
   $ run_test composite/inline_record.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class Scroll:
-      arg0: real
-  
-  
-  event = Scroll
   w: event = Scroll(2.0)
   
   ```
@@ -26,98 +19,26 @@ inline_record
 map_default_value_only
   $ run_test composite/map_default_value_only.yaml
   ```python
+  from __future__ import annotations
+  
   w: defaultdict[_a_0, bool] = defaultdict(lambda: False)
   
   ```
 
-map_int_bool
+map_int_bool_0
   $ run_test composite/map_int_bool_0.yaml
   ```python
+  from __future__ import annotations
+  
   w: defaultdict[int, bool] = defaultdict(lambda: False)
-  
-  ```
-
-map_int_bool_1
-  $ run_test composite/map_int_bool_1.yaml
-  ```python
-  w: defaultdict[int, bool] = defaultdict(lambda: False, {2: True})
-  
-  ```
-
-map_int_bool_2
-  $ run_test composite/map_int_bool_2.yaml
-  ```python
-  w: defaultdict[int, bool] = defaultdict(lambda: False, {2: True, 3: True})
-  
-  ```
-
-map_int_bool_3
-  $ run_test composite/map_int_bool_3.yaml
-  ```python
-  w: defaultdict[int, bool] = defaultdict(
-      lambda: False, {2: True, 3: False, 5: True}
-  )
-  
-  ```
-
-multiset_empty
-  $ run_test composite/multiset_empty.yaml
-  ```python
-  w: defaultdict[_a_0, int] = defaultdict(lambda: 0)
-  
-  ```
-
-multiset_nonempty
-  $ run_test composite/multiset_nonempty.yaml
-  ```python
-  w: defaultdict[int, int] = defaultdict(lambda: 0, {1: 2, 3: 1, 2: 2})
-  
-  ```
-
-set_empty
-  $ run_test composite/set_empty.yaml
-  ```python
-  w: defaultdict[_a_0, bool] = defaultdict(lambda: False)
-  
-  ```
-
-set_nonempty
-  $ run_test composite/set_nonempty.yaml
-  ```python
-  w: defaultdict[int, bool] = defaultdict(
-      lambda: False, {1: True, 3: True, 2: True}
-  )
   
   ```
 
 variant_and_record
   $ run_test composite/variant_and_record.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class position:
-      x: int
-      y: int
-      z: real
-  
-  
-  @dataclass
-  class North:
-      pass
-  
-  
-  direction = North
-  
-  
-  @dataclass
-  class Move:
-      arg0: position
-      arg1: direction
-  
-  
-  movement = Move
   w: movement = Move(position(1, 2, 3.0), North())
   
   ```
@@ -125,6 +46,8 @@ variant_and_record
 bool list
   $ run_test primitive/bool_list.yaml
   ```python
+  from __future__ import annotations
+  
   w: list[bool] = [True, False]
   
   ```
@@ -132,6 +55,8 @@ bool list
 empty list
   $ run_test primitive/empty_list.yaml
   ```python
+  from __future__ import annotations
+  
   w = []
   
   ```
@@ -139,15 +64,8 @@ empty list
 int option
   $ run_test primitive/int_option.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class Some:
-      arg0: int
-  
-  
-  option = Some
   w: option = Some(2)
   
   ```
@@ -155,6 +73,8 @@ int option
 int
   $ run_test primitive/int.yaml
   ```python
+  from __future__ import annotations
+  
   w: int = 2
   
   ```
@@ -162,6 +82,8 @@ int
 LChar
   $ run_test primitive/LChar.yaml
   ```python
+  from __future__ import annotations
+  
   w: str = '\x00'
   
   ```
@@ -169,6 +91,8 @@ LChar
 LString
   $ run_test primitive/LString.yaml
   ```python
+  from __future__ import annotations
+  
   w: list[str] = ['h', 'i']
   
   ```
@@ -176,6 +100,8 @@ LString
 real
   $ run_test primitive/real.yaml
   ```python
+  from __future__ import annotations
+  
   w: float = 3.14
   
   ```
@@ -183,14 +109,7 @@ real
 record
   $ run_test primitive/record.yaml
   ```python
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class user:
-      id: int
-      active: bool
-  
+  from __future__ import annotations
   
   w: user = user(1, True)
   
@@ -199,28 +118,26 @@ record
 single element int list
   $ run_test primitive/single_element_int_list.yaml
   ```python
+  from __future__ import annotations
+  
   w: list[int] = [1]
   
   ```
 
-tuple (bool * int)
-  $ run_test primitive/tuple_(bool_*_int).yaml
-  syntax error near unexpected token `('
-  `run_test primitive/tuple_(bool_*_int).yaml'
-  [1]
+tuple of bool and int
+  $ run_test primitive/tuple_of_bool_and_int.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: tuple[bool, int] = (True, 2)
+  
+  ```
 
 variant1
   $ run_test primitive/variant1.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class Active:
-      pass
-  
-  
-  status = Active
   w: status = Active()
   
   ```
@@ -228,15 +145,8 @@ variant1
 variant2
   $ run_test primitive/variant2.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class Waitlist:
-      arg0: int
-  
-  
-  status = Waitlist
   w: status = Waitlist(1)
   
   ```
@@ -244,16 +154,9 @@ variant2
 variant3
   $ run_test primitive/variant3.yaml
   ```python
-  from dataclasses import dataclass
+  from __future__ import annotations
   
-  
-  @dataclass
-  class Waitlist:
-      arg0: int
-      arg1: bool
-  
-  
-  status = Waitlist
   w: status = Waitlist(2, True)
   
   ```
+
