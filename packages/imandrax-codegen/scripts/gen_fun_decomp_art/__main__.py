@@ -70,7 +70,7 @@ c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_dev)
 out_dir = curr_dir
 
 # %%
-with (curr_dir / 'inputs.yml').open('r') as f:
+with (curr_dir / 'inputs.yaml').open('r') as f:
     inputs = yaml.safe_load(f)
 
 
