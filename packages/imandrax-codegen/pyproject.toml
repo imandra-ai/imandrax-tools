@@ -30,7 +30,14 @@ dev = [
 package = true
 
 [tool.uv.sources]
-py-gen = { path = "python", editable = true }
+# imandrax-api-model = { path = "../imandrax-api-model" }
+# imandrax-api = { path = "../../../imandrax-api/src/py" }
+# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
+
+[tool.uv.workspace]
+members = [
+    "scripts",
+]
 
 [tool.setuptools]
 package-dir = {"" = "python"}
@@ -91,7 +98,7 @@ isort.combine-as-imports = true
 quote-style = "single"
 
 [tool.ty]
-environment.python = "../.venv"
+environment.python = "./.venv"
 
 [tool.ty.rules]
 # Handled by pyright

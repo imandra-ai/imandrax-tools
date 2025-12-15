@@ -1,6 +1,15 @@
 # Changelog
 
+Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
+
 ## [Unreleased]
+
+## [18.0.0] - 2025-12-15
+- Changed
+  - upgrade to `imandrax-api==0.18.0`
+- Added
+  - New models: `GetDeclsReq`, `GetDeclsRes`, `DeclWithName`
+  - `get_decls()` method in `ImandraXClient` and `ImandraXAsyncClient`
 
 ## [1.1.1] - 2025-12-04
 - Changed

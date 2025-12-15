@@ -3,12 +3,13 @@ import os
 import pytest
 from dirty_equals import IsBytes, IsStr
 from google.protobuf.message import Message
-from imandrax_api import Client, url_prod
+from imandrax_api import Client, url_dev, url_prod  # noqa: F401
 from inline_snapshot import snapshot
 
 from imandrax_api_models import (
     DecomposeRes,
     EvalRes,
+    GetDeclsRes,
     InstanceRes,
     ModelType,
     TaskKind,
@@ -17,7 +18,7 @@ from imandrax_api_models import (
 )
 
 
-class IsArtifact(IsBytes):
+class IsArtifactData(IsBytes):
     def __init__(self):
         super().__init__(min_length=1)
 
@@ -29,7 +30,11 @@ class IsTaskID(IsStr):
 
 @pytest.fixture
 def c() -> Client:
-    c = Client(url=url_prod, auth_token=os.environ['IMANDRAX_API_KEY'])
+    c = Client(
+        url=url_prod,
+        # url=url_dev,
+        auth_token=os.environ['IMANDRAX_API_KEY'],
+    )
     return c
 
 
@@ -58,6 +63,16 @@ let f (x : int) : int =
 VERIFY_SRC = 'fun x -> g x > 0'
 VERIFY_SRC_REFUTED = 'fun x -> g x <= 0'
 DECOMPOSE_NAME = 'g'
+
+IML_CODE_FOR_GET_DECLS = """
+type direction = North | South | East | West
+
+type position = { x: int; y: int; z: real }
+
+type movement =
+  | Stay of position
+  | Move of position * direction
+"""
 
 
 def test_eval_res(c: Client):
@@ -173,8 +188,8 @@ module M = struct
 """,
                     'artifact': {
                         'kind': 'mir.model',
-                        'data': IsArtifact(),
-                        'api_version': 'v17',
+                        'data': IsArtifactData(),
+                        'api_version': 'v18',
                         'storage': [],
                     },
                 }
@@ -245,8 +260,8 @@ module M = struct
 """,
                     'artifact': {
                         'kind': 'mir.model',
-                        'data': IsArtifact(),
-                        'api_version': 'v17',
+                        'data': IsArtifactData(),
+                        'api_version': 'v18',
                         'storage': [],
                     },
                 }
@@ -265,8 +280,8 @@ def test_decompose(c: Client):
         {
             'artifact': {
                 'kind': 'mir.fun_decomp',
-                'data': IsArtifact(),
-                'api_version': 'v17',
+                'data': IsArtifactData(),
+                'api_version': 'v18',
                 'storage': [],
             },
             'err': None,
@@ -279,16 +294,16 @@ def test_decompose(c: Client):
             },
             'regions_str': [
                 {
-                    'constraints_str': ['x = (-1)'],
-                    'invariant_str': '103',
-                    'model_str': {'x': '(-1)'},
-                    'model_eval_str': '103',
-                },
-                {
                     'constraints_str': ['x <= (-2)'],
                     'invariant_str': '99',
                     'model_str': {'x': '(-2)'},
                     'model_eval_str': '99',
+                },
+                {
+                    'constraints_str': ['x = (-1)'],
+                    'invariant_str': '103',
+                    'model_str': {'x': '(-1)'},
+                    'model_eval_str': '103',
                 },
                 {
                     'constraints_str': ['x >= 0'],
@@ -345,5 +360,49 @@ The subtypes `int` and `bool` do not match.\
                     'process': 'imandrax-server',
                 }
             ],
+        }
+    )
+
+
+def test_get_decls(c: Client):
+    _ = c.eval_src(IML_CODE_FOR_GET_DECLS)
+    get_decls_res_data = c.get_decls(['direction', 'position', 'movement', 'else'])
+    get_decls_res = GetDeclsRes.model_validate(get_decls_res_data)
+
+    assert get_decls_res.model_dump(by_alias=True) == snapshot(
+        {
+            'decls': [
+                {
+                    'name': 'movement',
+                    'artifact': {
+                        'kind': 'mir.decl',
+                        'data': IsArtifactData(),
+                        'api_version': 'v18',
+                        'storage': [],
+                    },
+                    'str': None,
+                },
+                {
+                    'name': 'position',
+                    'artifact': {
+                        'kind': 'mir.decl',
+                        'data': IsArtifactData(),
+                        'api_version': 'v18',
+                        'storage': [],
+                    },
+                    'str': None,
+                },
+                {
+                    'name': 'direction',
+                    'artifact': {
+                        'kind': 'mir.decl',
+                        'data': IsArtifactData(),
+                        'api_version': 'v18',
+                        'storage': [],
+                    },
+                    'str': None,
+                },
+            ],
+            'not_found': ['else'],
         }
     )
