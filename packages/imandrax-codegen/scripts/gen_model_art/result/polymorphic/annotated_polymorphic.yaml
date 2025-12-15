@@ -1,9 +1,0 @@
-name: annotated_polymorphic
-category: polymorphic
-iml: 'let v =  (fun (w: _ list) -> if w = [] then true else false)'
-instance_src_kwargs:
-  src: v
-data: YF8R6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOJjRF9hXzD/GAGG+bLyYkRfYV8w98MC+P8qXxHq+zjt+ukBIvn4zwTxhRMz5TtF/OA9zevPBUzZesfRPGNEX2FfMP8YAYb5svJiRF9hXzD3Yvf/LWDDAv3zYv8B9mL99WBh/z2xR3R5Lmxpc3Sz+WJEbGlzdPfDAvj/CGBh/1jAAh8noGJBYfew9GHywwL/D/Vh/WLy+LFFYy5uaWyz92JCW131YvX/A2P0/x7/JsUD9/8mAmP2/zACwAIf+P8EoGJBYfmw9GHywwL/S/Vh+WH/AGLz+8ACH/n/BKBiQXf5YvT/AGP0/wn/EGL2/yhh9GCxR3R5LnVuaXSz+WJEdW5pdPfDAvj/BrH1Yv839GBgYGLx/+4BXxHEMMrfeUMjm6TsxCQaZylXtp5pyYhdzouBzCMj61kUe2NJQ19kdW1teV8w/x0Ahv6y8mJJQ19kdW1teV8w/GL8/zdj9P89/7kCxQP4/0YCY/b/xAICYfaw8mL/zQL1Yv9d92b0/37/jgIBAf+WAgs=
-api_version: v18
-kind: mir.model
-storage: []
