@@ -16,8 +16,8 @@ cat <<'EOF'
 Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
-  >    cd $DUNE_SOURCEROOT && \
-  >    py-gen-parse-fun-decomp "test/data/fun_decomp/$1" - \
+  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
+  >    py-gen-parse-fun-decomp "test/data/fun_decomp/$1" - --mode fun-decomp \
   >    | uv run py-gen - \
   >    | fence
   > ); }

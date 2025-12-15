@@ -140,7 +140,7 @@ let handle_error use_stdin = function
 
 (** Print usage information and exit. *)
 let print_usage () =
-  eprintf "Usage: %s [input_file.json|yaml|-] <output_file.json|-> --mode <model|fun-decomp> [--as-dict]\n"
+  eprintf "Usage: %s [input_file.json|yaml|-] <output_file.json|-> --mode <model|fun-decomp|decl> [--as-dict]\n"
     Sys.argv.(0);
   eprintf
     "  input_file: input JSON/YAML file path, or '-' for stdin (defaults to \
@@ -179,7 +179,7 @@ let () =
         | "fun-decomp" -> mode := Some FunDecomp
         | "decl" -> mode := Some Decl
         | _ ->
-          eprintf "Error: Invalid mode '%s'. Must be 'model' or 'fun-decomp'\n" mode_str;
+          eprintf "Error: Invalid mode '%s'. Must be 'model', 'fun-decomp', or 'decl'\n" mode_str;
           print_usage ());
         parse_args (i + 2)
       | "--as-dict" ->
