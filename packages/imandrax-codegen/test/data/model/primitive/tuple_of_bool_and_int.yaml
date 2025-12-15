@@ -1,4 +1,4 @@
-name: tuple (bool * int)
+name: tuple of bool and int
 category: primitive
 iml: |-
   let v =

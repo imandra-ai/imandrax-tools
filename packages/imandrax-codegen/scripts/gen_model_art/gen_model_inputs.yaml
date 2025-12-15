@@ -30,7 +30,7 @@
         if w = {l|hi|l} then true else false
   instance_src_kwargs:
     src: v
-- name: tuple (bool * int)
+- name: tuple of bool and int
   category: primitive
   iml: |-
     let v =
@@ -155,7 +155,7 @@
     let v = fun w -> if w = v then true else false
   instance_src_kwargs:
     src: v
-- name: map_int_bool
+- name: map_int_bool_0
   category: composite
   iml: |-
     let v : (int, bool) Map.t =
@@ -164,6 +164,29 @@
     let v = fun w -> if w = v then true else false
   instance_src_kwargs:
     src: v
+- name: map_int_bool_1
+  category: composite
+  iml: |-
+    let v : (int, bool) Map.t =
+      Map.const false
+       |> Map.add 2 true
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+
+- name: map_int_bool_2
+  category: composite
+  iml: |-
+    let v : (int, bool) Map.t =
+      Map.const false
+       |> Map.add 2 true
+       |> Map.add 3 false
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+
 - name: multiset_nonempty
   category: composite
   iml: |-
