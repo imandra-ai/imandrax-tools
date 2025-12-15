@@ -23,7 +23,7 @@ py-gen = "py_gen.__main__:main"
 
 [dependency-groups]
 dev = [
-    "imandrax-api-models>=1.1.1",
+    "imandrax-api-models>=18.0.0",
     "ipykernel>=7.0.1",
 ]
 
@@ -31,7 +31,7 @@ dev = [
 package = true
 
 [tool.uv.sources]
-imandrax-api-models = { path = "../imandrax-api-models", editable = true }
+# imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
 # imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 
