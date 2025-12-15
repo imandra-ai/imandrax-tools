@@ -76,6 +76,13 @@ let v = Multiset.of_list [1; 2; 3; 2; 1]
 
 let v = fun w -> if w = v then true else false
 """
+iml = """
+let v : (int, bool) Map.t =
+  Map.const false
+   |> Map.add 2 true
+
+let v = fun w -> if w = v then true else false
+"""
 # iml = """
 # let v = Set.of_list [1; 2; 3; 2; 1]
 
