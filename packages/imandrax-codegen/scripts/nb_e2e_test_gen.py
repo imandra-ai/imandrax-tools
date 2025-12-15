@@ -4,7 +4,7 @@ import re
 import subprocess
 from typing import Literal, cast
 
-from imandrax_api import Client, url_dev, url_prod
+from imandrax_api import url_dev
 from imandrax_api.lib import (
     Artifact,
     Common_Decl_t_poly_Fun,
@@ -47,66 +47,19 @@ PROJECT_DIR = curr_dir / '..'
 CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
 
 
+c = ImandraXClient(
+    auth_token=os.environ['IMANDRAX_API_KEY'],
+    url=url_dev,
+)
+
+
+# %%
 def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
     return MessageToDict(
         proto_obj,
         preserving_proto_field_name=True,
         always_print_fields_with_no_presence=True,
     )
-
-
-# %%
-
-c = Client(
-    auth_token=os.environ['IMANDRAX_API_KEY'],
-    # url=url_prod,
-    url=url_dev,
-)
-
-
-# c = ImandraXClient(
-#     auth_token=os.environ['IMANDRAX_API_KEY'],
-#     url=url_prod,
-# )
-
-
-# %%
-iml = """
-let v = Multiset.of_list [1; 2; 3; 2; 1]
-
-let v = fun w -> if w = v then true else false
-"""
-# iml = """
-# let v = Set.of_list [1; 2; 3; 2; 1]
-
-# let v = fun w -> if w = v then true else false
-# """
-c.eval_src(iml)
-c.instance_src('v')
-
-# %%
-
-
-# iml = """
-# type event =
-#     | Click of { x: int; y: int }
-#     | Keypress of { key: LChar.t; modifiers: LString.t list }
-#     | Scroll of { delta: real }
-
-# let v = Scroll {delta = 2.0}
-# let v = fun w -> if w = v then true else false
-# """
-# iml = """
-# let v : (int, bool) Map.t =
-#   Map.const false
-
-# let v = (fun w -> if w = v then true else false)
-# """
-c.eval_src(iml)
-c.instance_src('v')
-
-
-# %%
 
 
 def convert_to_standard_base64(data: str | bytes) -> str:
