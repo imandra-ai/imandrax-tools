@@ -189,7 +189,7 @@ module M = struct
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v17',
+                        'api_version': 'v18',
                         'storage': [],
                     },
                 }
@@ -261,7 +261,7 @@ module M = struct
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v17',
+                        'api_version': 'v18',
                         'storage': [],
                     },
                 }
@@ -281,7 +281,7 @@ def test_decompose(c: Client):
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v17',
+                'api_version': 'v18',
                 'storage': [],
             },
             'err': None,
@@ -294,16 +294,16 @@ def test_decompose(c: Client):
             },
             'regions_str': [
                 {
-                    'constraints_str': ['x = (-1)'],
-                    'invariant_str': '103',
-                    'model_str': {'x': '(-1)'},
-                    'model_eval_str': '103',
-                },
-                {
                     'constraints_str': ['x <= (-2)'],
                     'invariant_str': '99',
                     'model_str': {'x': '(-2)'},
                     'model_eval_str': '99',
+                },
+                {
+                    'constraints_str': ['x = (-1)'],
+                    'invariant_str': '103',
+                    'model_str': {'x': '(-1)'},
+                    'model_eval_str': '103',
                 },
                 {
                     'constraints_str': ['x >= 0'],
