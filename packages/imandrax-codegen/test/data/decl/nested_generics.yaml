@@ -1,10 +1,22 @@
-name: real_and_option
+name: nested_generics
 iml: |
-  type my_ty = {
-    x: real;
-    y: int option;
-    z: int;
+  type 'a identity = Identity of 'a
+
+  type 'a maybe =
+    | Just of 'a
+    | Nothing
+
+  type 'a validated =
+    | Valid of 'a
+    | Invalid of string
+
+  type 'a tagged = {
+    value : 'a;
+    tag : string
   }
+
+  type my_ty =
+    | My_ty of int identity maybe validated tagged
 req_kwargs:
   names:
   - my_ty
