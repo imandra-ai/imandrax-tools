@@ -30,11 +30,39 @@ let parse_constr_to_type_annot
       | _next_ty :: _next_tys ->
         failwith "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 args"
       end
-    | Var _ -> wip "Var"
+    | Var (var_uid : Uid.t) ->
+      let type_var_name = var_uid.name in
+      (type_var_name :: ty_acc, var_uid :: params_acc)
     | _ -> failwith "parse_constr_to_type_annot: expected Constr or Var"
   in
 
-  helper ty_view [] []
+  let (ty_acc, params_acc) = helper ty_view [] [] in
+  (List.rev ty_acc, params_acc)
+
+
+(** Define type variable
+
+Example:
+  - 'a/92728' -> `a = TypeVar('a')`
+*)
+let type_var_def_of_uid (uid : Uid.t) : Ast.stmt =
+  let name = uid.name in
+  Assign {
+    targets = [
+      Ast.mk_name_expr name
+    ];
+    value = Ast.Call {
+      func = Ast.mk_name_expr "TypeVar";
+      args = [
+        Ast.Constant {
+          value = String name;
+          kind = None;
+        }
+      ];
+      keywords = [];
+    };
+    type_comment = None;
+  }
 
 (**
 Parse one row of a Record type declaration
@@ -104,19 +132,32 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   in
 
   (* constructor names, i.e., the type annotation for each field *)
-  let (dc_arg_constr_names : string list list) =
-    args
-    |> List.map (fun (arg : Type.t) ->
-           let Type.{ view = arg_ty_view; generation = _ } = arg in
+  let (dc_arg_constr_names : string list list), (dc_arg_type_params : Uid.t list) =
+    (args : Mir.Type.t list)
+    |> List.map (
+      fun (arg : Type.t) ->
+      let Type.{ view = arg_ty_view; generation = _ } = arg in
 
-           let (types, _params) = parse_constr_to_type_annot arg_ty_view in
-           printf "types: %s\n" (String.concat ", " types);
+      let (types, params) = parse_constr_to_type_annot arg_ty_view in
 
-           types)
+      (types, params)
+    )
+    |> List.split
+    |> fun (dc_arg_constr_names, dc_arg_type_params_by_arg) ->
+      (* Flatten and dedup type params *)
+      let (dc_arg_type_params: Uid.t list) =
+        dc_arg_type_params_by_arg
+        |> List.flatten
+        |> CCList.sort_uniq ~cmp:Uid.compare
+      in
+      (dc_arg_constr_names, dc_arg_type_params)
   in
 
   let dataclass_def_stmt =
-    Ast.mk_dataclass_def dc_name (List.combine dc_arg_names dc_arg_constr_names)
+    Ast.mk_dataclass_def
+      dc_name
+      (Some (dc_arg_type_params |> List.map (fun (uid : Uid.t) -> uid.name)))
+      (List.combine dc_arg_names dc_arg_constr_names)
   in
 
   (* printf "Dataclass name: %s\n" dc_name;
@@ -135,7 +176,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
       (* Unpack ty view *)
       let {
         Ty_view.name = decl_name_uid;
-        params = _;
+        params = (params : Uid.t list);
         decl = ty_view_decl;
         clique = _;
         timeout = _;
@@ -143,28 +184,36 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
         ty_view_def
       in
 
+      let (type_var_defs : Ast.stmt list) =
+        params |> List.map type_var_def_of_uid
+      in
+
       (* Root name of the decl *)
       let { Uid.name = decl_name; view = _ } = decl_name_uid in
-      (* TODO: move above extraction to single pattern match *)
 
-      (* printf "Root name: %s\n" decl_name; *)
+      (* TODO(refactor): move above extraction to single pattern match *)
 
       (* Handle rows *)
-      match ty_view_decl with
+      let (decl_body : Ast_types.stmt list) = begin match ty_view_decl with
       | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
           let (dc_names : string list), (dc_defs : Ast.stmt list) =
             adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
           in
           let union_def = Ast.mk_union_def decl_name dc_names in
           let dc_and_union_defs = dc_defs @ [ union_def ] in
-          Ok dc_and_union_defs
+          dc_and_union_defs
       | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
           let dc_args : (string * string list) list =
             rec_rows |> List.map parse_rec_row_to_dataclass_row
           in
-          let dc_def = Ast.mk_dataclass_def decl_name dc_args in
-          Ok [ dc_def ]
-      | _ -> failwith "WIP: not Algebraic and not Tuple")
+          let dc_def = Ast.mk_dataclass_def decl_name None dc_args in
+          [ dc_def ]
+      | _ -> failwith "WIP: not Algebraic and not Tuple"
+        end
+      in
+      Ok (type_var_defs @ decl_body)
+
+  )
   | Fun _ -> failwith "WIP: Fun"
   | _ -> invalid_arg "parse_decl: expected Ty | Fun"
 
@@ -177,8 +226,9 @@ let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 -------------------- *)
 
 let%expect_test "parse decl art" =
-  (* let file_name = "variant_poly_two_var" in *)
-  let file_name = "nested_generics" in
+  let file_name = "variant_poly_two_var" in
+  (* let file_name = "nested_generics" in *)
+  (* let file_name = "real_and_option" in *)
   let yaml_str =
     CCIO.File.read_exn (sprintf "../test/data/decl/%s.yaml" file_name)
   in
@@ -230,54 +280,69 @@ let%expect_test "parse decl art" =
   print_endline (Format.flush_str_formatter ());
 
   [%expect {|
-    name: nested_generics
+    name: variant_poly_two_var
     code:
-     type 'a identity = Identity of 'a
-
-    type 'a maybe =
-      | Just of 'a
-      | Nothing
-
-    type 'a validated =
-      | Valid of 'a
-      | Invalid of string
-
-    type 'a tagged = {
-      value : 'a;
-      tag : string
-    }
-
-    type my_ty =
-      | My_ty of int identity maybe validated tagged
+     type ('a, 'b) container =
+      | Empty
+      | Single of 'a
+      | Pair of 'a * 'b
+      | Labeled of { key: 'a; value: 'b }
+      | Multi of 'a list * 'b list
 
     <><><><><><><><><>
     Ty
       {
-      name = my_ty/K4n0AuCEz3XMvL6LS1WaKVkIil-9a8rQZR_saAqxiFI;
-      params = [];
+      name = container/oxiYljEm9mLVWkkYURTWoWGNfupScANrN7SpMxUoULo;
+      params = [a/92728; b/92729];
       decl =
         Algebraic
           [{
-             c = My_ty/qlujE9k3C2C0TL-8Mzf_oEHJ9T5i4Y9ntjvl-NCkxa0;
+             c = Empty/zaoimvUmhw4ew6X_Jt2YwcRT3Xmk2fdS0-c_jFJhJxQ;
+             labels = None;
+             args = [];
+             doc = None
+             };
+           {
+             c = Single/VX6Zwtm7dZgJKoLgh9TNOahjhFhEv3ERVolUa0HF8OQ;
+             labels = None;
+             args = [{ view = (Var a/92728);
+                       generation = 1 }];
+             doc = None
+             };
+           {
+             c = Pair/B4x1x4rxXHCSWnsOlIPrDcyh6TbWcJB8Gg_-cZtmoF4;
+             labels = None;
+             args =
+               [{ view = (Var a/92728);
+                  generation = 1 };
+                { view = (Var b/92729);
+                  generation = 1 }];
+             doc = None
+             };
+           {
+             c = Labeled/iWpeHJGeoERz6FurcG-2PRVcIVyovCyN0ApH6xnsh3o;
+             labels =
+               (Some
+                 [key/cwwWl6JtTLFzaHQ1pe7U_iVJJf6NEw6GdOArOnc1ebo;
+                  value/FRnzhPcUFqym3uZnzXwwtdzgXuV3vrAi_1qaiZ2Te54]);
+             args =
+               [{ view = (Var a/92728);
+                  generation = 1 };
+                { view = (Var b/92729);
+                  generation = 1 }];
+             doc = None
+             };
+           {
+             c = Multi/pHB4Isq3zq0g3pg2KaAB7IAKGm336YEoe1ws7w1MzD8;
              labels = None;
              args =
                [{ view =
-                    (Constr
-                      (tagged/I_WZIRhH76rALxpX_YhaelRmb4LqKVzs6ywNGiWMgdY,
-                       [{ view =
-                            (Constr
-                              (validated/PxYEY49NXkjiR4aKBofz7rfhE6xXP_VLvNuiAIWJAcM,
-                               [{ view =
-                                    (Constr
-                                      (maybe/Cc1rj0QipyuO7yl3jKSzWyL5D22dfxaHNBb9ATN70Js,
-                                       [{ view =
-                                            (Constr
-                                              (identity/4AMLniQ-sMxTldiYfhr9PsBGq2-v0HfXToWpp68DlAQ,
-                                               [{ view = (Constr (int,[]));
-                                                  generation = 1 }]));
-                                          generation = 1 }]));
-                                  generation = 1 }]));
-                          generation = 1 }]));
+                    (Constr (list,[{ view = (Var a/92728);
+                                     generation = 1 }]));
+                  generation = 1 };
+                { view =
+                    (Constr (list,[{ view = (Var b/92729);
+                                     generation = 1 }]));
                   generation = 1 }];
              doc = None
              }];
@@ -298,27 +363,19 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
-  [%expect {|
-    types: int, identity, maybe, validated, tagged
-    <><><><><><><><><>
-    (Ast_types.ClassDef
-       { Ast_types.name = "My_ty"; bases = []; keywords = [];
-         body =
-         [(Ast_types.AnnAssign
-             { Ast_types.target =
-               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
-               annotation =
-               (Ast_types.Name { Ast_types.id = "tagged"; ctx = Ast_types.Load });
-               value = None; simple = 1 })
-           ];
-         decorator_list =
-         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
-         })
-    (Ast_types.Assign
-       { Ast_types.targets =
-         [(Ast_types.Name { Ast_types.id = "my_ty"; ctx = Ast_types.Load })];
-         value =
-         (Ast_types.Name { Ast_types.id = "My_ty"; ctx = Ast_types.Load });
-         type_comment = None })
-    <><><><><><><><><>
-    |}]
+  [%expect.unreachable]
+[@@expect.uncaught_exn {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  (Failure "WIP: Var")
+  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
+  Called from Imandrax_codegen__Parse_decl.parse_constr_to_type_annot in file "packages/imandrax-codegen/lib/parse_decl.ml", line 37, characters 29-49
+  Called from Imandrax_codegen__Parse_decl.parse_adt_row_to_dataclass_def.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 113, characters 34-72
+  Called from Stdlib__List.map in file "list.ml", line 83, characters 15-19
+  Called from Imandrax_codegen__Parse_decl.parse_adt_row_to_dataclass_def in file "packages/imandrax-codegen/lib/parse_decl.ml", lines 109-115, characters 4-17
+  Called from Stdlib__List.map in file "list.ml", line 87, characters 15-19
+  Called from Imandrax_codegen__Parse_decl.parse_decl in file "packages/imandrax-codegen/lib/parse_decl.ml", line 156, characters 12-63
+  Called from Imandrax_codegen__Parse_decl.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 281, characters 15-33
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+  |}]
