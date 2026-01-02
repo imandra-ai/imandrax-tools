@@ -48,25 +48,19 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
 
 
 # %%
-c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_dev)
+def mk_client():
+    return Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_dev)
+
 
 out_dir = curr_dir
 with (curr_dir / 'get_decl_inputs.yaml').open('r') as f:
     inputs = next(yaml.safe_load_all(f))
 
-# %%
-item = inputs[0]
-
-# %%
-iml = item['iml']
-get_decls_kwargs = item['req_kwargs']
-_eval_res = c.eval_src(iml)
-c.get_decls(**get_decls_kwargs)
-
 
 # %%
 res_by_item = []
 for item in track(inputs):
+    c = mk_client()
     iml = item['iml']
     get_decls_kwargs = item['req_kwargs']
     _eval_res = c.eval_src(iml)
