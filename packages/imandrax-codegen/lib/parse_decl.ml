@@ -1,6 +1,23 @@
 open Printf
 open Parse_common
 
+(**
+Parse one row of a Record type declaration
+
+Return a tuple of
+- field name :: string
+- field type name :: string
+
+Example:
+- (x, int) will be mapped to
+```python
+@dataclass
+class SomeClass:
+    ...
+    x: int
+    ...
+```
+*)
 let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     string * string =
   let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
@@ -19,7 +36,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
 
   (arg_name, arg_type_name)
 
-(*
+(**
 Parse one row of an Algebraic type declaration
 
 Return:
@@ -36,17 +53,18 @@ Mapping
     - when this exists, we should generate a dataclass with non-anonymous fields
   - args: Type.t list
     - the type annotation for a row
-    - Q: what if this is another ADT?
-  - doc :: string option: ?
+  - doc :: string option
 
 In Python
 - Each row of dataclass is a type annotation, `arg0: int` or `a: int`
-
-- dev
-  - Q
-    - what about polymorphic types? `args` field?
 *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
+  (*
+  - dev
+    - what about polymorphic types? `args` field?
+    - what if Type.t list in args is another ADT?
+    - how should we handle `doc` field? (it's ignored at the moment)
+   *)
     string * Ast.stmt =
   let Ty_view.{ c; labels; args; doc = _ } = adt_row in
   let dc_name = c.name in
