@@ -27,13 +27,12 @@ dev = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-include = ["python"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "none"
+reportUnusedImport = false
 reportUnusedExpression = false
 
 
@@ -109,6 +108,7 @@ ignore = [
   "RUF036",
   # ====================
   "F401",
+  "B018",
 ]
 task-tags = ["HACK"]
 pycodestyle.ignore-overlong-task-comments = true

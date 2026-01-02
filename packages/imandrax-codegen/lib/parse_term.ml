@@ -10,7 +10,6 @@ let split_last (xs : 'a list) : 'a list * 'a =
 (*
 Return:
   - | Ok of:
-    - type definition statements (statement list)
     - type-annotation (expression option)
     - expression (term)
   - | Error of string
