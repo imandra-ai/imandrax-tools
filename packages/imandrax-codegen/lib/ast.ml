@@ -138,8 +138,32 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
           simple = mk_ann_assign_simple_flat ();
         }
 
-(* Create a dataclass definition statement from its name and rows of fields
+(** Create type annotation from a dataclass row type
 
+    Case:
+    - Basic: for single type name, it's simply a Name ast node
+    - Generic: for generic type, it's a chained Subscript ast node
+
+    Example:
+    - Basic: `int` -> `int`
+    - Generic: `int, Optional, list` -> list[Optional[int]] *)
+let type_annot_of_chained_generic_types (type_names : string list) : expr =
+  match type_names with
+  | [] ->
+      invalid_arg "type_annot_of_chained_generic_types: empty type name list"
+  | fst :: rest ->
+      let base = Name { id = fst; ctx = mk_ctx () } in
+      List.fold_left
+        (fun (acc : expr) (next : string) ->
+          Subscript
+            {
+              value = acc;
+              slice = Name { id = next; ctx = mk_ctx () };
+              ctx = mk_ctx ();
+            })
+        base rest
+
+(** Create a dataclass definition statement from its name and rows of fields
 
 Args:
   - name: The name of the dataclass
@@ -161,7 +185,7 @@ let mk_dataclass_def (name : string) (rows : (string * string) list) : stmt =
     | [] -> [ Pass ]
     | _ ->
         List.map
-          (fun (tgt, ann) ->
+          (fun ((tgt, ann) : string * string) ->
             AnnAssign
               {
                 target = Name { id = tgt; ctx = mk_ctx () };
