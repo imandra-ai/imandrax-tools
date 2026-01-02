@@ -1,10 +1,12 @@
 # pyright: basic
+# pyright: reportUnusedExpression=false
 # %%
 import re
 import subprocess
+from functools import singledispatch
 from typing import Literal, cast
 
-from imandrax_api import url_dev
+from imandrax_api import url_dev, url_prod
 from imandrax_api.lib import (
     Artifact,
     Common_Decl_t_poly_Fun,
@@ -49,11 +51,11 @@ CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
 
 c = ImandraXClient(
     auth_token=os.environ['IMANDRAX_API_KEY'],
-    url=url_dev,
+    # url=url_dev,
+    url=url_prod,
 )
 
 
-# %%
 def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
     return MessageToDict(
         proto_obj,
@@ -104,7 +106,7 @@ def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] |
 
 def extract_type_decl_names(ml_code: str) -> list[str]:
     """
-    Extract all type definition names from OCaml code.
+    Extract all type definition names from OCaml code using regex.
 
     Args:
         ocaml_code: String containing OCaml code
@@ -134,10 +136,19 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
     return type_names
 
 
+@singledispatch
 def gen_ast(
-    art_json: str,
+    art: str | Art, mode: Literal['fun-decomp', 'model', 'decl']
+) -> list[ast_types.stmt]:
+    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
+
+
+@gen_ast.register
+def _(
+    art: str,
     mode: Literal['fun-decomp', 'model', 'decl'],
 ) -> list[ast_types.stmt]:
+    """Use the codegen executable to generate ASTs for a given artifact."""
     result = subprocess.run(
         [
             CODEGEN_EXE_PATH,
@@ -147,7 +158,7 @@ def gen_ast(
             mode,
         ],
         check=False,
-        input=art_json,
+        input=art,
         text=True,
         capture_output=True,
     )
@@ -156,7 +167,16 @@ def gen_ast(
     return load_from_json_string(result.stdout)
 
 
+@gen_ast.register
+def _(
+    art: Art,
+    mode: Literal['fun-decomp', 'model', 'decl'],
+) -> list[ast_types.stmt]:
+    return gen_ast(serialize_artifact(art), mode)
+
+
 def serialize_artifact(art: Art) -> str:
+    """Serialize an artifact BaseModel to a JSON string."""
     art_dict = art.model_dump()
     art_dict['data'] = convert_to_standard_base64(art_dict['data'])
     return json.dumps(art_dict)
@@ -188,7 +208,6 @@ let move = fun w ->
 """
 
 
-# %%
 fun_name = 'move'
 
 eval_res = c.eval_src(iml)
@@ -197,20 +216,18 @@ typecheck_res = c.typecheck(iml)
 # arg_types = get_fun_arg_types(fun_name, iml, c)
 arg_types = extract_type_decl_names(iml)
 assert arg_types
+arg_types
 
-# %%
+# %% type declarations
 decls = c.get_decls(arg_types)
-decl_arts: list[str] = [serialize_artifact(decl.artifact) for decl in decls.decls]
-type_def_stmts_by_decl = [gen_ast(decl_art, mode='decl') for decl_art in decl_arts]
+type_def_stmts_by_decl = [gen_ast(decl.artifact, mode='decl') for decl in decls.decls]
+
 type_def_stmts = [stmt for stmts in type_def_stmts_by_decl for stmt in stmts]
 
-
-# %%
-decomp_art = decomp_res.artifact
-assert decomp_art
-test_def_stmts = gen_ast(serialize_artifact(decomp_art), mode='fun-decomp')
-
-# %%
+# %% test function definitions
+assert decomp_res.artifact
+test_def_stmts = gen_ast(decomp_res.artifact, mode='fun-decomp')
+# %% generate code from ASTs
 gen_code: str = unparse([
     *type_def_stmts,
     *test_def_stmts,
@@ -257,55 +274,3 @@ func_ty_view: Ty_view_view[None, Mir_Type_var, Mir_Type] = func_ty.view
 
 # %%
 # print(asdict(art).keys())  # art is not a dataclass
-
-
-# %%
-def parse_decl_fun(mir_decl: Artifact) -> tuple[str, list[str]]:
-    """Parse a Mir_Decl.Fun_def artifact.
-
-    Returns:
-        tuple[str, list[str]]: The function name and the list of argument types.
-    """
-    if not isinstance(mir_decl, Common_Decl_t_poly_Fun):
-        raise TypeError(f'Expected Mir_Decl.Fun_def, got {type(mir_decl)}')
-    fun_def: Fun_def = mir_decl.arg
-    func_name: str = fun_def.f_name.name
-
-    func_ty: Mir_Type = fun_def.f_ty.ty
-    func_ty_view: Ty_view_view[None, Mir_Type_var, Mir_Type] = func_ty.view
-
-    return func_name, unpack_arrow(func_ty_view)
-
-
-def unpack_arrow(
-    ty_view: Ty_view_view[None, Mir_Type_var, Mir_Type],
-) -> list[str]:
-    """Flatten the arrow type view to a list of types (strings)."""
-    result = []
-
-    def helper(view: Any) -> None:
-        if isinstance(view, Ty_view_view_Arrow):
-            # Extract args: (annotations?, left_t, right_t)
-            _, left_t, right_t = view.args
-            # Assumption: left_t is a Mir_Type
-            left_view = left_t.view
-            if isinstance(left_view, Ty_view_view_Constr):
-                uid, _ = left_view.args
-                result.append(uid.name)
-            else:
-                raise ValueError('Never: left of arrow type view should be a constr')
-            # Recurse on right_t (which is a Mir_Type)
-            helper(right_t.view)
-        elif isinstance(view, Ty_view_view_Constr):
-            uid, _ = view.args
-            result.append(uid.name)
-        else:
-            raise ValueError(
-                'Never: arrow type view should be either a constr or an arrow'
-            )
-
-    helper(ty_view)
-    return result
-
-
-unpack_arrow(func_ty_view)
