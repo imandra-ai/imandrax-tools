@@ -1,5 +1,4 @@
-# pyright: basic
-# pyright: reportUnusedExpression=false
+# pyright: basic, reportUnusedExpression=false
 # %%
 import re
 import subprocess
