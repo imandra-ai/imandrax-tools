@@ -1,40 +1,8 @@
 open Printf
 open Parse_common
 
-(**
-Parse one row of a Record type declaration
 
-Return a tuple of
-- field name :: string
-- field type name :: string
-
-Example:
-- (x, int) will be mapped to
-```python
-@dataclass
-class SomeClass:
-    ...
-    x: int
-    ...
-```
-*)
-let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
-    string * string =
-  let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
-
-  let arg_name = f.name in
-  let Type.{ view = arg_ty_view; generation = _ } = ty in
-
-  let arg_type_name =
-    match (arg_ty_view : (unit, Uid.t, Type.t) Ty_view.view) with
-    | Constr ((constr_uid : Uid.t), (_constr_args : Type.t list)) ->
-        constr_uid.name
-    | _ ->
-        invalid_arg
-          "parse_rec_row_to_dataclass_row: expected Constr in .ty.view"
-  in
-
-  (arg_name, arg_type_name)
+let wip s = failwith (sprintf "WIP: %s" s)
 
 (** Parse Constr variant of Ty_view.view to type annotation
 
@@ -54,18 +22,47 @@ let parse_constr_to_type_annot
     match ty_view with
     | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) ->
       let constr_name = constr_uid.name in
-      match constr_args with
+      begin match constr_args with
       | [] -> (constr_name :: ty_acc, params_acc)
       | [next_ty] ->
         let next_view = next_ty.view in
         helper next_view (constr_name :: ty_acc) params_acc
       | _next_ty :: _next_tys ->
-        failwith "parse_constr_to_type_annot: expected Constr with 0 or 1 args"
-      | _ -> failwith "Never"
+        failwith "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 args"
+      end
+    | Var _ -> wip "Var"
     | _ -> failwith "parse_constr_to_type_annot: expected Constr or Var"
   in
 
   helper ty_view [] []
+
+(**
+Parse one row of a Record type declaration
+
+Return a tuple of
+- field name :: string
+- field type names :: string list (chain of nested types)
+
+Example:
+- (x, int) will be mapped to
+```python
+@dataclass
+class SomeClass:
+    ...
+    x: int
+    ...
+```
+*)
+let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
+    string * string list =
+  let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
+
+  let arg_name = f.name in
+  let Type.{ view = arg_ty_view; generation = _ } = ty in
+
+  let (arg_type_names, _params) = parse_constr_to_type_annot arg_ty_view in
+
+  (arg_name, arg_type_names)
 
 (** Parse one row of an Algebraic type declaration
 
@@ -107,22 +104,15 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   in
 
   (* constructor names, i.e., the type annotation for each field *)
-  let (dc_arg_constr_names : string list) =
+  let (dc_arg_constr_names : string list list) =
     args
     |> List.map (fun (arg : Type.t) ->
            let Type.{ view = arg_ty_view; generation = _ } = arg in
-           match (arg_ty_view : (unit, Uid.t, Type.t) Ty_view.view) with
-           | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) ->
-               let constr_name = constr_uid.name in
-               (* We should use the parameters of the constructor *)
-               let _todo = constr_args in
-               constr_name
-           | _ ->
-               let msg =
-                 "parse_adt_row_to_dataclass_def: expected Constr for \
-                  adt_row.args.[] | view"
-               in
-               failwith msg)
+
+           let (types, _params) = parse_constr_to_type_annot arg_ty_view in
+           printf "types: %s\n" (String.concat ", " types);
+
+           types)
   in
 
   let dataclass_def_stmt =
@@ -169,7 +159,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
           let dc_and_union_defs = dc_defs @ [ union_def ] in
           Ok dc_and_union_defs
       | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
-          let dc_args : (string * string) list =
+          let dc_args : (string * string list) list =
             rec_rows |> List.map parse_rec_row_to_dataclass_row
           in
           let dc_def = Ast.mk_dataclass_def decl_name dc_args in
@@ -309,6 +299,7 @@ let%expect_test "parse decl art" =
 
   printf "<><><><><><><><><>\n";
   [%expect {|
+    types: int, identity, maybe, validated, tagged
     <><><><><><><><><>
     (Ast_types.ClassDef
        { Ast_types.name = "My_ty"; bases = []; keywords = [];

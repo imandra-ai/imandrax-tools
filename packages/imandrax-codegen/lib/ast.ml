@@ -179,17 +179,17 @@ Example:
     y: str
   ```
 *)
-let mk_dataclass_def (name : string) (rows : (string * string) list) : stmt =
+let mk_dataclass_def (name : string) (rows : (string * string list) list) : stmt =
   let body : stmt list =
     match rows with
     | [] -> [ Pass ]
     | _ ->
         List.map
-          (fun ((tgt, ann) : string * string) ->
+          (fun ((tgt, row_types) : string * string list) ->
             AnnAssign
               {
                 target = Name { id = tgt; ctx = mk_ctx () };
-                annotation = Name { id = ann; ctx = mk_ctx () };
+                annotation = type_annot_of_chained_generic_types row_types;
                 value = None;
                 simple = mk_ann_assign_simple_flat ();
               })
@@ -263,9 +263,9 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
   let def_variant_constructor_as_dataclass (variant : string * string list) :
       stmt =
     let name = fst variant in
-    let rows : (string * string) list =
+    let rows : (string * string list) list =
       List.mapi
-        (fun i type_name -> ("arg" ^ string_of_int i, type_name))
+        (fun i type_name -> ("arg" ^ string_of_int i, [type_name]))
         (snd variant)
     in
     mk_dataclass_def name rows
