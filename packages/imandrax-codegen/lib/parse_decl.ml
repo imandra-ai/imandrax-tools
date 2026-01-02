@@ -115,7 +115,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     - Each row of dataclass is a type annotation, `arg0: int` or `a: int` *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     (*
-  - dev
+  - TODO(Q)
     - what about polymorphic types? `args` field?
     - what if Type.t list in args is another ADT?
     - how should we handle `doc` field? (it's ignored at the moment)
@@ -156,7 +156,7 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   let dataclass_def_stmt =
     Ast.mk_dataclass_def
       dc_name
-      (Some (dc_arg_type_params |> List.map (fun (uid : Uid.t) -> uid.name)))
+      (dc_arg_type_params |> List.map (fun (uid : Uid.t) -> uid.name))
       (List.combine dc_arg_names dc_arg_constr_names)
   in
 
@@ -206,7 +206,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
           let dc_args : (string * string list) list =
             rec_rows |> List.map parse_rec_row_to_dataclass_row
           in
-          let dc_def = Ast.mk_dataclass_def decl_name None dc_args in
+          let dc_def = Ast.mk_dataclass_def decl_name [] dc_args in
           [ dc_def ]
       | _ -> failwith "WIP: not Algebraic and not Tuple"
         end
@@ -363,19 +363,208 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
-  [%expect.unreachable]
-[@@expect.uncaught_exn {|
-  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
-     This is strongly discouraged as backtraces are fragile.
-     Please change this test to not include a backtrace. *)
-  (Failure "WIP: Var")
-  Raised at Stdlib.failwith in file "stdlib.ml", line 29, characters 17-33
-  Called from Imandrax_codegen__Parse_decl.parse_constr_to_type_annot in file "packages/imandrax-codegen/lib/parse_decl.ml", line 37, characters 29-49
-  Called from Imandrax_codegen__Parse_decl.parse_adt_row_to_dataclass_def.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 113, characters 34-72
-  Called from Stdlib__List.map in file "list.ml", line 83, characters 15-19
-  Called from Imandrax_codegen__Parse_decl.parse_adt_row_to_dataclass_def in file "packages/imandrax-codegen/lib/parse_decl.ml", lines 109-115, characters 4-17
-  Called from Stdlib__List.map in file "list.ml", line 87, characters 15-19
-  Called from Imandrax_codegen__Parse_decl.parse_decl in file "packages/imandrax-codegen/lib/parse_decl.ml", line 156, characters 12-63
-  Called from Imandrax_codegen__Parse_decl.(fun) in file "packages/imandrax-codegen/lib/parse_decl.ml", line 281, characters 15-33
-  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
-  |}]
+  [%expect {|
+    <><><><><><><><><>
+    (Ast_types.Assign
+       { Ast_types.targets =
+         [(Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load })];
+         value =
+         (Ast_types.Call
+            { Ast_types.func =
+              (Ast_types.Name { Ast_types.id = "TypeVar"; ctx = Ast_types.Load });
+              args =
+              [(Ast_types.Constant
+                  { Ast_types.value = (Ast_types.String "a"); kind = None })
+                ];
+              keywords = [] });
+         type_comment = None })
+    (Ast_types.Assign
+       { Ast_types.targets =
+         [(Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load })];
+         value =
+         (Ast_types.Call
+            { Ast_types.func =
+              (Ast_types.Name { Ast_types.id = "TypeVar"; ctx = Ast_types.Load });
+              args =
+              [(Ast_types.Constant
+                  { Ast_types.value = (Ast_types.String "b"); kind = None })
+                ];
+              keywords = [] });
+         type_comment = None })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Empty"; bases = []; keywords = [];
+         body = [Ast_types.Pass];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Single";
+         bases =
+         [(Ast_types.Subscript
+             { Ast_types.value =
+               (Ast_types.Name { Ast_types.id = "Generic"; ctx = Ast_types.Load });
+               slice =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               ctx = Ast_types.Load })
+           ];
+         keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Pair";
+         bases =
+         [(Ast_types.Subscript
+             { Ast_types.value =
+               (Ast_types.Name { Ast_types.id = "Generic"; ctx = Ast_types.Load });
+               slice =
+               (Ast_types.Tuple
+                  { Ast_types.elts =
+                    [(Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+                      (Ast_types.Name
+                         { Ast_types.id = "b"; ctx = Ast_types.Load })
+                      ];
+                    ctx = Ast_types.Load; dims = [] });
+               ctx = Ast_types.Load })
+           ];
+         keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Labeled";
+         bases =
+         [(Ast_types.Subscript
+             { Ast_types.value =
+               (Ast_types.Name { Ast_types.id = "Generic"; ctx = Ast_types.Load });
+               slice =
+               (Ast_types.Tuple
+                  { Ast_types.elts =
+                    [(Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+                      (Ast_types.Name
+                         { Ast_types.id = "b"; ctx = Ast_types.Load })
+                      ];
+                    ctx = Ast_types.Load; dims = [] });
+               ctx = Ast_types.Load })
+           ];
+         keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "key"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "value"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.ClassDef
+       { Ast_types.name = "Multi";
+         bases =
+         [(Ast_types.Subscript
+             { Ast_types.value =
+               (Ast_types.Name { Ast_types.id = "Generic"; ctx = Ast_types.Load });
+               slice =
+               (Ast_types.Tuple
+                  { Ast_types.elts =
+                    [(Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+                      (Ast_types.Name
+                         { Ast_types.id = "b"; ctx = Ast_types.Load })
+                      ];
+                    ctx = Ast_types.Load; dims = [] });
+               ctx = Ast_types.Load })
+           ];
+         keywords = [];
+         body =
+         [(Ast_types.AnnAssign
+             { Ast_types.target =
+               (Ast_types.Name { Ast_types.id = "arg0"; ctx = Ast_types.Load });
+               annotation =
+               (Ast_types.Subscript
+                  { Ast_types.value =
+                    (Ast_types.Name
+                       { Ast_types.id = "list"; ctx = Ast_types.Load });
+                    slice =
+                    (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+                    ctx = Ast_types.Load });
+               value = None; simple = 1 });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "arg1"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Subscript
+                   { Ast_types.value =
+                     (Ast_types.Name
+                        { Ast_types.id = "list"; ctx = Ast_types.Load });
+                     slice =
+                     (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                     ctx = Ast_types.Load });
+                value = None; simple = 1 })
+           ];
+         decorator_list =
+         [(Ast_types.Name { Ast_types.id = "dataclass"; ctx = Ast_types.Load })]
+         })
+    (Ast_types.Assign
+       { Ast_types.targets =
+         [(Ast_types.Name { Ast_types.id = "container"; ctx = Ast_types.Load })];
+         value =
+         (Ast_types.BinOp
+            { Ast_types.left =
+              (Ast_types.BinOp
+                 { Ast_types.left =
+                   (Ast_types.BinOp
+                      { Ast_types.left =
+                        (Ast_types.BinOp
+                           { Ast_types.left =
+                             (Ast_types.Name
+                                { Ast_types.id = "Empty"; ctx = Ast_types.Load });
+                             op = Ast_types.BitOr;
+                             right =
+                             (Ast_types.Name
+                                { Ast_types.id = "Single"; ctx = Ast_types.Load })
+                             });
+                        op = Ast_types.BitOr;
+                        right =
+                        (Ast_types.Name
+                           { Ast_types.id = "Pair"; ctx = Ast_types.Load })
+                        });
+                   op = Ast_types.BitOr;
+                   right =
+                   (Ast_types.Name
+                      { Ast_types.id = "Labeled"; ctx = Ast_types.Load })
+                   });
+              op = Ast_types.BitOr;
+              right =
+              (Ast_types.Name { Ast_types.id = "Multi"; ctx = Ast_types.Load }) });
+         type_comment = None })
+    <><><><><><><><><>
+    |}]
