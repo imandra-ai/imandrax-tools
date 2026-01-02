@@ -75,11 +75,11 @@
 
 - name: variant_with_composite_payload
   iml: |
-    type shape =
+    type shape2 =
     | Circle of int option
   req_kwargs:
     names:
-      - shape
+      - shape2
 
 - name: variant_two
   iml: |
@@ -170,6 +170,33 @@
     # type Container[A, B] = Empty | Single[A] | Pair[A, B] | Labeled[A, B] | Multi[A, B]
     Container = Empty | Single[A] | Pair[A, B] | Labeled[A, B] | Multi[A, B]
 
+- name: nested_generics
+  iml: |
+    type 'a identity = Identity of 'a
+
+    type 'a maybe =
+      | Just of 'a
+      | Nothing
+
+    type 'a validated =
+      | Valid of 'a
+      | Invalid of string
+
+    type 'a tagged = {
+      value : 'a;
+      tag : string
+    }
+
+    type my_ty =
+      | My_ty of int identity maybe validated tagged
+  req_kwargs:
+    names:
+      - my_ty
+  expected_python_code: |
+    @dataclass
+    class my_ty:
+        arg0: tagged[validated[maybe[identity[int]]]]
+
 - name: variant_recursive
   iml: |
     type tree =
@@ -198,8 +225,6 @@
   req_kwargs:
     names:
       - expr
-
-# - name: polymorphic?
 
 - name: real_and_option
   iml: |
