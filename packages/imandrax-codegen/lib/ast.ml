@@ -145,8 +145,7 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
     - Generic: for generic type, it's a chained Subscript ast node
 
     Example:
-    - Basic: `int` -> `int`
-    - Generic: `int, Optional, list` -> list[Optional[int]] *)
+    - `list, Optional, int` -> list[Optional[int]] *)
 let type_annot_of_chained_generic_types (type_names : string list) : expr =
   match type_names with
   | [] ->
@@ -163,23 +162,45 @@ let type_annot_of_chained_generic_types (type_names : string list) : expr =
             })
         base rest
 
+let mk_generic_type_base (base_type_vars : string list) : expr =
+  match base_type_vars with
+  | [] -> invalid_arg "mk_generic_type_base: empty type variable list"
+  | _ ->
+    let type_var_expr_by_var: expr list =
+      List.map (fun var -> Name { id = var; ctx = mk_ctx () }) base_type_vars
+    in
+    let subs_slice_expr: expr = if List.length type_var_expr_by_var = 1 then
+      List.hd type_var_expr_by_var
+    else
+      tuple_of_exprs type_var_expr_by_var
+    in
+    Subscript {
+      value = Name { id = "Generic"; ctx = mk_ctx () };
+      slice = subs_slice_expr;
+      ctx = mk_ctx ();
+    }
+
 (** Create a dataclass definition statement from its name and rows of fields
 
 Args:
   - name: The name of the dataclass
+  - base_type_vars: The type variables of the base dataclass
   - rows :: (string * string) list
     - (variable_name, type_name) pairs
 
 Example:
-- `Foo`, `x: int`, `y: str`: |
+- `Foo`, `[A, B]`, `x: int`, `y: str`: |
   ```
   @dataclass
-  class Foo:
+  class Foo(Generic[A, B]):
     x: int
     y: str
   ```
 *)
-let mk_dataclass_def (name : string) (rows : (string * string list) list) : stmt =
+let mk_dataclass_def
+  (name : string)
+  (base_type_vars: string list option)
+  (rows : (string * string list) list) : stmt =
   let body : stmt list =
     match rows with
     | [] -> [ Pass ]
@@ -195,10 +216,14 @@ let mk_dataclass_def (name : string) (rows : (string * string list) list) : stmt
               })
           rows
   in
+  let class_base = match base_type_vars with
+  | None -> []
+  | Some base_type_vars -> [ mk_generic_type_base base_type_vars ]
+  in
   ClassDef
     {
       name;
-      bases = [];
+      bases = class_base;
       keywords = [];
       body;
       decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
@@ -268,7 +293,7 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
         (fun i type_name -> ("arg" ^ string_of_int i, [type_name]))
         (snd variant)
     in
-    mk_dataclass_def name rows
+    mk_dataclass_def name None rows
   in
   let constructor_defs =
     List.map def_variant_constructor_as_dataclass variants
