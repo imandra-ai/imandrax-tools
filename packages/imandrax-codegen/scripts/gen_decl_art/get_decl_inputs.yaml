@@ -104,6 +104,71 @@
   req_kwargs:
     names:
       - shape_poly
+  expected_python_code: |
+    from dataclasses import dataclass
+    from typing import Generic, TypeVar
+
+    T = TypeVar('T')
+
+    @dataclass
+    class Point:
+        pass
+
+    @dataclass
+    class Circle(Generic[T]):
+        arg0: T
+
+    @dataclass
+    class Rectangle(Generic[T]):
+        arg0: T
+        arg1: T
+
+    @dataclass
+    class Triangle(Generic[T]):
+        a: T
+        b: T
+        c: T
+
+    # type shape_poly[T] = Point | Circle[T] | Rectangle[T] | Triangle[T]
+    shape_poly = Point | Circle[T] | Rectangle[T] | Triangle[T]
+
+- name: variant_poly_two_var
+  iml: |
+    type ('a, 'b) container =
+      | Empty
+      | Single of 'a
+      | Pair of 'a * 'b
+      | Labeled of { key: 'a; value: 'b }
+      | Multi of 'a list * 'b list
+  req_kwargs:
+    names:
+      - container
+  expected_python_code: |
+    @dataclass
+    class Empty:
+        pass
+
+    @dataclass
+    class Single[A]:
+        arg0: A
+
+    @dataclass
+    class Pair[A, B]:
+        arg0: A
+        arg1: B
+
+    @dataclass
+    class Labeled[A, B]:
+        key: A
+        value: B
+
+    @dataclass
+    class Multi[A, B]:
+        arg0: list[A]
+        arg1: list[B]
+
+    # type Container[A, B] = Empty | Single[A] | Pair[A, B] | Labeled[A, B] | Multi[A, B]
+    Container = Empty | Single[A] | Pair[A, B] | Labeled[A, B] | Multi[A, B]
 
 - name: variant_recursive
   iml: |
@@ -136,9 +201,19 @@
 
 # - name: polymorphic?
 
+- name: real_and_option
+  iml: |
+    type my_ty = {
+      x: real;
+      y: int option;
+      z: int;
+    }
+  req_kwargs:
+    names:
+      - my_ty
+
 - name: function
   iml: |
-
     type direction = North | South | East | West
 
     type position = { x: int; y: int; z: real }
