@@ -20,6 +20,7 @@ iml: |
 req_kwargs:
   names:
   - my_ty
+expected_python_code: "@dataclass\nclass my_ty:\n    arg0: tagged[validated[maybe[identity[int]]]]\n"
 get_decls_res:
   decls:
   - name: my_ty
