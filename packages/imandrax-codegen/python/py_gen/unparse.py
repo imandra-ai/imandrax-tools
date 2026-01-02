@@ -35,7 +35,7 @@ def remove_unused_import(code: str) -> str:
 
     try:
         result = subprocess.run(
-            [ruff_bin, 'check', '--select', 'F401', 'I001', '--fix', '-'],
+            [ruff_bin, 'check', '--select', 'F401, I001', '--fix', '-'],
             check=False,
             input=code,
             capture_output=True,
