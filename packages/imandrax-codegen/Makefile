@@ -16,7 +16,7 @@ gen-fun-decomp-art:
 	uv run scripts/gen_fun_decomp_art
 
 .PHONY: gen-decl-art
-gen-decl-art:
+gen-decl-art:  ## Generate decl artifacts
 	@echo "Generating decl artifacts..."
 	uv run scripts/gen_decl_art
 
@@ -33,7 +33,7 @@ copy-fun-decomp:
 	rsync -av --delete scripts/gen_fun_decomp_art/result/ test/data/fun_decomp/
 
 .PHONY: copy-decl
-copy-decl:
+copy-decl:  ## Copy decl artifacts to test data directories
 	@echo "Copying decl artifacts to test/data/decl/..."
 	rsync -av --delete scripts/gen_decl_art/result/ test/data/decl/
 
