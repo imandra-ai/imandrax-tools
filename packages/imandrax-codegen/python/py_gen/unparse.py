@@ -2,13 +2,26 @@
 
 import ast as stdlib_ast
 import subprocess
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from ruff.__main__ import find_ruff_bin
 
 from . import ast_types as custom_ast
 
 ruff_bin = find_ruff_bin()
+
+
+OPTION_LIB_SRC: Final[str] = """\
+from typing import TypeVar, Generic, TypeAlias
+T = TypeVar('T')
+
+
+@dataclass
+class Some(Generic[T]):
+    value: T
+
+option: TypeAlias = Some[T] | None
+"""
 
 
 def format_code(code: str) -> str:
@@ -96,8 +109,9 @@ def unparse(
         names=[stdlib_ast.alias(name='dataclass', asname=None)],
         level=0,
     )
+    option_lib_ast: list[stdlib_ast.stmt] = stdlib_ast.parse(OPTION_LIB_SRC).body
 
-    body = [future_annotations_import, dataclass_import, *stdlib_stmts]
+    body = [future_annotations_import, dataclass_import, *option_lib_ast, *stdlib_stmts]
 
     module = stdlib_ast.Module(body=body, type_ignores=[])
     stdlib_ast.fix_missing_locations(module)
