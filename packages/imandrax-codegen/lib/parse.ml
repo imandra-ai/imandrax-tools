@@ -612,7 +612,7 @@ let%expect_test "parse model art" =
     <><><><><><><><><><>
 
     Applied symbol:
-    (w/97332 : { view = (Constr (list, [{ view = (Var a/97331); generation = 3 }])); generation = 3 })
+    (w/92030 : { view = (Constr (list, [{ view = (Var a/92029); generation = 3 }])); generation = 3 })
 
     <><><><><><><><><><>
 
