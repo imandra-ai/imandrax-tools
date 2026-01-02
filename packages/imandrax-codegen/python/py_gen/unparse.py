@@ -95,6 +95,23 @@ def to_stdlib(node: Any) -> Any:
 
 def unparse(
     nodes: list[custom_ast.stmt],
+    # TODO: add a config field?
+    # - whether to include option lib imports
+    # - whether to alias `real` to `float` or not
+    #   - alternatively: use Decimal instead of float
+    # - the python version to use: 3.12+ or not
+    #   - this determines the type definition syntax
+    # # 3.12+
+    # class Pair[A, B]:
+    #     first: A
+    #     second: B
+    # # ----
+    # # 3.11-
+    # A = TypeVar('A')
+    # B = TypeVar('B')
+    # class Pair(Generic[A, B]):
+    #     first: A
+    #     second: B
 ) -> str:
     """Convert custom AST to Python source code using stdlib ast.unparse."""
     stdlib_stmts: list[stdlib_ast.stmt] = to_stdlib(nodes)
