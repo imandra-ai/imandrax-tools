@@ -144,7 +144,7 @@ def gen_ast(
 
 
 @gen_ast.register
-def _(
+def _base(
     art: str,
     mode: Literal['fun-decomp', 'model', 'decl'],
 ) -> list[ast_types.stmt]:
@@ -217,6 +217,16 @@ typecheck_res = c.typecheck(iml)
 arg_types = extract_type_decl_names(iml)
 assert arg_types
 arg_types
+# %%
+typecheck_res
+
+# %%
+decls = c.get_decls(['move'])
+
+
+# %%
+decls
+
 
 # %% type declarations
 decls = c.get_decls(arg_types)
