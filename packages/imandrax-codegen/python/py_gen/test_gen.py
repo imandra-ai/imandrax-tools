@@ -9,7 +9,7 @@ from typing import Literal
 
 import dotenv
 import py_gen.ast_types as ast_types
-from imandrax_api import url_prod
+from imandrax_api import url_dev, url_prod  # noqa: F401
 from imandrax_api_models import Art, EvalRes
 from imandrax_api_models.client import ImandraXClient
 from py_gen.ast_deserialize import load_from_json_string
@@ -19,7 +19,17 @@ curr_dir = Path(__file__).parent
 
 dotenv.load_dotenv()
 PROJECT_DIR = curr_dir / '..' / '..'
-CODEGEN_EXE_PATH = PROJECT_DIR / '_build' / 'default' / 'bin' / 'parse.exe'
+# Navigate to workspace root and then to the actual executable location
+WORKSPACE_ROOT = PROJECT_DIR / '..' / '..'
+CODEGEN_EXE_PATH = (
+    WORKSPACE_ROOT
+    / '_build'
+    / 'default'
+    / 'packages'
+    / 'imandrax-codegen'
+    / 'bin'
+    / 'parse.exe'
+)
 
 # Utils
 # ====================
@@ -150,6 +160,7 @@ def serialize_artifact(art: Art) -> str:
 def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
     c = ImandraXClient(
         auth_token=os.environ['IMANDRAX_API_KEY'],
+        # url=url_dev,
         url=url_prod,
     )
 

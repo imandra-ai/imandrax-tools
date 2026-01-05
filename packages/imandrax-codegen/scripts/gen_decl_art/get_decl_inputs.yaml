@@ -11,6 +11,15 @@
     names:
       - point
 
+- name: record_with_composite_type
+  iml: |
+    type shape = {
+      circle : int option
+    }
+  req_kwargs:
+    names:
+      - shape
+
 - name: tuple_two_int
   iml: |
     type two_int = int * int
@@ -256,6 +265,31 @@
       - move
 
 ---
+- name: six_swiss
+  iml: |
+    type order_type =
+      | Market
+      | Limit
+      | Quote
+
+    type order = {
+      order_id: int;
+      order_type: order_type;
+      order_qty: int;
+      order_price: real;
+      order_time: int;
+    }
+
+    type fill_price = real option
+
+    type order_book = {
+      buys: order list;
+      sells: order list;
+    }
+  req_kwargs:
+    names:
+      - order_book
+
 - name: basic
   iml: |
     let g = fun x -> x + 1
