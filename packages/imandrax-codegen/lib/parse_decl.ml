@@ -1,7 +1,6 @@
 open Printf
 open Parse_common
 
-
 let wip s = failwith (sprintf "WIP: %s" s)
 
 (** Parse Constr variant of Ty_view.view to type annotation
@@ -10,35 +9,32 @@ Return:
   0: a chained sequence of applied types
   1: generic type parameters used
 *)
-let parse_constr_to_type_annot
-  (ty_view: (unit, Uid.t, Type.t) Ty_view.view)
-  : (string list * Uid.t list) =
-
+let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
+    string list * Uid.t list =
   let rec helper
-  (ty_view: (unit, Uid.t, Type.t) Ty_view.view)
-  (ty_acc: string list)
-  (params_acc: Uid.t list)
-  : (string list * Uid.t list) =
+      (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
+      (ty_acc : string list)
+      (params_acc : Uid.t list) : string list * Uid.t list =
     match ty_view with
-    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) ->
-      let constr_name = constr_uid.name in
-      begin match constr_args with
-      | [] -> (constr_name :: ty_acc, params_acc)
-      | [next_ty] ->
-        let next_view = next_ty.view in
-        helper next_view (constr_name :: ty_acc) params_acc
-      | _next_ty :: _next_tys ->
-        failwith "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 args"
-      end
+    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
+        let constr_name = constr_uid.name in
+        match constr_args with
+        | [] -> (constr_name :: ty_acc, params_acc)
+        | [ next_ty ] ->
+            let next_view = next_ty.view in
+            helper next_view (constr_name :: ty_acc) params_acc
+        | _next_ty :: _next_tys ->
+            failwith
+              "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 \
+               args")
     | Var (var_uid : Uid.t) ->
-      let type_var_name = var_uid.name in
-      (type_var_name :: ty_acc, var_uid :: params_acc)
+        let type_var_name = var_uid.name in
+        (type_var_name :: ty_acc, var_uid :: params_acc)
     | _ -> failwith "parse_constr_to_type_annot: expected Constr or Var"
   in
 
-  let (ty_acc, params_acc) = helper ty_view [] [] in
+  let ty_acc, params_acc = helper ty_view [] [] in
   (List.rev ty_acc, params_acc)
-
 
 (** Define type variable
 
@@ -47,22 +43,18 @@ Example:
 *)
 let type_var_def_of_uid (uid : Uid.t) : Ast.stmt =
   let name = uid.name in
-  Assign {
-    targets = [
-      Ast.mk_name_expr name
-    ];
-    value = Ast.Call {
-      func = Ast.mk_name_expr "TypeVar";
-      args = [
-        Ast.Constant {
-          value = String name;
-          kind = None;
-        }
-      ];
-      keywords = [];
-    };
-    type_comment = None;
-  }
+  Assign
+    {
+      targets = [ Ast.mk_name_expr name ];
+      value =
+        Ast.Call
+          {
+            func = Ast.mk_name_expr "TypeVar";
+            args = [ Ast.Constant { value = String name; kind = None } ];
+            keywords = [];
+          };
+      type_comment = None;
+    }
 
 (**
 Parse one row of a Record type declaration
@@ -88,7 +80,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
   let arg_name = f.name in
   let Type.{ view = arg_ty_view; generation = _ } = ty in
 
-  let (arg_type_names, _params) = parse_constr_to_type_annot arg_ty_view in
+  let arg_type_names, _params = parse_constr_to_type_annot arg_ty_view in
 
   (arg_name, arg_type_names)
 
@@ -97,6 +89,9 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     Return:
     - dataclass name :: string
     - dataclass definition statement :: Ast.stmt
+    - type annotation of the dataclass :: Ast.expr
+      - for non-generic types, this is just the dataclass name
+      - for generic types, this is a subscript
 
     - Handle the Algebraic case of Delc.t where payload is a list of adt_row
     - Each adt_row should maps to a dataclass definition in Python (a list of
@@ -115,7 +110,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     - Each row of dataclass is a type annotation, `arg0: int` or `a: int` *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     (*
-  - TODO(Q)
+  - TODO(Q):
     - what about polymorphic types? `args` field?
     - what if Type.t list in args is another ADT?
     - how should we handle `doc` field? (it's ignored at the moment)
@@ -132,30 +127,27 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   in
 
   (* constructor names, i.e., the type annotation for each field *)
-  let (dc_arg_constr_names : string list list), (dc_arg_type_params : Uid.t list) =
+  let ( (dc_arg_constr_names : string list list),
+        (dc_arg_type_params : Uid.t list) ) =
     (args : Mir.Type.t list)
-    |> List.map (
-      fun (arg : Type.t) ->
-      let Type.{ view = arg_ty_view; generation = _ } = arg in
+    |> List.map (fun (arg : Type.t) ->
+           let Type.{ view = arg_ty_view; generation = _ } = arg in
 
-      let (types, params) = parse_constr_to_type_annot arg_ty_view in
+           let types, params = parse_constr_to_type_annot arg_ty_view in
 
-      (types, params)
-    )
+           (types, params))
     |> List.split
     |> fun (dc_arg_constr_names, dc_arg_type_params_by_arg) ->
-      (* Flatten and dedup type params *)
-      let (dc_arg_type_params: Uid.t list) =
-        dc_arg_type_params_by_arg
-        |> List.flatten
-        |> CCList.sort_uniq ~cmp:Uid.compare
-      in
-      (dc_arg_constr_names, dc_arg_type_params)
+    (* Flatten and dedup type params *)
+    let (dc_arg_type_params : Uid.t list) =
+      dc_arg_type_params_by_arg |> List.flatten
+      |> CCList.sort_uniq ~cmp:Uid.compare
+    in
+    (dc_arg_constr_names, dc_arg_type_params)
   in
 
   let dataclass_def_stmt =
-    Ast.mk_dataclass_def
-      dc_name
+    Ast.mk_dataclass_def dc_name
       (dc_arg_type_params |> List.map (fun (uid : Uid.t) -> uid.name))
       (List.combine dc_arg_names dc_arg_constr_names)
   in
@@ -172,11 +164,11 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
   match decl with
-  | Ty (ty_view_def : Type.t Ty_view.def_poly) -> (
+  | Ty (ty_view_def : Type.t Ty_view.def_poly) ->
       (* Unpack ty view *)
       let {
         Ty_view.name = decl_name_uid;
-        params = (params : Uid.t list);
+        params : Uid.t list;
         decl = ty_view_decl;
         clique = _;
         timeout = _;
@@ -194,26 +186,24 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
       (* TODO(refactor): move above extraction to single pattern match *)
 
       (* Handle rows *)
-      let (decl_body : Ast_types.stmt list) = begin match ty_view_decl with
-      | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
-          let (dc_names : string list), (dc_defs : Ast.stmt list) =
-            adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
-          in
-          let union_def = Ast.mk_union_def decl_name dc_names in
-          let dc_and_union_defs = dc_defs @ [ union_def ] in
-          dc_and_union_defs
-      | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
-          let dc_args : (string * string list) list =
-            rec_rows |> List.map parse_rec_row_to_dataclass_row
-          in
-          let dc_def = Ast.mk_dataclass_def decl_name [] dc_args in
-          [ dc_def ]
-      | _ -> failwith "WIP: not Algebraic and not Tuple"
-        end
+      let (decl_body : Ast_types.stmt list) =
+        match ty_view_decl with
+        | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
+            let (dc_names : string list), (dc_defs : Ast.stmt list) =
+              adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
+            in
+            let union_def = Ast.mk_union_def decl_name dc_names in
+            let dc_and_union_defs = dc_defs @ [ union_def ] in
+            dc_and_union_defs
+        | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
+            let dc_args : (string * string list) list =
+              rec_rows |> List.map parse_rec_row_to_dataclass_row
+            in
+            let dc_def = Ast.mk_dataclass_def decl_name [] dc_args in
+            [ dc_def ]
+        | _ -> failwith "WIP: not Algebraic and not Tuple"
       in
       Ok (type_var_defs @ decl_body)
-
-  )
   | Fun _ -> failwith "WIP: Fun"
   | _ -> invalid_arg "parse_decl: expected Ty | Fun"
 
@@ -279,7 +269,8 @@ let%expect_test "parse decl art" =
     decls;
   print_endline (Format.flush_str_formatter ());
 
-  [%expect {|
+  [%expect
+    {|
     name: variant_poly_two_var
     code:
      type ('a, 'b) container =
@@ -363,7 +354,8 @@ let%expect_test "parse decl art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   printf "<><><><><><><><><>\n";
-  [%expect {|
+  [%expect
+    {|
     <><><><><><><><><>
     (Ast_types.Assign
        { Ast_types.targets =
