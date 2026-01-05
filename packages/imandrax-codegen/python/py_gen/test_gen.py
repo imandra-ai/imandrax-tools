@@ -180,11 +180,11 @@ def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
 
 
 if __name__ == '__main__':
-    import sys
+    import argparse
 
     from py_gen.unparse import unparse
 
-    default_iml = """\
+    DEFAULT_IML = """\
     type direction = North | South | East | West
 
     type position = { x: int; y: int; z: real }
@@ -207,15 +207,27 @@ if __name__ == '__main__':
         in
         { x; y; z }\
     """
-    # Read IML from stdin or default to a simple example
-    # Only read from stdin if it's not a TTY (i.e., data is piped in)
-    if not sys.stdin.isatty():
-        iml = sys.stdin.read()
-    else:
-        iml = ''
 
-    if not iml:
-        iml = default_iml
+    parser = argparse.ArgumentParser(description='Generate test cases for IML.')
+    parser.add_argument(
+        '-i',
+        '--iml-path',
+        help='Path of IML file to generate test cases',
+    )
+    parser.add_argument(
+        '-f',
+        '--function',
+        help='Name of function to generate test cases for',
+    )
+    args = parser.parse_args()
 
-    test_case_stmts = gen_test_cases(iml, 'move')
+    match (args.iml_path, args.function):
+        case (str(iml_path), str(func)):
+            iml = Path(iml_path).read_text()
+            f = func
+        case _:
+            iml = DEFAULT_IML
+            f = 'move'
+
+    test_case_stmts = gen_test_cases(iml, f)
     print(unparse(test_case_stmts))
