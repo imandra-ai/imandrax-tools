@@ -138,7 +138,7 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
           simple = mk_ann_assign_simple_flat ();
         }
 
-(** Create type annotation from a dataclass row type
+(** Create type annotation from a list of applied generic type names
 
     Case:
     - Basic: for single type name, it's simply a Name ast node
@@ -161,6 +161,31 @@ let type_annot_of_chained_generic_types (type_names : string list) : expr =
               ctx = mk_ctx ();
             })
         base rest
+
+(** Create type annotation
+Eg:
+- Foo; A, B -> Foo[A, B]
+- Foo; -> Foo
+*)
+let mk_generic_type_annot (name : string) (type_vars : string list) : expr =
+  match type_vars with
+  | [] -> Name { id = name; ctx = mk_ctx () }
+  | _ ->
+    let type_var_expr_by_var : expr list =
+      List.map (fun var -> Name { id = var; ctx = mk_ctx () }) type_vars
+    in
+    let subs_slice_expr : expr =
+      if List.length type_var_expr_by_var = 1 then
+        List.hd type_var_expr_by_var
+      else tuple_of_exprs type_var_expr_by_var
+    in
+    Subscript
+      {
+        value = Name { id = name; ctx = mk_ctx () };
+        slice = subs_slice_expr;
+        ctx = mk_ctx ();
+      }
+
 
 let mk_generic_type_base (base_type_vars : string list) : expr =
   match base_type_vars with
@@ -220,7 +245,7 @@ let mk_dataclass_def
   let class_base =
     match base_type_vars with
     | [] -> []
-    | _ -> [ mk_generic_type_base base_type_vars ]
+    | _ -> [ mk_generic_type_annot "Generic" base_type_vars ]
   in
   ClassDef
     {
@@ -230,6 +255,7 @@ let mk_dataclass_def
       body;
       decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
     }
+
 
 (** Initiate a dataclass instance from its name and arguments (both pos and kw)
 
@@ -244,24 +270,18 @@ let mk_dataclass_value
   in
   Call { func = Name { id = dataclass_name; ctx = mk_ctx () }; args; keywords }
 
-(* Create an union definition statement from a list of member names
+(** Create an union definition statement from a list of member type expr
 
 Example:
 - `Status`, `str`, `int` -> `Status = str | int`
 *)
-let mk_union_def (name : string) (union_names : string list) : stmt =
+let mk_union_def (name : string) (member_types : expr list) : stmt =
   let left_targets = [ Name { id = name; ctx = mk_ctx () } ] in
   let right_value =
-    match union_names with
+    match member_types with
     | [] -> invalid_arg "def_union: empty union"
-    | [ single ] -> Name { id = single; ctx = mk_ctx () }
+    | [ single ] -> single
     | _ ->
-        let component_exprs : expr list =
-          List.map
-            (fun component_name ->
-              Name { id = component_name; ctx = mk_ctx () })
-            union_names
-        in
         let rec mk_union (components : expr list) : expr =
           match components with
           | [] | [ _ ] -> invalid_arg "mk_union: need at least 2 elements"
@@ -270,7 +290,7 @@ let mk_union_def (name : string) (union_names : string list) : stmt =
               let merged_left_and_right = BinOp { left; op = BitOr; right } in
               mk_union (merged_left_and_right :: rest)
         in
-        mk_union component_exprs
+        mk_union member_types
   in
   Assign { targets = left_targets; value = right_value; type_comment = None }
 
@@ -285,7 +305,9 @@ let mk_union_def (name : string) (union_names : string list) : stmt =
 *)
 let variant_dataclass (name : string) (variants : (string * string list) list) :
     stmt list =
-  let variant_names = List.map fst variants in
+  let (variant_names : string list) = List.map fst variants in
+  let (variant_types : expr list) = variant_names |> List.map mk_name_expr
+  in
   (* Define a single variant constructor as a dataclass *)
   let def_variant_constructor_as_dataclass (variant : string * string list) :
       stmt =
@@ -300,7 +322,7 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
   let constructor_defs =
     List.map def_variant_constructor_as_dataclass variants
   in
-  constructor_defs @ [ mk_union_def name variant_names ]
+  constructor_defs @ [ mk_union_def name variant_types ]
 
 (** Create a defaultdict type annotation from its key and value types *)
 let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
@@ -549,7 +571,7 @@ let%expect_test "char to bools" =
   [%expect {| false false false false true true false false |}]
 
 let%expect_test "build union" =
-  let union_stmt = mk_union_def "Status" [ "str"; "int" ] in
+  let union_stmt = mk_union_def "Status" [mk_name_expr "str"; mk_name_expr "int"] in
   print_endline (show_stmt union_stmt);
   [%expect
     {|
