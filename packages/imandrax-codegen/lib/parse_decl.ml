@@ -90,9 +90,9 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     - dataclass name :: string
     - dataclass definition statement :: Ast.stmt
     - type annotation of the dataclass :: Ast.expr
-      - for non-generic types, this is just the dataclass name
-      - for generic types, this is a subscript
-      - this will be used in the final union definition
+        - for non-generic types, this is just the dataclass name
+        - for generic types, this is a subscript
+        - this will be used in the final union definition
 
     - Handle the Algebraic case of Delc.t where payload is a list of adt_row
     - Each adt_row should maps to a dataclass definition in Python (a list of
@@ -185,8 +185,11 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
   (* Ast expression for the type annotation of the dataclass
   Eg: Point, Circle[a], Square
   *)
+  let ast_expr_dataclass_annot =
+    Ast.mk_generic_type_annot class_name (type_params_used |> List.map (fun (uid : Uid.t) -> uid.name))
+  in
 
-  (class_name, ast_stmt_dataclass_def, _)
+  (class_name, ast_stmt_dataclass_def, ast_expr_dataclass_annot)
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
@@ -216,10 +219,10 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
       let (decl_body : Ast_types.stmt list) =
         match ty_view_decl with
         | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
-            let (dc_names : string list), (dc_defs : Ast.stmt list) =
-              adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
+            let (dc_names : string list), (dc_defs : Ast.stmt list), (dc_annot : Ast.expr list) =
+              adt_rows |> List.map parse_adt_row_to_dataclass_def |> unzip3
             in
-            let union_def = Ast.mk_union_def decl_name dc_names in
+            let union_def = Ast.mk_union_def decl_name dc_annot in
             let dc_and_union_defs = dc_defs @ [ union_def ] in
             dc_and_union_defs
         | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
@@ -568,22 +571,69 @@ let%expect_test "parse decl art" =
                                 { Ast_types.id = "Empty"; ctx = Ast_types.Load });
                              op = Ast_types.BitOr;
                              right =
-                             (Ast_types.Name
-                                { Ast_types.id = "Single"; ctx = Ast_types.Load })
+                             (Ast_types.Subscript
+                                { Ast_types.value =
+                                  (Ast_types.Name
+                                     { Ast_types.id = "Single";
+                                       ctx = Ast_types.Load });
+                                  slice =
+                                  (Ast_types.Name
+                                     { Ast_types.id = "a"; ctx = Ast_types.Load });
+                                  ctx = Ast_types.Load })
                              });
                         op = Ast_types.BitOr;
                         right =
-                        (Ast_types.Name
-                           { Ast_types.id = "Pair"; ctx = Ast_types.Load })
+                        (Ast_types.Subscript
+                           { Ast_types.value =
+                             (Ast_types.Name
+                                { Ast_types.id = "Pair"; ctx = Ast_types.Load });
+                             slice =
+                             (Ast_types.Tuple
+                                { Ast_types.elts =
+                                  [(Ast_types.Name
+                                      { Ast_types.id = "a"; ctx = Ast_types.Load
+                                        });
+                                    (Ast_types.Name
+                                       { Ast_types.id = "b"; ctx = Ast_types.Load
+                                         })
+                                    ];
+                                  ctx = Ast_types.Load; dims = [] });
+                             ctx = Ast_types.Load })
                         });
                    op = Ast_types.BitOr;
                    right =
-                   (Ast_types.Name
-                      { Ast_types.id = "Labeled"; ctx = Ast_types.Load })
+                   (Ast_types.Subscript
+                      { Ast_types.value =
+                        (Ast_types.Name
+                           { Ast_types.id = "Labeled"; ctx = Ast_types.Load });
+                        slice =
+                        (Ast_types.Tuple
+                           { Ast_types.elts =
+                             [(Ast_types.Name
+                                 { Ast_types.id = "a"; ctx = Ast_types.Load });
+                               (Ast_types.Name
+                                  { Ast_types.id = "b"; ctx = Ast_types.Load })
+                               ];
+                             ctx = Ast_types.Load; dims = [] });
+                        ctx = Ast_types.Load })
                    });
               op = Ast_types.BitOr;
               right =
-              (Ast_types.Name { Ast_types.id = "Multi"; ctx = Ast_types.Load }) });
+              (Ast_types.Subscript
+                 { Ast_types.value =
+                   (Ast_types.Name
+                      { Ast_types.id = "Multi"; ctx = Ast_types.Load });
+                   slice =
+                   (Ast_types.Tuple
+                      { Ast_types.elts =
+                        [(Ast_types.Name
+                            { Ast_types.id = "a"; ctx = Ast_types.Load });
+                          (Ast_types.Name
+                             { Ast_types.id = "b"; ctx = Ast_types.Load })
+                          ];
+                        ctx = Ast_types.Load; dims = [] });
+                   ctx = Ast_types.Load })
+              });
          type_comment = None })
     <><><><><><><><><>
     |}]
