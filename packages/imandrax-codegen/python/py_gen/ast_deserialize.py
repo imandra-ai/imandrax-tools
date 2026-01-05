@@ -69,7 +69,8 @@ def deserialize(value: Any) -> Any:
                 if tag == 'Constant' and 'value' in data:
                     kwargs: dict[str, Any] = {}
                     for k, v in data.items():
-                        kwargs[k] = deserialize(v)
+                        if k != 'value':  # Skip 'value' - handle it specially below
+                            kwargs[k] = deserialize(v)
                     kwargs['value'] = deserialize_constant_value(data['value'])
                     return cls(**kwargs)
 
