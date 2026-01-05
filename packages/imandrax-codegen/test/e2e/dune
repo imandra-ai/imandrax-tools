@@ -44,4 +44,4 @@
   ../../pyproject.toml
   ../../uv.lock
   ../../README.md
-  (source_tree ../../python)))
+  (glob_files ../../python/**/*.py)))
