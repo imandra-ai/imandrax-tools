@@ -17,7 +17,7 @@ Setup: Define helper function
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    py-gen-parse "test/data/model/$1" - --mode model \
-  >    | uv run py-gen - \
+  >    | uv run imandrax-codegen - \
   >    | fence
   > ); }
 

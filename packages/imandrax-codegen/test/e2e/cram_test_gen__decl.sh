@@ -19,7 +19,7 @@ Setup: Define helper function
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    yq ".get_decls_res.decls[0].artifact" "test/data/decl/$1" -o json \
   >    | py-gen-parse - - --mode decl \
-  >    | uv run py-gen - \
+  >    | uv run imandrax-codegen - \
   >    | fence
   > ); }
 

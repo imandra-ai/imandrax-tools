@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [manifest]
 members = [
-    "imandrax-codegen-py",
+    "imandrax-codegen",
     "scripts",
 ]
 
@@ -232,6 +232,18 @@ wheels = [
 ]
 
 [[package]]
+name = "click"
+version = "8.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/fa/656b739db8587d7b5dfa22e22ed02566950fbfbcdc20311993483657a5c0/click-8.3.1.tar.gz", hash = "sha256:12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a", size = 295065, upload-time = "2025-11-15T20:45:42.706Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/98/78/01c019cdb5d6498122777c1a43056ebb3ebfeef2076d9d026bfe15583b2b/click-8.3.1-py3-none-any.whl", hash = "sha256:981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6", size = 108274, upload-time = "2025-11-15T20:45:41.139Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -433,7 +445,7 @@ wheels = [
 ]
 
 [[package]]
-name = "imandrax-codegen-py"
+name = "imandrax-codegen"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -445,6 +457,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rich" },
     { name = "ruff" },
+    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -463,6 +476,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "ruff", specifier = ">=0.14.3" },
+    { name = "typer", specifier = ">=0.21.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1132,7 +1146,7 @@ name = "scripts"
 version = "0.1.0"
 source = { editable = "scripts" }
 dependencies = [
-    { name = "imandrax-codegen-py" },
+    { name = "imandrax-codegen" },
 ]
 
 [package.dev-dependencies]
@@ -1142,7 +1156,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "imandrax-codegen-py", editable = "." }]
+requires-dist = [{ name = "imandrax-codegen", editable = "." }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1157,6 +1171,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a7/7f/369a478863a39351be75e0a12602bc29196b31f87bf3432bed2be6379f8e/sexpdata-1.0.2.tar.gz", hash = "sha256:92b67b0361f6766f8f9e44b9519cf3fbcfafa755db85bbf893c3e1cf4ddac109", size = 8906, upload-time = "2024-01-09T07:09:59.096Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/f3/ec9f8cc20dc1f34c926f0ec3f43b73fa2da59cf08e432fb8ae5b666b2027/sexpdata-1.0.2-py3-none-any.whl", hash = "sha256:b39c918f055a85c5c35c1d4f7930aabb176bd29016e5ba5692e7e849914b2a1a", size = 10337, upload-time = "2024-01-09T07:09:57.185Z" },
+]
+
+[[package]]
+name = "shellingham"
+version = "1.5.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b27b655beb4b4e9c62313a4e8da8c676e142cc210d58e/shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de", size = 10310, upload-time = "2023-10-24T04:13:40.426Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
 ]
 
 [[package]]
@@ -1248,6 +1271,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/22/ec/9bc96aa94db6656cbed3c911fdd2a99693cdd165bc94e22ecc4bc8136c2a/tree_sitter_iml-0.25.2.tar.gz", hash = "sha256:74c16612b41362fcbf8c42a77dca8a8d85c3784bb1acf1e1b57acee0aa0eff34", size = 2290267, upload-time = "2025-09-29T15:29:36.561Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/20/36/f11162aa3f290f807ace028d0b9b6b99d4045b3920d1fa98422d9a8fe906/tree_sitter_iml-0.25.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:4aefa2a6c4502ddf1e6159ef6c3543aac73990801be6aabe2ac3fcdb53dc196d", size = 957429, upload-time = "2025-09-29T15:29:34.142Z" },
+]
+
+[[package]]
+name = "typer"
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "rich" },
+    { name = "shellingham" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/30/ff9ede605e3bd086b4dd842499814e128500621f7951ca1e5ce84bbf61b1/typer-0.21.0.tar.gz", hash = "sha256:c87c0d2b6eee3b49c5c64649ec92425492c14488096dfbc8a0c2799b2f6f9c53", size = 106781, upload-time = "2025-12-25T09:54:53.651Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/e4/5ebc1899d31d2b1601b32d21cfb4bba022ae6fce323d365f0448031b1660/typer-0.21.0-py3-none-any.whl", hash = "sha256:c79c01ca6b30af9fd48284058a7056ba0d3bf5cf10d0ff3d0c5b11b68c258ac6", size = 47109, upload-time = "2025-12-25T09:54:51.918Z" },
 ]
 
 [[package]]

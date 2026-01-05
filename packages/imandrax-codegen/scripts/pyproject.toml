@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "imandrax-codegen-py",
+    "imandrax-codegen",
 ]
 
 [build-system]
@@ -16,7 +16,7 @@ requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-imandrax-codegen-py = { workspace = true }
+imandrax-codegen = { workspace = true }
 
 [dependency-groups]
 dev = [

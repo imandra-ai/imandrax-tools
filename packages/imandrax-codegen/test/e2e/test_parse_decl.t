@@ -4,7 +4,7 @@ Setup: Define helper function
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    yq ".get_decls_res.decls[0].artifact" "test/data/decl/$1" -o json \
   >    | py-gen-parse - - --mode decl \
-  >    | uv run py-gen - \
+  >    | uv run imandrax-codegen - \
   >    | fence
   > ); }
 
@@ -12,14 +12,14 @@ function
   $ run_test function.yaml
   ```python
   Error parsing input: WIP: Fun
-  py-gen error: Input is empty
+  imandrax_codegen error: Input is empty
   ```
 
 GADT_monomorphic
   $ run_test GADT_monomorphic.yaml
   ```python
   Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
-  py-gen error: Input is empty
+  imandrax_codegen error: Input is empty
   ```
 
 nested_generics
@@ -71,7 +71,7 @@ tuple_two_int
   $ run_test tuple_two_int.yaml
   ```python
   Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
-  py-gen error: Input is empty
+  imandrax_codegen error: Input is empty
   ```
 
 variant_poly_two_var
