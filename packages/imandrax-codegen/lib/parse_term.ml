@@ -230,8 +230,12 @@ let rec parse_term (term : Term.term) :
       in
 
       let term =
-        Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
-          ~kwargs:[]
+        match variant_constr_name with
+        (* map Option's None variant to Unit, which will be Python's None *)
+        | "None" -> Ast.Constant { value = Unit; kind = None }
+        | _ ->
+            Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
+              ~kwargs:[]
       in
       Ok (Some dataclass_type_annot, term)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
