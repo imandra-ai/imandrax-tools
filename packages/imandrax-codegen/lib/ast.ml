@@ -186,26 +186,6 @@ let mk_generic_type_annot (name : string) (type_vars : string list) : expr =
         ctx = mk_ctx ();
       }
 
-
-let mk_generic_type_base (base_type_vars : string list) : expr =
-  match base_type_vars with
-  | [] -> invalid_arg "mk_generic_type_base: empty type variable list"
-  | _ ->
-      let type_var_expr_by_var : expr list =
-        List.map (fun var -> Name { id = var; ctx = mk_ctx () }) base_type_vars
-      in
-      let subs_slice_expr : expr =
-        if List.length type_var_expr_by_var = 1 then
-          List.hd type_var_expr_by_var
-        else tuple_of_exprs type_var_expr_by_var
-      in
-      Subscript
-        {
-          value = Name { id = "Generic"; ctx = mk_ctx () };
-          slice = subs_slice_expr;
-          ctx = mk_ctx ();
-        }
-
 (** Create a dataclass definition statement from its name and rows of fields
 
 Args:
