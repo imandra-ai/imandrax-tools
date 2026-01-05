@@ -27,6 +27,9 @@ option: TypeAlias = Some[T] | None
 def format_code(code: str) -> str:
     """Format Python code using ruff."""
 
+    # Sort imports
+    code = fix_ruff_check(code, ['I001'])
+
     try:
         result = subprocess.run(
             [ruff_bin, 'format', '-'],
@@ -41,14 +44,17 @@ def format_code(code: str) -> str:
         return code
 
 
-def remove_unused_import(code: str) -> str:
-    """Lint and fix code with ruff, focusing on F401 (unused imports)."""
+def fix_ruff_check(code: str, rules: list[str]) -> str:
+    """Lint and fix code with ruff for the given rules."""
+
+    if not rules:
+        return code
 
     ruff_bin = find_ruff_bin()
 
     try:
         result = subprocess.run(
-            [ruff_bin, 'check', '--select', 'F401, I001', '--fix', '-'],
+            [ruff_bin, 'check', '--select', ','.join(rules), '--fix', '-'],
             check=False,
             input=code,
             capture_output=True,
@@ -59,6 +65,11 @@ def remove_unused_import(code: str) -> str:
     except (subprocess.CalledProcessError, FileNotFoundError):
         # If ruff fails or is not found, return original code
         return code
+
+
+def remove_unused_import(code: str) -> str:
+    """Remove unused imports from code."""
+    return fix_ruff_check(code, ['F401'])
 
 
 def to_stdlib(node: Any) -> Any:
@@ -95,7 +106,6 @@ def to_stdlib(node: Any) -> Any:
 
 def unparse(
     nodes: list[custom_ast.stmt],
-    include_option_lib: bool = False,
     alias_real_to_float: bool = False,
     # TODO: add a config field?
     # - [x] whether to include option lib imports
@@ -118,6 +128,15 @@ def unparse(
     """Convert custom AST to Python source code using stdlib ast.unparse."""
     stdlib_stmts: list[stdlib_ast.stmt] = to_stdlib(nodes)
 
+    def mk_ast(src: str) -> list[stdlib_ast.stmt]:
+        return stdlib_ast.parse(src).body
+
+    def gen_code(stmts: list[stdlib_ast.stmt]) -> str:
+        """Generate Python source code from a list of AST statements."""
+        module = stdlib_ast.Module(body=stmts, type_ignores=[])
+        stdlib_ast.fix_missing_locations(module)
+        return stdlib_ast.unparse(module)
+
     future_annotations_import = stdlib_ast.ImportFrom(
         module='__future__',
         names=[stdlib_ast.alias(name='annotations', asname=None)],
@@ -128,23 +147,32 @@ def unparse(
         names=[stdlib_ast.alias(name='dataclass', asname=None)],
         level=0,
     )
-
-    option_lib_ast: list[stdlib_ast.stmt] = stdlib_ast.parse(OPTION_LIB_SRC).body
-    alias_real_ast: list[stdlib_ast.stmt] = stdlib_ast.parse('real = float').body
+    option_lib_import = mk_ast('from imandrax_option_lib import option, Some')
+    option_lib_definition: list[stdlib_ast.stmt] = mk_ast(OPTION_LIB_SRC)
+    alias_real: list[stdlib_ast.stmt] = mk_ast('real = float')
 
     body = [
         future_annotations_import,
         dataclass_import,
-        *(alias_real_ast if alias_real_to_float else []),
-        *(option_lib_ast if include_option_lib else []),
+        *option_lib_import,
+        *(alias_real if alias_real_to_float else []),
         *stdlib_stmts,
     ]
 
-    module = stdlib_ast.Module(body=body, type_ignores=[])
-    stdlib_ast.fix_missing_locations(module)
+    code = gen_code(body)
 
-    gen_code = stdlib_ast.unparse(module)
+    code = remove_unused_import(code)
 
-    gen_code = format_code(remove_unused_import(gen_code))
+    # After removing unused imports, if "from imandrax_option_lib" is still present,
+    # it means that the option_lib definition is needed
+    if 'from imandrax_option_lib' in code:
+        body = [
+            future_annotations_import,
+            dataclass_import,
+            *option_lib_definition,
+            *(alias_real if alias_real_to_float else []),
+            *stdlib_stmts,
+        ]
+        code = gen_code(body)
 
-    return gen_code
+    return format_code(code)

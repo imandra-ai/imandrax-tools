@@ -26,9 +26,6 @@ def cli(
             help='Output Python file (writes to stdout if not provided)',
         ),
     ] = None,
-    include_option_lib: Annotated[
-        bool, typer.Option('--include-option-lib', help='Include option definition')
-    ] = False,
     include_real_to_float_alias: Annotated[
         bool,
         typer.Option(
@@ -53,7 +50,6 @@ def cli(
     # Generate Python code
     python_code = unparse(
         stmts,
-        include_option_lib=include_option_lib,
         alias_real_to_float=include_real_to_float_alias,
     )
 
