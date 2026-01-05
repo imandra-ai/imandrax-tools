@@ -87,7 +87,6 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
 (** Parse one row of an Algebraic type declaration
 
     Return:
-    - dataclass name :: string
     - dataclass definition statement :: Ast.stmt
     - type annotation of the dataclass :: Ast.expr
         - for non-generic types, this is just the dataclass name
@@ -134,13 +133,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     This function handles the adt rows (the dataclasses definition in Python)
     *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
-    (*
-  - TODO(Q):
-    - what about polymorphic types? `args` field?
-    - what if Type.t list in args is another ADT?
-    - how should we handle `doc` field? (it's ignored at the moment)
-   *)
-    string * Ast.stmt * Ast.expr =
+    Ast.stmt * Ast.expr =
   let Ty_view.{ c; labels; args; doc = _ } = adt_row in
   let class_name = c.name in
 
@@ -189,7 +182,7 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     Ast.mk_generic_type_annot class_name (type_params_used |> List.map (fun (uid : Uid.t) -> uid.name))
   in
 
-  (class_name, ast_stmt_dataclass_def, ast_expr_dataclass_annot)
+  (ast_stmt_dataclass_def, ast_expr_dataclass_annot)
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
@@ -219,8 +212,8 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
       let (decl_body : Ast_types.stmt list) =
         match ty_view_decl with
         | Algebraic (adt_rows : (Uid.t, Type.t) Ty_view.adt_row list) ->
-            let (dc_names : string list), (dc_defs : Ast.stmt list), (dc_annot : Ast.expr list) =
-              adt_rows |> List.map parse_adt_row_to_dataclass_def |> unzip3
+            let (dc_defs : Ast.stmt list), (dc_annot : Ast.expr list) =
+              adt_rows |> List.map parse_adt_row_to_dataclass_def |> List.split
             in
             let union_def = Ast.mk_union_def decl_name dc_annot in
             let dc_and_union_defs = dc_defs @ [ union_def ] in
