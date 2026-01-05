@@ -70,6 +70,14 @@
         if w = Some 2 then true else false
   instance_src_kwargs:
     src: v
+- name: int option none
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = None then true else false
+  instance_src_kwargs:
+    src: v
 - name: record
   category: primitive
   iml: |-
