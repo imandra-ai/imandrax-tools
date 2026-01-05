@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # Script to generate cram test cases from YAML files
-# Usage: ./gen_model_test.sh
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
