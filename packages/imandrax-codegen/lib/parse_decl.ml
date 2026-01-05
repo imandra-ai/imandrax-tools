@@ -92,6 +92,7 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     - type annotation of the dataclass :: Ast.expr
       - for non-generic types, this is just the dataclass name
       - for generic types, this is a subscript
+      - this will be used in the final union definition
 
     - Handle the Algebraic case of Delc.t where payload is a list of adt_row
     - Each adt_row should maps to a dataclass definition in Python (a list of
@@ -107,7 +108,31 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     - doc :: string option
 
     In Python
-    - Each row of dataclass is a type annotation, `arg0: int` or `a: int` *)
+    - Each row of dataclass is a type annotation, `arg0: int` or `a: int`
+
+    Example:
+    ```iml
+    type 'a shape_poly =
+    | Point
+    | Circle of 'a
+    | Square of int
+    ```
+    gets parsed to
+    ```python
+    a = TypeVar('a')
+    @dataclass
+    class Point:
+        pass
+    @dataclass
+    class Circle[Generic[a]]:
+        arg0: a
+    @dataclass
+    class Square:
+        arg0: int
+    shape_poly: TypeAlias = Point | Circle[a] | Square
+    ```
+    This function handles the adt rows (the dataclasses definition in Python)
+    *)
 let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     (*
   - TODO(Q):
@@ -115,20 +140,24 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     - what if Type.t list in args is another ADT?
     - how should we handle `doc` field? (it's ignored at the moment)
    *)
-    string * Ast.stmt =
+    string * Ast.stmt * Ast.expr =
   let Ty_view.{ c; labels; args; doc = _ } = adt_row in
-  let dc_name = c.name in
+  let class_name = c.name in
 
   (* labels -> dataclass field names *)
-  let (dc_arg_names : string list) =
+  let (field_names : string list) =
     match labels with
     | None -> Ast.anonymous_arg_names (List.length args)
     | Some id_list -> List.map (fun (id : Uid.t) -> id.name) id_list
   in
 
-  (* constructor names, i.e., the type annotation for each field *)
-  let ( (dc_arg_constr_names : string list list),
-        (dc_arg_type_params : Uid.t list) ) =
+  (* constructor names, i.e., the type annotation for each field
+    Eg: a, int
+    type params used
+    Eg: a
+  *)
+  let ( (constr_names_by_field : string list list),
+        (type_params_used : Uid.t list) ) =
     (args : Mir.Type.t list)
     |> List.map (fun (arg : Type.t) ->
            let Type.{ view = arg_ty_view; generation = _ } = arg in
@@ -146,20 +175,18 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     (dc_arg_constr_names, dc_arg_type_params)
   in
 
-  let dataclass_def_stmt =
-    Ast.mk_dataclass_def dc_name
-      (dc_arg_type_params |> List.map (fun (uid : Uid.t) -> uid.name))
-      (List.combine dc_arg_names dc_arg_constr_names)
+  (* Ast statement for defining the dataclass *)
+  let ast_stmt_dataclass_def =
+    Ast.mk_dataclass_def class_name
+      (type_params_used |> List.map (fun (uid : Uid.t) -> uid.name))
+      (List.combine field_names constr_names_by_field)
   in
 
-  (* printf "Dataclass name: %s\n" dc_name;
-  print_endline "Arg names:";
-  List.iter (fun n -> print_endline n) dc_arg_names;
-  print_endline "Arg constr names:";
-  List.iter (fun n -> print_endline n) dc_arg_constr_names;
-  print_endline "";
-  print_endline (Ast.show_stmt dataclass_def_stmt); *)
-  (dc_name, dataclass_def_stmt)
+  (* Ast expression for the type annotation of the dataclass
+  Eg: Point, Circle[a], Square
+  *)
+
+  (class_name, ast_stmt_dataclass_def, _)
 
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =

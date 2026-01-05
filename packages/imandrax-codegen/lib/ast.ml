@@ -231,7 +231,7 @@ let mk_dataclass_def
       decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
     }
 
-(* Initiate a dataclass instance from its name and arguments (both pos and kw)
+(** Initiate a dataclass instance from its name and arguments (both pos and kw)
 
 Example: `Foo`, `5`, `y='hello'` -> `Foo(5, y='hello')`
 *)
@@ -302,7 +302,7 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
   in
   constructor_defs @ [ mk_union_def name variant_names ]
 
-(* Create a defaultdict type annotation from its key and value types *)
+(** Create a defaultdict type annotation from its key and value types *)
 let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
     expr =
   Subscript
@@ -317,7 +317,7 @@ let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
       ctx = mk_ctx ();
     }
 
-(* Initiate a defaultdict instance *)
+(** Initiate a defaultdict instance *)
 let mk_defaultdict_value
     (default_value : expr)
     (key_val_pairs : (expr * expr) list) : expr =
