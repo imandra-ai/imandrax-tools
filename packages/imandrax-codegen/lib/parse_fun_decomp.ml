@@ -121,21 +121,16 @@ let parse_fun_decomp
         regions |> List.map parse_region |> unzip3
       in
 
-      let (
-            (* We have no place to use type annots for input args*)
+      let ( (* We have no place to use type annots for input args*)
             (_models_type_annots : (string * Ast.expr option) list list),
             (models_terms : (string * Ast.expr) list list) ) =
         model_by_arg_by_region
         |> List.map (fun (model_by_arg : (string * Term.term) list) ->
                List.map
                  (fun (arg_name, model) ->
-                   let type_annot, term_expr =
-                     parse_term model |> unwrap
-                   in
+                   let type_annot, term_expr = parse_term model |> unwrap in
                    (* bind arg name again *)
-                   (
-                     (arg_name, type_annot),
-                     (arg_name, term_expr) ))
+                   ((arg_name, type_annot), (arg_name, term_expr)))
                  model_by_arg)
         |> List.map List.split |> List.split
       in
@@ -176,7 +171,6 @@ let parse_fun_decomp
         model_type_defs_flattened @ (model_eval_type_defs_s |> List.flatten)
         |> uniq_stmts
       in *)
-
       let tests : Ast.stmt list =
         match output_as_dict with
         | true ->

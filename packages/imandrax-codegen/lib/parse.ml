@@ -50,6 +50,13 @@ let%expect_test "parse fun decomp art" =
 
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
+  [%expect {|
+    name: basic
+    code:
+     let g = fun x -> x + 1
+
+    let f = fun x -> if x > 0 then x + 2 else g x
+    |}];
 
   let (fun_decomp : Mir.Fun_decomp.t) = Art_utils.yaml_to_fun_decomp art in
 
@@ -66,12 +73,6 @@ let%expect_test "parse fun decomp art" =
   ();
   [%expect
     {|
-    name: basic
-    code:
-     let g = fun x -> x + 1
-
-    let f = fun x -> if x > 0 then x + 2 else g x
-
     Fun decomp:
     {
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;

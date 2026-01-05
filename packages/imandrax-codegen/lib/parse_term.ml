@@ -103,6 +103,10 @@ let rec parse_term (term : Term.term) :
         | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
         | _ -> failwith "Never: ty should be a constr"
       in
+      let dataclass_type_annot =
+        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
+        Ast.type_annot_of_chained_generic_types types
+      in
 
       (* Extract values from rows, which will be used as arguments to the dataclass constructor *)
       let row_val_exprs =
@@ -111,7 +115,7 @@ let rec parse_term (term : Term.term) :
       in
 
       Ok
-        ( Some (Ast.mk_name_expr ty_name),
+        ( Some dataclass_type_annot,
           Ast.mk_dataclass_value ty_name ~args:row_val_exprs ~kwargs:[] )
   (* Construct - LChar.t *)
   | ( Term.Construct
@@ -212,59 +216,12 @@ let rec parse_term (term : Term.term) :
           (* TODO: labels are for inline records; handle them *)
           labels = _;
         },
-      (_ : Type.t) ) ->
-      (* Flatten the arrow type view to a list of types *)
-      let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
-          string list =
-        let rec helper
-            (types : string list)
-            (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
-          match ty_view with
-          | Ty_view.Arrow (_, left_t, right_t) ->
-              let left_type =
-                match left_t.view with
-                | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
-                    constr_name_uid.name
-                | _ ->
-                    failwith "Never: left of arrow type view should be a constr"
-              in
-              helper (types @ [ left_type ]) right_t.view
-          | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
-              let final_type = constr_name_uid.name in
-              List.append types [ final_type ]
-          | _ ->
-              failwith
-                "Never: arrow type view should be either a constr or an arrow"
-        in
-        helper [] ty_view
-      in
-
+      (ty : Type.t) ) ->
       let variant_constr_name = construct.sym.id.name in
 
-      (* the last arg is the variant name *)
-      let variant_constr_args_and_variant_name : string list =
-        unpack_arrows construct.ty.view
-      in
-
-      (* Variant name, used in type annotation *)
-      let variant_type_name : string =
-        let constr_args_, name =
-          split_last variant_constr_args_and_variant_name
-        in
-        (* Map Ocaml type names to Python type names *)
-        let _constr_args =
-          List.map
-            (fun (caml_type : string) : string ->
-              let py_type_opt =
-                CCList.assoc_opt ~eq:( = ) caml_type
-                  Ast.ty_view_constr_name_mapping
-              in
-              match py_type_opt with
-              | Some py_type -> py_type
-              | None -> caml_type)
-            constr_args_
-        in
-        name
+      let (dataclass_type_annot : Ast_types.expr) =
+        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
+        Ast.type_annot_of_chained_generic_types types
       in
 
       let _constr_arg_type_annot_lists, constr_arg_terms =
@@ -276,7 +233,7 @@ let rec parse_term (term : Term.term) :
         Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
           ~kwargs:[]
       in
-      Ok (Some Ast.(Name { id = variant_type_name; ctx = Load }), term)
+      Ok (Some dataclass_type_annot, term)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
       try
         (* Extract Map key and value type from ty *)

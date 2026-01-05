@@ -66,7 +66,15 @@ let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
   in
 
   let ty_acc, params_acc = helper ty_view [] [] in
-  (List.rev ty_acc, params_acc)
+  (* Replace with python names *)
+  let ty_acc_py =
+    ty_acc
+    |> List.map (fun (caml_type : string) : string ->
+           CCList.assoc_opt ~eq:String.equal caml_type
+             Ast.ty_view_constr_name_mapping
+           |> Option.value ~default:caml_type)
+  in
+  (List.rev ty_acc_py, params_acc)
 
 (** Define type variable
 
@@ -87,3 +95,25 @@ let type_var_def_of_uid (uid : Uid.t) : Ast.stmt =
           };
       type_comment = None;
     }
+
+(** Flatten the arrow type view to a list of types *)
+let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
+  let rec helper
+      (types : string list)
+      (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
+    match ty_view with
+    | Ty_view.Arrow (_, left_t, right_t) ->
+        let left_type =
+          match left_t.view with
+          | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
+              constr_name_uid.name
+          | _ -> failwith "Never: left of arrow type view should be a constr"
+        in
+        helper (types @ [ left_type ]) right_t.view
+    | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
+        let final_type = constr_name_uid.name in
+        List.append types [ final_type ]
+    | _ ->
+        failwith "Never: arrow type view should be either a constr or an arrow"
+  in
+  helper [] ty_view

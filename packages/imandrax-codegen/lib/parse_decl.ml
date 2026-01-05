@@ -253,7 +253,7 @@ let%expect_test "parse decl art" =
     Ty
       {
       name = container/oxiYljEm9mLVWkkYURTWoWGNfupScANrN7SpMxUoULo;
-      params = [a/92728; b/92729];
+      params = [a/161549; b/161550];
       decl =
         Algebraic
           [{
@@ -265,7 +265,7 @@ let%expect_test "parse decl art" =
            {
              c = Single/VX6Zwtm7dZgJKoLgh9TNOahjhFhEv3ERVolUa0HF8OQ;
              labels = None;
-             args = [{ view = (Var a/92728);
+             args = [{ view = (Var a/161549);
                        generation = 1 }];
              doc = None
              };
@@ -273,9 +273,9 @@ let%expect_test "parse decl art" =
              c = Pair/B4x1x4rxXHCSWnsOlIPrDcyh6TbWcJB8Gg_-cZtmoF4;
              labels = None;
              args =
-               [{ view = (Var a/92728);
+               [{ view = (Var a/161549);
                   generation = 1 };
-                { view = (Var b/92729);
+                { view = (Var b/161550);
                   generation = 1 }];
              doc = None
              };
@@ -286,9 +286,9 @@ let%expect_test "parse decl art" =
                  [key/cwwWl6JtTLFzaHQ1pe7U_iVJJf6NEw6GdOArOnc1ebo;
                   value/FRnzhPcUFqym3uZnzXwwtdzgXuV3vrAi_1qaiZ2Te54]);
              args =
-               [{ view = (Var a/92728);
+               [{ view = (Var a/161549);
                   generation = 1 };
-                { view = (Var b/92729);
+                { view = (Var b/161550);
                   generation = 1 }];
              doc = None
              };
@@ -297,11 +297,11 @@ let%expect_test "parse decl art" =
              labels = None;
              args =
                [{ view =
-                    (Constr (list,[{ view = (Var a/92728);
+                    (Constr (list,[{ view = (Var a/161549);
                                      generation = 1 }]));
                   generation = 1 };
                 { view =
-                    (Constr (list,[{ view = (Var b/92729);
+                    (Constr (list,[{ view = (Var b/161550);
                                      generation = 1 }]));
                   generation = 1 }];
              doc = None
