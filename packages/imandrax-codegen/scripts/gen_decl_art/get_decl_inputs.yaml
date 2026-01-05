@@ -18,15 +18,6 @@
     names:
       - two_int
 
-- name: tuple_two_int
-  iml: |
-    type two_int = int * int
-
-    let diff: two_int -> int = fun (a, b) -> a - b
-  req_kwargs:
-    names:
-      - two_int
-
 - name: variant_simple
   iml: |
     type color = Red | Green | Blue
