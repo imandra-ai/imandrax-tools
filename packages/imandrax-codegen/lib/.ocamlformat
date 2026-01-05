@@ -1,2 +1,3 @@
 break-fun-decl=fit-or-vertical
 parse-docstrings=false
+indent-after-in = 0
