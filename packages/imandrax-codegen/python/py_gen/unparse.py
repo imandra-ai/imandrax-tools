@@ -95,10 +95,12 @@ def to_stdlib(node: Any) -> Any:
 
 def unparse(
     nodes: list[custom_ast.stmt],
+    include_option_lib: bool = False,
+    alias_real_to_float: bool = False,
     # TODO: add a config field?
-    # - whether to include option lib imports
-    # - whether to alias `real` to `float` or not
-    #   - alternatively: use Decimal instead of float
+    # - [x] whether to include option lib imports
+    # - [x] whether to alias `real` to `float` or not
+    #   - [ ] alternatively: use Decimal instead of float
     # - the python version to use: 3.12+ or not
     #   - this determines the type definition syntax
     # # 3.12+
@@ -126,9 +128,17 @@ def unparse(
         names=[stdlib_ast.alias(name='dataclass', asname=None)],
         level=0,
     )
-    option_lib_ast: list[stdlib_ast.stmt] = stdlib_ast.parse(OPTION_LIB_SRC).body
 
-    body = [future_annotations_import, dataclass_import, *option_lib_ast, *stdlib_stmts]
+    option_lib_ast: list[stdlib_ast.stmt] = stdlib_ast.parse(OPTION_LIB_SRC).body
+    alias_real_ast: list[stdlib_ast.stmt] = stdlib_ast.parse('real = float').body
+
+    body = [
+        future_annotations_import,
+        dataclass_import,
+        *(alias_real_ast if alias_real_to_float else []),
+        *(option_lib_ast if include_option_lib else []),
+        *stdlib_stmts,
+    ]
 
     module = stdlib_ast.Module(body=body, type_ignores=[])
     stdlib_ast.fix_missing_locations(module)
