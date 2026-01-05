@@ -12,14 +12,14 @@ function
   $ run_test function.yaml
   ```python
   Error parsing input: WIP: Fun
-  Error: Input is empty
+  py-gen error: Input is empty
   ```
 
 GADT_monomorphic
   $ run_test GADT_monomorphic.yaml
   ```python
   Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
-  Error: Input is empty
+  py-gen error: Input is empty
   ```
 
 nested_generics
@@ -27,17 +27,6 @@ nested_generics
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -54,17 +43,6 @@ real_and_option
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -80,17 +58,6 @@ record
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -104,7 +71,7 @@ tuple_two_int
   $ run_test tuple_two_int.yaml
   ```python
   Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
-  Error: Input is empty
+  py-gen error: Input is empty
   ```
 
 variant_poly_two_var
@@ -112,17 +79,7 @@ variant_poly_two_var
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
   
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   a = TypeVar('a')
   b = TypeVar('b')
   
@@ -164,17 +121,7 @@ variant_poly
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
   
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   a = TypeVar('a')
   
   
@@ -210,17 +157,6 @@ variant_recursive
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -243,17 +179,6 @@ variant_simple
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -280,17 +205,6 @@ variant_two
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -312,17 +226,6 @@ variant_with_composite_payload
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -339,17 +242,6 @@ variant_with_payload
   ```python
   from __future__ import annotations
   from dataclasses import dataclass
-  from typing import TypeVar, Generic, TypeAlias
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -378,3 +270,4 @@ variant_with_payload
   shape = Point | Circle | Rectangle | Triangle
   
   ```
+
