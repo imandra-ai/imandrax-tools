@@ -177,3 +177,45 @@ def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
         *type_def_stmts,
         *test_def_stmts,
     ]
+
+
+if __name__ == '__main__':
+    import sys
+
+    from py_gen.unparse import unparse
+
+    default_iml = """\
+    type direction = North | South | East | West
+
+    type position = { x: int; y: int; z: real }
+
+    type movement =
+    | Stay of position
+    | Move of position * direction
+
+    let move = fun w ->
+    match w with
+    | Stay p -> p
+    | Move (p, d) ->
+        let x, y, z = p.x, p.y, p.z in
+        let x, y, z =
+        match d with
+        | North -> (x, y+1, z)
+        | South -> (x, y-1, z)
+        | East -> (x+1, y, z)
+        | West -> (x-1, y, z)
+        in
+        { x; y; z }\
+    """
+    # Read IML from stdin or default to a simple example
+    # Only read from stdin if it's not a TTY (i.e., data is piped in)
+    if not sys.stdin.isatty():
+        iml = sys.stdin.read()
+    else:
+        iml = ''
+
+    if not iml:
+        iml = default_iml
+
+    test_case_stmts = gen_test_cases(iml, 'move')
+    print(unparse(test_case_stmts))
