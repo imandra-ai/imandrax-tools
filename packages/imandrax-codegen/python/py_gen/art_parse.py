@@ -109,3 +109,6 @@ def _(
     mode: Literal['fun-decomp', 'model', 'decl'],
 ) -> list[ast_types.stmt]:
     return ast_of_art(_serialize_artifact(art), mode)
+
+
+# END [[ast_of_art]]>
