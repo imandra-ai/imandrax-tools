@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
-from py_gen.ast_deserialize import load_from_json_string
+from py_gen.ast_deserialize import stmts_of_json
 from py_gen.unparse import unparse
 
 app = typer.Typer()
@@ -45,7 +45,7 @@ def cli(
         typer.echo('imandrax_codegen error: Input is empty', err=True)
         raise typer.Exit(code=1)
 
-    stmts = load_from_json_string(json_str)
+    stmts = stmts_of_json(json_str)
 
     # Generate Python code
     python_code = unparse(

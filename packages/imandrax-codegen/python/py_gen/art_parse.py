@@ -9,7 +9,7 @@ import dotenv
 import py_gen.ast_types as ast_types
 from imandrax_api import url_dev, url_prod  # noqa: F401
 from imandrax_api_models import Art
-from py_gen.ast_deserialize import load_from_json_string
+from py_gen.ast_deserialize import stmts_of_json
 
 curr_dir = Path(__file__).parent
 dotenv.load_dotenv()
@@ -100,7 +100,7 @@ def _(
     )
     if result.returncode != 0:
         raise RuntimeError(f'Failed to run generate AST: {result.stderr}')
-    return load_from_json_string(result.stdout)
+    return stmts_of_json(result.stdout)
 
 
 @ast_of_art.register

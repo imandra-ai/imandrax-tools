@@ -89,14 +89,14 @@ def deserialize(value: Any) -> Any:
     return value
 
 
-def load_stmt_list(json_data: list[Any]) -> list[ast.stmt]:
+def _stmts_of_json_data(json_data: list[Any]) -> list[ast.stmt]:
     """Load a list of statements from OCaml JSON."""
     return deserialize(json_data)
 
 
-def load_from_json_string(json_string: str) -> list[ast.stmt]:
+def stmts_of_json(json_string: str) -> list[ast.stmt]:
     """Load statements from a JSON string."""
     import json
 
     data = json.loads(json_string)
-    return load_stmt_list(data)
+    return _stmts_of_json_data(data)
