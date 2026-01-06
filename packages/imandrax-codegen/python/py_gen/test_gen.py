@@ -1,68 +1,17 @@
-import base64
-import json
 import os
 import re
-import subprocess
-from functools import singledispatch
 from pathlib import Path
-from typing import Literal
 
 import dotenv
 import py_gen.ast_types as ast_types
 from imandrax_api import url_dev, url_prod  # noqa: F401
-from imandrax_api_models import Art, EvalRes
+from imandrax_api_models import EvalRes
 from imandrax_api_models.client import ImandraXClient
-from py_gen.ast_deserialize import load_from_json_string
+
+from .art_parse import ast_of_art
 
 curr_dir = Path(__file__).parent
-
-
 dotenv.load_dotenv()
-PROJECT_DIR = curr_dir / '..' / '..'
-# Navigate to workspace root and then to the actual executable location
-WORKSPACE_ROOT = PROJECT_DIR / '..' / '..'
-CODEGEN_EXE_PATH = (
-    WORKSPACE_ROOT
-    / '_build'
-    / 'default'
-    / 'packages'
-    / 'imandrax-codegen'
-    / 'bin'
-    / 'parse.exe'
-)
-
-# Utils
-# ====================
-
-
-def convert_to_standard_base64(data: str | bytes) -> str:
-    """Convert bytes or URL-safe base64 string to standard base64.
-
-    Handles two cases:
-    1. If data is bytes: directly encode to standard base64
-    2. If data is a URL-safe base64 string: convert to standard base64
-
-    Pydantic serializes bytes as URL-safe base64 (using - and _ instead of + and /),
-    but OCaml's Base64.decode_exn expects standard base64 encoding.
-
-    Args:
-        data: Either raw bytes or URL-safe base64 string
-
-    Returns:
-        Standard base64 string
-    """
-    if isinstance(data, bytes):
-        # Directly encode bytes to standard base64
-        return base64.b64encode(data).decode('ascii')
-
-    # It's a string - assume it's URL-safe base64
-    # Add padding if needed
-    padding = (4 - len(data) % 4) % 4
-    urlsafe_b64_padded = data + ('=' * padding)
-
-    # Decode URL-safe and re-encode as standard base64
-    decoded_bytes = base64.urlsafe_b64decode(urlsafe_b64_padded)
-    return base64.b64encode(decoded_bytes).decode('ascii')
 
 
 def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] | None:
@@ -107,52 +56,6 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
     return type_names
 
 
-@singledispatch
-def gen_ast(
-    art: str | Art, mode: Literal['fun-decomp', 'model', 'decl']
-) -> list[ast_types.stmt]:
-    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
-
-
-@gen_ast.register
-def _(
-    art: str,
-    mode: Literal['fun-decomp', 'model', 'decl'],
-) -> list[ast_types.stmt]:
-    """Use the codegen executable to generate ASTs for a given artifact."""
-    result = subprocess.run(
-        [
-            CODEGEN_EXE_PATH,
-            '-',
-            '-',
-            '--mode',
-            mode,
-        ],
-        check=False,
-        input=art,
-        text=True,
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f'Failed to run generate AST: {result.stderr}')
-    return load_from_json_string(result.stdout)
-
-
-@gen_ast.register
-def _(
-    art: Art,
-    mode: Literal['fun-decomp', 'model', 'decl'],
-) -> list[ast_types.stmt]:
-    return gen_ast(serialize_artifact(art), mode)
-
-
-def serialize_artifact(art: Art) -> str:
-    """Serialize an artifact BaseModel to a JSON string."""
-    art_dict = art.model_dump()
-    art_dict['data'] = convert_to_standard_base64(art_dict['data'])
-    return json.dumps(art_dict)
-
-
 # Main
 # ====================
 
@@ -176,13 +79,13 @@ def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
     # Type declarations
     decls = c.get_decls(arg_types)
     type_def_stmts_by_decl = [
-        gen_ast(decl.artifact, mode='decl') for decl in decls.decls
+        ast_of_art(decl.artifact, mode='decl') for decl in decls.decls
     ]
     type_def_stmts = [stmt for stmts in type_def_stmts_by_decl for stmt in stmts]
 
     # Test function definitions
     assert decomp_res.artifact, 'No artifact returned from decompose'
-    test_def_stmts = gen_ast(decomp_res.artifact, mode='fun-decomp')
+    test_def_stmts = ast_of_art(decomp_res.artifact, mode='fun-decomp')
 
     return [
         *type_def_stmts,
