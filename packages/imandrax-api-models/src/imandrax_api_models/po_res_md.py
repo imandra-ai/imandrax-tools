@@ -16,12 +16,11 @@ from imandrax_api.lib import (
     Common_Model_t_poly,
     Common_Model_ty_def_Ty_alias_unit,
     Common_Model_ty_def_Ty_finite,
-    Const_False,
-    Const_Int,
-    Const_Null,
-    Const_Real,
-    Const_String,
-    Const_True,
+    Const_Const_bool,
+    Const_Const_float,
+    Const_Const_q,
+    Const_Const_string,
+    Const_Const_z,
     Error_Error_core,
     Mir_Sequent,
     Mir_Term,
@@ -156,18 +155,16 @@ def format_term(term: Mir_Term) -> str:
 def format_const(const) -> str:
     """Format a constant."""
     match const:
-        case Const_Int(arg=i):
+        case Const_Const_z(arg=i):
             return str(i)
-        case Const_Real(arg=r):
+        case Const_Const_q(arg=r):
             return str(r)
-        case Const_String(arg=s):
+        case Const_Const_float(arg=f):
+            return str(f)
+        case Const_Const_string(arg=s):
             return f'"{s}"'
-        case Const_True():
-            return 'true'
-        case Const_False():
-            return 'false'
-        case Const_Null():
-            return '()'
+        case Const_Const_bool(arg=b):
+            return 'true' if b else 'false'
         case _:
             return f'<const:{type(const).__name__}>'
 
