@@ -1,12 +1,13 @@
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import dotenv
 import py_gen.ast_types as ast_types
-from imandrax_api import url_dev, url_prod  # noqa: F401
-from imandrax_api_models import EvalRes
+from imandrax_api import Client, url_dev, url_prod  # noqa: F401
+from imandrax_api.bindings.artmsg_pb2 import Art as PbArt
+from imandrax_api_models import Art, DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
 
 from .art_parse import ast_of_art
@@ -80,7 +81,15 @@ def gen_test_cases(
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    decomp_res = c.decompose(decomp_name, **other_decomp_kwargs)
+    # decomp_res: DecomposeRes = c.decompose(decomp_name, **other_decomp_kwargs)
+    # decomp_art = decomp_res.artifact
+    # assert decomp_art, 'No artifact returned from decompose'
+    # The decoding of fun-decomp artifact is broken, we fallback to the naive
+    # API client which does not have region extraction
+    decomp_res_proto = Client.decompose(c, decomp_name, **other_decomp_kwargs)
+    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))  # type: ignore[reportUnknownMemberType]
+    assert decomp_art, 'No artifact returned from decompose'
+
     arg_types: list[str] = extract_type_decl_names(iml)
 
     # Type declarations
@@ -91,8 +100,7 @@ def gen_test_cases(
     type_def_stmts = [stmt for stmts in type_def_stmts_by_decl for stmt in stmts]
 
     # Test function definitions
-    assert decomp_res.artifact, 'No artifact returned from decompose'
-    test_def_stmts = ast_of_art(decomp_res.artifact, mode='fun-decomp')
+    test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
 
     return [
         *type_def_stmts,
