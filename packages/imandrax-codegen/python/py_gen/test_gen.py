@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 import dotenv
 import py_gen.ast_types as ast_types
@@ -60,7 +61,13 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
 # ====================
 
 
-def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
+def gen_test_cases(
+    iml: str,
+    decomp_name: str,
+    other_decomp_kwargs: dict[str, Any] | None = None,
+) -> list[ast_types.stmt]:
+    other_decomp_kwargs = other_decomp_kwargs or {}
+
     c = ImandraXClient(
         auth_token=os.environ['IMANDRAX_API_KEY'],
         # url=url_dev,
@@ -73,7 +80,7 @@ def gen_test_cases(iml: str, decomp_name: str) -> list[ast_types.stmt]:
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    decomp_res = c.decompose(decomp_name)
+    decomp_res = c.decompose(decomp_name, **other_decomp_kwargs)
     arg_types: list[str] = extract_type_decl_names(iml)
 
     # Type declarations
