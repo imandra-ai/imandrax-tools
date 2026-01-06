@@ -237,33 +237,138 @@
     names:
       - my_ty
 
-- name: function
+- name: function1
   iml: |
-    type direction = North | South | East | West
+    let add1 a b = a + b
 
-    type position = { x: int; y: int; z: real }
+    let add2 = fun a b -> a + b
 
-    type movement =
-      | Stay of position
-      | Move of position * direction
+    let add3 ~a ~b = a + b
 
-    let move = fun w ->
-      match w with
-      | Stay p -> p
-      | Move (p, d) ->
-        let x, y, z = p.x, p.y, p.z in
-        let x, y, z =
-          match d with
-          | North -> (x, y+1, z)
-          | South -> (x, y-1, z)
-          | East -> (x+1, y, z)
-          | West -> (x-1, y, z)
-        in
-        { x; y; z }
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
   req_kwargs:
     names:
-      - move
+      - add1
 
+- name: function2
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add2
+
+- name: function3
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add3
+
+- name: function4
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add4
+
+- name: function5
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add5
+
+- name: function6
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add6
+
+- name: function7
+  iml: |
+    let add1 a b = a + b
+
+    let add2 = fun a b -> a + b
+
+    let add3 ~a ~b = a + b
+
+    let add4 a ~b = a + b
+
+    let add5 ~a b = a + b
+
+    let add6 a = fun b -> a + b
+
+    let add7 ~a = fun b -> a + b
+  req_kwargs:
+    names:
+      - add7
 ---
 - name: six_swiss
   iml: |

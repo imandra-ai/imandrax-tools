@@ -20,7 +20,7 @@ get_decls_res:
   - name: container
     artifact:
       kind: mir.decl
-      data: YF8RzaoimvUmhw4ew6X/Jt2YwcRT3Xmk2fdS0+c/jFJhJxRjRUVtcHR5/xkAhvqy8mJFRW1wdHn4ZPgC/ywCwAIf/u0JoGJBYfmw9GHyXxFVfpnC2bt1mAkqguCH1M05qGOEWES/cRFWiVRrQcXw5GNGU2luZ2xl/xoAhvuy8mJGU2luZ2xl+WT5Av8vAsACH//tCaBiQWL5sPRi/0L0XxEHjHXHivFccJJaew6Ug+sNzKHpNtZwkHwaD/5xm2agXmNEUGFpcv8YAIb5svJiRFBhaXL3ZPcC/y0CYv+CAf82XxFzDBaXom1MsXNodDWl7tT+JUkl/o0TDoZ04Cs6dzV5umNDa2V5/xcAhviy8mJDa2V59l8RFRnzhPcUFqym3uZnzXwwtdzgXuV3vrAi/1qaiZ2Te55jRXZhbHVl/xkAhvqy8mJFdmFsdWX4Yv8v+mH0XxGJal4ckZ6gRHPoW6twb7Y9FVwhXKi8LI3QCkfrGeyHemNHTGFiZWxlZP8bAIb8svJiR0xhYmVsZWT6ZPr/MP+oAQJh/74CsUd0eS5saXN0s/liRGxpc3T3wwL4/wlh/4oCwwL/Avdi/vZfEaRweCLKt86tIN6YNimgAeyAChpt9+mBKHtcLO8NTMw/Y0VNdWx0af8ZAIb6svJiRU11bHRp+GT4Av8uAmX/tAP/6AL/ngL/Z/8CsP5i/7cD/+sCXxGjGJiWMSb2YtVaSRhRFNahYY1+6lJwA2s3tKkzFShQumNJY29udGFpbmVy/x0Bhv6y8mJJY29udGFpbmVy/GX8/zn/PQICsfgB
+      data: YF8RzaoimvUmhw4ew6X/Jt2YwcRT3Xmk2fdS0+c/jFJhJxRjRUVtcHR5/xkAhvqy8mJFRW1wdHn4ZPgC/ywCwAIfr+QKoGJBYfmw9GHyXxFVfpnC2bt1mAkqguCH1M05qGOEWES/cRFWiVRrQcXw5GNGU2luZ2xl/xoAhvuy8mJGU2luZ2xl+WT5Av8vAsACH7DkCqBiQWL5sPRi/0L0XxEHjHXHivFccJJaew6Ug+sNzKHpNtZwkHwaD/5xm2agXmNEUGFpcv8YAIb5svJiRFBhaXL3ZPcC/y0CYv+CAf82XxFzDBaXom1MsXNodDWl7tT+JUkl/o0TDoZ04Cs6dzV5umNDa2V5/xcAhviy8mJDa2V59l8RFRnzhPcUFqym3uZnzXwwtdzgXuV3vrAi/1qaiZ2Te55jRXZhbHVl/xkAhvqy8mJFdmFsdWX4Yv8v+mH0XxGJal4ckZ6gRHPoW6twb7Y9FVwhXKi8LI3QCkfrGeyHemNHTGFiZWxlZP8bAIb8svJiR0xhYmVsZWT6ZPr/MP+oAQJh/74CsUd0eS5saXN0s/liRGxpc3T3wwL4/wlh/4oCwwL/Avdi/vZfEaRweCLKt86tIN6YNimgAeyAChpt9+mBKHtcLO8NTMw/Y0VNdWx0af8ZAIb6svJiRU11bHRp+GT4Av8uAmX/tAP/6AL/ngL/Z/8CsP5i/7cD/+sCXxGjGJiWMSb2YtVaSRhRFNahYY1+6lJwA2s3tKkzFShQumNJY29udGFpbmVy/x0Bhv6y8mJJY29udGFpbmVy/GX8/zn/PQICsfgB
       api_version: v18
       storage: []
   not_found: []

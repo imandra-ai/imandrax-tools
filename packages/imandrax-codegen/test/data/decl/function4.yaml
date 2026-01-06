@@ -1,0 +1,27 @@
+name: function4
+iml: |
+  let add1 a b = a + b
+
+  let add2 = fun a b -> a + b
+
+  let add3 ~a ~b = a + b
+
+  let add4 a ~b = a + b
+
+  let add5 ~a b = a + b
+
+  let add6 a = fun b -> a + b
+
+  let add7 ~a = fun b -> a + b
+req_kwargs:
+  names:
+  - add4
+get_decls_res:
+  decls:
+  - name: add4
+    artifact:
+      kind: mir.decl
+      data: YGCwAmfyAvX3AgICwAIAAGCwSG1rX3NfaW50s/piQ2ludPbDAvf/BsACH8PmCqBiQWH5YvT/ArP0Y/L/CALAAh/H5gqgYkFi+WL0/xiz9GPy/x4CYv8M98EDAv8o/yrBAwL/L/tgYGLx+bBIbWtfaV9hZGSz+mJBK/Ri9P8FY/T/C/8TtPZj8v8ZAsIC9v8qY/X/XwJi/1f/ZWL/Rv9qYvr2YGLx/zZfEeIjzHqIaWxz4+TiK+l7JRJdDE40mpF1/1HfpsNM9ixeY0RhZGQ0/xgBhvmy8mJEYWRkNPdn9/8s/zL/QwL/ygH/1QGw/wAC
+      api_version: v18
+      storage: []
+  not_found: []
