@@ -25,6 +25,7 @@ imandrax-codegen = "py_gen.__main__:app"
 [dependency-groups]
 dev = [
     "imandrax-api-models>=18.0.0",
+    "inline-snapshot>=0.31.1",
     "ipykernel>=7.0.1",
 ]
 
