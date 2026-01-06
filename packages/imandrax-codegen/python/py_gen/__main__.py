@@ -1,65 +1,47 @@
 #!/usr/bin/env python
-"""CLI tool to convert OCaml AST JSON to Python source code."""
-
 import sys
 from pathlib import Path
-from typing import Annotated
 
 import typer
-from py_gen.ast_deserialize import stmts_of_json
+from py_gen.test_gen import gen_test_cases
 from py_gen.unparse import unparse
 
 app = typer.Typer()
 
 
 @app.command()
-def cli(
-    input_file: Annotated[
-        str,
-        typer.Argument(help="Input JSON file (from OCaml yojson), or '-' for stdin"),
-    ],
-    output: Annotated[
-        str | None,
-        typer.Option(
-            '-o',
-            '--output',
-            help='Output Python file (writes to stdout if not provided)',
-        ),
-    ] = None,
-    include_real_to_float_alias: Annotated[
-        bool,
-        typer.Option(
-            '--include-real-to-float-alias', help='Include real to float alias'
-        ),
-    ] = False,
+def main(
+    iml_path: str = typer.Argument(
+        help='Path of IML file to generate test cases (use "-" to read from stdin)',
+    ),
+    function: str = typer.Option(
+        ...,
+        '-f',
+        '--function',
+        help='Name of function to generate test cases for',
+    ),
+    output: str | None = typer.Option(
+        None,
+        '-o',
+        '--output',
+        help='Output file path (defaults to stdout)',
+    ),
 ) -> None:
-    """Convert OCaml AST JSON to Python source code."""
-    # Read and deserialize
-    if input_file == '-':
-        json_str = sys.stdin.read()
+    """Generate test cases for IML."""
+    # Read input from stdin or file
+    if iml_path == '-':
+        iml = sys.stdin.read()
     else:
-        with Path(input_file).open() as f:
-            json_str = f.read()
+        iml = Path(iml_path).read_text()
 
-    if not json_str:
-        typer.echo('imandrax_codegen error: Input is empty', err=True)
-        raise typer.Exit(code=1)
+    test_case_stmts = gen_test_cases(iml, function)
+    result = unparse(test_case_stmts)
 
-    stmts = stmts_of_json(json_str)
-
-    # Generate Python code
-    python_code = unparse(
-        stmts,
-        alias_real_to_float=include_real_to_float_alias,
-    )
-
-    # Write output
+    # Write output to file or stdout
     if output:
-        with Path(output).open('w') as f:
-            f.write(python_code)
-            f.write('\n')
+        Path(output).write_text(result)
     else:
-        typer.echo(python_code)
+        typer.echo(result)
 
 
 if __name__ == '__main__':
