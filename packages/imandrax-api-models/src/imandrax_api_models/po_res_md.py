@@ -1,3 +1,4 @@
+# pyright: basic
 """
 Markdown rendering of PO_res types.
 
