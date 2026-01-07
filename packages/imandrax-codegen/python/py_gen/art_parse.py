@@ -1,6 +1,7 @@
 import base64
 import json
 import subprocess
+import sys
 from functools import singledispatch
 from pathlib import Path
 from typing import Literal
@@ -23,13 +24,17 @@ def find_art_parse_exe() -> Path:
     """
     exe_path = Path(__file__).parent / 'art_parse.exe'
 
-    if exe_path.exists():
-        return exe_path
+    if sys.platform != 'darwin':
+        raise ValueError(
+            'Only MacOS is supported for now. Please wait for the next release.'
+        )
 
-    raise RuntimeError(
-        f'art_parse.exe not found in {exe_path.parent}. '
-        f'This platform may not be supported or the package was not built correctly.'
-    )
+    if not exe_path.exists():
+        raise ValueError(
+            f'art_parse.exe not found in {exe_path.parent}. '
+            f'The package might not be built correctly.'
+        )
+    return exe_path
 
 
 CODEGEN_EXE_PATH = find_art_parse_exe()
