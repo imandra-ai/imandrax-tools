@@ -6,14 +6,10 @@ from functools import singledispatch
 from pathlib import Path
 from typing import Literal
 
-import dotenv
 import py_gen.ast_types as ast_types
 from imandrax_api import url_dev, url_prod  # noqa: F401
 from imandrax_api_models import Art
 from py_gen.ast_deserialize import stmts_of_json
-
-curr_dir = Path(__file__).parent
-dotenv.load_dotenv()
 
 
 def find_art_parse_exe() -> Path:
