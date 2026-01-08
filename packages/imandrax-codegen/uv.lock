@@ -405,7 +405,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.18"
+version = "0.18.0.1"
 source = { directory = "../../../imandrax-api/src/py" }
 dependencies = [
     { name = "protobuf" },
