@@ -452,6 +452,7 @@ dependencies = [
     { name = "devtools" },
     { name = "dotenv" },
     { name = "imandrax-api", extra = ["async"] },
+    { name = "imandrax-api-models" },
     { name = "iml-query" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -462,7 +463,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "imandrax-api-models" },
     { name = "inline-snapshot" },
     { name = "ipykernel" },
 ]
@@ -472,6 +472,7 @@ requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "imandrax-api", extras = ["async"], directory = "../../../imandrax-api/src/py" },
+    { name = "imandrax-api-models", specifier = ">=18.0.0" },
     { name = "iml-query", specifier = ">=0.3.4" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -482,7 +483,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "imandrax-api-models", specifier = ">=18.0.0" },
     { name = "inline-snapshot", specifier = ">=0.31.1" },
     { name = "ipykernel", specifier = ">=7.0.1" },
 ]

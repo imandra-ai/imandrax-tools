@@ -10,6 +10,7 @@ requires-python = ">=3.13"
 dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
+    "imandrax-api-models>=18.0.0",
     "imandrax-api[async]>=0.18",
     "iml-query>=0.3.4",
     "pydantic>=2.12.3",
@@ -24,7 +25,6 @@ imandrax-codegen = "py_gen.__main__:app"
 
 [dependency-groups]
 dev = [
-    "imandrax-api-models>=18.0.0",
     "inline-snapshot>=0.31.1",
     "ipykernel>=7.0.1",
 ]
