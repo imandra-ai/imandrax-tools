@@ -172,3 +172,22 @@
   decomp_kwargs:
     name: classify
     prune: true
+
+- name: variant_poly
+  iml: |
+    type ('a, 'b) container =
+      | Empty
+      | Single of 'a
+      | Pair of 'a * 'b
+      | Labeled of { key: 'a; value: 'b }
+      | Multi of 'a list * 'b list
+
+    let f (c : (int, real) container) : int =
+      match c with
+      | Empty -> 0
+      | Single x -> if x > 0 then 1 else -1
+      | Pair (x, y) -> if Real.(>) (Real.of_int x)  y then 2 else -2
+      | _ -> 3
+  decomp_kwargs:
+    name: f
+    prune: true
