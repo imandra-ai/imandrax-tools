@@ -26,7 +26,7 @@ def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] |
     return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
 
 
-def extract_type_decl_names(ml_code: str) -> list[str]:
+def extract_type_decl_names(iml_code: str) -> list[str]:
     """
     Extract all type definition names from OCaml code using regex.
 
@@ -41,11 +41,15 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
         >>> extract_ocaml_type_names(code)
         ['direction']
     """
-    # Pattern matches: "type" keyword followed by type name
+    # Pattern matches: "type" or "and" keyword followed by optional type parameters, then type name
     # Handles both regular types and recursive types (type ... and ...)
-    pattern = r'\btype\s+([a-z_][a-zA-Z0-9_]*(?:\s*,\s*[a-z_][a-zA-Z0-9_]*)*)'
+    # Also handles parameterized types:
+    #   - Single param without parens: type 'a option
+    #   - Multi param with parens: type ('a, 'b) container
+    #   - Wildcard param: type _ expr (GADTs)
+    pattern = r'\b(?:type|and)\s+(?:(?:\([^)]+\)|\'[a-z_][a-zA-Z0-9_]*|_)\s+)?([a-z_][a-zA-Z0-9_]*(?:\s*,\s*[a-z_][a-zA-Z0-9_]*)*)'
 
-    matches = re.finditer(pattern, ml_code)
+    matches = re.finditer(pattern, iml_code)
     type_names: list[str] = []
 
     for match in matches:
@@ -106,57 +110,3 @@ def gen_test_cases(
         *type_def_stmts,
         *test_def_stmts,
     ]
-
-
-if __name__ == '__main__':
-    import argparse
-
-    from py_gen.unparse import unparse
-
-    DEFAULT_IML = """\
-    type direction = North | South | East | West
-
-    type position = { x: int; y: int; z: real }
-
-    type movement =
-    | Stay of position
-    | Move of position * direction
-
-    let move = fun w ->
-    match w with
-    | Stay p -> p
-    | Move (p, d) ->
-        let x, y, z = p.x, p.y, p.z in
-        let x, y, z =
-        match d with
-        | North -> (x, y+1, z)
-        | South -> (x, y-1, z)
-        | East -> (x+1, y, z)
-        | West -> (x-1, y, z)
-        in
-        { x; y; z }\
-    """
-
-    parser = argparse.ArgumentParser(description='Generate test cases for IML.')
-    parser.add_argument(
-        '-i',
-        '--iml-path',
-        help='Path of IML file to generate test cases',
-    )
-    parser.add_argument(
-        '-f',
-        '--function',
-        help='Name of function to generate test cases for',
-    )
-    args = parser.parse_args()
-
-    match (args.iml_path, args.function):
-        case (str(iml_path), str(func)):
-            iml = Path(iml_path).read_text()
-            f = func
-        case _:
-            iml = DEFAULT_IML
-            f = 'move'
-
-    test_case_stmts = gen_test_cases(iml, f)
-    print(unparse(test_case_stmts))
