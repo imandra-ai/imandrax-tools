@@ -12,7 +12,6 @@ ruff_bin = find_ruff_bin()
 
 
 OPTION_LIB_SRC: Final[str] = """\
-from typing import TypeVar, Generic, TypeAlias
 T = TypeVar('T')
 
 
@@ -148,6 +147,15 @@ def unparse(
         names=[stdlib_ast.alias(name='dataclass', asname=None)],
         level=0,
     )
+    typing_import = stdlib_ast.ImportFrom(
+        module='typing',
+        names=[
+            stdlib_ast.alias(name='TypeVar', asname=None),
+            stdlib_ast.alias(name='Generic', asname=None),
+            stdlib_ast.alias(name='TypeAlias', asname=None),
+        ],
+        level=0,
+    )
     option_lib_import = mk_ast('from imandrax_option_lib import option, Some')
     option_lib_definition: list[stdlib_ast.stmt] = mk_ast(OPTION_LIB_SRC)
     alias_real: list[stdlib_ast.stmt] = mk_ast('real = float')
@@ -155,6 +163,7 @@ def unparse(
     body = [
         future_annotations_import,
         dataclass_import,
+        typing_import,
         *option_lib_import,
         *(alias_real if alias_real_to_float else []),
         *stdlib_stmts,
@@ -170,6 +179,7 @@ def unparse(
         body = [
             future_annotations_import,
             dataclass_import,
+            typing_import,
             *option_lib_definition,
             *(alias_real if alias_real_to_float else []),
             *stdlib_stmts,
