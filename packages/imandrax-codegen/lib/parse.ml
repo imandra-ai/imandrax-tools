@@ -71,8 +71,7 @@ let%expect_test "parse fun decomp art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   ();
-  [%expect
-    {|
+  [%expect {|
     Fun decomp:
     {
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
@@ -526,7 +525,7 @@ let%expect_test "parse model art" =
     (* CCIO.File.read_exn "../test/data/model/composite/map_default_value_only.yaml" *)
     (* CCIO.File.read_exn "../test/data/model/primitive/empty_list.yaml" *)
     CCIO.File.read_exn
-      "../test/data/model/polymorphic/annotated_polymorphic.yaml"
+      "../test/data/model/polymorphic/nested_poly.yaml"
     (* CCIO.File.read_exn "../test/data/model/polymorphic/ambiguous_type_name.yaml" *)
   in
   let yaml = Yaml.of_string_exn yaml_str in
@@ -605,35 +604,194 @@ let%expect_test "parse model art" =
   (* Also print to stdout for the test *)
   Yojson.Safe.pretty_to_string json_out |> print_endline;
 
-  [%expect
-    {|
-    name: annotated_polymorphic
-    code: let v =  (fun (w: _ list) -> if w = [] then true else false)
+  [%expect {|
+    name: nested_poly
+    code: type ('a, 'b) container2 = { v : ('a * 'b) }
+
+    type ('a, 'b, 'c) container3 = { v : ('a * 'b * 'c) }
+
+    let v : ((int, int, (int, int) container2) container3) = { v = (1, 2, ({ v = (3, 4) } : (int, int) container2)) }
+
+    let v = fun w -> if w = v then true else false
 
     <><><><><><><><><><>
 
     Applied symbol:
-    (w/92030 : { view = (Constr (list, [{ view = (Var a/92029); generation = 3 }])); generation = 3 })
+    (w/93078 : { view = (Constr (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0, [{ view = (Constr (int, [])); generation = 3 }; { view = (Constr (int, [])); generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM, [{ view = (Constr (int, [])); generation = 3 }; { view = (Constr (int, [])); generation = 3 }])); generation = 3 }])); generation = 3 })
 
     <><><><><><><><><><>
 
     Term:
-    { view = Construct {c = ([] : { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
-                                                            generation = 3 }]));
-                                    generation = 3 });args = []};
-      ty = { view = (Constr (list,[{ view = (Constr (_a_0/6fPTIEu6GifOtjqDBtCi54oXN93v3kMRHpj650evVOI,[]));
-                                     generation = 3 }]));
+    { view =
+        Record
+          {
+          rows =
+            [(
+               (v/ntugG7n5lh6HDSFygAl3k5zU06F3KZPD_Ya-6G5al2E : { view =
+                                                                    (Arrow ((),
+                                                                            { view =
+                                                                                (Constr
+                                                                                  (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0,
+                                                                                   [{ view = (Constr (int,[]));
+                                                                                      generation = 3 };
+                                                                                    { view = (Constr (int,[]));
+                                                                                      generation = 3 };
+                                                                                    { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                generation = 3 };
+                                                                                                                                                              { view = (Constr (int,[]));
+                                                                                                                                                                generation = 3 }]));
+                                                                                      generation = 3 }]));
+                                                                              generation = 3 },
+                                                                            { view = (Tuple [{ view = (Constr (int,[]));
+                                                                                               generation = 3 }; { view = (Constr (int,[]));
+                                                                                                                   generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                                                                 generation = 3 };
+                                                                                                                                                                                                               { view = (Constr (int,[]));
+                                                                                                                                                                                                                 generation = 3 }]));
+                                                                                                                                       generation = 3 }]);
+                                                                              generation = 3 }));
+                                                                  generation = 3 }),
+               { view =
+                   Tuple
+                     {
+                     l =
+                       [{ view = (Const 1);
+                          ty = { view = (Constr (int,[]));
+                                 generation = 3 };
+                          generation = 1; sub_anchor = None };
+                         { view = (Const 2);
+                           ty = { view = (Constr (int,[]));
+                                  generation = 3 };
+                           generation = 1; sub_anchor = None };
+                         { view =
+                             Record
+                               {
+                               rows =
+                                 [(
+                                    (v/qy3HK0-_EulKK7NKYEdLqhsx6_nCFYnpclHGLlIf9J8 : { view =
+                                                                                         (Arrow ((),
+                                                                                                 { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                             generation = 3 };
+                                                                                                                                                                           { view = (Constr (int,[]));
+                                                                                                                                                                             generation = 3 }]));
+                                                                                                   generation = 3 },
+                                                                                                 { view = (Tuple [{ view = (Constr (int,[]));
+                                                                                                                    generation = 3 }; { view = (Constr (int,[]));
+                                                                                                                                        generation = 3 }]);
+                                                                                                   generation = 3 }));
+                                                                                       generation = 3 }),
+                                    { view = Tuple {l = [{ view = (Const 3);
+                                                           ty = { view = (Constr (int,[]));
+                                                                  generation = 3 };
+                                                           generation = 1; sub_anchor = None }; { view = (Const 4);
+                                                                                                  ty = { view = (Constr (int,[]));
+                                                                                                         generation = 3 };
+                                                                                                  generation = 1; sub_anchor = None }]};
+                                      ty = { view = (Tuple [{ view = (Constr (int,[]));
+                                                              generation = 3 }; { view = (Constr (int,[]));
+                                                                                  generation = 3 }]);
+                                             generation = 3 };
+                                      generation = 1;
+                                      sub_anchor = None }
+                                    )];
+                               rest = None
+                               };
+                           ty = { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                            generation = 3 };
+                                                                                                          { view = (Constr (int,[]));
+                                                                                                            generation = 3 }]));
+                                  generation = 3 };
+                           generation = 1;
+                           sub_anchor = None }]
+                     };
+                 ty = { view = (Tuple [{ view = (Constr (int,[]));
+                                         generation = 3 }; { view = (Constr (int,[]));
+                                                             generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                           generation = 3 };
+                                                                                                                                                         { view = (Constr (int,[]));
+                                                                                                                                                           generation = 3 }]));
+                                                                                 generation = 3 }]);
+                        generation = 3 };
+                 generation = 1;
+                 sub_anchor = None }
+               )];
+          rest = None
+          };
+      ty = { view = (Constr (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0,[{ view = (Constr (int,[]));
+                                                                                       generation = 3 };
+                                                                                     { view = (Constr (int,[]));
+                                                                                       generation = 3 };
+                                                                                     { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                 generation = 3 };
+                                                                                                                                                               { view = (Constr (int,[]));
+                                                                                                                                                                 generation = 3 }]));
+                                                                                       generation = 3 }]));
              generation = 3 };
-      generation = 1; sub_anchor = None }
+      generation = 1;
+      sub_anchor = None }
 
     <><><><><><><><><><>
 
     Parsing term:
 
-    Type annot: None
+    Type annot: (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "container3"; ctx = Ast_types.Load });
+         slice =
+         (Ast_types.Tuple
+            { Ast_types.elts =
+              [(Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Subscript
+                   { Ast_types.value =
+                     (Ast_types.Name
+                        { Ast_types.id = "container2"; ctx = Ast_types.Load });
+                     slice =
+                     (Ast_types.Tuple
+                        { Ast_types.elts =
+                          [(Ast_types.Name
+                              { Ast_types.id = "int"; ctx = Ast_types.Load });
+                            (Ast_types.Name
+                               { Ast_types.id = "int"; ctx = Ast_types.Load })
+                            ];
+                          ctx = Ast_types.Load; dims = [] });
+                     ctx = Ast_types.Load })
+                ];
+              ctx = Ast_types.Load; dims = [] });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast_types.List { Ast_types.elts = []; ctx = Ast_types.Load })
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "container3"; ctx = Ast_types.Load });
+         args =
+         [(Ast_types.Tuple
+             { Ast_types.elts =
+               [(Ast_types.Constant
+                   { Ast_types.value = (Ast_types.Int 1); kind = None });
+                 (Ast_types.Constant
+                    { Ast_types.value = (Ast_types.Int 2); kind = None });
+                 (Ast_types.Call
+                    { Ast_types.func =
+                      (Ast_types.Name
+                         { Ast_types.id = "container2"; ctx = Ast_types.Load });
+                      args =
+                      [(Ast_types.Tuple
+                          { Ast_types.elts =
+                            [(Ast_types.Constant
+                                { Ast_types.value = (Ast_types.Int 3);
+                                  kind = None });
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 4);
+                                   kind = None })
+                              ];
+                            ctx = Ast_types.Load; dims = [] })
+                        ];
+                      keywords = [] })
+                 ];
+               ctx = Ast_types.Load; dims = [] })
+           ];
+         keywords = [] })
 
     <><><><><><><><><><>
 
@@ -641,11 +799,96 @@ let%expect_test "parse model art" =
 
     [
       [
-        "Assign",
+        "AnnAssign",
         {
-          "targets": [ [ "Name", { "id": "w", "ctx": [ "Load" ] } ] ],
-          "value": [ "List", { "elts": [], "ctx": [ "Load" ] } ],
-          "type_comment": null
+          "target": [ "Name", { "id": "w", "ctx": [ "Load" ] } ],
+          "annotation": [
+            "Subscript",
+            {
+              "value": [ "Name", { "id": "container3", "ctx": [ "Load" ] } ],
+              "slice": [
+                "Tuple",
+                {
+                  "elts": [
+                    [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                    [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                    [
+                      "Subscript",
+                      {
+                        "value": [
+                          "Name", { "id": "container2", "ctx": [ "Load" ] }
+                        ],
+                        "slice": [
+                          "Tuple",
+                          {
+                            "elts": [
+                              [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                              [ "Name", { "id": "int", "ctx": [ "Load" ] } ]
+                            ],
+                            "ctx": [ "Load" ],
+                            "dims": []
+                          }
+                        ],
+                        "ctx": [ "Load" ]
+                      }
+                    ]
+                  ],
+                  "ctx": [ "Load" ],
+                  "dims": []
+                }
+              ],
+              "ctx": [ "Load" ]
+            }
+          ],
+          "value": [
+            "Call",
+            {
+              "func": [ "Name", { "id": "container3", "ctx": [ "Load" ] } ],
+              "args": [
+                [
+                  "Tuple",
+                  {
+                    "elts": [
+                      [ "Constant", { "value": [ "Int", 1 ], "kind": null } ],
+                      [ "Constant", { "value": [ "Int", 2 ], "kind": null } ],
+                      [
+                        "Call",
+                        {
+                          "func": [
+                            "Name", { "id": "container2", "ctx": [ "Load" ] }
+                          ],
+                          "args": [
+                            [
+                              "Tuple",
+                              {
+                                "elts": [
+                                  [
+                                    "Constant",
+                                    { "value": [ "Int", 3 ], "kind": null }
+                                  ],
+                                  [
+                                    "Constant",
+                                    { "value": [ "Int", 4 ], "kind": null }
+                                  ]
+                                ],
+                                "ctx": [ "Load" ],
+                                "dims": []
+                              }
+                            ]
+                          ],
+                          "keywords": []
+                        }
+                      ]
+                    ],
+                    "ctx": [ "Load" ],
+                    "dims": []
+                  }
+                ]
+              ],
+              "keywords": []
+            }
+          ],
+          "simple": 1
         }
       ]
     ]

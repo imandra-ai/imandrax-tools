@@ -138,6 +138,38 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
           simple = mk_ann_assign_simple_flat ();
         }
 
+(*
+- A -> Base("A")
+- A[B] -> Generic("A", [Base("B")])
+- A[B, C] -> Generic("A", [Base("B"); Base("C")])
+- A[B, C[D]] -> Generic("A", [Base("B"); Generic("C", [Base("D")])])
+*)
+type type_expr = Base of string | Generic of string * type_expr list
+
+let rec map_type_expr (ty_expr : type_expr) ~(f : string -> string) : type_expr =
+  match ty_expr with
+  | Base type_name -> Base (f type_name)
+  | Generic (type_name, type_args) ->
+      let (type_args : type_expr list) = List.map (map_type_expr ~f) type_args in
+      Generic (f type_name, type_args)
+
+let rec type_annot_of_type_expr (ty_expr : type_expr) : expr =
+  match ty_expr with
+  | Base type_name -> Name { id = type_name; ctx = mk_ctx () }
+  | Generic (type_name, type_args) ->
+      let (type_arg_exprs : expr list) =
+        List.map type_annot_of_type_expr type_args
+      in
+      Subscript
+        {
+          value = Name { id = type_name; ctx = mk_ctx () };
+          slice = (match type_arg_exprs with
+            | [] -> failwith "Never: empty type arg exprs"
+            | [one] -> one
+            |  _ -> tuple_of_exprs type_arg_exprs);
+          ctx = mk_ctx ();
+        }
+
 (** Create type annotation from a list of applied generic type names
 
     Case:
@@ -171,20 +203,20 @@ let mk_generic_type_annot (name : string) (type_vars : string list) : expr =
   match type_vars with
   | [] -> Name { id = name; ctx = mk_ctx () }
   | _ ->
-    let type_var_expr_by_var : expr list =
-      List.map (fun var -> Name { id = var; ctx = mk_ctx () }) type_vars
-    in
-    let subs_slice_expr : expr =
-      if List.length type_var_expr_by_var = 1 then
-        List.hd type_var_expr_by_var
-      else tuple_of_exprs type_var_expr_by_var
-    in
-    Subscript
-      {
-        value = Name { id = name; ctx = mk_ctx () };
-        slice = subs_slice_expr;
-        ctx = mk_ctx ();
-      }
+      let type_var_expr_by_var : expr list =
+        List.map (fun var -> Name { id = var; ctx = mk_ctx () }) type_vars
+      in
+      let subs_slice_expr : expr =
+        if List.length type_var_expr_by_var = 1 then
+          List.hd type_var_expr_by_var
+        else tuple_of_exprs type_var_expr_by_var
+      in
+      Subscript
+        {
+          value = Name { id = name; ctx = mk_ctx () };
+          slice = subs_slice_expr;
+          ctx = mk_ctx ();
+        }
 
 (** Create a dataclass definition statement from its name and rows of fields
 
@@ -206,17 +238,17 @@ Example:
 let mk_dataclass_def
     (name : string)
     (base_type_vars : string list)
-    (rows : (string * string list) list) : stmt =
+    (rows : (string * type_expr) list) : stmt =
   let body : stmt list =
     match rows with
     | [] -> [ Pass ]
     | _ ->
         List.map
-          (fun ((tgt, row_types) : string * string list) ->
+          (fun ((tgt, row_types) : string * type_expr) ->
             AnnAssign
               {
                 target = Name { id = tgt; ctx = mk_ctx () };
-                annotation = type_annot_of_chained_generic_types row_types;
+                annotation = type_annot_of_type_expr row_types;
                 value = None;
                 simple = mk_ann_assign_simple_flat ();
               })
@@ -235,7 +267,6 @@ let mk_dataclass_def
       body;
       decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
     }
-
 
 (** Initiate a dataclass instance from its name and arguments (both pos and kw)
 
@@ -283,11 +314,10 @@ let mk_union_def (name : string) (member_types : expr list) : stmt =
 
   TODO: this should be deprecated
 *)
-let variant_dataclass (name : string) (variants : (string * string list) list) :
+(* let variant_dataclass (name : string) (variants : (string * string list) list) :
     stmt list =
   let (variant_names : string list) = List.map fst variants in
-  let (variant_types : expr list) = variant_names |> List.map mk_name_expr
-  in
+  let (variant_types : expr list) = variant_names |> List.map mk_name_expr in
   (* Define a single variant constructor as a dataclass *)
   let def_variant_constructor_as_dataclass (variant : string * string list) :
       stmt =
@@ -302,7 +332,7 @@ let variant_dataclass (name : string) (variants : (string * string list) list) :
   let constructor_defs =
     List.map def_variant_constructor_as_dataclass variants
   in
-  constructor_defs @ [ mk_union_def name variant_types ]
+  constructor_defs @ [ mk_union_def name variant_types ] *)
 
 (** Create a defaultdict type annotation from its key and value types *)
 let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
@@ -551,7 +581,9 @@ let%expect_test "char to bools" =
   [%expect {| false false false false true true false false |}]
 
 let%expect_test "build union" =
-  let union_stmt = mk_union_def "Status" [mk_name_expr "str"; mk_name_expr "int"] in
+  let union_stmt =
+    mk_union_def "Status" [ mk_name_expr "str"; mk_name_expr "int" ]
+  in
   print_endline (show_stmt union_stmt);
   [%expect
     {|

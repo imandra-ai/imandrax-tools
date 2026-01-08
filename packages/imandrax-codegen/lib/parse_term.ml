@@ -105,7 +105,7 @@ let rec parse_term (term : Term.term) :
       in
       let dataclass_type_annot =
         parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
-        Ast.type_annot_of_chained_generic_types types
+        Ast.type_annot_of_type_expr types
       in
 
       (* Extract values from rows, which will be used as arguments to the dataclass constructor *)
@@ -221,7 +221,7 @@ let rec parse_term (term : Term.term) :
 
       let (dataclass_type_annot : Ast_types.expr) =
         parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
-        Ast.type_annot_of_chained_generic_types types
+        Ast.type_annot_of_type_expr types
       in
 
       let _constr_arg_type_annot_lists, constr_arg_terms =

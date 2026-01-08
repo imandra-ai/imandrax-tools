@@ -20,7 +20,7 @@ class SomeClass:
 ```
 *)
 let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
-    string * string list =
+    string * type_expr =
   let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
 
   let arg_name = f.name in
@@ -62,7 +62,9 @@ let parse_rec_row_to_dataclass_row (rec_row : (Uid.t, Type.t) Ty_view.rec_row) :
     | Circle of 'a
     | Square of int
     ```
+
     gets parsed to
+
     ```python
     a = TypeVar('a')
     @dataclass
@@ -95,7 +97,7 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
     type params used
     Eg: a
   *)
-  let ( (constr_names_by_field : string list list),
+  let ( (constr_names_by_field : type_expr list),
         (type_params_used : Uid.t list) ) =
     (args : Mir.Type.t list)
     |> List.map (fun (arg : Type.t) ->
@@ -165,7 +167,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
             let dc_and_union_defs = dc_defs @ [ union_def ] in
             dc_and_union_defs
         | Record (rec_rows : (Uid.t, Type.t) Ty_view.rec_row list) ->
-            let dc_args : (string * string list) list =
+            let dc_args : (string * type_expr) list =
               rec_rows |> List.map parse_rec_row_to_dataclass_row
             in
             let dc_def = Ast.mk_dataclass_def decl_name [] dc_args in
@@ -253,7 +255,7 @@ let%expect_test "parse decl art" =
     Ty
       {
       name = container/oxiYljEm9mLVWkkYURTWoWGNfupScANrN7SpMxUoULo;
-      params = [a/161549; b/161550];
+      params = [a/176702; b/176703];
       decl =
         Algebraic
           [{
@@ -265,7 +267,7 @@ let%expect_test "parse decl art" =
            {
              c = Single/VX6Zwtm7dZgJKoLgh9TNOahjhFhEv3ERVolUa0HF8OQ;
              labels = None;
-             args = [{ view = (Var a/161549);
+             args = [{ view = (Var a/176702);
                        generation = 1 }];
              doc = None
              };
@@ -273,9 +275,9 @@ let%expect_test "parse decl art" =
              c = Pair/B4x1x4rxXHCSWnsOlIPrDcyh6TbWcJB8Gg_-cZtmoF4;
              labels = None;
              args =
-               [{ view = (Var a/161549);
+               [{ view = (Var a/176702);
                   generation = 1 };
-                { view = (Var b/161550);
+                { view = (Var b/176703);
                   generation = 1 }];
              doc = None
              };
@@ -286,9 +288,9 @@ let%expect_test "parse decl art" =
                  [key/cwwWl6JtTLFzaHQ1pe7U_iVJJf6NEw6GdOArOnc1ebo;
                   value/FRnzhPcUFqym3uZnzXwwtdzgXuV3vrAi_1qaiZ2Te54]);
              args =
-               [{ view = (Var a/161549);
+               [{ view = (Var a/176702);
                   generation = 1 };
-                { view = (Var b/161550);
+                { view = (Var b/176703);
                   generation = 1 }];
              doc = None
              };
@@ -297,11 +299,11 @@ let%expect_test "parse decl art" =
              labels = None;
              args =
                [{ view =
-                    (Constr (list,[{ view = (Var a/161549);
+                    (Constr (list,[{ view = (Var a/176702);
                                      generation = 1 }]));
                   generation = 1 };
                 { view =
-                    (Constr (list,[{ view = (Var b/161550);
+                    (Constr (list,[{ view = (Var b/176703);
                                      generation = 1 }]));
                   generation = 1 }];
              doc = None
@@ -475,7 +477,12 @@ let%expect_test "parse decl art" =
                     (Ast_types.Name
                        { Ast_types.id = "list"; ctx = Ast_types.Load });
                     slice =
-                    (Ast_types.Name { Ast_types.id = "a"; ctx = Ast_types.Load });
+                    (Ast_types.Tuple
+                       { Ast_types.elts =
+                         [(Ast_types.Name
+                             { Ast_types.id = "a"; ctx = Ast_types.Load })
+                           ];
+                         ctx = Ast_types.Load; dims = [] });
                     ctx = Ast_types.Load });
                value = None; simple = 1 });
            (Ast_types.AnnAssign
@@ -487,7 +494,12 @@ let%expect_test "parse decl art" =
                      (Ast_types.Name
                         { Ast_types.id = "list"; ctx = Ast_types.Load });
                      slice =
-                     (Ast_types.Name { Ast_types.id = "b"; ctx = Ast_types.Load });
+                     (Ast_types.Tuple
+                        { Ast_types.elts =
+                          [(Ast_types.Name
+                              { Ast_types.id = "b"; ctx = Ast_types.Load })
+                            ];
+                          ctx = Ast_types.Load; dims = [] });
                      ctx = Ast_types.Load });
                 value = None; simple = 1 })
            ];

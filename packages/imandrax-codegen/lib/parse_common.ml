@@ -10,7 +10,6 @@ module Term = Imandrax_api_mir.Term
 module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
-module Ast = Ast
 
 (* Shared exception *)
 exception Early_return of string
@@ -41,7 +40,7 @@ Return:
   0: a chained sequence of applied types
   1: generic type parameters used
 *)
-let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
+let parse_constr_to_type_annot_ (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
     string list * Uid.t list =
   let rec helper
       (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
@@ -56,6 +55,7 @@ let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
             let next_view = next_ty.view in
             helper next_view (constr_name :: ty_acc) params_acc
         | _next_ty :: _next_tys ->
+            List.iter (fun t -> print_endline (Type.show t)) constr_args;
             failwith
               "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 \
                args")
@@ -75,6 +75,51 @@ let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
            |> Option.value ~default:caml_type)
   in
   (List.rev ty_acc_py, params_acc)
+
+type type_expr = Ast.type_expr
+
+(** Parse Constr variant of Ty_view.view to type annotation
+
+Return:
+  0: a chained sequence of applied types
+  1: generic type parameters used
+*)
+let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
+    type_expr * Uid.t list =
+  let rec helper
+      (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
+      (params_acc : Uid.t list) : type_expr * Uid.t list =
+    match ty_view with
+    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
+        let constr_name = constr_uid.name in
+        match constr_args with
+        | [] -> (Base constr_name, params_acc)
+        | _ ->
+            let ( (arg_exprs : type_expr list),
+                  (params_acc_by_arg : Uid.t list list) ) =
+              constr_args
+              |> List.map (fun (ty : Type.t) -> helper ty.view [])
+              |> List.split
+            in
+            ( Generic (constr_name, arg_exprs),
+              params_acc @ (params_acc_by_arg |> List.flatten) ))
+    | Var (var_uid : Uid.t) ->
+        let type_var_name = var_uid.name in
+        (Base type_var_name, var_uid :: params_acc)
+    | _ -> failwith "parse_constr_to_type_annot: expected Constr or Var"
+  in
+
+  let ty_acc, params_acc = helper ty_view [] in
+  (* Replace with python names *)
+  let ty_acc_py =
+    Ast.map_type_expr ty_acc ~f:(fun (caml_type : string) : string ->
+        CCList.assoc_opt ~eq:String.equal caml_type
+          Ast.ty_view_constr_name_mapping
+        |> Option.value ~default:caml_type)
+  in
+
+  let dedup_params = params_acc |> CCList.uniq ~eq:Uid.equal in
+  (ty_acc_py, dedup_params)
 
 (** Define type variable
 
