@@ -53,7 +53,7 @@ def proto_to_dict(proto_obj: Message) -> dict[Any, Any]:
 # %%
 inputs = (curr_dir / 'gen_model_inputs.yaml').read_text()
 inputs = yaml.safe_load(inputs)
-c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_dev)
+c = Client(auth_token=os.environ['IMANDRAX_API_KEY'], url=url_prod)
 
 
 # %%

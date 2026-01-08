@@ -249,3 +249,56 @@
     let v =  (fun (w: _a_0 list) -> if w = [] then true else false)
   instance_src_kwargs:
     src: v
+- name: poly_3
+  category: polymorphic
+  iml: |-
+    type ('a, 'b, 'c) container3 =
+    | Three of 'a * 'b * 'c
+
+    let v = Three (1, 2, 3)
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+  expected_python_code: |
+    a = TypeVar('a')
+    b = TypeVar('b')
+    c = TypeVar('c')
+
+    @dataclass Three(Generic[a, b, c]):
+        arg0: a
+        arg1: b
+        arg2: c
+
+    container3 = Three[a, b, c]
+
+    value = Three(1, 2, 3)
+
+- name: nested_poly
+  category: polymorphic
+  iml: |-
+    type ('a, 'b) container2 = { v : ('a * 'b) }
+
+    type ('a, 'b, 'c) container3 = { v : ('a * 'b * 'c) }
+
+    let v : ((int, int, (int, int) container2) container3) = { v = (1, 2, ({ v = (3, 4) } : (int, int) container2)) }
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+  expected_python_code: |
+    a = TypeVar('a')
+    b = TypeVar('b')
+    c = TypeVar('c')
+
+    @dataclass
+    class container2:
+        v: tuple[a, b]
+
+    @dataclass
+    class container3:
+        v: tuple[a, b, container2[a, b]]
+
+    container3: TypeAlias = container3[int, int, container2[int, int]]
+
+    value: container3[int, int, container2[int, int]] = container3(1, 2, container2(1, 2))

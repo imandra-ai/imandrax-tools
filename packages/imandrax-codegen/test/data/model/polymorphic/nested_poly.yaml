@@ -1,0 +1,21 @@
+name: nested_poly
+category: polymorphic
+iml: |-
+  type ('a, 'b) container2 = { v : ('a * 'b) }
+
+  type ('a, 'b, 'c) container3 = { v : ('a * 'b * 'c) }
+
+  let v : ((int, int, (int, int) container2) container3) = { v = (1, 2, ({ v = (3, 4) } : (int, int) container2)) }
+
+  let v = fun w -> if w = v then true else false
+instance_src_kwargs:
+  src: v
+expected_python_code: "a = TypeVar('a')\nb = TypeVar('b')\nc = TypeVar('c')\n\n@dataclass\n\
+  class container2:\n    v: tuple[a, b]\n\n@dataclass\nclass container3:\n    v: tuple[a,\
+  \ b, container2[a, b]]\n\ncontainer3: TypeAlias = container3[int, int, container2[int,\
+  \ int]]\n\nvalue: container3[int, int, container2[int, int]] = container3(1, 2,\
+  \ container2(1, 2))\n"
+data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wZi9fZfEfg6pl90kouSvDt3R0JlpgqUDEe2dK04XaJK9if3fErDY0pjb250YWluZXIy/x4Bhv8AsvNiSmNvbnRhaW5lcjL9wwL+/zlj/0H/Q/lfERjXIKjcBcGFubc4cmmOgnhgCD3f8rft/PDPaASvqArtY0pjb250YWluZXIz/x4Bhv8AsvNiSmNvbnRhaW5lcjP9wwL+/zxj/48B/5IB/0qy+bJYAgAAAAAAAACw+mPy/6cBArJYBAAAAAAAAACw+mPy/7kBAmL/vgH/wQGy97JYBgAAAAAAAACw+mPy/9QBArJYCAAAAAAAAACw+mPy/+YBAmL/Cfi49GPy/x4CwQMC/60B/ydi//4B/4ECwAIfwdYFoGJBYfmw9MACH8LWBaBiQWL5sPRi/wD0svRi/wb6wwL/7AH4wQMC+P8AYv8a/w9i9fxfEastxytPvxLpSiuzSmBHS6obMev5whWJ6XJRxi5SH/SfY0F2/xUAhvay8mJBdvRi9P8lY/T/Zf9vYvb/eGH0ywLzAmP0/7cCAmP/0gH/wwH8uPhj8v/rAQLBAwL/gAL/9QFj/6AD/6MD/9sCwAIfxdYFoGJBYfmw9MACH8bWBaBiQWL5sPTAAh/H1gWgYkFj+bD0Y/8N/wL2svZj/xX/Cv7DAv/UAvrBAwL4/wJj/yv/IP8VYvf+XxGe26AbufmWHocNIXKACXeTnNTToXcpk8P9hr7oblqXYWNBdv8VAIb2svJiQXb0YvT/JWP0/3v/hgFi9/+RAWH1ywLzAmP0/6MDAmBgYvH/qwPAAh+H1wWgYkF3+WL0/wJj9P8I/8EDYvf/FWH0YGbx9P/7BAEB/4EFCg==
+api_version: v18
+kind: mir.model
+storage: []
