@@ -4,12 +4,61 @@ Setup: Define helper function
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    yq ".get_decls_res.decls[0].artifact" "test/data/decl/$1" -o json \
   >    | py-gen-parse - - --mode decl \
-  >    | uv run imandrax-codegen - \
+  >    | uv run python/py_gen/code_of_ast - \
   >    | fence
   > ); }
 
 function
   $ run_test function.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function1
+  $ run_test function1.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function2
+  $ run_test function2.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function3
+  $ run_test function3.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function4
+  $ run_test function4.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function5
+  $ run_test function5.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function6
+  $ run_test function6.yaml
+  ```python
+  Error parsing input: WIP: Fun
+  imandrax_codegen error: Input is empty
+  ```
+
+function7
+  $ run_test function7.yaml
   ```python
   Error parsing input: WIP: Fun
   imandrax_codegen error: Input is empty
@@ -26,12 +75,13 @@ nested_generics
   $ run_test nested_generics.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   
   @dataclass
   class My_ty:
-      arg0: tagged[validated][maybe][identity][int]
+      arg0: tagged[validated[maybe[identity[int]]]]
   
   
   my_ty = My_ty
@@ -42,14 +92,51 @@ real_and_option
   $ run_test real_and_option.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
   
   
   @dataclass
   class my_ty:
-      x: real
+      x: float
       y: option[int]
       z: int
+  
+  ```
+
+record_with_composite_type
+  $ run_test record_with_composite_type.yaml
+  ```python
+  from __future__ import annotations
+  
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  
+  
+  @dataclass
+  class shape:
+      circle: option[int]
   
   ```
 
@@ -57,6 +144,7 @@ record
   $ run_test record.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   
@@ -78,7 +166,9 @@ variant_poly_two_var
   $ run_test variant_poly_two_var.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
+  from typing import Generic, TypeVar
   
   a = TypeVar('a')
   b = TypeVar('b')
@@ -120,7 +210,9 @@ variant_poly
   $ run_test variant_poly.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
+  from typing import Generic, TypeVar
   
   a = TypeVar('a')
   
@@ -156,6 +248,7 @@ variant_recursive
   $ run_test variant_recursive.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   
@@ -178,6 +271,7 @@ variant_simple
   $ run_test variant_simple.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   
@@ -204,6 +298,7 @@ variant_two
   $ run_test variant_two.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   
@@ -225,7 +320,19 @@ variant_with_composite_payload
   $ run_test variant_with_composite_payload.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
   
   
   @dataclass
@@ -241,6 +348,7 @@ variant_with_payload
   $ run_test variant_with_payload.yaml
   ```python
   from __future__ import annotations
+  
   from dataclasses import dataclass
   
   

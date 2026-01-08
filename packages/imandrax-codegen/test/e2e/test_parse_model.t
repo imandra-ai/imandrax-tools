@@ -3,7 +3,7 @@ Setup: Define helper function
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    py-gen-parse "test/data/model/$1" - --mode model \
-  >    | uv run imandrax-codegen - \
+  >    | uv run python/py_gen/code_of_ast - \
   >    | fence
   > ); }
 
@@ -34,6 +34,60 @@ map_int_bool_0
   
   ```
 
+map_int_bool_1
+  $ run_test composite/map_int_bool_1.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[int, bool] = defaultdict(lambda: False, {2: True})
+  
+  ```
+
+map_int_bool_2
+  $ run_test composite/map_int_bool_2.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[int, bool] = defaultdict(lambda: False, {2: True, 3: False})
+  
+  ```
+
+multiset_empty
+  $ run_test composite/multiset_empty.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[_a_0, int] = defaultdict(lambda: 0)
+  
+  ```
+
+multiset_nonempty
+  $ run_test composite/multiset_nonempty.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[int, int] = defaultdict(lambda: 0, {1: 2, 3: 1, 2: 2})
+  
+  ```
+
+set_empty
+  $ run_test composite/set_empty.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[_a_0, bool] = defaultdict(lambda: False)
+  
+  ```
+
+set_nonempty
+  $ run_test composite/set_nonempty.yaml
+  ```python
+  from __future__ import annotations
+  
+  w: defaultdict[int, bool] = defaultdict(lambda: False, {1: True, 3: True, 2: True})
+  
+  ```
+
 variant_and_record
   $ run_test composite/variant_and_record.yaml
   ```python
@@ -61,12 +115,45 @@ empty list
   
   ```
 
+int option none
+  $ run_test primitive/int_option_none.yaml
+  ```python
+  from __future__ import annotations
+  
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  w: option[_a_0] = None
+  
+  ```
+
 int option
   $ run_test primitive/int_option.yaml
   ```python
   from __future__ import annotations
   
-  w: option = Some(2)
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  w: option[int] = Some(2)
   
   ```
 

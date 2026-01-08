@@ -4,7 +4,7 @@ Setup: Define helper function
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    yq ".decomp_res.artifact" "test/data/fun_decomp/$1" -o json \
   >    | py-gen-parse - - --mode fun-decomp \
-  >    | uv run imandrax-codegen - \
+  >    | uv run python/py_gen/code_of_ast - \
   >    | fence
   > ); }
 
@@ -373,6 +373,19 @@ option_type
   ```python
   from __future__ import annotations
   
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  
   
   def test_1():
       """test_1
@@ -407,7 +420,7 @@ option_type
       - constraints:
           - Is_a(None, opt)
       """
-      result: int = option_value(opt=None())
+      result: int = option_value(opt=None)
       expected: int = 0
       assert result == expected
   
@@ -531,6 +544,97 @@ primitive_real
       """
       result: bool = classify_temp(temp=0)
       expected: bool = True
+      assert result == expected
+  
+  ```
+
+variant_poly
+  $ run_test variant_poly.yaml
+  ```python
+  from __future__ import annotations
+  
+  
+  def test_1():
+      """test_1
+  
+      - invariant: 3
+      - constraints:
+          - not Is_a(Empty, c)
+          - not Is_a(Pair, c)
+          - not Is_a(Single, c)
+      """
+      result: int = f(c=Labeled(0, 0.0))
+      expected: int = 3
+      assert result == expected
+  
+  
+  def test_2():
+      """test_2
+  
+      - invariant: (-1)
+      - constraints:
+          - Is_a(Single, c)
+          - not Is_a(Empty, c)
+          - not Is_a(Pair, c)
+          - Destruct(Single, 0, c) <= 0
+      """
+      result: int = f(c=Single(0))
+      expected: int = -1
+      assert result == expected
+  
+  
+  def test_3():
+      """test_3
+  
+      - invariant: 1
+      - constraints:
+          - Is_a(Single, c)
+          - not Is_a(Empty, c)
+          - not Is_a(Pair, c)
+          - Destruct(Single, 0, c) >= 1
+      """
+      result: int = f(c=Single(1))
+      expected: int = 1
+      assert result == expected
+  
+  
+  def test_4():
+      """test_4
+  
+      - invariant: (-2)
+      - constraints:
+          - Is_a(Pair, c)
+          - not Is_a(Empty, c)
+          - Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c)
+      """
+      result: int = f(c=Pair(0, 0.0))
+      expected: int = -2
+      assert result == expected
+  
+  
+  def test_5():
+      """test_5
+  
+      - invariant: 2
+      - constraints:
+          - not (Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c))
+          - Is_a(Pair, c)
+          - not Is_a(Empty, c)
+      """
+      result: int = f(c=Pair(0, -1.0))
+      expected: int = 2
+      assert result == expected
+  
+  
+  def test_6():
+      """test_6
+  
+      - invariant: 0
+      - constraints:
+          - Is_a(Empty, c)
+      """
+      result: int = f(c=Empty())
+      expected: int = 0
       assert result == expected
   
   ```
