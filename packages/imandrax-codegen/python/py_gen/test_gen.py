@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 from typing import Any, cast
 
-import dotenv
 import py_gen.ast_types as ast_types
 from imandrax_api import Client, url_dev, url_prod  # noqa: F401
 from imandrax_api.bindings.artmsg_pb2 import Art as PbArt
@@ -13,7 +12,6 @@ from imandrax_api_models.client import ImandraXClient
 from .art_parse import ast_of_art
 
 curr_dir = Path(__file__).parent
-dotenv.load_dotenv()
 
 
 def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] | None:
