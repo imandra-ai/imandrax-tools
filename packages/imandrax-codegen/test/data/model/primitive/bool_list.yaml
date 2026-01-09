@@ -1,10 +1,12 @@
 name: bool list
+category: primitive
 iml: |-
   let v =
     fun w ->
       if w = [true; false] then true else false
-instance_src: v
-data: YGBgsElta19zX2Jvb2yz+2JEYm9vbPfDAvj/CGH1sUd0eS5saXN0s/liRGxpc3T3wwL4/we2AbDyY/L/FAK2ALDyY/L/HQJgYf8iwAIfJ6BiQWH3sPRh8sMC/yH1Yf1i8vixRWMubmlss/diQltd9WL1/wNj9P8e/zjFAvf/JmP1/0ECYv8z98EDAv9L/03BAwL/a/th/2/BAwL/M/81wQMC/z77Yf9GYvP6sUZjLmNvbnOz+GJCOjr1YvX/BGP0/xv/I8UC9/8zY/X/iwECYv+HAflh/64BYf95YvP/LmL/G/Zj9P8B/0jFAvf/DWP1/7ABAmBgYvH/uAHAAh+R3QGgYkF3+WL0/wJj9P8I/84BYvf/FWH0YGbx9P+KAgEB/5ACCg==
-api_version: v17
+instance_src_kwargs:
+  src: v
+data: YGBgsElta19zX2Jvb2yz+2JEYm9vbPfDAvj/CGH1sUd0eS5saXN0s/liRGxpc3T3wwL4/we2AbDyY/L/FAK2ALDyY/L/HQJgYf8iwAIfJ6BiQWH3sPRh8sMC/yH1Yf1i8vixRWMubmlss/diQltd9WL1/wNj9P8e/zjFA/f/JgJj9v9CAmL/NPfBAwL/TP9OwQMC/2z7Yf9wwQMC/zT/NsEDAv8/+2H/R2Lz+rFGYy5jb25zs/hiQjo69WL1/wRj9P8b/yPFA/f/MwJj9v+NAQJi/4kB+WH/sAFh/3ti8/8vYv8c9mP0/wH/ScUD9/8NAmP2/7MBAmBgYvH/uwHAAh+tnQSgYkF3+WL0/wJj9P8I/9EBYvf/FWH0YGbx9P+NAgEB/5MCCg==
+api_version: v18
 kind: mir.model
 storage: []

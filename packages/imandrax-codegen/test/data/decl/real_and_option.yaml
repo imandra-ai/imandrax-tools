@@ -1,0 +1,19 @@
+name: real_and_option
+iml: |
+  type my_ty = {
+    x: real;
+    y: int option;
+    z: int;
+  }
+req_kwargs:
+  names:
+  - my_ty
+get_decls_res:
+  decls:
+  - name: my_ty
+    artifact:
+      kind: mir.decl
+      data: YLBJbWtfc19yZWFss/tiRHJlYWz3wwL4/whfEWRjUIKRuyuI0uu11zqejbbNlpqQxD7iq3NwS6Z9RFfoY0F4/xUAhvay8mJBePRj9P8nAmCwSG1rX3NfaW50s/piQ2ludPbDAvf/BmH1sUl0eS5vcHRpb26z+2JGb3B0aW9u+cMC+v8LXxHWhiWr8StI+plgqyrYWJCgx42p9E7XQB6uvQ5j1QGxEWNBef8VAIb2svJiQXn0Y/T/JwJfEZm5gvHf8P2qqR5+3964nKoy1+dSaQ4z+3JC41T24RIYY0F6/xUAhvay8mJBevRj9P95AmP/lQH/Lvqx92BfEWGp9HEOYB5Jc+lxmtW+ehynik0q7p2BcWtV59ieDErVY0VteV90ef8ZAYb6svJiRW15X3R5+GX4/yv/LwICsfgB
+      api_version: v18
+      storage: []
+  not_found: []

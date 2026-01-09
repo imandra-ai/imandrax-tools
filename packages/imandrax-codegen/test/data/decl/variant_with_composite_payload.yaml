@@ -1,0 +1,16 @@
+name: variant_with_composite_payload
+iml: |
+  type shape2 =
+  | Circle of int option
+req_kwargs:
+  names:
+  - shape2
+get_decls_res:
+  decls:
+  - name: shape2
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfWxSXR5Lm9wdGlvbrP7YkZvcHRpb275wwL6/wth9V8R0LTIq9l9DEmPBtfvDTgE9o8nYqdS+AaN5lQ4Pfh0i/RjRkNpcmNsZf8aAIb7svJiRkNpcmNsZflk+QL/LwJh9rDyYF8RYm4TYoqC1R5wmQbmSip3VmH11ajoIS5IEZZBe0hOlpNjRnNoYXBlMv8aAYb7svJiRnNoYXBlMvll+f8t/zECArH4AQ==
+      api_version: v18
+      storage: []
+  not_found: []

@@ -49,9 +49,11 @@ def decode_artifact(
     kind: str,
 ) -> list[RegionStr] | dict[str, str] | None:
     if isinstance(data, str):
-        data = base64.b64decode(data)
-    data: bytes
-    art: Artifact = read_artifact_data(data=data, kind=kind)
+        data_ = base64.b64decode(data)
+    else:
+        data_ = data
+    data_: bytes
+    art: Artifact = read_artifact_data(data=data_, kind=kind)
     match (art, kind):
         # DecomposeRes
         case (

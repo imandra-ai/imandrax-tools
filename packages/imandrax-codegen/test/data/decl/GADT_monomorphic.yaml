@@ -1,0 +1,12 @@
+name: GADT_monomorphic
+iml: |
+  type _ expr =
+    | Int: int -> int expr
+    | Add: int expr * int expr -> int expr
+req_kwargs:
+  names:
+  - expr
+get_decls_res:
+  not_found:
+  - expr
+  decls: []

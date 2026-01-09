@@ -1,0 +1,78 @@
+name: variant_poly
+iml: |
+  type ('a, 'b) container =
+    | Empty
+    | Single of 'a
+    | Pair of 'a * 'b
+    | Labeled of { key: 'a; value: 'b }
+    | Multi of 'a list * 'b list
+
+  let f (c : (int, real) container) : int =
+    match c with
+    | Empty -> 0
+    | Single x -> if x > 0 then 1 else -1
+    | Pair (x, y) -> if Real.(>) (Real.of_int x)  y then 2 else -2
+    | _ -> 3
+decomp_kwargs:
+  name: f
+  prune: true
+regions:
+- model_str:
+    c: Labeled (0, 0.0)
+  model_eval_str: '3'
+  invariant_str: '3'
+  constraints_str:
+  - not Is_a(Empty, c)
+  - not Is_a(Pair, c)
+  - not Is_a(Single, c)
+- model_str:
+    c: Single 0
+  model_eval_str: (-1)
+  invariant_str: (-1)
+  constraints_str:
+  - Is_a(Single, c)
+  - not Is_a(Empty, c)
+  - not Is_a(Pair, c)
+  - Destruct(Single, 0, c) <= 0
+- model_str:
+    c: Single 1
+  model_eval_str: '1'
+  invariant_str: '1'
+  constraints_str:
+  - Is_a(Single, c)
+  - not Is_a(Empty, c)
+  - not Is_a(Pair, c)
+  - Destruct(Single, 0, c) >= 1
+- model_str:
+    c: Pair (0, 0.0)
+  model_eval_str: (-2)
+  invariant_str: (-2)
+  constraints_str:
+  - Is_a(Pair, c)
+  - not Is_a(Empty, c)
+  - Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c)
+- model_str:
+    c: Pair (0, (-1.0))
+  model_eval_str: '2'
+  invariant_str: '2'
+  constraints_str:
+  - not (Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c))
+  - Is_a(Pair, c)
+  - not Is_a(Empty, c)
+- model_str:
+    c: Empty
+  model_eval_str: '0'
+  invariant_str: '0'
+  constraints_str:
+  - Is_a(Empty, c)
+decomp_res:
+  artifact:
+    kind: mir.fun_decomp
+    data: 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
+    api_version: v18
+    storage: []
+  task:
+    id:
+      id: task:decomp:kv_2ogW3w3_5ijcbRtqvkxpR5jD_uPFCooOTuYQV5mE=
+    kind: TASK_DECOMP
+  errors: []

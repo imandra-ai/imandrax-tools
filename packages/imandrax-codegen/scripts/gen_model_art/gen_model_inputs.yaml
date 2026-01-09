@@ -1,0 +1,304 @@
+- name: real
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = 3.14 then true else false
+  instance_src_kwargs:
+    src: v
+- name: int
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = 2 then true else false
+  instance_src_kwargs:
+    src: v
+- name: LChar
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = LChar.zero then true else false
+  instance_src_kwargs:
+    src: v
+- name: LString
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = {l|hi|l} then true else false
+  instance_src_kwargs:
+    src: v
+- name: tuple of bool and int
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = (true, 2) then true else false
+  instance_src_kwargs:
+    src: v
+- name: empty list
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = [] then true else false
+  instance_src_kwargs:
+    src: v
+- name: single element int list
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = [1] then true else false
+  instance_src_kwargs:
+    src: v
+- name: bool list
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = [true; false] then true else false
+  instance_src_kwargs:
+    src: v
+- name: int option
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = Some 2 then true else false
+  instance_src_kwargs:
+    src: v
+- name: int option none
+  category: primitive
+  iml: |-
+    let v =
+      fun w ->
+        if w = None then true else false
+  instance_src_kwargs:
+    src: v
+- name: record
+  category: primitive
+  iml: |-
+    type user = {
+        id: int;
+        active: bool;
+    }
+
+    let v = {id = 1; active = true}
+
+    let v =
+      fun w ->
+        if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: variant1
+  category: primitive
+  iml: |-
+    type status =
+        | Active
+        | Waitlist of int
+
+    let v = Active
+
+    let v =
+      fun w ->
+        if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: variant2
+  category: primitive
+  iml: |-
+    type status =
+        | Active
+        | Waitlist of int
+
+    let v = Waitlist 1
+
+    let v =
+      fun w ->
+        if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: variant3
+  category: primitive
+  iml: |-
+    type status =
+        | Active
+        | Waitlist of int * bool
+
+    let v = Waitlist (2, true)
+
+    let v =
+      fun w ->
+        if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: variant_and_record
+  category: composite
+  iml: |-
+    type direction = North | South | East | West
+
+    type position = { x: int; y: int; z: real }
+
+    type movement =
+      | Stay of position
+      | Move of position * direction
+
+    let v =
+      fun w ->
+          if w = Move ({x=1; y=2; z=3.0}, North) then true else false
+  instance_src_kwargs:
+    src: v
+- name: inline_record
+  category: composite
+  iml: |-
+    type event =
+        | Click of { x: int; y: int }
+        | Keypress of { key: LChar.t; modifiers: LString.t list }
+        | Scroll of { delta: real }
+
+    let v = Scroll {delta = 2.0}
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: map_int_bool_0
+  category: composite
+  iml: |-
+    let v : (int, bool) Map.t =
+      Map.const false
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: map_int_bool_1
+  category: composite
+  iml: |-
+    let v : (int, bool) Map.t =
+      Map.const false
+       |> Map.add 2 true
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+
+- name: map_int_bool_2
+  category: composite
+  iml: |-
+    let v : (int, bool) Map.t =
+      Map.const false
+       |> Map.add 2 true
+       |> Map.add 3 false
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+
+- name: multiset_nonempty
+  category: composite
+  iml: |-
+    let v = Multiset.of_list [1; 2; 3; 2; 1]
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: multiset_empty
+  category: composite
+  iml: |-
+    let v = Multiset.of_list []
+
+    let v = fun w -> if w = v then true else false
+    instance v
+  instance_src_kwargs:
+    src: v
+- name: set_nonempty
+  category: composite
+  iml: |-
+    let v = Set.of_list [1; 2; 3; 2; 1]
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: set_empty
+  category: composite
+  iml: |-
+    let v = Set.of_list []
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: map_default_value_only
+  category: composite
+  iml: |-
+    let v = Map.const false
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+- name: annotated_polymorphic
+  category: polymorphic
+  iml: "let v =  (fun (w: _ list) -> if w = [] then true else false)"
+  instance_src_kwargs:
+    src: v
+- name: annotated_polymorphic_weird_type_name
+  category: polymorphic
+  iml: |-
+    type _a_0 = My_dummy_0
+
+    let v =  (fun (w: _a_0 list) -> if w = [] then true else false)
+  instance_src_kwargs:
+    src: v
+- name: poly_3
+  category: polymorphic
+  iml: |-
+    type ('a, 'b, 'c) container3 =
+    | Three of 'a * 'b * 'c
+
+    let v = Three (1, 2, 3)
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+  expected_python_code: |
+    a = TypeVar('a')
+    b = TypeVar('b')
+    c = TypeVar('c')
+
+    @dataclass Three(Generic[a, b, c]):
+        arg0: a
+        arg1: b
+        arg2: c
+
+    container3 = Three[a, b, c]
+
+    value = Three(1, 2, 3)
+
+- name: nested_poly
+  category: polymorphic
+  iml: |-
+    type ('a, 'b) container2 = { v : ('a * 'b) }
+
+    type ('a, 'b, 'c) container3 = { v : ('a * 'b * 'c) }
+
+    let v : ((int, int, (int, int) container2) container3) = { v = (1, 2, ({ v = (3, 4) } : (int, int) container2)) }
+
+    let v = fun w -> if w = v then true else false
+  instance_src_kwargs:
+    src: v
+  expected_python_code: |
+    a = TypeVar('a')
+    b = TypeVar('b')
+    c = TypeVar('c')
+
+    @dataclass
+    class container2:
+        v: tuple[a, b]
+
+    @dataclass
+    class container3:
+        v: tuple[a, b, container2[a, b]]
+
+    container3: TypeAlias = container3[int, int, container2[int, int]]
+
+    value: container3[int, int, container2[int, int]] = container3(1, 2, container2(1, 2))
