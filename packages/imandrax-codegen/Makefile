@@ -73,7 +73,7 @@ build-py:  ## Build Python package
 
 .PHONY: pre-release-test
 pre-release-test:  ## Run pre-release tests for Python package
-	uv run --env-file .env pytest test/python
+	uv run pytest test/python
 
 .PHONY: publish-testpypi
 publish-testpypi: pre-release-test  ## Publish to test.pypi.org

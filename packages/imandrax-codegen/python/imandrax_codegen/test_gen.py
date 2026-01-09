@@ -84,6 +84,7 @@ def gen_test_cases(
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
+    # TODO: it's fixed. We should revert this change
     # decomp_res: DecomposeRes = c.decompose(decomp_name, **other_decomp_kwargs)
     # decomp_art = decomp_res.artifact
     # assert decomp_art, 'No artifact returned from decompose'
