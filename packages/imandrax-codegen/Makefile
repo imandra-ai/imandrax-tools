@@ -66,13 +66,17 @@ clean:
 # Py
 # ====================
 
-.PHONY: py-build
-py-build:  ## Build Python package
+.PHONY: build-py
+build-py:  ## Build Python package
 	rm -rf ./dist/imandrax_codegen-*
 	uv build --no-sources
 
+.PHONY: pre-release-test-py
+pre-release-test-py:  ## Run pre-release tests for Python package
+	uv run --env-file .env pytest test/python
+
 .PHONY: publish-testpypi
-publish-testpypi: pre-release-test  ## Publish to test.pypi.org
+publish-testpypi: pre-release-test-py  ## Publish to test.pypi.org
 	uv publish \
 	--publish-url https://test.pypi.org/legacy/ \
 	-u __token__ \
@@ -80,7 +84,7 @@ publish-testpypi: pre-release-test  ## Publish to test.pypi.org
 	./dist/imandrax_codegen-*
 
 .PHONY: publish-pypi
-publish-pypi: pre-release-test  ## Publish to pypi.org
+publish-pypi: pre-release-test-py  ## Publish to pypi.org
 	uv publish \
 	--publish-url https://upload.pypi.org/legacy/ \
 	-u __token__ \

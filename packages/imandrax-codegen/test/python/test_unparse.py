@@ -13,6 +13,7 @@ DATA_DIR = curr_dir.parent / 'data' / 'fun_decomp'
 
 @dataclass
 class TestGenInput:
+    __test__ = False  # This is not a test
     name: str
     iml: str
     function_name: str

@@ -1,3 +1,4 @@
+__test__ = False  # this is not a test
 import os
 import re
 from pathlib import Path
