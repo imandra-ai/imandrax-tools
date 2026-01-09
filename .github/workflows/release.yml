@@ -10,6 +10,7 @@ on:
         options:
           - packages/imandrax-api-models
           - packages/iml-query
+          - packages/imandrax-codegen
           - packages/imandrax-tools
 jobs:
   build:
