@@ -1,7 +1,7 @@
 [project]
 name = "imandrax-codegen"
 version = "0.1.0"
-description = "Add your description here"
+description = "Code generator for ImandraX artifact"
 readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }
@@ -52,7 +52,6 @@ where = ["python"]
 # By default, Python packages only include .py files. setuptools.package-data tells
 # setuptools to include additional non-Python files when building the package (wheels,
 # sdist).
-
 py_gen = ["art_parse.exe"]
 
 

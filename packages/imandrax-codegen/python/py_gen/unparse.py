@@ -107,7 +107,6 @@ def unparse(
     nodes: list[custom_ast.stmt],
     alias_real_to_float: bool = False,
     # TODO: add a config field?
-    # - [x] whether to include option lib imports
     # - [x] whether to alias `real` to `float` or not
     #   - [ ] alternatively: use Decimal instead of float
     # - the python version to use: 3.12+ or not

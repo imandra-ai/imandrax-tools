@@ -57,8 +57,32 @@ update-all:  ## Update all artifacts and regenerate cram test files
 	@echo "Run 'dune test' to execute the tests and 'dune promote' to accept new outputs."
 
 # Clean generated artifacts
-.PHONY: clean
+.PHONY: clean-artifacts
 clean:
 	rm -rf scripts/gen_model_art/result/*
 	rm -rf scripts/gen_fun_decomp_art/result/*
 	rm -rf scripts/gen_decl_art/result/*
+
+# Py
+# ====================
+
+.PHONY: py-build
+py-build:  ## Build Python package
+	rm -rf ./dist/imandrax_codegen-*
+	uv build --no-sources
+
+.PHONY: publish-testpypi
+publish-testpypi: pre-release-test  ## Publish to test.pypi.org
+	uv publish \
+	--publish-url https://test.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*
+
+.PHONY: publish-pypi
+publish-pypi: pre-release-test  ## Publish to pypi.org
+	uv publish \
+	--publish-url https://upload.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*
