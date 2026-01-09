@@ -19,17 +19,14 @@ iml: |
     | My_ty of int identity maybe validated tagged
 req_kwargs:
   names:
-    - my_ty
-expected_python_code: |
-  @dataclass
-  class my_ty:
-    arg0: tagged[validated[maybe[identity[int]]]]
+  - my_ty
+expected_python_code: "@dataclass\nclass my_ty:\n    arg0: tagged[validated[maybe[identity[int]]]]\n"
 get_decls_res:
   decls:
-    - name: my_ty
-      artifact:
-        kind: mir.decl
-        data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfVfEeADC54kPrDMU5XYmH4a/T7ARqtvr9B3106FqaevA5QEY0hpZGVudGl0ef8cAYb9svJiSGlkZW50aXR5+8MC/P8zYfVfEQnNa49EIqcrju8pd4yks1si+Q9tnX8WhzQW/QEze9CbY0VtYXliZf8ZAYb6svJiRW1heWJl+MMC+f8tYfVfET8WBGOPTV5I4keGigaH8+634ROsVz/1S7zbogCFiQHDY0l2YWxpZGF0ZWT/HQGG/rLyYkl2YWxpZGF0ZWT8wwL9/zVh9V8RI/WZIRhH76rALxpX/YhaelRmb4LqKVzs6ywNGiWMgdZjRnRhZ2dlZP8aAYb7svJiRnRhZ2dlZPnDAvr/L2H1XxGqW6MT2TcLYLRMv7wzN/+gQcn1PmLhj2e2O+X40KTFrWNFTXlfdHn/GQCG+rLyYkVNeV90efhk+AL/LQJh9rDyYF8RK4n0AuCEz3XMvL6LS1WaKVkIil+9a8rQZR/saAqxiFJjRW15X3R5/xkBhvqy8mJFbXlfdHn4Zfj/K/8vAgKx+AE=
-        api_version: v18
-        storage: []
+  - name: my_ty
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfVfEeADC54kPrDMU5XYmH4a/T7ARqtvr9B3106FqaevA5QEY0hpZGVudGl0ef8cAYb9svJiSGlkZW50aXR5+8MC/P8zYfVfEQnNa49EIqcrju8pd4yks1si+Q9tnX8WhzQW/QEze9CbY0VtYXliZf8ZAYb6svJiRW1heWJl+MMC+f8tYfVfET8WBGOPTV5I4keGigaH8+634ROsVz/1S7zbogCFiQHDY0l2YWxpZGF0ZWT/HQGG/rLyYkl2YWxpZGF0ZWT8wwL9/zVh9V8RI/WZIRhH76rALxpX/YhaelRmb4LqKVzs6ywNGiWMgdZjRnRhZ2dlZP8aAYb7svJiRnRhZ2dlZPnDAvr/L2H1XxGqW6MT2TcLYLRMv7wzN/+gQcn1PmLhj2e2O+X40KTFrWNFTXlfdHn/GQCG+rLyYkVNeV90efhk+AL/LQJh9rDyYF8RK4n0AuCEz3XMvL6LS1WaKVkIil+9a8rQZR/saAqxiFJjRW15X3R5/xkBhvqy8mJFbXlfdHn4Zfj/K/8vAgKx+AE=
+      api_version: v18
+      storage: []
   not_found: []

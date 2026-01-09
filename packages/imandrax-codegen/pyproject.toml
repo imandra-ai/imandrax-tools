@@ -11,7 +11,7 @@ dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
     "imandrax-api-models>=18.0.0",
-    "imandrax-api[async]>=0.18",
+    "imandrax-api[async]>=0.18.0.1",
     "iml-query>=0.3.4",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
@@ -34,7 +34,7 @@ package = true
 
 [tool.uv.sources]
 # imandrax-api-models = { path = "../imandrax-api-models", editable = true }
-imandrax-api = { path = "../../../imandrax-api/src/py" }
+# imandrax-api = { path = "../../../imandrax-api/src/py" }
 # imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 
 [tool.uv.workspace]

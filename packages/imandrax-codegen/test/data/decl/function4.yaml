@@ -21,7 +21,7 @@ get_decls_res:
   - name: add4
     artifact:
       kind: mir.decl
-      data: YGCwAmfyAvX3AgICwAIAAGCwSG1rX3NfaW50s/piQ2ludPbDAvf/BsACH8PmCqBiQWH5YvT/ArP0Y/L/CALAAh/H5gqgYkFi+WL0/xiz9GPy/x4CYv8M98EDAv8o/yrBAwL/L/tgYGLx+bBIbWtfaV9hZGSz+mJBK/Ri9P8FY/T/C/8TtPZj8v8ZAsIC9v8qY/X/XwJi/1f/ZWL/Rv9qYvr2YGLx/zZfEeIjzHqIaWxz4+TiK+l7JRJdDE40mpF1/1HfpsNM9ixeY0RhZGQ0/xgBhvmy8mJEYWRkNPdn9/8s/zL/QwL/ygH/1QGw/wAC
+      data: YGCwAmfyAvX3AgICwAIAAGCwSG1rX3NfaW50s/piQ2ludPbDAvf/BsACH4KbEKBiQWH5YvT/ArP0Y/L/CALAAh+GmxCgYkFi+WL0/xiz9GPy/x4CYv8M98EDAv8o/yrBAwL/L/tgYGLx+bBIbWtfaV9hZGSz+mJBK/Ri9P8FY/T/C/8TtPZj8v8ZAsIC9v8qY/X/XwJi/1f/ZWL/Rv9qYvr2YGLx/zZfEeIjzHqIaWxz4+TiK+l7JRJdDE40mpF1/1HfpsNM9ixeY0RhZGQ0/xgBhvmy8mJEYWRkNPdn9/8s/zL/QwL/ygH/1QGw/wAC
       api_version: v18
       storage: []
   not_found: []

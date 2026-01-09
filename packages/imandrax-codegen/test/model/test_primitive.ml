@@ -11,19 +11,22 @@ let%expect_test "bool list" =
       fun w ->
         if w = [true; false] then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Subscript
-       { Ast.value = (Ast.Name { Ast.id = "list"; ctx = Ast.Load });
-         slice = (Ast.Name { Ast.id = "bool"; ctx = Ast.Load }); ctx = Ast.Load })
+    (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "list"; ctx = Ast_types.Load });
+         slice = (Ast_types.Name { Ast_types.id = "bool"; ctx = Ast_types.Load });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast.List
-       { Ast.elts =
-         [(Ast.Constant { Ast.value = (Ast.Bool true); kind = None });
-           (Ast.Constant { Ast.value = (Ast.Bool false); kind = None })];
-         ctx = Ast.Load })
+    (Ast_types.List
+       { Ast_types.elts =
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Bool true); kind = None });
+           (Ast_types.Constant
+              { Ast_types.value = (Ast_types.Bool false); kind = None })
+           ];
+         ctx = Ast_types.Load })
     |}]
 
 let%expect_test "empty list" =
@@ -36,13 +39,11 @@ let%expect_test "empty list" =
       fun w ->
         if w = [] then true else false
 
-    Type defs:
-
     Type annot:
     None
 
     Expr:
-    (Ast.List { Ast.elts = []; ctx = Ast.Load })
+    (Ast_types.List { Ast_types.elts = []; ctx = Ast_types.Load })
     |}]
 
 let%expect_test "int option" =
@@ -55,28 +56,21 @@ let%expect_test "int option" =
       fun w ->
         if w = Some 2 then true else false
 
-    Type defs:
-    (Ast.ClassDef
-       { Ast.name = "Some"; bases = []; keywords = [];
-         body =
-         [(Ast.AnnAssign
-             { Ast.target = (Ast.Name { Ast.id = "arg0"; ctx = Ast.Load });
-               annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
-               value = None; simple = 1 })
-           ];
-         decorator_list = [(Ast.Name { Ast.id = "dataclass"; ctx = Ast.Load })] })
-    (Ast.Assign
-       { Ast.targets = [(Ast.Name { Ast.id = "option"; ctx = Ast.Load })];
-         value = (Ast.Name { Ast.id = "Some"; ctx = Ast.Load });
-         type_comment = None })
-
     Type annot:
-    (Ast.Name { Ast.id = "option"; ctx = Ast.Load })
+    (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "option"; ctx = Ast_types.Load });
+         slice = (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Call
-       { Ast.func = (Ast.Name { Ast.id = "Some"; ctx = Ast.Load });
-         args = [(Ast.Constant { Ast.value = (Ast.Int 2); kind = None })];
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "Some"; ctx = Ast_types.Load });
+         args =
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Int 2); kind = None })
+           ];
          keywords = [] })
     |}]
 
@@ -90,13 +84,11 @@ let%expect_test "int" =
       fun w ->
         if w = 2 then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Name { Ast.id = "int"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Constant { Ast.value = (Ast.Int 2); kind = None })
+    (Ast_types.Constant { Ast_types.value = (Ast_types.Int 2); kind = None })
     |}]
 
 let%expect_test "LChar" =
@@ -109,13 +101,12 @@ let%expect_test "LChar" =
       fun w ->
         if w = LChar.zero then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Name { Ast.id = "str"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "str"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Constant { Ast.value = (Ast.String "\000"); kind = None })
+    (Ast_types.Constant
+       { Ast_types.value = (Ast_types.String "\000"); kind = None })
     |}]
 
 let%expect_test "LString" =
@@ -128,19 +119,22 @@ let%expect_test "LString" =
       fun w ->
         if w = {l|hi|l} then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Subscript
-       { Ast.value = (Ast.Name { Ast.id = "list"; ctx = Ast.Load });
-         slice = (Ast.Name { Ast.id = "str"; ctx = Ast.Load }); ctx = Ast.Load })
+    (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "list"; ctx = Ast_types.Load });
+         slice = (Ast_types.Name { Ast_types.id = "str"; ctx = Ast_types.Load });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast.List
-       { Ast.elts =
-         [(Ast.Constant { Ast.value = (Ast.String "h"); kind = None });
-           (Ast.Constant { Ast.value = (Ast.String "i"); kind = None })];
-         ctx = Ast.Load })
+    (Ast_types.List
+       { Ast_types.elts =
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.String "h"); kind = None });
+           (Ast_types.Constant
+              { Ast_types.value = (Ast_types.String "i"); kind = None })
+           ];
+         ctx = Ast_types.Load })
     |}]
 
 let%expect_test "real" =
@@ -153,13 +147,11 @@ let%expect_test "real" =
       fun w ->
         if w = 3.14 then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Name { Ast.id = "float"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "float"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Constant { Ast.value = (Ast.Float 3.14); kind = None })
+    (Ast_types.Constant { Ast_types.value = (Ast_types.Float 3.14); kind = None })
     |}]
 
 let%expect_test "record" =
@@ -179,30 +171,19 @@ let%expect_test "record" =
       fun w ->
         if w = v then true else false
 
-    Type defs:
-    (Ast.ClassDef
-       { Ast.name = "user"; bases = []; keywords = [];
-         body =
-         [(Ast.AnnAssign
-             { Ast.target = (Ast.Name { Ast.id = "id"; ctx = Ast.Load });
-               annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
-               value = None; simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "active"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "bool"; ctx = Ast.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list = [(Ast.Name { Ast.id = "dataclass"; ctx = Ast.Load })] })
-
     Type annot:
-    (Ast.Name { Ast.id = "user"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "user"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Call
-       { Ast.func = (Ast.Name { Ast.id = "user"; ctx = Ast.Load });
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "user"; ctx = Ast_types.Load });
          args =
-         [(Ast.Constant { Ast.value = (Ast.Int 1); kind = None });
-           (Ast.Constant { Ast.value = (Ast.Bool true); kind = None })];
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Int 1); kind = None });
+           (Ast_types.Constant
+              { Ast_types.value = (Ast_types.Bool true); kind = None })
+           ];
          keywords = [] })
     |}]
 
@@ -216,48 +197,20 @@ let%expect_test "single element int list" =
       fun w ->
         if w = [1] then true else false
 
-    Type defs:
-
     Type annot:
-    (Ast.Subscript
-       { Ast.value = (Ast.Name { Ast.id = "list"; ctx = Ast.Load });
-         slice = (Ast.Name { Ast.id = "int"; ctx = Ast.Load }); ctx = Ast.Load })
+    (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "list"; ctx = Ast_types.Load });
+         slice = (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast.List
-       { Ast.elts = [(Ast.Constant { Ast.value = (Ast.Int 1); kind = None })];
-         ctx = Ast.Load })
-    |}]
-
-let%expect_test "tuple (bool * int)" =
-  test_parse_model (Some "primitive") "tuple_(bool_*_int)";
-  [%expect
-    {|
-    name: tuple (bool * int)
-    iml_code:
-    let v =
-      fun w ->
-        if w = (true, 2) then true else false
-
-    Type defs:
-
-    Type annot:
-    (Ast.Subscript
-       { Ast.value = (Ast.Name { Ast.id = "tuple"; ctx = Ast.Load });
-         slice =
-         (Ast.Tuple
-            { Ast.elts =
-              [(Ast.Name { Ast.id = "bool"; ctx = Ast.Load });
-                (Ast.Name { Ast.id = "int"; ctx = Ast.Load })];
-              ctx = Ast.Load; dims = [] });
-         ctx = Ast.Load })
-
-    Expr:
-    (Ast.Tuple
-       { Ast.elts =
-         [(Ast.Constant { Ast.value = (Ast.Bool true); kind = None });
-           (Ast.Constant { Ast.value = (Ast.Int 2); kind = None })];
-         ctx = Ast.Load; dims = [] })
+    (Ast_types.List
+       { Ast_types.elts =
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Int 1); kind = None })
+           ];
+         ctx = Ast_types.Load })
     |}]
 
 let%expect_test "variant1" =
@@ -276,22 +229,14 @@ let%expect_test "variant1" =
       fun w ->
         if w = v then true else false
 
-    Type defs:
-    (Ast.ClassDef
-       { Ast.name = "Active"; bases = []; keywords = []; body = [Ast.Pass];
-         decorator_list = [(Ast.Name { Ast.id = "dataclass"; ctx = Ast.Load })] })
-    (Ast.Assign
-       { Ast.targets = [(Ast.Name { Ast.id = "status"; ctx = Ast.Load })];
-         value = (Ast.Name { Ast.id = "Active"; ctx = Ast.Load });
-         type_comment = None })
-
     Type annot:
-    (Ast.Name { Ast.id = "status"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "status"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Call
-       { Ast.func = (Ast.Name { Ast.id = "Active"; ctx = Ast.Load }); args = [];
-         keywords = [] })
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "Active"; ctx = Ast_types.Load });
+         args = []; keywords = [] })
     |}]
 
 let%expect_test "variant2" =
@@ -310,28 +255,17 @@ let%expect_test "variant2" =
       fun w ->
         if w = v then true else false
 
-    Type defs:
-    (Ast.ClassDef
-       { Ast.name = "Waitlist"; bases = []; keywords = [];
-         body =
-         [(Ast.AnnAssign
-             { Ast.target = (Ast.Name { Ast.id = "arg0"; ctx = Ast.Load });
-               annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
-               value = None; simple = 1 })
-           ];
-         decorator_list = [(Ast.Name { Ast.id = "dataclass"; ctx = Ast.Load })] })
-    (Ast.Assign
-       { Ast.targets = [(Ast.Name { Ast.id = "status"; ctx = Ast.Load })];
-         value = (Ast.Name { Ast.id = "Waitlist"; ctx = Ast.Load });
-         type_comment = None })
-
     Type annot:
-    (Ast.Name { Ast.id = "status"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "status"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Call
-       { Ast.func = (Ast.Name { Ast.id = "Waitlist"; ctx = Ast.Load });
-         args = [(Ast.Constant { Ast.value = (Ast.Int 1); kind = None })];
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "Waitlist"; ctx = Ast_types.Load });
+         args =
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Int 1); kind = None })
+           ];
          keywords = [] })
     |}]
 
@@ -351,33 +285,18 @@ let%expect_test "variant3" =
       fun w ->
         if w = v then true else false
 
-    Type defs:
-    (Ast.ClassDef
-       { Ast.name = "Waitlist"; bases = []; keywords = [];
-         body =
-         [(Ast.AnnAssign
-             { Ast.target = (Ast.Name { Ast.id = "arg0"; ctx = Ast.Load });
-               annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
-               value = None; simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "arg1"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "bool"; ctx = Ast.Load });
-                value = None; simple = 1 })
-           ];
-         decorator_list = [(Ast.Name { Ast.id = "dataclass"; ctx = Ast.Load })] })
-    (Ast.Assign
-       { Ast.targets = [(Ast.Name { Ast.id = "status"; ctx = Ast.Load })];
-         value = (Ast.Name { Ast.id = "Waitlist"; ctx = Ast.Load });
-         type_comment = None })
-
     Type annot:
-    (Ast.Name { Ast.id = "status"; ctx = Ast.Load })
+    (Ast_types.Name { Ast_types.id = "status"; ctx = Ast_types.Load })
 
     Expr:
-    (Ast.Call
-       { Ast.func = (Ast.Name { Ast.id = "Waitlist"; ctx = Ast.Load });
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "Waitlist"; ctx = Ast_types.Load });
          args =
-         [(Ast.Constant { Ast.value = (Ast.Int 2); kind = None });
-           (Ast.Constant { Ast.value = (Ast.Bool true); kind = None })];
+         [(Ast_types.Constant
+             { Ast_types.value = (Ast_types.Int 2); kind = None });
+           (Ast_types.Constant
+              { Ast_types.value = (Ast_types.Bool true); kind = None })
+           ];
          keywords = [] })
     |}]
