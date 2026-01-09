@@ -5,7 +5,7 @@
 This is `imandrax-codegen`, a code generator that converts ImandraX artifacts (MIR - Mid-level Intermediate Representation) into Python code. The project consists of two main components:
 
 1. **OCaml Parser** (`lib/`, `bin/`): Deserializes YAML/JSON artifacts and converts them to a Python AST representation
-2. **Python Code Generator** (`python/py_gen/`): Deserializes the Python AST and generates executable Python code
+2. **Python Code Generator** (`python/imandrax_codegen/`): Deserializes the Python AST and generates executable Python code
 
 ## Architecture & Data Flow
 
@@ -35,7 +35,7 @@ yq "." artifact.yaml -o json | dune exec bin/parse.exe -- - --mode model | uv ru
 │   └── pretty_print.ml     # AST pretty printing
 ├── bin/
 │   └── parse.ml            # CLI entry point for parser (parse.exe)
-├── python/py_gen/          # Python code generator
+├── python/imandrax_codegen/          # Python code generator
 │   ├── __main__.py         # CLI entry point (imandrax-codegen command)
 │   ├── ast_deserialize.py  # Deserializes JSON AST from OCaml
 │   ├── ast_types.py        # Python AST type definitions

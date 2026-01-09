@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from imandrax_codegen.test_gen import gen_test_cases
+from imandrax_codegen.unparse import unparse
 from inline_snapshot import snapshot
-from py_gen.test_gen import gen_test_cases
-from py_gen.unparse import unparse
 
 curr_dir = Path(__file__).parent
 DATA_DIR = curr_dir.parent / 'data' / 'fun_decomp'

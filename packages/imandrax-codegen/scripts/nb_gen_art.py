@@ -33,11 +33,11 @@ from pathlib import Path
 from typing import Any
 
 import dotenv
-import py_gen.ast_types as ast_types
+import imandrax_codegen.ast_types as ast_types
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
-from py_gen.ast_deserialize import load_from_json_string
-from py_gen.unparse import unparse
+from imandrax_codegen.ast_deserialize import stmts_of_json
+from imandrax_codegen.unparse import unparse
 
 curr_dir = Path.cwd() if ip else Path(__file__).parent
 

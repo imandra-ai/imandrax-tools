@@ -6,7 +6,7 @@ codegen() {
     fi
     yq '.decomp_res.artifact' "$1" -o json \
     | dune exec bin/parse.exe -- - - --mode fun-decomp \
-    | uv run py-gen -
+    | uv run imandrax-codegen -
 }
 
 codegen "$1"

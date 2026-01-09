@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import dotenv
-import py_gen.ast_types as ast_types
+import imandrax_codegen.ast_types as ast_types
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import Message
 from imandrax_api import url_dev, url_prod
@@ -27,9 +27,9 @@ from imandrax_api.lib import (
 )
 from imandrax_api_models import Art
 from imandrax_api_models.client import ImandraXClient
+from imandrax_codegen.ast_deserialize import load_from_json_string
+from imandrax_codegen.unparse import unparse
 from IPython.core.getipython import get_ipython
-from py_gen.ast_deserialize import load_from_json_string
-from py_gen.unparse import unparse
 from rich import print
 
 

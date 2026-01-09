@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [project.scripts]
-imandrax-codegen = "py_gen.__main__:app"
+imandrax-codegen = "imandrax_codegen.__main__:app"
 
 [dependency-groups]
 dev = [
@@ -52,7 +52,7 @@ where = ["python"]
 # By default, Python packages only include .py files. setuptools.package-data tells
 # setuptools to include additional non-Python files when building the package (wheels,
 # sdist).
-py_gen = ["art_parse.exe"]
+imandrax_codegen = ["art_parse.exe"]
 
 
 [tool.ty]

@@ -1,4 +1,4 @@
-(subdir py_gen
+(subdir imandrax_codegen
   (rule
     (target art_parse.exe)
     (deps ../../bin/parse.exe)

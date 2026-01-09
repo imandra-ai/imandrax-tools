@@ -1,7 +1,7 @@
 """Test cases for extract_type_decl_names function."""
 
+from imandrax_codegen.test_gen import extract_type_decl_names
 from IPython.core.getipython import get_ipython
-from py_gen.test_gen import extract_type_decl_names
 
 if ip := get_ipython():
     ip.run_line_magic('reload_ext', 'autoreload')

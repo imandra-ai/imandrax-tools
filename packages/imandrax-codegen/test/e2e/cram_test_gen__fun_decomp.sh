@@ -18,7 +18,7 @@ Setup: Define helper function
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
   >    yq ".decomp_res.artifact" "test/data/fun_decomp/$1" -o json \
   >    | py-gen-parse - - --mode fun-decomp \
-  >    | uv run python/py_gen/code_of_ast - \
+  >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }
 
