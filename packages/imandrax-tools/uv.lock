@@ -337,7 +337,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.17.3.1"
+version = "0.18.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -345,7 +345,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/31/8d134ada9668b7acf065f0b98c0e245e670066a527706b4c5598f0bed53e/imandrax_api-0.17.3.1-py3-none-any.whl", hash = "sha256:ed09fdd5b3678ac63941bca88c3e3d863e739eb9d983ffb3355410ece92e471e", size = 60945, upload-time = "2025-11-14T17:25:40.144Z" },
+    { url = "https://files.pythonhosted.org/packages/47/9b/2711a0927bc149dcfb377094a6862d9f062e9737537d74009338a66a8c74/imandrax_api-0.18.0.1-py3-none-any.whl", hash = "sha256:2d98d081daee52ad998afa45acd88188b6116615fc80a315e07e2d1bdfe38e06", size = 62246, upload-time = "2026-01-08T18:19:38.786Z" },
 ]
 
 [package.optional-dependencies]
@@ -355,16 +355,21 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "1.0.0"
+version = "18.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/21/4b795cf0a61e628e1ead69de36cd098da9cc6909fb335dd94a764ba604c7/imandrax_api_models-1.0.0.tar.gz", hash = "sha256:2bd3619ef246bd14531f7bc13fbac3bf5115834f6097de8d33f4c863615ae593", size = 8695, upload-time = "2025-11-17T15:11:13.539Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/30/6f899ddb11eddb4d6c408f12188ba73225d98750f1858694cd702a256929/imandrax_api_models-18.0.0.tar.gz", hash = "sha256:ba499542ddfd51745785cfc55c69d983695534f3ae94c0f44c20a73fb39a140d", size = 12703, upload-time = "2025-12-15T14:26:00.969Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/ed/9ebcfeca7298edcbd735cab59723d00f066d9af8ad2fe8204d30550b3db9/imandrax_api_models-1.0.0-py3-none-any.whl", hash = "sha256:befad508c8f1e7d9cbe9bd7786fca92e14ad697e69d2c07d41ac593bcc4a6372", size = 12499, upload-time = "2025-11-17T15:11:12.541Z" },
+    { url = "https://files.pythonhosted.org/packages/71/e8/5ee9b5245a86b96d942706e5c80ec81e5ca1f0a9f352c3c32ec6c8233c02/imandrax_api_models-18.0.0-py3-none-any.whl", hash = "sha256:7cf3ceaa152e5d6c03bda81228ec9e545f900d622be45dcdf15665fcee5e58b1", size = 17378, upload-time = "2025-12-15T14:25:59.926Z" },
+]
+
+[package.optional-dependencies]
+client = [
+    { name = "iml-query" },
 ]
 
 [[package]]
@@ -376,6 +381,11 @@ dependencies = [
     { name = "iml-query" },
 ]
 
+[package.optional-dependencies]
+extended-client = [
+    { name = "imandrax-api-models", extra = ["client"] },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "pytest" },
@@ -383,16 +393,18 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "imandrax-api-models", specifier = ">=1.0.0" },
-    { name = "iml-query", specifier = ">=0.4.2" },
+    { name = "imandrax-api-models", specifier = ">=18" },
+    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = ">=18.0.0" },
+    { name = "iml-query", specifier = ">=0.5.1" },
 ]
+provides-extras = ["extended-client"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.1" }]
 
 [[package]]
 name = "iml-query"
-version = "0.4.2"
+version = "0.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -402,9 +414,9 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/1b/0b8b99812b4eb43c1a2b0d0cc55d62183eef103f61113da7439fb219cc89/iml_query-0.4.2.tar.gz", hash = "sha256:43b80e48b17ea9a7bd607fd42c09bdbdcb50ac3fe2e923604517a7f2f81a4696", size = 95963, upload-time = "2025-11-17T17:55:40.456Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/03/65cae639ae2af023ef856d763401bdd3d89bbd06527a62752659e4fe4cfd/iml_query-0.5.1.tar.gz", hash = "sha256:52e621ca7bfe20c1f1f9c02c954e2568165dd73b83f6ffae4873b862dc01b799", size = 96135, upload-time = "2025-12-05T15:16:12.093Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/ed/66e5831710e36aa23e01c669c73ac321c9fc7e92b1bc54689d303636adec/iml_query-0.4.2-py3-none-any.whl", hash = "sha256:2d2128c8ef3bc45b807c1198b687c4323e21cdf89b1e8a150ecf587e030df787", size = 13310, upload-time = "2025-11-17T17:55:38.985Z" },
+    { url = "https://files.pythonhosted.org/packages/09/c9/a517d195832e8498f7cdc26c8c27f7ca0f9b0b2b3f330bf3c32333ee6a9f/iml_query-0.5.1-py3-none-any.whl", hash = "sha256:4d8d691ccf0352724f62c5f6461954843aa7ee335f2165f49cd0975107104243", size = 16183, upload-time = "2025-12-05T15:16:10.933Z" },
 ]
 
 [[package]]
