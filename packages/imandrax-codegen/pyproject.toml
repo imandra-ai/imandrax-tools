@@ -1,12 +1,12 @@
 [project]
 name = "imandrax-codegen"
-version = "18.0.0"
+version = "18.1.0"
 description = "Code generator for ImandraX artifact"
 readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
