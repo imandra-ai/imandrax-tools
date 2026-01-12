@@ -16,6 +16,9 @@ dependencies = [
 extended-client = [
     "imandrax-api-models[client]>=18.0.0",
 ]
+codegen = [
+    "imandrax-codegen>=18.1.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
