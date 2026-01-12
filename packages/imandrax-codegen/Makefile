@@ -71,6 +71,10 @@ build-py:  ## Build Python package
 	rm -rf ./dist/imandrax_codegen-*
 	uv build --no-sources
 
+.PHONY: test-py
+test-py:  ## Run tests for Python package
+	uv run pytest test/python
+
 .PHONY: pre-release-test
 pre-release-test:  ## Run pre-release tests for Python package
 	# uv run pytest test/python
