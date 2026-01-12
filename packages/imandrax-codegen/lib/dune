@@ -2,7 +2,6 @@
 
 (library
  (name imandrax_codegen)
- (modules parse ast util pretty_print)
  (flags (:standard -w -30))
  (libraries
   imandrax-api

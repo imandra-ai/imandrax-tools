@@ -1,0 +1,21 @@
+name: variant_two
+iml: |
+  type rect =
+  | Rectangle of int * int
+  | Square of int
+
+  type shape =
+  | Circle of int
+  | Polygon of rect
+req_kwargs:
+  names:
+  - shape
+get_decls_res:
+  decls:
+  - name: shape
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfVfEfq3BQClvTf6CLSGkZVgT2YOInQvqcxO34qogWn94RndY0ZDaXJjbGX/GgCG+7LyYkZDaXJjbGX5ZPkC/y8CYF8RclPQ9Y7Wyvuoi75LRmgDaHYaQNmPYS4CpmV4dBHrCWpjRHJlY3T/GAGG+bLyYkRyZWN098MC+P8qYfVfEXIqkJhXOjz1/pIwDkvVPudXT2IAez87TLNhZ0iOZNjlY0dQb2x5Z29u/xsAhvyy8mJHUG9seWdvbvpk+gL/MQJi/3f4sPRgXxGDxs6FVA7tclTDcGEhBgvBYiHxj1JaOJ1FB28azTixjGNFc2hhcGX/GQGG+rLyYkVzaGFwZfhl+P8r/y8CArH4AQ==
+      api_version: v18
+      storage: []
+  not_found: []

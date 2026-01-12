@@ -1,0 +1,18 @@
+name: poly_3
+category: polymorphic
+iml: |-
+  type ('a, 'b, 'c) container3 =
+  | Three of 'a * 'b * 'c
+
+  let v = Three (1, 2, 3)
+
+  let v = fun w -> if w = v then true else false
+instance_src_kwargs:
+  src: v
+expected_python_code: "a = TypeVar('a')\nb = TypeVar('b')\nc = TypeVar('c')\n\n@dataclass\
+  \ Three(Generic[a, b, c]):\n    arg0: a\n    arg1: b\n    arg2: c\n\ncontainer3\
+  \ = Three[a, b, c]\n\nvalue = Three(1, 2, 3)\n"
+data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wZj9fb3XxF69tU52rP2BUPPSaNEMJflkY4ljgrr5nS4D9YXZhe/SmNKY29udGFpbmVyM/8eAYb/ALLzYkpjb250YWluZXIz/cMC/v86slgCAAAAAAAAALD6Y/L/TwKyWAQAAAAAAAAAsPpj8v9gArJYBgAAAAAAAACw+mPy/3ECY/8Y/wn5wQMC/33/M8EDAv+EAfzBAwL/iwH8Y/+QAf+TAf+WAcACH+2gBKBiQWH5sPTAAh/uoASgYkFi+bD0wAIf76AEoGJBY/mw9GP/Df8C9sMC/4kB+sEDAv8B+sEDAv8U+sEDAv8n+mP/L/8k/xli9/5fEZFFgb6XIoOszfPaJFvxvRHRT5YfV4WZXGGWpTTiPK5DY0VUaHJlZf8ZAIb6svJiRVRocmVl+GL4/y1j9P+HAf+RAcUD+f+rAQJj9//pAQJgYGLx//EBwAIfjaEEoGJBd/li9P8CY/T/CP+HAmL3/xVh9GBm8fT/9AIBAf/6Ago=
+api_version: v18
+kind: mir.model
+storage: []

@@ -1,1 +1,1 @@
-(vendored_dirs vendor)
+; (vendored_dirs vendor)  ; Disabled - using pinned imandrax-api instead

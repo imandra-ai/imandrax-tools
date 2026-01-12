@@ -1,0 +1,9 @@
+name: annotated_polymorphic
+category: polymorphic
+iml: 'let v =  (fun (w: _ list) -> if w = [] then true else false)'
+instance_src_kwargs:
+  src: v
+data: YMACEKFiRF9hXzD5wwL4/l8R6vs47frpASL5+M8E8YUTM+U7RfzgPc3rzwVM2XrH0TxjRF9hXzD/GAGG+bLyYkRfYV8w92L3/yxgwwL982L/AfZi/fVgYf88sUd0eS5saXN0s/liRGxpc3T3wwL4/whgYf9XwAIfJ6BiQWH3sPRh8sMC/w/1Yf1i8vixRWMubmlss/diQltd9WL1/wNj9P8e/ybFA/f/JgJj9v8wAsACH9igBKBiQWH5sPRh8sMC/0v1Yflh/wBi8/vAAh/ZoASgYkF3+WL0/wBj9P8J/xBi9v8oYfRgsUd0eS51bml0s/liRHVuaXT3wwL4/wax9WL/N/RgYGBi8f/tAcACEaFiSUNfZHVtbXlfMP5i/P8HY/T/Df+IAsUD+P8WAmP2/5MCAmH2sPJi/5wC9WL/Lfdm9P9O/94BAQH/5gEL
+api_version: v18
+kind: mir.model
+storage: []

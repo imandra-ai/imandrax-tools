@@ -1,4 +1,4 @@
-(lang dune 3.0)
+(lang dune 3.17)
 
 (generate_opam_files true)
 
@@ -15,7 +15,7 @@
  (synopsis "Code generator for ImandraX artifacts")
  (depends
   (ocaml (>= 4.12.0))
-  (imandrax-api (>= 0.17))
+  (imandrax-api (>= 0.18))
   (containers (>= 3.4))
   (yojson (>= 1.6))
   (yaml (>= 3.0))

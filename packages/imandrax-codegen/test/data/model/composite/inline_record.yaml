@@ -1,4 +1,5 @@
 name: inline_record
+category: composite
 iml: |-
   type event =
       | Click of { x: int; y: int }
@@ -7,8 +8,9 @@ iml: |-
 
   let v = Scroll {delta = 2.0}
   let v = fun w -> if w = v then true else false
-instance_src: v
-data: YGBgXxHfdB2s7l+M7lh9o12IzHtzC2F48PJllX1wL9GHeGkkDWNFZXZlbnT/GQGG+rLyYkVldmVudPjDAvn/LGCwSW1rX3NfcmVhbLP7YkRyZWFs98MC+P8IYlgEAAAAAAAAAFgCAAAAAAAAALP/BLDzY/L/DwJh9cEDAv8X/zNgYGLx+l8Ry0oPqhZgx/qBr8hVGw/986ouqDSDFu5ljazblVUuLeBjRlNjcm9sbP8aAIb7svJiRlNjcm9sbPli+f8vY/T/Nf8+xQL3/0Vj9f+FAQJgYGLx/40BwAIfpLkHoGJBd/li9P8CY/T/CP+jAWL3/xVh9GBm8fT/6gEBAf/wAQo=
-api_version: v17
+instance_src_kwargs:
+  src: v
+data: YGBgXxHfdB2s7l+M7lh9o12IzHtzC2F48PJllX1wL9GHeGkkDWNFZXZlbnT/GQGG+rLyYkVldmVudPjDAvn/LF8RivqXKpVtR8s3BrbdOYTi8EsWvRupxg54A+0Tn0iZPqJjRWRlbHRh/xkAhvqy8mJFZGVsdGH4Yfhh8mCwSW1rX3NfcmVhbLP7YkRyZWFs98MC+P8IYlgEAAAAAAAAAFgCAAAAAAAAALP/BLDzY/L/DwJh9cEDAv8X/29gYGLx+l8Ry0oPqhZgx/qBr8hVGw/986ouqDSDFu5ljazblVUuLeBjRlNjcm9sbP8aAIb7svJiRlNjcm9sbPli+f8vY/T/Nf8+xQP3/0X/gAFj+P/EAQJgYGLx/8wBwAIf854EoGJBd/li9P8CY/T/CP/iAWL3/xVh9GBm8fT/qQIBAf+vAgo=
+api_version: v18
 kind: mir.model
 storage: []

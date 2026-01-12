@@ -1,0 +1,17 @@
+name: record_with_composite_type
+iml: |
+  type shape = {
+    circle : int option
+  }
+req_kwargs:
+  names:
+  - shape
+get_decls_res:
+  decls:
+  - name: shape
+    artifact:
+      kind: mir.decl
+      data: YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfWxSXR5Lm9wdGlvbrP7YkZvcHRpb275wwL6/wtfEYzCI8mWCv2yYaZa5CCwa8OBCThUoy3CPtYKbVhXoCXWY0ZjaXJjbGX/GgCG+7LyYkZjaXJjbGX5Y/n/MQJh9bHyYF8RotEZV48AlVmVzL8+kXKpox9KOYAad3S58oupkFOIsENjRXNoYXBl/xkBhvqy8mJFc2hhcGX4Zfj/K/8vAgKx+AE=
+      api_version: v18
+      storage: []
+  not_found: []

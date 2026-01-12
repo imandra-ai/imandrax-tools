@@ -1,2 +1,6 @@
 ; Include subdirectories for library and binaries
-(dirs lib bin test examples)
+(dirs lib bin test examples python)
+
+(alias
+ (name default)
+ (deps (alias_rec python-setup)))

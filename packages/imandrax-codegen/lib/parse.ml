@@ -1,729 +1,23 @@
 open Printf
-open Imandrax_api
-open CCFun
-module Artifact = Imandrax_api_artifact.Artifact
-module Mir = Imandrax_api_mir
-module Type = Imandrax_api_mir.Type
-module Term = Imandrax_api_mir.Term
-module Region = Imandrax_api_mir.Region
-module Ty_view = Imandrax_api.Ty_view
-module Applied_symbol = Imandrax_api_common.Applied_symbol
-module Ast = Ast
+open Parse_common
 
-let show_term_view : (Term.term, Type.t) Term.view -> string =
-  Term.show_view Term.pp Type.pp
+include Parse_term
+include Parse_model
+include Parse_fun_decomp
+include Parse_decl
 
-exception Early_return of string
-
-let unzip3 triples =
-  List.fold_right
-    (fun (x, y, z) (xs, ys, zs) -> (x :: xs, y :: ys, z :: zs))
-    triples ([], [], [])
-
-let zip3 xs ys zs =
-  List.map2 (fun x (y, z) -> (x, y, z)) xs (List.combine ys zs)
-
-let zip5 l1 l2 l3 l4 l5 =
-  List.combine l1 l2 |> List.combine l3 |> List.combine l4 |> List.combine l5
-  |> List.map (fun (e, (d, (c, (a, b)))) -> (a, b, c, d, e))
-
-let unwrap : ('a, 'b) result -> 'a = function
-  | Ok x -> x
-  | Error msg -> failwith msg
-
-(*
-Return:
-  type definition statements
-  expression option (type-annotation)
-  expression (term)
-*)
-let rec parse_term (term : Term.term) :
-    (Ast.stmt list * Ast.expr option * Ast.expr, string) result =
-  let debug = true in
-  match ((term.view : (Term.term, Type.t) Term.view), (term.ty : Type.t)) with
-  (* Constant *)
-  | Term.Const const, _ -> (
-      match const with
-      | Const_bool b ->
-          let open Ast in
-          Ok
-            ( [],
-              Some (mk_name_expr "bool"),
-              Constant { value = Bool b; kind = None } )
-      | Const_float f ->
-          (* printf "%f" f; *)
-          let open Ast in
-          Ok
-            ( [],
-              Some (mk_name_expr "float"),
-              Constant { value = Float f; kind = None } )
-      | Const_q q ->
-          let num = Q.num q in
-          let den = Q.den q in
-          (* printf "%s/%s" (Z.to_string num) (Z.to_string den); *)
-          let open Ast in
-          (* Should we use Decimal instead? *)
-          Ok
-            ( [],
-              Some (mk_name_expr "float"),
-              Constant
-                {
-                  value = Float (Z.to_float num /. Z.to_float den);
-                  kind = None;
-                } )
-      | Const_z z ->
-          let open Ast in
-          Ok
-            ( [],
-              Some (mk_name_expr "int"),
-              Ast.Constant { value = Int (Z.to_int z); kind = None } )
-      | Const_string s ->
-          let open Ast in
-          Ok
-            ( [],
-              Some (mk_name_expr "str"),
-              Constant { value = String s; kind = None } )
-      | c ->
-          (* Uid and real_approx *)
-          let msg = sprintf "unhandled const %s" (Imandrax_api.Const.show c) in
-          Error msg)
-  (* Tuple *)
-  | Term.Tuple { l = (terms : Term.term list) }, (_ty : Type.t) ->
-      let parsed_elems =
-        List.map (fun term -> parse_term term |> unwrap) terms
-      in
-      let type_defs_of_elems, type_annot_of_elems, term_of_elems =
-        unzip3 parsed_elems
-      in
-      let tuple_annot =
-        type_annot_of_elems
-        |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
-        |> Ast.tuple_annot_of_annots
-      in
-      let type_def_of_elems = List.flatten type_defs_of_elems in
-      Ok (type_def_of_elems, Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
-  (* Record *)
-  | ( Term.Record
-        {
-          rows : (Type.t Applied_symbol.t_poly * Term.term) list;
-          rest = (_ : Term.term option);
-        },
-      (ty : Type.t) ) ->
-      (* Get dataclass name from ty *)
-      let ty_name =
-        match ty.view with
-        | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
-        | _ -> failwith "Never: ty should be a constr"
-      in
-
-      (* For each row,
-      the first element applied_symbol gives dataclass definition
-      the second element gives the value
-      *)
-      let parse_row
-          (applied_symbol : Type.t Applied_symbol.t_poly)
-          (term : Term.term) =
-        let def_row_var_name = applied_symbol.sym.id.name in
-        let def_row_type_name =
-          match applied_symbol.ty.view with
-          | Ty_view.Arrow (_, _record_view, row_view) -> (
-              match row_view.view with
-              | Ty_view.Constr (constr_name_uid, _constr_args) ->
-                  constr_name_uid.name
-              | _ -> failwith "Never: row_view should be a constr")
-          | _ -> failwith "Never: applied_symbol.ty.view should be a arrow"
-        in
-        let type_defs_of_row, _type_annot_of_row, row_val_expr =
-          parse_term term |> unwrap
-        in
-        (* TODO(ENH): maybe using kwargs is clearer? *)
-        (type_defs_of_row, (def_row_var_name, def_row_type_name), row_val_expr)
-      in
-
-      let type_defs_of_rows, def_rows, row_val_exprs =
-        List.map (fun (applied_sym, term) -> parse_row applied_sym term) rows
-        |> unzip3
-      in
-
-      let type_def_of_rows = List.flatten type_defs_of_rows in
-      let open Ast in
-      Ok
-        ( type_def_of_rows @ [ def_dataclass ty_name def_rows ],
-          Some (Ast.mk_name_expr ty_name),
-          init_dataclass ty_name ~args:row_val_exprs ~kwargs:[] )
-  (* Construct LChar.t *)
-  | ( Term.Construct
-        {
-          c = (_ : Type.t Applied_symbol.t_poly);
-          args = (construct_args : Term.term list);
-        },
-      {
-        view =
-          Ty_view.Constr
-            (Uid.{ name = "LChar.t"; view = _ }, ty_view_constr_args);
-        _;
-      } ) ->
-      if not debug then ()
-      else if List.length ty_view_constr_args <> 0 then
-        failwith "Never: LChar.t should have no args"
-      else ();
-
-      let bool_type_defs_s, _bool_type_annot_s, bool_terms =
-        List.map (fun arg -> parse_term arg |> unwrap) construct_args |> unzip3
-      in
-      let bool_type_defs = List.flatten bool_type_defs_s in
-
-      (if not debug then ()
-       else
-         match bool_type_defs with
-         | [] -> ()
-         (* Why would bool need type def? *)
-         | _ -> failwith "Never: bool_type_defs should be empty");
-
-      let char_expr = Ast.bool_list_expr_to_char_expr bool_terms in
-      (* NOTE: Python has no char type, so we use str *)
-      Ok ([], Some (Ast.mk_name_expr "str"), char_expr)
-  (* Construct list *)
-  | ( Term.Construct
-        {
-          c = (_ : Type.t Applied_symbol.t_poly);
-          args = (construct_args : Term.term list);
-        },
-      {
-        view =
-          Ty_view.Constr (Uid.{ name = "list"; view = _ }, ty_view_constr_args);
-        _;
-      } ) ->
-      (* For empty list, the construct arg is empty.
-      For non-empty list, the construct arg has two terms, with the first term
-      being the head and the second term being the tail (existing list).
-    *)
-      (if not debug then ()
-       else if List.length ty_view_constr_args <> 1 then
-         let args_str =
-           CCString.concat ", " (List.map Type.show ty_view_constr_args)
-         in
-         let msg =
-           sprintf "Never: list should have only 1 arg, got %d: %s"
-             (List.length ty_view_constr_args)
-             args_str
-         in
-         failwith msg);
-
-      let type_def_of_elems, type_annot_of_elems, term_of_elems =
-        match construct_args with
-        | [] ->
-            (* Nil *)
-            ([], None, Ast.empty_list_expr ())
-        | _ -> (
-            let type_defs_of_elems, type_annot_of_elems, term_of_elems =
-              List.map (fun arg -> parse_term arg |> unwrap) construct_args
-              |> unzip3
-            in
-            let type_def_of_elems = List.flatten type_defs_of_elems in
-            match term_of_elems with
-            | [] -> failwith "Never: empty constuct arg for non-Nil"
-            | [ _ ] -> failwith "Never: single element list for non-Nil"
-            | [ head; tail ] ->
-                let type_annot_of_elem =
-                  type_annot_of_elems |> List.hd
-                  |> CCOption.get_exn_or
-                       "No type annotation for the first list element"
-                in
-                let type_annot =
-                  Ast.(
-                    Subscript
-                      {
-                        value = Name { id = "list"; ctx = mk_ctx () };
-                        slice = type_annot_of_elem;
-                        ctx = mk_ctx ();
-                      })
-                in
-
-                ( type_def_of_elems,
-                  Some type_annot,
-                  Ast.cons_list_expr head tail )
-                (* let n_elem = CCList.length elems in
-          let except_last = CCList.take (n_elem - 1) elems in
-          Some (Ast.list_of_exprs except_last) *)
-            | _ -> failwith "Never: more than 2 elements list for non-Nil")
-      in
-
-      Ok (type_def_of_elems, type_annot_of_elems, term_of_elems)
-  (* Construct - other *)
-  | ( Term.Construct
-        {
-          c = (construct : Type.t Applied_symbol.t_poly);
-          args = (construct_args : Term.term list);
-        },
-      (_ : Type.t) ) ->
-      (* Flatten the arrow type view to a list of types *)
-      let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
-          string list =
-        let rec helper
-            (types : string list)
-            (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
-          match ty_view with
-          | Ty_view.Arrow (_, left_t, right_t) ->
-              let left_type =
-                match left_t.view with
-                | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
-                    constr_name_uid.name
-                | _ ->
-                    failwith "Never: left of arrow type view should be a constr"
-              in
-              helper (types @ [ left_type ]) right_t.view
-          | Ty_view.Constr (constr_name_uid, _empty_constr_args) ->
-              let final_type = constr_name_uid.name in
-              List.append types [ final_type ]
-          | _ ->
-              failwith
-                "Never: arrow type view should be either a constr or an arrow"
-        in
-        helper [] ty_view
-      in
-
-      let res : (Ast.stmt list * Ast.expr option * Ast.expr, string) result =
-        let variant_constr_name = construct.sym.id.name in
-        (* the last arg is the variant name *)
-        let variant_constr_args_and_variant_name : string list =
-          unpack_arrows construct.ty.view
-        in
-
-        (* print_endline
-          (CCString.concat "->" variant_constr_args_and_variant_name);
-        printf "variant constructor name: %s\n" variant_constr_name; *)
-        let split_last xs =
-          match List.rev xs with
-          | [] -> failwith "Never: empty list"
-          | x :: xs -> (List.rev xs, x)
-        in
-
-        let variant_constr_args, variant_name =
-          let constr_args_, name =
-            split_last variant_constr_args_and_variant_name
-          in
-          (* Map Ocaml type names to Python type names *)
-          let constr_args =
-            List.map
-              (fun (caml_type : string) : string ->
-                let py_type_opt =
-                  CCList.assoc_opt ~eq:( = ) caml_type
-                    Ast.ty_view_constr_name_mapping
-                in
-                match py_type_opt with
-                | Some py_type -> py_type
-                | None -> caml_type)
-              constr_args_
-          in
-          (constr_args, name)
-        in
-
-        let ty_defs =
-          Ast.variant_dataclass variant_name
-            [ (variant_constr_name, variant_constr_args) ]
-        in
-
-        let parsed_constr_args =
-          List.map (fun arg -> parse_term arg |> unwrap) construct_args
-        in
-
-        let ( constr_arg_type_stmt_lists,
-              _constr_arg_type_annot_lists,
-              constr_arg_terms ) =
-          unzip3 parsed_constr_args
-        in
-
-        let constr_arg_type_stmts = List.flatten constr_arg_type_stmt_lists in
-
-        let term =
-          Ast.init_dataclass variant_constr_name ~args:constr_arg_terms
-            ~kwargs:[]
-        in
-        Ok
-          ( constr_arg_type_stmts @ ty_defs,
-            Some Ast.(Name { id = variant_name; ctx = Load }),
-            term )
-      in
-
-      res
-  | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
-      try
-        (* Extract Map key and value type from ty *)
-        let key_ty_name, val_ty_name =
-          match ty.view with
-          | Ty_view.Constr
-              ( { name = "Map.t"; _ },
-                ([
-                   {
-                     view = Ty_view.Constr (Uid.{ name = key_ty_name; _ }, _);
-                     _;
-                   };
-                   {
-                     view = Ty_view.Constr (Uid.{ name = val_ty_name; _ }, _);
-                     _;
-                   };
-                 ] :
-                  Type.t list) ) ->
-              (key_ty_name, val_ty_name)
-          | _ -> raise (Early_return "Non-map Apply term view")
-        in
-
-        (* printf "key_ty_name: %s\n" key_ty_name;
-       printf "val_ty_name: %s\n" val_ty_name; *)
-        let type_annot =
-          Ast.defaultdict_type_annotation key_ty_name val_ty_name
-        in
-
-        (* Parse the [l] of Map.add'
-        - [Map.add' m k v] adds the pair (k, v) to map m
-        - it should be exactly 3 terms
-        - if the first term is `Map.const`, it contains the default value
-        - if the first term is `Map.add'` again, we recursively call parsing
-
-        Return:
-          - the key-value pairs that have been parsed so far
-          - the default value
-       *)
-        let rec parse_map_term_view
-            (f : Term.term)
-            (l : Term.term list)
-            (accu_key_val_pairs : (Term.term * Term.term) list) :
-            (Term.term * Term.term) list * Term.term =
-          let key_val_pairs, default =
-            match f with
-            | ({
-                 view =
-                   Term.Sym
-                     Applied_symbol.
-                       { sym = { id = Uid.{ name = "Map.add'"; _ }; _ }; _ };
-                 _;
-               } :
-                Term.term) ->
-                (* f is Map.add', l should have exactly 3 terms
-               - the first term, which should have view of Apply, goes to next call
-               - the second and third terms go to the key_val_pairs
-             *)
-                let key_val_pairs, default =
-                  match l with
-                  | [ inner_l1; inner_l2; inner_l3 ] ->
-                      let next_accu =
-                        accu_key_val_pairs @ [ (inner_l2, inner_l3) ]
-                      in
-                      let f_, l_ =
-                        match inner_l1.view with
-                        | Term.Apply { f; l; _ } -> (f, l)
-                        | _ ->
-                            failwith
-                              "Never: Map.add' first term should be Apply"
-                      in
-                      parse_map_term_view f_ l_ next_accu
-                  | _ ->
-                      let msg =
-                        sprintf
-                          "Never: Map.add' should have exactly 3 terms in the \
-                           l, but got %d"
-                          (List.length l)
-                      in
-                      failwith msg
-                in
-                (key_val_pairs, default)
-            | ({
-                 view =
-                   Term.Sym
-                     Applied_symbol.
-                       { sym = { id = Uid.{ name = "Map.const"; _ }; _ }; _ };
-                 _;
-               } :
-                Term.term) ->
-                (* f is Map.const, l should have only one term, which is default *)
-                let default_term =
-                  match l with
-                  | [ default_term ] -> default_term
-                  | _ ->
-                      failwith
-                        "Never: Map.const should have exactly 1 term in the l"
-                in
-                (accu_key_val_pairs, default_term)
-            | _ -> failwith "Never: Map.add' or Map.const not found"
-          in
-          (key_val_pairs, default)
-        in
-        let key_val_pairs, default = parse_map_term_view f l [] in
-
-        let default_val_ty_defs, _default_val_type_annot, default_val_expr =
-          default |> parse_term |> unwrap
-        in
-
-        let key_terms, val_terms = key_val_pairs |> List.rev |> List.split in
-
-        let keys_ty_defs, _key_type_annots, key_exprs =
-          key_terms |> List.map (fun k -> parse_term k |> unwrap) |> unzip3
-        in
-
-        let vals_ty_defs, _val_type_annots, val_exprs =
-          val_terms |> List.map (fun k -> parse_term k |> unwrap) |> unzip3
-        in
-
-        let defaultdict_expr =
-          Ast.init_defaultdict default_val_expr
-            (CCList.combine key_exprs val_exprs)
-        in
-
-        Ok
-          ( default_val_ty_defs @ List.flatten keys_ty_defs
-            @ List.flatten vals_ty_defs,
-            Some type_annot,
-            defaultdict_expr )
-      with Early_return msg -> Error msg)
-  | _, _ ->
-      let msg = "case other than const, construct, or apply" in
-      Error msg
-
-(* <><><><><><><><><><><><><><><><><><><><> *)
-
-(* Model to applied symbol and term *)
-let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
-    : Type.t Applied_symbol.t_poly * Term.term =
-  match model.Mir.Model.consts with
-  | [] -> failwith "No constants\n"
-  | [ const ] ->
-      let app_sym, term = const in
-      (app_sym, term)
-  | _ ->
-      let s =
-        sprintf "more than 1 const, not supported\n len = %d"
-          (List.length model.Mir.Model.consts)
-      in
-      failwith s
-
-let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
-    Ast.stmt list =
-  let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
-  let ty_defs, type_annot, term_expr =
-    match parse_term term with
-    | Ok (ty_defs, type_annot, term_expr) -> (ty_defs, type_annot, term_expr)
-    | Error msg -> failwith msg
-  in
-
-  let assign_stmt =
-    let target = app_sym.sym.id.name in
-    match type_annot with
-    | None ->
-        Ast.Assign
-          {
-            targets = [ Ast.Name { Ast.id = target; ctx = Ast.Load } ];
-            value = term_expr;
-            type_comment = None;
-          }
-    | Some type_annot ->
-        Ast.AnnAssign
-          {
-            target = Ast.Name { Ast.id = target; ctx = Ast.Load };
-            annotation = type_annot;
-            value = Some term_expr;
-            simple = 1;
-          }
-  in
-  List.append ty_defs [ assign_stmt ]
-
-(* <><><><><><><><><><><><><><><><><><><><> *)
-
-(* Return a tuple of
-  - a list of model terms
-  - the model eval term
-  - invariant string
-  - constraints string list
-*)
-let parse_region (region : (Term.term, Type.t) Mir.Region.t_poly) :
-    (string * Term.term) list * Term.term * (string * string list) =
-  let (model : (string * Term.term) list) =
-    region.meta |> List.assoc "model" |> function
-    | Assoc assoc ->
-        assoc
-        |> List.map (function
-             | arg_name, Region.Term t -> (arg_name, t)
-             | _ -> failwith "Never: values of model assoc should be a term")
-    | _ -> failwith "Never: model should be an Assoc"
-  in
-  let model_eval = region.meta |> List.assoc "model_eval" in
-  let model_eval_term =
-    match model_eval with
-    | Term t -> t
-    | _ -> failwith "Never: model_eval should be a term"
-  in
-
-  let meta_str = region.meta |> List.assoc "str" in
-  let (invariant : string), (constraints : string list) =
-    match meta_str with
-    | Assoc assoc ->
-        let extract_string key = function
-          | Region.String s -> s
-          | _ ->
-              failwith (Printf.sprintf "Never: %s should be a meta string" key)
-        in
-        let extract_list key = function
-          | Region.List l -> l
-          | _ -> failwith (Printf.sprintf "Never: %s should be a meta list" key)
-        in
-        let invariant =
-          List.assoc "invariant" assoc |> extract_string "invariant"
-        in
-        let constraints_meta =
-          List.assoc "constraints" assoc |> extract_list "constraints"
-        in
-        let constraints =
-          List.map (extract_string "constraint") constraints_meta
-        in
-        (invariant, constraints)
-    | _ -> failwith "Never: meta_str should be an Assoc"
-  in
-
-  (* NOTE: for now, we return empty list of model terms *)
-  (model, model_eval_term, (invariant, constraints))
-
-let uniq_stmts (stmts : Ast.stmt list) : Ast.stmt list =
-  let tbl = Hashtbl.create (List.length stmts) in
-  List.filter
-    (fun x ->
-      if Hashtbl.mem tbl x then false
-      else (
-        Hashtbl.add tbl x ();
-        true))
-    stmts
-
-let format_invariant_constraints_as_yaml_string
-    ?(with_fence : bool = false)
-    (invariant : string)
-    (constraints : string list) : string =
-  let yaml_meta : Yaml.value =
-    `O
-      [
-        ("invariant", `String invariant);
-        ("constraints", `A (List.map (fun s -> `String s) constraints));
-      ]
-  in
-  let yaml_str = Yaml.to_string_exn yaml_meta in
-  if with_fence then
-    let fence_yaml = String.trim %> sprintf "```yaml\n%s\n```" in
-    fence_yaml yaml_str
-  else yaml_str
-
-let indent i s =
-  let indent_str = String.make i ' ' in
-  indent_str ^ CCString.ltrim s
-
-let format_invariant_constraints_as_markdown_list
-    (invariant : string)
-    (constraints : string list) : string =
-  let invariant_str = sprintf "- invariant: %s" invariant in
-  let constraints_strs = constraints |> List.map (fun s -> sprintf "- %s" s) in
-  invariant_str :: "- constraints:" :: (constraints_strs |> List.map (indent 4))
-  |> String.concat "\n"
-  |> fun s -> s ^ "\n"
-
-let parse_fun_decomp
-    ?(output_as_dict : bool = false)
-    (fun_decomp : Mir.Fun_decomp.t) : Ast.stmt list =
-  (* Ast.stmt list  *)
-  match fun_decomp with
-  | { f_id = Uid.{ name = f_id_name; view = _ }; f_args = _; regions } ->
-      let n_region = regions |> List.length in
-
-      (* The last list is the dimension of region
-       The second to last list is the dimension of f_args
-    *)
-      let ( (model_by_arg_by_region : (string * Term.term) list list),
-            (model_evals : Term.term list),
-            (invariant_and_constraints_by_region : (string * string list) list)
-          ) =
-        regions |> List.map parse_region |> unzip3
-      in
-
-      let ( (models_type_defs : (string * Ast.stmt list) list list),
-            (* We have no place to use type annots for input args*)
-            (_models_type_annots : (string * Ast.expr option) list list),
-            (models_terms : (string * Ast.expr) list list) ) =
-        model_by_arg_by_region
-        |> List.map (fun (model_by_arg : (string * Term.term) list) ->
-               List.map
-                 (fun (arg_name, model) ->
-                   let type_defs, type_annot, term_expr =
-                     parse_term model |> unwrap
-                   in
-                   (* bind arg name again *)
-                   ( (arg_name, type_defs),
-                     (arg_name, type_annot),
-                     (arg_name, term_expr) ))
-                 model_by_arg)
-        |> List.map unzip3 |> unzip3
-      in
-
-      let test_names =
-        List.map (fun i -> Printf.sprintf "test_%d" i) CCList.(1 -- n_region)
-      in
-
-      let docstr_body_by_region : string list =
-        invariant_and_constraints_by_region
-        |> List.map (fun (invariant, constraints) ->
-               format_invariant_constraints_as_markdown_list invariant
-                 constraints)
-      in
-
-      let docstr_by_region =
-        List.map2
-          (fun title body -> sprintf "%s\n\n%s" title body)
-          test_names docstr_body_by_region
-      in
-
-      let model_eval_type_defs_s, model_eval_type_annots, model_eval_exprs =
-        model_evals
-        |> List.map (fun model_eval -> parse_term model_eval |> unwrap)
-        |> unzip3
-      in
-
-      (* Deduplicate type definitions *)
-      let type_defs : Ast.stmt list =
-        let model_type_defs_flattened : Ast.stmt list =
-          let model_type_defs_by_arg = models_type_defs |> List.flatten in
-          model_type_defs_by_arg
-          |> List.map (fun (_, stmts) -> stmts)
-          |> List.flatten
-        in
-        model_type_defs_flattened @ (model_eval_type_defs_s |> List.flatten)
-        |> uniq_stmts
-      in
-
-      let tests : Ast.stmt list =
-        match output_as_dict with
-        | true ->
-            let test_value : Ast.stmt =
-              Ast.mk_test_data_dict ~test_names ~f_args_list:models_terms
-                ~expected_list:model_eval_exprs
-            in
-            [ test_value ]
-        | false ->
-            let test_functions : Ast.stmt list =
-              List.map
-                (fun ( test_name,
-                       docstr,
-                       model,
-                       model_eval_type_annot,
-                       model_eval ) ->
-                  Ast.def_test_function ~test_name ~f_name:f_id_name
-                    ~docstr:(Some docstr) ~f_args:model
-                    ~output_type_annot:model_eval_type_annot
-                    ~expected:model_eval)
-                (zip5 test_names docstr_by_region models_terms
-                   model_eval_type_annots model_eval_exprs)
-            in
-            test_functions
-      in
-      type_defs @ tests
+(* Expect tests
+==================== *)
 
 let sep : string = "\n" ^ CCString.repeat "<>" 10 ^ "\n"
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Decl
+-------------------- *)
+
+(* TODO: move from parse_decl *)
+
+(* Decomp
+-------------------- *)
 
 let%expect_test "parse fun decomp art" =
   let yaml_str = CCIO.File.read_exn "../test/data/fun_decomp/basic.yaml" in
@@ -756,8 +50,15 @@ let%expect_test "parse fun decomp art" =
 
   printf "name: %s\n" name;
   printf "code:\n %s\n" code;
+  [%expect {|
+    name: basic
+    code:
+     let g = fun x -> x + 1
 
-  let (fun_decomp : Mir.Fun_decomp.t) = Util.yaml_to_fun_decomp art in
+    let f = fun x -> if x > 0 then x + 2 else g x
+    |}];
+
+  let (fun_decomp : Mir.Fun_decomp.t) = Art_utils.yaml_to_fun_decomp art in
 
   printf "Fun decomp:\n";
   let fmt = Format.str_formatter in
@@ -770,20 +71,13 @@ let%expect_test "parse fun decomp art" =
   List.iter (fun stmt -> print_endline (Ast.show_stmt stmt)) parsed;
 
   ();
-  [%expect
-    {|
-    name: basic
-    code:
-     let g = fun x -> x + 1
-
-    let f = fun x -> if x > 0 then x + 2 else g x
-
+  [%expect {|
     Fun decomp:
     {
       f_id = f/u-V_2hDBsgPLnBVARN3d7lwMjeshy0JEtJSUqjWmJj8;
       f_args =
-        [{ id = x/16869; ty = { view = (Constr (int,[]));
-                                generation = 1 } }];
+        [{ id = x/116441; ty = { view = (Constr (int,[]));
+                                 generation = 1 } }];
       regions =
         [(2 elements)
          {
@@ -827,7 +121,7 @@ let%expect_test "parse fun decomp art" =
                          l =
                            [{ view =
                                 (Var
-                                  { id = x/16869;
+                                  { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
                                       generation = 1 }
@@ -886,7 +180,7 @@ let%expect_test "parse fun decomp art" =
                         l =
                           [{ view =
                                (Var
-                                 { id = x/16869;
+                                 { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
                                      generation = 1 }
@@ -928,13 +222,13 @@ let%expect_test "parse fun decomp art" =
                            generation = 1 };
                     generation = 0;
                     sub_anchor = None };
-              "id": String "d1134cdc-0654-49b8-8a05-1fb763fe9fb3"];
+              "id": String "403df3c1-816f-4d4a-9414-877a974b6548"];
            status =
              Feasible
                { tys = [];
                  consts =
-                 [((x/16869 : { view = (Constr (int,[]));
-                                generation = 1 }),
+                 [((x/116441 : { view = (Constr (int,[]));
+                                 generation = 1 }),
                    { view = (Const 1);
                      ty = { view = (Constr (int,[]));
                             generation = 1 };
@@ -985,7 +279,7 @@ let%expect_test "parse fun decomp art" =
                          l =
                            [{ view =
                                 (Var
-                                  { id = x/16869;
+                                  { id = x/116441;
                                     ty =
                                     { view = (Constr (int,[]));
                                       generation = 1 }
@@ -1049,7 +343,7 @@ let%expect_test "parse fun decomp art" =
                              sub_anchor = None };
                            { view =
                                (Var
-                                 { id = x/16869;
+                                 { id = x/116441;
                                    ty =
                                    { view = (Constr (int,[]));
                                      generation = 1 }
@@ -1086,13 +380,13 @@ let%expect_test "parse fun decomp art" =
                            generation = 1 };
                     generation = 0;
                     sub_anchor = None };
-              "id": String "8d762a3d-a005-4489-8dfb-7221823f063c"];
+              "id": String "7c9c52f3-519f-47a5-934c-d7dede67083d"];
            status =
              Feasible
                { tys = [];
                  consts =
-                 [((x/16869 : { view = (Constr (int,[]));
-                                generation = 1 }),
+                 [((x/116441 : { view = (Constr (int,[]));
+                                 generation = 1 }),
                    { view = (Const 0);
                      ty = { view = (Constr (int,[]));
                             generation = 1 };
@@ -1104,106 +398,134 @@ let%expect_test "parse fun decomp art" =
            }]
       }
     Parsed AST:
-    (Ast.FunctionDef
-       { Ast.name = "test_1";
+    (Ast_types.FunctionDef
+       { Ast_types.name = "test_1";
          args =
-         { Ast.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
+         { Ast_types.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
            kw_defaults = []; kwarg = None; defaults = [] };
          body =
-         [Ast.ExprStmt {
+         [Ast_types.ExprStmt {
             value =
-            (Ast.Constant
-               { Ast.value =
-                 (Ast.String
+            (Ast_types.Constant
+               { Ast_types.value =
+                 (Ast_types.String
                     "test_1\n\n- invariant: x + 2\n- constraints:\n    - x >= 1\n");
                  kind = None })};
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Call
-                         { Ast.func = (Ast.Name { Ast.id = "f"; ctx = Ast.Load });
+                (Some (Ast_types.Call
+                         { Ast_types.func =
+                           (Ast_types.Name
+                              { Ast_types.id = "f"; ctx = Ast_types.Load });
                            args = [];
                            keywords =
-                           [{ Ast.arg = (Some "x");
+                           [{ Ast_types.arg = (Some "x");
                               value =
-                              (Ast.Constant
-                                 { Ast.value = (Ast.Int 1); kind = None })
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 1);
+                                   kind = None })
                               }
                              ]
                            }));
                 simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "expected"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Constant { Ast.value = (Ast.Int 3); kind = None }));
+                (Some (Ast_types.Constant
+                         { Ast_types.value = (Ast_types.Int 3); kind = None }));
                 simple = 1 });
-           Ast.Assert {
+           Ast_types.Assert {
              test =
-             Ast.Compare {
-               left = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-               ops = [Ast.Eq];
-               comparators = [(Ast.Name { Ast.id = "expected"; ctx = Ast.Load })]};
+             Ast_types.Compare {
+               left =
+               (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+               ops = [Ast_types.Eq];
+               comparators =
+               [(Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load })
+                 ]};
              msg = None}
            ];
          decorator_list = []; returns = None; type_comment = None;
          type_params = [] })
-    (Ast.FunctionDef
-       { Ast.name = "test_2";
+    (Ast_types.FunctionDef
+       { Ast_types.name = "test_2";
          args =
-         { Ast.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
+         { Ast_types.posonlyargs = []; args = []; vararg = None; kwonlyargs = [];
            kw_defaults = []; kwarg = None; defaults = [] };
          body =
-         [Ast.ExprStmt {
+         [Ast_types.ExprStmt {
             value =
-            (Ast.Constant
-               { Ast.value =
-                 (Ast.String
+            (Ast_types.Constant
+               { Ast_types.value =
+                 (Ast_types.String
                     "test_2\n\n- invariant: 1 + x\n- constraints:\n    - x <= 0\n");
                  kind = None })};
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Call
-                         { Ast.func = (Ast.Name { Ast.id = "f"; ctx = Ast.Load });
+                (Some (Ast_types.Call
+                         { Ast_types.func =
+                           (Ast_types.Name
+                              { Ast_types.id = "f"; ctx = Ast_types.Load });
                            args = [];
                            keywords =
-                           [{ Ast.arg = (Some "x");
+                           [{ Ast_types.arg = (Some "x");
                               value =
-                              (Ast.Constant
-                                 { Ast.value = (Ast.Int 0); kind = None })
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 0);
+                                   kind = None })
                               }
                              ]
                            }));
                 simple = 1 });
-           (Ast.AnnAssign
-              { Ast.target = (Ast.Name { Ast.id = "expected"; ctx = Ast.Load });
-                annotation = (Ast.Name { Ast.id = "int"; ctx = Ast.Load });
+           (Ast_types.AnnAssign
+              { Ast_types.target =
+                (Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load });
+                annotation =
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
                 value =
-                (Some (Ast.Constant { Ast.value = (Ast.Int 1); kind = None }));
+                (Some (Ast_types.Constant
+                         { Ast_types.value = (Ast_types.Int 1); kind = None }));
                 simple = 1 });
-           Ast.Assert {
+           Ast_types.Assert {
              test =
-             Ast.Compare {
-               left = (Ast.Name { Ast.id = "result"; ctx = Ast.Load });
-               ops = [Ast.Eq];
-               comparators = [(Ast.Name { Ast.id = "expected"; ctx = Ast.Load })]};
+             Ast_types.Compare {
+               left =
+               (Ast_types.Name { Ast_types.id = "result"; ctx = Ast_types.Load });
+               ops = [Ast_types.Eq];
+               comparators =
+               [(Ast_types.Name
+                   { Ast_types.id = "expected"; ctx = Ast_types.Load })
+                 ]};
              msg = None}
            ];
          decorator_list = []; returns = None; type_comment = None;
          type_params = [] })
     |}]
 
-(* <><><><><><><><><><><><><><><><><><><><> *)
+(* Model
+-------------------- *)
 
 let%expect_test "parse model art" =
   (* let yaml_str = CCIO.File.read_exn "../examples/art/art.yaml" in *)
   let yaml_str =
     (* CCIO.File.read_exn "../test/data/model/composite/map_default_value_only.yaml" *)
     (* CCIO.File.read_exn "../test/data/model/primitive/empty_list.yaml" *)
-    CCIO.File.read_exn "../test/data/model/polymorphic/annotated_list.yaml"
+    CCIO.File.read_exn
+      "../test/data/model/polymorphic/nested_poly.yaml"
     (* CCIO.File.read_exn "../test/data/model/polymorphic/ambiguous_type_name.yaml" *)
   in
   let yaml = Yaml.of_string_exn yaml_str in
@@ -1227,7 +549,7 @@ let%expect_test "parse model art" =
   printf "name: %s\n" name;
   printf "code: %s\n" code;
 
-  let model = Util.yaml_to_model yaml in
+  let model = Art_utils.yaml_to_model yaml in
   let app_sym, term = unpack_model model in
 
   (* Create a custom formatter with wider margin *)
@@ -1256,14 +578,11 @@ let%expect_test "parse model art" =
   print_endline (Format.flush_str_formatter ());
   printf "%s\n" sep; *)
   print_endline "Parsing term:\n";
-  let ty_defs, type_annot, expr =
+  let type_annot, expr =
     match parse_term term with
-    | Ok (ty_defs, type_annot, expr) -> (ty_defs, type_annot, expr)
+    | Ok (type_annot, expr) -> (type_annot, expr)
     | Error msg -> failwith msg
   in
-
-  printf "Type defs:\n";
-  List.iter (fun ty_def -> print_endline (Ast.show_stmt ty_def)) ty_defs;
 
   printf "Type annot: ";
   (match type_annot with
@@ -1285,36 +604,194 @@ let%expect_test "parse model art" =
   (* Also print to stdout for the test *)
   Yojson.Safe.pretty_to_string json_out |> print_endline;
 
-  [%expect
-    {|
-    name: annotated_list
-    code: let v =  (fun (w: _ list) -> if w = [] then true else false)
+  [%expect {|
+    name: nested_poly
+    code: type ('a, 'b) container2 = { v : ('a * 'b) }
+
+    type ('a, 'b, 'c) container3 = { v : ('a * 'b * 'c) }
+
+    let v : ((int, int, (int, int) container2) container3) = { v = (1, 2, ({ v = (3, 4) } : (int, int) container2)) }
+
+    let v = fun w -> if w = v then true else false
 
     <><><><><><><><><><>
 
     Applied symbol:
-    (w/16003 : { view = (Constr (list, [{ view = (Var a/16002); generation = 3 }])); generation = 3 })
+    (w/93078 : { view = (Constr (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0, [{ view = (Constr (int, [])); generation = 3 }; { view = (Constr (int, [])); generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM, [{ view = (Constr (int, [])); generation = 3 }; { view = (Constr (int, [])); generation = 3 }])); generation = 3 }])); generation = 3 })
 
     <><><><><><><><><><>
 
     Term:
-    { view = Construct {c = ([] : { view = (Constr (list,[{ view = (Constr (_a_0/0[temp],[]));
-                                                            generation = 3 }]));
-                                    generation = 3 });args = []};
-      ty = { view = (Constr (list,[{ view = (Constr (_a_0/0[temp],[]));
-                                     generation = 3 }]));
+    { view =
+        Record
+          {
+          rows =
+            [(
+               (v/ntugG7n5lh6HDSFygAl3k5zU06F3KZPD_Ya-6G5al2E : { view =
+                                                                    (Arrow ((),
+                                                                            { view =
+                                                                                (Constr
+                                                                                  (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0,
+                                                                                   [{ view = (Constr (int,[]));
+                                                                                      generation = 3 };
+                                                                                    { view = (Constr (int,[]));
+                                                                                      generation = 3 };
+                                                                                    { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                generation = 3 };
+                                                                                                                                                              { view = (Constr (int,[]));
+                                                                                                                                                                generation = 3 }]));
+                                                                                      generation = 3 }]));
+                                                                              generation = 3 },
+                                                                            { view = (Tuple [{ view = (Constr (int,[]));
+                                                                                               generation = 3 }; { view = (Constr (int,[]));
+                                                                                                                   generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                                                                 generation = 3 };
+                                                                                                                                                                                                               { view = (Constr (int,[]));
+                                                                                                                                                                                                                 generation = 3 }]));
+                                                                                                                                       generation = 3 }]);
+                                                                              generation = 3 }));
+                                                                  generation = 3 }),
+               { view =
+                   Tuple
+                     {
+                     l =
+                       [{ view = (Const 1);
+                          ty = { view = (Constr (int,[]));
+                                 generation = 3 };
+                          generation = 1; sub_anchor = None };
+                         { view = (Const 2);
+                           ty = { view = (Constr (int,[]));
+                                  generation = 3 };
+                           generation = 1; sub_anchor = None };
+                         { view =
+                             Record
+                               {
+                               rows =
+                                 [(
+                                    (v/qy3HK0-_EulKK7NKYEdLqhsx6_nCFYnpclHGLlIf9J8 : { view =
+                                                                                         (Arrow ((),
+                                                                                                 { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                             generation = 3 };
+                                                                                                                                                                           { view = (Constr (int,[]));
+                                                                                                                                                                             generation = 3 }]));
+                                                                                                   generation = 3 },
+                                                                                                 { view = (Tuple [{ view = (Constr (int,[]));
+                                                                                                                    generation = 3 }; { view = (Constr (int,[]));
+                                                                                                                                        generation = 3 }]);
+                                                                                                   generation = 3 }));
+                                                                                       generation = 3 }),
+                                    { view = Tuple {l = [{ view = (Const 3);
+                                                           ty = { view = (Constr (int,[]));
+                                                                  generation = 3 };
+                                                           generation = 1; sub_anchor = None }; { view = (Const 4);
+                                                                                                  ty = { view = (Constr (int,[]));
+                                                                                                         generation = 3 };
+                                                                                                  generation = 1; sub_anchor = None }]};
+                                      ty = { view = (Tuple [{ view = (Constr (int,[]));
+                                                              generation = 3 }; { view = (Constr (int,[]));
+                                                                                  generation = 3 }]);
+                                             generation = 3 };
+                                      generation = 1;
+                                      sub_anchor = None }
+                                    )];
+                               rest = None
+                               };
+                           ty = { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                            generation = 3 };
+                                                                                                          { view = (Constr (int,[]));
+                                                                                                            generation = 3 }]));
+                                  generation = 3 };
+                           generation = 1;
+                           sub_anchor = None }]
+                     };
+                 ty = { view = (Tuple [{ view = (Constr (int,[]));
+                                         generation = 3 }; { view = (Constr (int,[]));
+                                                             generation = 3 }; { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                           generation = 3 };
+                                                                                                                                                         { view = (Constr (int,[]));
+                                                                                                                                                           generation = 3 }]));
+                                                                                 generation = 3 }]);
+                        generation = 3 };
+                 generation = 1;
+                 sub_anchor = None }
+               )];
+          rest = None
+          };
+      ty = { view = (Constr (container3/GNcgqNwFwYW5tzhyaY6CeGAIPd_yt-388M9oBK-oCu0,[{ view = (Constr (int,[]));
+                                                                                       generation = 3 };
+                                                                                     { view = (Constr (int,[]));
+                                                                                       generation = 3 };
+                                                                                     { view = (Constr (container2/-DqmX3SSi5K8O3dHQmWmCpQMR7Z0rThdokr2J_d8SsM,[{ view = (Constr (int,[]));
+                                                                                                                                                                 generation = 3 };
+                                                                                                                                                               { view = (Constr (int,[]));
+                                                                                                                                                                 generation = 3 }]));
+                                                                                       generation = 3 }]));
              generation = 3 };
-      generation = 1; sub_anchor = None }
+      generation = 1;
+      sub_anchor = None }
 
     <><><><><><><><><><>
 
     Parsing term:
 
-    Type defs:
-    Type annot: None
+    Type annot: (Ast_types.Subscript
+       { Ast_types.value =
+         (Ast_types.Name { Ast_types.id = "container3"; ctx = Ast_types.Load });
+         slice =
+         (Ast_types.Tuple
+            { Ast_types.elts =
+              [(Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load });
+                (Ast_types.Subscript
+                   { Ast_types.value =
+                     (Ast_types.Name
+                        { Ast_types.id = "container2"; ctx = Ast_types.Load });
+                     slice =
+                     (Ast_types.Tuple
+                        { Ast_types.elts =
+                          [(Ast_types.Name
+                              { Ast_types.id = "int"; ctx = Ast_types.Load });
+                            (Ast_types.Name
+                               { Ast_types.id = "int"; ctx = Ast_types.Load })
+                            ];
+                          ctx = Ast_types.Load; dims = [] });
+                     ctx = Ast_types.Load })
+                ];
+              ctx = Ast_types.Load; dims = [] });
+         ctx = Ast_types.Load })
 
     Expr:
-    (Ast.List { Ast.elts = []; ctx = Ast.Load })
+    (Ast_types.Call
+       { Ast_types.func =
+         (Ast_types.Name { Ast_types.id = "container3"; ctx = Ast_types.Load });
+         args =
+         [(Ast_types.Tuple
+             { Ast_types.elts =
+               [(Ast_types.Constant
+                   { Ast_types.value = (Ast_types.Int 1); kind = None });
+                 (Ast_types.Constant
+                    { Ast_types.value = (Ast_types.Int 2); kind = None });
+                 (Ast_types.Call
+                    { Ast_types.func =
+                      (Ast_types.Name
+                         { Ast_types.id = "container2"; ctx = Ast_types.Load });
+                      args =
+                      [(Ast_types.Tuple
+                          { Ast_types.elts =
+                            [(Ast_types.Constant
+                                { Ast_types.value = (Ast_types.Int 3);
+                                  kind = None });
+                              (Ast_types.Constant
+                                 { Ast_types.value = (Ast_types.Int 4);
+                                   kind = None })
+                              ];
+                            ctx = Ast_types.Load; dims = [] })
+                        ];
+                      keywords = [] })
+                 ];
+               ctx = Ast_types.Load; dims = [] })
+           ];
+         keywords = [] })
 
     <><><><><><><><><><>
 
@@ -1322,11 +799,96 @@ let%expect_test "parse model art" =
 
     [
       [
-        "Assign",
+        "AnnAssign",
         {
-          "targets": [ [ "Name", { "id": "w", "ctx": [ "Load" ] } ] ],
-          "value": [ "List", { "elts": [], "ctx": [ "Load" ] } ],
-          "type_comment": null
+          "target": [ "Name", { "id": "w", "ctx": [ "Load" ] } ],
+          "annotation": [
+            "Subscript",
+            {
+              "value": [ "Name", { "id": "container3", "ctx": [ "Load" ] } ],
+              "slice": [
+                "Tuple",
+                {
+                  "elts": [
+                    [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                    [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                    [
+                      "Subscript",
+                      {
+                        "value": [
+                          "Name", { "id": "container2", "ctx": [ "Load" ] }
+                        ],
+                        "slice": [
+                          "Tuple",
+                          {
+                            "elts": [
+                              [ "Name", { "id": "int", "ctx": [ "Load" ] } ],
+                              [ "Name", { "id": "int", "ctx": [ "Load" ] } ]
+                            ],
+                            "ctx": [ "Load" ],
+                            "dims": []
+                          }
+                        ],
+                        "ctx": [ "Load" ]
+                      }
+                    ]
+                  ],
+                  "ctx": [ "Load" ],
+                  "dims": []
+                }
+              ],
+              "ctx": [ "Load" ]
+            }
+          ],
+          "value": [
+            "Call",
+            {
+              "func": [ "Name", { "id": "container3", "ctx": [ "Load" ] } ],
+              "args": [
+                [
+                  "Tuple",
+                  {
+                    "elts": [
+                      [ "Constant", { "value": [ "Int", 1 ], "kind": null } ],
+                      [ "Constant", { "value": [ "Int", 2 ], "kind": null } ],
+                      [
+                        "Call",
+                        {
+                          "func": [
+                            "Name", { "id": "container2", "ctx": [ "Load" ] }
+                          ],
+                          "args": [
+                            [
+                              "Tuple",
+                              {
+                                "elts": [
+                                  [
+                                    "Constant",
+                                    { "value": [ "Int", 3 ], "kind": null }
+                                  ],
+                                  [
+                                    "Constant",
+                                    { "value": [ "Int", 4 ], "kind": null }
+                                  ]
+                                ],
+                                "ctx": [ "Load" ],
+                                "dims": []
+                              }
+                            ]
+                          ],
+                          "keywords": []
+                        }
+                      ]
+                    ],
+                    "ctx": [ "Load" ],
+                    "dims": []
+                  }
+                ]
+              ],
+              "keywords": []
+            }
+          ],
+          "simple": 1
         }
       ]
     ]

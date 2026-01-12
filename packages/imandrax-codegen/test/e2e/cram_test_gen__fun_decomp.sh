@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # Script to generate cram test cases from YAML files
-# Usage: ./gen_model_test.sh
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -16,9 +15,10 @@ cat <<'EOF'
 Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
-  >    cd $DUNE_SOURCEROOT && \
-  >    py-gen-parse-fun-decomp "test/data/fun_decomp/$1" - \
-  >    | uv run py-gen - \
+  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
+  >    yq ".decomp_res.artifact" "test/data/fun_decomp/$1" -o json \
+  >    | py-gen-parse - - --mode fun-decomp \
+  >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }
 

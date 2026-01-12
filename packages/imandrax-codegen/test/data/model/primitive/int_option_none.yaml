@@ -1,0 +1,12 @@
+name: int option none
+category: primitive
+iml: |-
+  let v =
+    fun w ->
+      if w = None then true else false
+instance_src_kwargs:
+  src: v
+data: YMACEKFiRF9hXzD5wwL4/l8R6vs47frpASL5+M8E8YUTM+U7RfzgPc3rzwVM2XrH0TxjRF9hXzD/GAGG+bLyYkRfYV8w92L3/yxgwwL982L/AfZi/fVgYf88sUl0eS5vcHRpb26z+2JGb3B0aW9u+cMC+v8MYGH/W8ACHyagYkFh97D0YfLDAv8R9WH9YvL4sUZjLm5vbmWz+GJETm9uZfdi9/8GY/T/If8pxQP3/ykCY/b/MwLAAh/LnQSgYkFh+bD0YfLDAv9Q9WH5Yf8AYvP7wAIfzJ0EoGJBd/li9P8AY/T/Cf8QYvb/KGH0YLFHdHkudW5pdLP5YkR1bml098MC+P8GsfVi/zf0YGBgYvH/9AHAAhGhYklDX2R1bW15XzD+Yvz/B2P0/w3/jwLFA/j/FgJj9v+aAgJh9rDyYv+jAvVi/y33ZvT/Tv/lAQEB/+0BCw==
+api_version: v18
+kind: mir.model
+storage: []

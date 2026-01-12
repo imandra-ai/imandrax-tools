@@ -1,9 +1,47 @@
+; Generate test files from scripts
+(rule
+ (target test_parse_model.t)
+ (mode promote)
+ (deps
+  cram_test_gen__model.sh
+  (source_tree ../data/model))
+ (action
+  (with-stdout-to %{target}
+   (run bash %{dep:cram_test_gen__model.sh}))))
+
+(rule
+ (target test_parse_decl.t)
+ (mode promote)
+ (deps
+  cram_test_gen__decl.sh
+  (source_tree ../data/decl))
+ (action
+  (with-stdout-to %{target}
+   (run bash %{dep:cram_test_gen__decl.sh}))))
+
+(rule
+ (target test_parse_fun_decomp.t)
+ (mode promote)
+ (deps
+  cram_test_gen__fun_decomp.sh
+  (source_tree ../data/fun_decomp))
+ (action
+  (with-stdout-to %{target}
+   (run bash %{dep:cram_test_gen__fun_decomp.sh}))))
+
+; Alias to generate all test files
+(alias
+ (name gen-tests)
+ (deps
+  test_parse_model.t
+  test_parse_decl.t
+  test_parse_fun_decomp.t))
+
 (cram
  (deps
-  %{bin:py-gen-parse-model}
-  %{bin:py-gen-parse-fun-decomp}
+  %{bin:py-gen-parse}
   (source_tree ../data)
   ../../pyproject.toml
   ../../uv.lock
   ../../README.md
-  (source_tree ../../python)))
+  (glob_files ../../python/**/*.py)))

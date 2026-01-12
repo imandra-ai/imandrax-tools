@@ -15,4 +15,7 @@ _build/
 _opam/
 
 .env
+
+tmp.*
+tmp
 .issues/

@@ -1,10 +1,12 @@
 name: int
+category: primitive
 iml: |-
   let v =
     fun w ->
       if w = 2 then true else false
-instance_src: v
-data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wayWAQAAAAAAAAAsPpj8v8DAmBgYvH/CsACH7LcAaBiQXf5YvT/AWP0/wf/H2L2/xJh9GBm8fT/PwEB/0QI
-api_version: v17
+instance_src_kwargs:
+  src: v
+data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wayWAQAAAAAAAAAsPpj8v8DAmBgYvH/CsACH86cBKBiQXf5YvT/AWP0/wf/H2L2/xJh9GBm8fT/PwEB/0QI
+api_version: v18
 kind: mir.model
 storage: []
