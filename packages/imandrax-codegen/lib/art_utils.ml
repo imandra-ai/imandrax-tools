@@ -4,6 +4,7 @@ module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term
 
+(* TODO: rename to art_data_of_json *)
 let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
 
@@ -21,6 +22,7 @@ let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
     (String.sub data_b64 0 (min 50 (String.length data_b64))); *)
   (data_b64, kind_str)
 
+(* TODO: rename to art_of_art_data *)
 let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string) :
     Artifact.t =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
