@@ -134,3 +134,22 @@ test-linux-wheel:  ## Test Linux wheel in Docker
 	@echo "Testing Linux wheel import..."
 	docker run --rm -v $(PWD):/workspace python:3.12 \
 		bash -c "pip install /workspace/dist/*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
+
+# Binary names for GitHub releases
+LINUX_BIN_NAME := art_parse-linux-x86_64
+MACOS_BIN_NAME := art_parse-darwin-arm64
+
+.PHONY: upload-linux-bin
+upload-linux-bin:  ## Upload Linux binary to GitHub release (requires RELEASE_TAG)
+	@if [ -z "$(RELEASE_TAG)" ]; then echo "Error: RELEASE_TAG is required"; exit 1; fi
+	@echo "Uploading Linux binary to release $(RELEASE_TAG)..."
+	gh release upload $(RELEASE_TAG) $(LINUX_BIN_DIR)/art_parse.exe#$(LINUX_BIN_NAME) --clobber
+
+.PHONY: upload-macos-bin
+upload-macos-bin:  ## Upload MacOS binary to GitHub release (requires RELEASE_TAG)
+	@if [ -z "$(RELEASE_TAG)" ]; then echo "Error: RELEASE_TAG is required"; exit 1; fi
+	@echo "Uploading MacOS binary to release $(RELEASE_TAG)..."
+	gh release upload $(RELEASE_TAG) $(MACOS_BIN_DIR)/art_parse.exe#$(MACOS_BIN_NAME) --clobber
+
+.PHONY: upload-binaries
+upload-binaries: upload-linux-bin upload-macos-bin  ## Upload all binaries to GitHub release
