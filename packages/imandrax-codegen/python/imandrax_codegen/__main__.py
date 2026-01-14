@@ -9,8 +9,7 @@ from imandrax_codegen.unparse import unparse
 app = typer.Typer()
 
 
-@app.command()
-def main(
+def gen_test_command(
     iml_path: str = typer.Argument(
         help='Path of IML file to generate test cases (use "-" to read from stdin)',
     ),
@@ -43,6 +42,8 @@ def main(
     else:
         typer.echo(result)
 
+
+app.command()(gen_test_command)
 
 if __name__ == '__main__':
     app()
