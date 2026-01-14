@@ -95,3 +95,42 @@ publish-pypi: pre-release-test  ## Publish to pypi.org
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
 	./dist/imandrax_codegen-*
+
+# Cross-platform binary builds
+# ====================
+
+LINUX_BIN_DIR := ./bin-linux
+MACOS_BIN_DIR := ./bin-macos
+
+.PHONY: build-linux-bin
+build-linux-bin:  ## Build Linux binary using Docker
+	@echo "Building Linux binary via Docker..."
+	@mkdir -p $(LINUX_BIN_DIR)
+	docker run --rm \
+		-v $(PWD)/../..:/workspace/imandrax-tools \
+		-v $(PWD)/../../../imandrax-api:/workspace/imandrax-api \
+		-w /workspace/imandrax-tools/packages/imandrax-codegen \
+		ocaml/opam:ubuntu-24.04-ocaml-5.3 \
+		bash -c "\
+			sudo apt-get update && sudo apt-get install -y pkg-config libgmp-dev zlib1g-dev libprotobuf-dev protobuf-compiler && \
+			opam update && \
+			opam pin add -n imandrax-api /workspace/imandrax-api && \
+			opam pin add -n imandra-proof-system /workspace/imandrax-api && \
+			opam install . --deps-only -y && \
+			dune build --root=. bin/parse.exe && \
+			cp _build/default/bin/parse.exe bin-linux/art_parse.exe"
+	@echo "Linux binary built at $(LINUX_BIN_DIR)/art_parse.exe"
+
+.PHONY: build-macos-bin
+build-macos-bin:  ## Build MacOS binary (native)
+	@echo "Building MacOS binary..."
+	@mkdir -p $(MACOS_BIN_DIR)
+	dune build bin/parse.exe
+	cp _build/default/bin/parse.exe $(MACOS_BIN_DIR)/art_parse.exe
+	@echo "MacOS binary built at $(MACOS_BIN_DIR)/art_parse.exe"
+
+.PHONY: test-linux-wheel
+test-linux-wheel:  ## Test Linux wheel in Docker
+	@echo "Testing Linux wheel import..."
+	docker run --rm -v $(PWD):/workspace python:3.12 \
+		bash -c "pip install /workspace/dist/*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
