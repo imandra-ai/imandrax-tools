@@ -30,7 +30,7 @@ jobs:
       # Download pre-built binary for this platform
       - name: Download codegen binary (${{ matrix.artifact-suffix }})
         run: |
-          gh release download codegen-binaries-latest \
+          gh release download codegen-binaries \
             --pattern "${{ matrix.binary-name }}" \
             --output python/imandrax_codegen/art_parse.exe
           chmod +x python/imandrax_codegen/art_parse.exe
@@ -40,7 +40,10 @@ jobs:
 
       # Build platform-specific wheel
       - name: Build wheel for ${{ matrix.artifact-suffix }}
-        run: uv build --wheel --config-setting="--plat-name=${{ matrix.platform-tag }}"
+        run: |
+          uv build --wheel
+          # Retag wheel to platform-specific (modifies internal metadata)
+          uv tool run wheel tags --platform-tag ${{ matrix.platform-tag }} --remove dist/*.whl
         working-directory: packages/imandrax-codegen
 
       - name: Upload build
