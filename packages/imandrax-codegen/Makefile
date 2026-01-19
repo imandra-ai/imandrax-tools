@@ -66,7 +66,7 @@ clean-artifacts:
 .PHONY: clean-binaries
 clean-binaries:  ## Clean built binaries
 	rm -rf $(BIN_DIR)
-	rm -rf bin-linux bin-macos  # Legacy directories
+	rm -rf _build-linux  # Docker build directory
 
 # Cross-platform binary builds
 # ====================
@@ -77,7 +77,7 @@ BIN_DIR := .bin
 build-linux-bin:  ## Build Linux binary using Docker
 	@echo "Building Linux binary via Docker..."
 	@mkdir -p $(BIN_DIR)
-	docker run --rm \
+	docker run --rm --platform linux/amd64 \
 		-v $(PWD)/../..:/workspace/imandrax-tools \
 		-v $(PWD)/../../../imandrax-api:/workspace/imandrax-api \
 		-w /workspace/imandrax-tools/packages/imandrax-codegen \
@@ -88,8 +88,8 @@ build-linux-bin:  ## Build Linux binary using Docker
 			opam pin add -n imandrax-api /workspace/imandrax-api && \
 			opam pin add -n imandra-proof-system /workspace/imandrax-api && \
 			opam install . --deps-only -y && \
-			dune build --root=. bin/parse.exe && \
-			cp _build/default/bin/parse.exe .bin/art_parse-linux-x86_64"
+			dune build --root=. --build-dir=_build-linux bin/parse.exe && \
+			cp _build-linux/default/bin/parse.exe .bin/art_parse-linux-x86_64"
 	@echo "Linux binary built at $(BIN_DIR)/art_parse-linux-x86_64"
 
 .PHONY: build-macos-bin
@@ -97,7 +97,7 @@ build-macos-bin:  ## Build MacOS binary (native)
 	@echo "Building MacOS binary..."
 	@mkdir -p $(BIN_DIR)
 	dune build bin/parse.exe
-	cp _build/default/bin/parse.exe $(BIN_DIR)/art_parse-darwin-arm64
+	cp ../../_build/default/packages/imandrax-codegen/bin/parse.exe $(BIN_DIR)/art_parse-darwin-arm64
 	@echo "MacOS binary built at $(BIN_DIR)/art_parse-darwin-arm64"
 
 .PHONY: build-binaries
