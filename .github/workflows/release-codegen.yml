@@ -1,0 +1,144 @@
+# $schema: https://json.schemastore.org/github-workflow.json
+name: release-codegen
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - platform-tag: manylinux_2_17_x86_64
+            binary-name: art_parse-linux-x86_64
+            artifact-suffix: linux
+          - platform-tag: macosx_11_0_arm64
+            binary-name: art_parse-darwin-arm64
+            artifact-suffix: macos
+
+    outputs:
+      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
+      version: ${{ steps.check-version.outputs.version }}
+      tag: ${{ steps.check-version.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      # Download pre-built binary for this platform
+      - name: Download codegen binary (${{ matrix.artifact-suffix }})
+        run: |
+          gh release download codegen-binaries \
+            --pattern "${{ matrix.binary-name }}" \
+            --output python/imandrax_codegen/art_parse.exe
+          chmod +x python/imandrax_codegen/art_parse.exe
+        working-directory: packages/imandrax-codegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # Build platform-specific wheel
+      - name: Build wheel for ${{ matrix.artifact-suffix }}
+        run: |
+          uv build --wheel
+          # Retag wheel to platform-specific (modifies internal metadata)
+          uv tool run wheel tags --platform-tag ${{ matrix.platform-tag }} --remove dist/*.whl
+        working-directory: packages/imandrax-codegen
+
+      - name: Upload build
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-${{ matrix.artifact-suffix }}
+          path: packages/imandrax-codegen/dist/
+
+      - name: Check version
+        id: check-version
+        shell: bash
+        working-directory: packages/imandrax-codegen
+        run: |
+          version_data=$(uv version --output-format=json)
+          version=$(echo "$version_data" | jq -r '.version')
+          package_name=$(echo "$version_data" | jq -r '.package_name')
+          tag="${package_name}==${version}"
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+  pre-release-test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+
+      # Download both platform artifacts
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-macos
+          path: packages/imandrax-codegen/dist/
+
+      - name: Run pre-release tests
+        run: make pre-release-test
+        working-directory: packages/imandrax-codegen
+        env:
+          IMANDRAX_API_KEY: ${{ secrets.IMANDRA_UNIVERSE_API_KEY }}
+
+  pypi-publish:
+    needs: [build, pre-release-test]
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Download both platform artifacts
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-macos
+          path: packages/imandrax-codegen/dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/imandrax-codegen/dist/
+          print-hash: true
+
+  github-release:
+    needs: [build, pypi-publish]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Download both platform artifacts
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-macos
+          path: packages/imandrax-codegen/dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.tag }}
+          name: ${{ needs.build.outputs.pkg-name }} ${{ needs.build.outputs.version }}
+          files: packages/imandrax-codegen/dist/*
+          generate_release_notes: true
