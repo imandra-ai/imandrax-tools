@@ -32,7 +32,8 @@ jobs:
         run: |
           gh release download codegen-binaries \
             --pattern "${{ matrix.binary-name }}" \
-            --output python/imandrax_codegen/art_parse.exe
+            --output python/imandrax_codegen/art_parse.exe \
+            --clobber
           chmod +x python/imandrax_codegen/art_parse.exe
         working-directory: packages/imandrax-codegen
         env:
