@@ -182,15 +182,22 @@ def format_eval_output(eval_output: EvalOutput) -> str: ...
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     if not eval_res.has_errors:
-        s = 'Eval success!'
-        if eval_res.eval_results:
-            s += '\n'
-        for i, eval_result in enumerate(eval_res.eval_results, 1):
-            s += f'\nEval result #{i}:\n'
-            success = eval_result.success
-            s += f'- success: {success}\n'
-            s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
-        return s
+        errs_in_eval_msg: list[str] = [
+            msg for msg in eval_res.messages if 'error' in msg
+        ]
+        if len(errs_in_eval_msg) == 0:
+            s = 'Eval success!'
+            if eval_res.eval_results:
+                s += '\n'
+            for i, eval_result in enumerate(eval_res.eval_results, 1):
+                s += f'\nEval result #{i}:\n'
+                success = eval_result.success
+                s += f'- success: {success}\n'
+                s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
+            return s
+        else:
+            s = 'ImandraX internal error'
+            return s
 
     else:
         s = ''
