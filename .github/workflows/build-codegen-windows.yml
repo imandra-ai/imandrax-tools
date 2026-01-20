@@ -2,6 +2,9 @@
 name: build-codegen-windows
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - hy/support-windows-for-codegen  # TODO: remove after testing
 
 jobs:
   build:
