@@ -18,7 +18,7 @@ def option_map[T, U](v: T | None, f: Callable[[T], U]) -> U | None:
 
 
 PO_RES_PP_BIN_PATH: Final[Path | None] = option_map(
-    os.getenv('IMANDRAX_PP_GOAL_STATE_BIN_PATH'), Path
+    os.getenv('IMANDRAX_PO_RES_PP_BIN_PATH'), Path
 )
 
 
