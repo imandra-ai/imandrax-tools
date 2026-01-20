@@ -41,6 +41,8 @@ def pp_goal_state(
         raise FileNotFoundError('imandrax-pp-goal-state binary not found')
 
     match po_res:
+        # Base case
+        # --------------------
         case Path():
             if po_res.suffix not in ('.zip', '.json'):
                 raise ValueError('po_res must be a zip or json file')
@@ -54,7 +56,8 @@ def pp_goal_state(
             if out.returncode != 0:
                 raise RuntimeError(f'pp_goal_state failed: {out.stderr.decode()}')
             return out.stdout.decode()
-
+        # Turn into base case
+        # --------------------
         case xbinding.api_pb2.ArtifactZip():
             with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
                 tmp.write(po_res.art_zip)
