@@ -16,9 +16,8 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: 5.3.x
-
-      - name: Install system dependencies
-        run: opam exec -- depext --install conf-gmp conf-zlib conf-protobuf
+          depext: true
+          depext-cygwinports: true
 
       - name: Pin and install
         run: |
