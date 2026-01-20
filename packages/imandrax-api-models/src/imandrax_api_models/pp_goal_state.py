@@ -1,5 +1,7 @@
+import os
 import subprocess
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Final
 
@@ -7,15 +9,16 @@ from imandrax_api import bindings as xbinding
 
 from imandrax_api_models import proto_models
 
-curr_dir = Path(__file__).parent
 
-WORKSPACE_DIR: Final[Path] = curr_dir.parent.parent.parent.parent
-PO_RES_PP_BIN_PATH: Final[Path] = (
-    WORKSPACE_DIR.parent
-    / 'imandrax'
-    / '_build'
-    / 'default'
-    / 'src/pp-goal-state/bin/pp_goal_state.exe'
+def option_map[T, U](v: T | None, f: Callable[[T], U]) -> U | None:
+    if v is None:
+        return None
+    else:
+        return f(v)
+
+
+PO_RES_PP_BIN_PATH: Final[Path | None] = option_map(
+    os.getenv('IMANDRAX_PP_GOAL_STATE_BIN_PATH'), Path
 )
 
 
@@ -37,7 +40,7 @@ def pp_goal_state(
             - if it's an api_pb2.ArtifactZip, we create a temp zip file
 
     """
-    if not PO_RES_PP_BIN_PATH.exists():
+    if PO_RES_PP_BIN_PATH is None or (not PO_RES_PP_BIN_PATH.exists()):
         raise FileNotFoundError('imandrax-pp-goal-state binary not found')
 
     match po_res:
