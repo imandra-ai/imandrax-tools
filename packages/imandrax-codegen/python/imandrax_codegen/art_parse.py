@@ -11,24 +11,28 @@ from imandrax_api import url_dev, url_prod  # noqa: F401
 from imandrax_api_models import Art
 from imandrax_codegen.ast_deserialize import stmts_of_json
 
+SUPPORTED_PLATFORMS = ('darwin', 'linux')
+
 
 def find_art_parse_exe() -> Path:
     """Find the art_parse executable.
 
     Raises:
-        RuntimeError: If the executable is not found (unsupported platform)
+        ValueError: If the executable is not found or platform is unsupported
     """
     exe_path = Path(__file__).parent / 'art_parse.exe'
 
-    if sys.platform != 'darwin':
+    if sys.platform not in SUPPORTED_PLATFORMS:
         raise ValueError(
-            'Only MacOS is supported for now. Please wait for the next release.'
+            f'Platform {sys.platform!r} is not supported. '
+            f'Supported platforms: {SUPPORTED_PLATFORMS}'
         )
 
     if not exe_path.exists():
         raise ValueError(
             f'art_parse.exe not found in {exe_path.parent}. '
-            f'The package might not be built correctly.'
+            f'The package might not be built correctly. '
+            f'Make sure you installed the platform-specific wheel, not the sdist.'
         )
     return exe_path
 

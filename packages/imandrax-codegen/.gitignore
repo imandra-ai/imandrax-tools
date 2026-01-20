@@ -1,6 +1,7 @@
 _build
 _opam
 *.exe
+.bin/
 
 *.install
 
@@ -9,3 +10,4 @@ docs/
 !*.json
 
 *local*
+_build-linux
