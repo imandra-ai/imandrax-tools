@@ -47,9 +47,9 @@ def instance_capture_to_req(
     capture: InstanceCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from an instance statement node."""
-    node = capture.instance_statement
+    node = capture.instance_expr
     req: dict[str, str] = {}
-    assert node.type == 'instance_statement', 'not instance_statement'
+
     instance_src = (
         unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
     )
