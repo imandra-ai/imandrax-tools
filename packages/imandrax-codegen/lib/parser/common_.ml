@@ -66,3 +66,43 @@ let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
         failwith "Never: arrow type view should be either a constr or an arrow"
   in
   helper [] ty_view
+
+(* SIR
+==================== *)
+
+(** Parse Constr variant of MIR Ty_view.view to Semantic IR type_expr
+
+Arg:
+  ty_view: Constr variant of Mir Ty_view.view
+Return: tuple of:
+  0: Semantic IR type expression
+  1: generic type parameters used (as strings, not UIDs)
+*)
+let type_expr_of_mir_ty_view_constr (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
+    : Sir.Types.type_expr * string list =
+  let rec helper
+      (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
+      (params_acc : string list) : Sir.Types.type_expr * string list =
+    match ty_view with
+    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
+        let constr_name = constr_uid.name in
+        match constr_args with
+        | [] -> (Sir.Types.TBase constr_name, params_acc)
+        | _ ->
+            let ( (arg_exprs : Sir.Types.type_expr list),
+                  (params_acc_by_arg : string list list) ) =
+              constr_args
+              |> List.map (fun (ty : Type.t) -> helper ty.view [])
+              |> List.split
+            in
+            ( Sir.Types.TApp (constr_name, arg_exprs),
+              params_acc @ (params_acc_by_arg |> List.flatten) ))
+    | Var (var_uid : Uid.t) ->
+        let type_var_name = var_uid.name in
+        (Sir.Types.TVar type_var_name, type_var_name :: params_acc)
+    | _ -> failwith "parse_constr_to_semantic_type: expected Constr or Var"
+  in
+
+  let ty_expr, params_acc = helper ty_view [] in
+  let dedup_params = params_acc |> CCList.uniq ~eq:String.equal in
+  (ty_expr, dedup_params)

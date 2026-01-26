@@ -1,4 +1,6 @@
 open Common_
+open Printf
+
 module Sir = Semantic_ir.Types
 
 (** Parse a MIR term to SIR type expression and term expression.
@@ -42,26 +44,11 @@ let rec parse_term (term : Term.term) :
       | Const_q q ->
           let num = Q.num q in
           let den = Q.den q in
-          (* printf "%s/%s" (Z.to_string num) (Z.to_string den); *)
-          let open Ast in
-          (* Should we use Decimal instead? *)
-          Ok
-            ( Some (mk_name_expr "float"),
-              Constant
-                {
-                  value = Float (Z.to_float num /. Z.to_float den);
-                  kind = None;
-                } )
-      | Const_z z ->
-          let open Ast in
-          Ok
-            ( Some (mk_name_expr "int"),
-              Ast.Constant { value = Int (Z.to_int z); kind = None } )
-      | Const_string s ->
-          let open Ast in
-          Ok
-            ( Some (mk_name_expr "str"),
-              Constant { value = String s; kind = None } )
+          (* Convert rational to float *)
+          let float_val = Z.to_float num /. Z.to_float den in
+          Ok (Some (TBase "float"), VConst (CFloat float_val))
+      | Const_z z -> Ok (Some (TBase "int"), VConst (CInt (Z.to_int z)))
+      | Const_string s -> Ok (Some (TBase "str"), VConst (CString s))
       | c ->
           (* Uid and real_approx *)
           let msg = sprintf "unhandled const %s" (Imandrax_api.Const.show c) in
@@ -72,12 +59,11 @@ let rec parse_term (term : Term.term) :
         List.map (fun term -> parse_term term |> unwrap) terms
       in
       let type_annot_of_elems, term_of_elems = List.split parsed_elems in
-      let tuple_annot =
+      let tuple_type =
         type_annot_of_elems
         |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
-        |> Ast.tuple_annot_of_annots
       in
-      Ok (Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
+      Ok (Some (TTuple tuple_type), VTuple term_of_elems)
   (* Record *)
   | ( Term.Record
         {
@@ -85,26 +71,24 @@ let rec parse_term (term : Term.term) :
           rest = (_ : Term.term option);
         },
       (ty : Type.t) ) ->
-      (* Get dataclass name (constructor) from ty *)
+      (* Get record type name from ty *)
       let ty_name =
         match ty.view with
         | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
         | _ -> failwith "Never: ty should be a constr"
       in
-      let dataclass_type_annot =
-        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
-        Ast.type_annot_of_type_expr types
+      let record_type, _type_vars = type_expr_of_mir_ty_view_constr ty.view in
+
+      (* Extract field names and values from rows *)
+      let fields =
+        rows
+        |> List.map (fun (field_sym, term) ->
+               let field_name = field_sym.sym.id.name in
+               let _field_ty, field_val = parse_term term |> unwrap in
+               (field_name, field_val))
       in
 
-      (* Extract values from rows, which will be used as arguments to the dataclass constructor *)
-      let row_val_exprs =
-        rows |> List.map snd
-        |> List.map (fun term -> term |> parse_term |> unwrap |> snd)
-      in
-
-      Ok
-        ( Some dataclass_type_annot,
-          Ast.mk_dataclass_value ty_name ~args:row_val_exprs ~kwargs:[] )
+      Ok (Some record_type, VRecord { type_name = ty_name; fields })
   (* Construct - LChar.t *)
   | ( Term.Construct
         {
@@ -123,14 +107,23 @@ let rec parse_term (term : Term.term) :
         failwith "Never: LChar.t should have no args"
       else ();
 
-      let _bool_type_annot_s, bool_terms =
+      let _bool_type_annot_s, bool_values =
         List.map (fun arg -> parse_term arg |> unwrap) construct_args
         |> List.split
       in
 
-      let char_expr = Ast.char_expr_of_bool_list_expr bool_terms in
-      (* NOTE: Python has no char type, so we use str *)
-      Ok (Some (Ast.mk_name_expr "str"), char_expr)
+      (* Extract boolean constants from the parsed values *)
+      let bools =
+        List.map
+          (function
+            | VConst (CBool b) -> b
+            | _ -> failwith "LChar.t args must be boolean constants")
+          bool_values
+      in
+
+      (* Convert list of 8 bools to a char using Ast.bools_to_char *)
+      let char_val = Ast.bools_to_char bools in
+      Ok (Some (TBase "char"), VConst (CChar char_val))
   (* Construct - list *)
   | ( Term.Construct
         {
@@ -159,43 +152,42 @@ let rec parse_term (term : Term.term) :
          in
          failwith msg);
 
-      let type_annot_of_elems, term_of_elems =
+      (* Get element type from ty_view_constr_args *)
+      let elem_type =
+        match ty_view_constr_args with
+        | [ elem_ty ] ->
+            let ty_expr, _params =
+              type_expr_of_mir_ty_view_constr elem_ty.view
+            in
+            ty_expr
+        | _ -> failwith "Never: list should have exactly 1 type arg"
+      in
+      let list_type = TApp ("list", [ elem_type ]) in
+
+      let list_value =
         match construct_args with
         | [] ->
-            (* Nil *)
-            (None, Ast.empty_list_expr ())
+            (* Nil - empty list *)
+            VList []
         | _ -> (
             let type_annot_of_elems, term_of_elems =
               List.map (fun arg -> parse_term arg |> unwrap) construct_args
               |> List.split
             in
             match term_of_elems with
-            | [] -> failwith "Never: empty constuct arg for non-Nil"
+            | [] -> failwith "Never: empty construct arg for non-Nil"
             | [ _ ] -> failwith "Never: single element list for non-Nil"
-            | [ head; tail ] ->
-                let type_annot_of_elem =
-                  type_annot_of_elems |> List.hd
-                  |> CCOption.get_exn_or
-                       "No type annotation for the first list element"
-                in
-                let type_annot =
-                  Ast.(
-                    Subscript
-                      {
-                        value = Name { id = "list"; ctx = mk_ctx () };
-                        slice = type_annot_of_elem;
-                        ctx = mk_ctx ();
-                      })
-                in
-
-                (Some type_annot, Ast.cons_list_expr head tail)
-                (* let n_elem = CCList.length elems in
-          let except_last = CCList.take (n_elem - 1) elems in
-          Some (Ast.list_of_exprs except_last) *)
+            | [ head; tail ] -> (
+                (* Cons - need to flatten the tail into a full list *)
+                match tail with
+                | VList tail_elems -> VList (head :: tail_elems)
+                | _ ->
+                    failwith
+                      "Never: tail of cons list should be a VList after parsing")
             | _ -> failwith "Never: more than 2 elements list for non-Nil")
       in
 
-      Ok (type_annot_of_elems, term_of_elems)
+      Ok (Some list_type, list_value)
   (* Construct - other *)
   | ( Term.Construct
         {
@@ -207,52 +199,41 @@ let rec parse_term (term : Term.term) :
       (ty : Type.t) ) ->
       let variant_constr_name = construct.sym.id.name in
 
-      let (dataclass_type_annot : Ast.expr) =
-        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
-        Ast.type_annot_of_type_expr types
+      let variant_type, _type_vars =
+        Parse_common.parse_constr_to_sir_type_expr ty.view
       in
 
-      let _constr_arg_type_annot_lists, constr_arg_terms =
+      let _constr_arg_type_annots, constr_arg_values =
         List.map (fun arg -> parse_term arg |> unwrap) construct_args
         |> List.split
       in
 
-      let term =
+      let value =
         match variant_constr_name with
-        (* map Option's None variant to Unit, which will be Python's None *)
-        | "None" -> Ast.Constant { value = Unit; kind = None }
-        | _ ->
-            Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
-              ~kwargs:[]
+        (* map Option's None variant to CUnit *)
+        | "None" -> VConst CUnit
+        | _ -> VConstruct { constructor = variant_constr_name; args = constr_arg_values }
       in
-      Ok (Some dataclass_type_annot, term)
+      Ok (Some variant_type, value)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
       try
         (* Extract Map key and value type from ty *)
-        let key_ty_name, val_ty_name =
+        let key_ty, val_ty =
           match ty.view with
           | Ty_view.Constr
               ( { name = "Map.t"; _ },
-                ([
-                   {
-                     view = Ty_view.Constr (Uid.{ name = key_ty_name; _ }, _);
-                     _;
-                   };
-                   {
-                     view = Ty_view.Constr (Uid.{ name = val_ty_name; _ }, _);
-                     _;
-                   };
-                 ] :
-                  Type.t list) ) ->
-              (key_ty_name, val_ty_name)
+                ([ key_ty; val_ty ] : Type.t list) ) ->
+              let key_ty_expr, _ =
+                type_expr_of_mir_ty_view_constr key_ty.view
+              in
+              let val_ty_expr, _ =
+                type_expr_of_mir_ty_view_constr val_ty.view
+              in
+              (key_ty_expr, val_ty_expr)
           | _ -> raise (Early_return "Non-map Apply term view")
         in
 
-        (* printf "key_ty_name: %s\n" key_ty_name;
-       printf "val_ty_name: %s\n" val_ty_name; *)
-        let type_annot =
-          Ast.mk_defaultdict_type_annotation key_ty_name val_ty_name
-        in
+        let map_type = TApp ("Map.t", [ key_ty; val_ty ]) in
 
         (* Parse the [l] of Map.add'
         - [Map.add' m k v] adds the pair (k, v) to map m
@@ -330,26 +311,29 @@ let rec parse_term (term : Term.term) :
         in
         let key_val_pairs, default = parse_map_term_view f l [] in
 
-        let _default_val_type_annot, default_val_expr =
+        let _default_val_type_annot, default_val =
           default |> parse_term |> unwrap
         in
 
         let key_terms, val_terms = key_val_pairs |> List.rev |> List.split in
 
-        let _key_type_annots, key_exprs =
+        let _key_type_annots, key_vals =
           key_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
         in
 
-        let _val_type_annots, val_exprs =
+        let _val_type_annots, val_vals =
           val_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
         in
 
-        let defaultdict_expr =
-          Ast.mk_defaultdict_value default_val_expr
-            (CCList.combine key_exprs val_exprs)
+        let map_value =
+          VMap
+            {
+              default = default_val;
+              entries = CCList.combine key_vals val_vals;
+            }
         in
 
-        Ok (Some type_annot, defaultdict_expr)
+        Ok (Some map_type, map_value)
       with Early_return msg -> Error msg)
   | _, _ ->
       let msg = "case other than const, construct, or apply" in
