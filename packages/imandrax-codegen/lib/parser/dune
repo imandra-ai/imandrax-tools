@@ -1,5 +1,6 @@
 (library
  (name parser)
+ (public_name imandrax-codegen.parser)
  (libraries
   imandrax-api
   imandrax-api.artifact

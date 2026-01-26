@@ -1,5 +1,6 @@
 (library
  (name python_adapter)
+ (public_name imandrax-codegen.adapters.python)
  (libraries
   semantic_ir
   parser
