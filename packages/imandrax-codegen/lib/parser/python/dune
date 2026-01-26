@@ -1,6 +1,9 @@
 (library
  (name py_parser)
- (libraries semantic_ir containers)
+ (libraries
+  semantic_ir containers
+  parser
+ )
  (inline_tests)
  (flags
   (:standard -w -33))

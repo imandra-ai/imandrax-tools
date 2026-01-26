@@ -1,6 +1,14 @@
 (library
  (name parser)
- (libraries semantic_ir containers)
+ (libraries
+  imandrax-api
+  imandrax-api.artifact
+  imandrax-api.mir
+  imandrakit
+  imandrakit.twine
+  semantic_ir
+  containers
+)
  (inline_tests)
  (flags
   (:standard -w -33))
