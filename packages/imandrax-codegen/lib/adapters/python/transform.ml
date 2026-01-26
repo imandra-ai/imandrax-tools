@@ -225,7 +225,7 @@ let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
       |> List.map (fun (name, ty, tm) ->
              (name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm))
     in
-    let (output_type_annot, expected) = test_decl.f_output in
+    let output_type_annot, expected = test_decl.f_output in
     ( test_decl.name,
       test_decl.f_name,
       test_decl.docstr,
@@ -282,4 +282,89 @@ let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
       returns = None;
       type_comment = None;
       type_params = [];
+    }
+
+let test_data_dict_of_test_decl (test_decl : Sir.test_decl) : expr =
+  let (args : (string * expr) list) =
+    test_decl.f_args
+    |> List.map (fun (name, _ty, tm) -> (name, ast_expr_of_sir_value tm))
+  in
+  let (expected : expr) = test_decl.f_output |> snd |> ast_expr_of_sir_value in
+  let input_kwargs_dict : expr =
+    let keys, values = List.split args in
+    let key_opt_exprs =
+      keys
+      |> List.map (fun k -> Some (Constant { value = String k; kind = None }))
+    in
+    Dict { keys = key_opt_exprs; values }
+  in
+  Dict
+    {
+      keys =
+        [
+          Some (Constant { value = String "input_kwargs"; kind = None });
+          Some (Constant { value = String "expected"; kind = None });
+        ];
+      values = [ input_kwargs_dict; expected ];
+    }
+
+(** Parse SIR test suite to an assignment statement of a test data dictionary *)
+let test_data_dict_of_test_suite (test_suite : Sir.test_suite) : stmt =
+  let (test_names : string list) =
+    test_suite |> List.map (fun (test_decl : Sir.test_decl) -> test_decl.name)
+  in
+
+  let (test_data_dict_items : expr list) =
+      test_suite |> List.map test_data_dict_of_test_decl
+  in
+  let agg_dict =
+    Dict
+      {
+        keys =
+          List.map
+            (fun test_name ->
+              Some (Constant { value = String test_name; kind = None }))
+            test_names;
+        values = test_data_dict_items;
+      }
+  in
+  let agg_dict_type_annot =
+    Subscript
+      {
+        value = Name { id = "dict"; ctx = mk_ctx () };
+        slice =
+          Tuple
+            {
+              elts =
+                [
+                  Name { id = "str"; ctx = mk_ctx () };
+                  Subscript
+                    {
+                      value = Name { id = "dict"; ctx = mk_ctx () };
+                      slice =
+                        Tuple
+                          {
+                            elts =
+                              [
+                                Name { id = "str"; ctx = mk_ctx () };
+                                Name { id = "Any"; ctx = mk_ctx () };
+                              ];
+                            ctx = mk_ctx ();
+                            dims = [];
+                          };
+                      ctx = mk_ctx ();
+                    };
+                ];
+              ctx = mk_ctx ();
+              dims = [];
+            };
+        ctx = mk_ctx ();
+      }
+  in
+  AnnAssign
+    {
+      target = Name { id = "tests"; ctx = mk_ctx () };
+      annotation = agg_dict_type_annot;
+      value = Some agg_dict;
+      simple = 1;
     }
