@@ -1,0 +1,10 @@
+module Type = Imandrax_api_mir.Type
+module Term = Imandrax_api_mir.Term
+module Decl = Imandrax_api_mir.Decl
+
+val parse_model :
+  (Term.term, Type.t) Imandrax_api_common.Model.t_poly -> Ast.stmt
+(** Parse a MIR model into an AST assign statement *)
+
+val parse_decl : (Term.t, Type.t) Decl.t_poly -> (Ast.stmt list, string) result
+(** Parse a MIR Decl.t to corresponding AST statments for type declaration *)

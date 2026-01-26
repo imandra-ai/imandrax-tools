@@ -14,12 +14,12 @@ type type_expr =
 
 (** Variant constructor field types *)
 type variant_field =
-  | Positional of type_expr  (** Positional field *)
+  | Positional of type_expr  (** Positional field. came from inline record *)
   | Named of string * type_expr  (** Named field: name: type *)
 [@@deriving show, eq, yojson]
 
 type variant_constructor = {
-  vc_name : string;  (** Constructor name *)
+  vc_name : string;  (** Constructor name, aka tag *)
   vc_fields : variant_field list;  (** Constructor fields *)
 }
 [@@deriving show, eq, yojson]

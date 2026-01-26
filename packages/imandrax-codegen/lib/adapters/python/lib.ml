@@ -12,6 +12,9 @@ module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
 module Sir = Semantic_ir.Types
 
+(* TODO: this will be removed *)
+module Parser = Parser
+
 (* Model |-> applied symbol and term *)
 let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
     : Type.t Applied_symbol.t_poly * Term.term =
@@ -27,6 +30,12 @@ let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
       in
       failwith s
 
+(** Parse a MIR model into an AST assign statement
+
+```py
+target_var: TargetType = target_value
+```
+*)
 let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
     Ast.stmt =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
@@ -59,5 +68,13 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
             simple = 1;
           }
   in
-
   assign_stmt
+
+(** Parse a MIR Decl.t to corresponding AST statments for type declaration *)
+let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
+    (Ast.stmt list, string) result =
+  match Parser.Decl.parse_decl decl with
+  | Ok sir_type_decl ->
+      let stmts = Transform.stmts_of_sir_type_decl sir_type_decl in
+      Ok stmts
+  | Error msg -> Error msg

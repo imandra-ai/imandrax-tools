@@ -10,7 +10,8 @@ module Term = Imandrax_api_mir.Term
 module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
-module Sir = Semantic_ir
+
+module Sir = Semantic_ir.Types
 
 (* Utils
 ==================== *)
@@ -42,6 +43,18 @@ let unwrap : ('a, 'b) result -> 'a = function
   | Ok x -> x
   | Error msg -> failwith msg
 
+(** Create a list of anonymous argument names
+
+Example:
+  anonymous_arg_names 3 = ["arg0"; "arg1"; "arg2"]
+*)
+let anonymous_arg_names (i : int) : string list =
+  List.init i (fun i -> "arg" ^ string_of_int i)
+
+let%expect_test "anonymous_arg_names" =
+  let names = anonymous_arg_names 3 in
+  List.iter (Printf.printf "%s ") names;
+  [%expect {| arg0 arg1 arg2 |}]
 
 (* Convert 8-bit bool list to a char *)
 let char_of_bools (bools : bool list) : char =
@@ -117,27 +130,27 @@ Return: tuple of:
   1: generic type parameters used (as strings, not UIDs)
 *)
 let type_expr_of_mir_ty_view_constr (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
-    : Sir.Types.type_expr * string list =
+    : Sir.type_expr * string list =
   let rec helper
       (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
-      (params_acc : string list) : Sir.Types.type_expr * string list =
+      (params_acc : string list) : Sir.type_expr * string list =
     match ty_view with
     | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
         let constr_name = constr_uid.name in
         match constr_args with
-        | [] -> (Sir.Types.TBase constr_name, params_acc)
+        | [] -> (Sir.TBase constr_name, params_acc)
         | _ ->
-            let ( (arg_exprs : Sir.Types.type_expr list),
+            let ( (arg_exprs : Sir.type_expr list),
                   (params_acc_by_arg : string list list) ) =
               constr_args
               |> List.map (fun (ty : Type.t) -> helper ty.view [])
               |> List.split
             in
-            ( Sir.Types.TApp (constr_name, arg_exprs),
+            ( Sir.TApp (constr_name, arg_exprs),
               params_acc @ (params_acc_by_arg |> List.flatten) ))
     | Var (var_uid : Uid.t) ->
         let type_var_name = var_uid.name in
-        (Sir.Types.TVar type_var_name, type_var_name :: params_acc)
+        (Sir.TVar type_var_name, type_var_name :: params_acc)
     | _ -> failwith "parse_constr_to_semantic_type: expected Constr or Var"
   in
 
