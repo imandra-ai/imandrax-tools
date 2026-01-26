@@ -1,4 +1,4 @@
-(** Parser for transforming MIR terms to semantic IR *)
+(** Parser for transforming MIR Term to semantic IR *)
 
 open Common_
 open Printf

@@ -8,6 +8,7 @@
   imandrakit.twine
   semantic_ir
   containers
+  yaml
 )
  (inline_tests)
  (flags
