@@ -13,7 +13,7 @@
   containers
   base64
   yaml
-  fmt)
+  semantic_ir)
  (inline_tests
   (deps
    (source_tree ../examples)
