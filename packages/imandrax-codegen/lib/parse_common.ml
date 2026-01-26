@@ -10,7 +10,6 @@ module Term = Imandrax_api_mir.Term
 module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
-module Sir = Semantic_ir
 
 (* Shared exception *)
 exception Early_return of string
@@ -79,47 +78,6 @@ let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
 
   let dedup_params = params_acc |> CCList.uniq ~eq:Uid.equal in
   (ty_acc_py, dedup_params)
-
-(** Parse Constr variant of Ty_view.view to Semantic IR type_expr
-
-    Return:
-      0: Semantic IR type expression
-      1: generic type parameters used (as strings, not UIDs)
-*)
-let parse_constr_to_sir_type_expr (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
-    Sir.Types.type_expr * string list =
-  let rec helper
-      (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
-      (params_acc : string list) : Sir.Types.type_expr * string list =
-    match ty_view with
-    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
-        let constr_name = constr_uid.name in
-        (* Map to Python type names *)
-        let mapped_name =
-          CCList.assoc_opt ~eq:String.equal constr_name
-            Ast.ty_view_constr_name_mapping
-          |> Option.value ~default:constr_name
-        in
-        match constr_args with
-        | [] -> (Sir.Types.TBase mapped_name, params_acc)
-        | _ ->
-            let ( (arg_exprs : Sir.Types.type_expr list),
-                  (params_acc_by_arg : string list list) ) =
-              constr_args
-              |> List.map (fun (ty : Type.t) -> helper ty.view [])
-              |> List.split
-            in
-            ( Sir.Types.TApp (mapped_name, arg_exprs),
-              params_acc @ (params_acc_by_arg |> List.flatten) ))
-    | Var (var_uid : Uid.t) ->
-        let type_var_name = var_uid.name in
-        (Sir.Types.TVar type_var_name, type_var_name :: params_acc)
-    | _ -> failwith "parse_constr_to_semantic_type: expected Constr or Var"
-  in
-
-  let ty_expr, params_acc = helper ty_view [] in
-  let dedup_params = params_acc |> CCList.uniq ~eq:String.equal in
-  (ty_expr, dedup_params)
 
 (** Define type variable
 
