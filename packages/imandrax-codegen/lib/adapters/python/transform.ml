@@ -90,8 +90,7 @@ let dataclass_decl_of_variant_constructor
     List.mapi
       (fun i field ->
         match field with
-        | Sir.Positional ty ->
-            ("arg" ^ string_of_int i, ast_type_expr_of_sir ty)
+        | Sir.Positional ty -> ("arg" ^ string_of_int i, ast_type_expr_of_sir ty)
         | Sir.Named (name, ty) -> (name, ast_type_expr_of_sir ty))
       constr.vc_fields
   in
@@ -103,7 +102,9 @@ let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
   | Sir.Variant { name; type_params; constructors } ->
       let type_var_stmts = stmts_of_type_params type_params in
       let constructor_defs =
-        List.map (dataclass_decl_of_variant_constructor type_params) constructors
+        List.map
+          (dataclass_decl_of_variant_constructor type_params)
+          constructors
       in
       let union_type_expr =
         List.map
@@ -146,13 +147,14 @@ let ast_const_of_sir_const (c : Sir.const_value) : constant_value =
 (** Convert SIR value to Python expression *)
 let rec ast_expr_of_sir_value (v : Sir.value) : expr =
   match v with
-  | Sir.VConst c ->
-      Constant { value = ast_const_of_sir_const c; kind = None }
+  | Sir.VConst c -> Constant { value = ast_const_of_sir_const c; kind = None }
   | Sir.VTuple vs -> tuple_of_exprs (List.map ast_expr_of_sir_value vs)
   | Sir.VList vs -> list_of_exprs (List.map ast_expr_of_sir_value vs)
   | Sir.VRecord { type_name; fields } ->
       let kwargs =
-        List.map (fun (name, value) -> (name, ast_expr_of_sir_value value)) fields
+        List.map
+          (fun (name, value) -> (name, ast_expr_of_sir_value value))
+          fields
       in
       mk_dataclass_value type_name ~args:[] ~kwargs
   | Sir.VConstruct { constructor; args } ->
@@ -178,9 +180,106 @@ let rec ast_expr_of_sir_value (v : Sir.value) : expr =
           BinOp
             { left = left_expr; op = Config.map_bin_op op; right = right_expr })
   | Sir.VIfThenElse (cond, then_val, else_val) ->
-      IfExp (ast_expr_of_sir_value cond, ast_expr_of_sir_value then_val, ast_expr_of_sir_value else_val)
+      IfExp
+        ( ast_expr_of_sir_value cond,
+          ast_expr_of_sir_value then_val,
+          ast_expr_of_sir_value else_val )
   | Sir.VMap { default; entries } ->
       let key_val_pairs =
-        List.map (fun (k, v) -> (ast_expr_of_sir_value k, ast_expr_of_sir_value v)) entries
+        List.map
+          (fun (k, v) -> (ast_expr_of_sir_value k, ast_expr_of_sir_value v))
+          entries
       in
       mk_defaultdict_value (ast_expr_of_sir_value default) key_val_pairs
+
+(*
+Create a test function definition statement
+
+Args:
+  test_decl:
+    - test_name: The name of the test function
+    - f_name: The name of the function to be tested
+    - docstr: The docstring of the test function
+    - f_args: The arguments of the function to be tested
+    - output_type_annot: The type annotation of the output of the function to be tested
+    - expected: The expected value of the output of the function to be tested
+
+Example:
+```python
+def name():
+    """docstr"""
+    result = f(x)
+    expected = ...
+    assert result == expected
+```
+*)
+let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
+  let ( (test_name : string),
+        (f_name : string),
+        (docstr : string),
+        (f_args : (string * expr * expr) list),
+        (output_type_annot : expr),
+        (expected : expr) ) =
+    let f_args =
+      test_decl.f_args
+      |> List.map (fun (name, ty, tm) ->
+             (name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm))
+    in
+    let (output_type_annot, expected) = test_decl.f_output in
+    ( test_decl.name,
+      test_decl.f_name,
+      test_decl.docstr,
+      f_args,
+      output_type_annot |> annot_of_sir_type_expr,
+      expected |> ast_expr_of_sir_value )
+  in
+  let call_keywords : keyword list =
+    List.map (fun (k, _, v) -> { arg = Some k; value = v }) f_args
+  in
+  (* `f(x)` *)
+  let call : expr =
+    Call
+      {
+        func = Name { id = f_name; ctx = mk_ctx () };
+        args = [];
+        keywords = call_keywords;
+      }
+  in
+  (* `result = f(x)` *)
+  let assign_call_result : stmt =
+    mk_assign
+      (Name { id = "result"; ctx = mk_ctx () })
+      (Some output_type_annot) call
+  in
+  (* `expected = ...` *)
+  let assign_expected : stmt =
+    mk_assign
+      (Name { id = "expected"; ctx = mk_ctx () })
+      (Some output_type_annot) expected
+  in
+
+  (* `assert result == expected` *)
+  let assert_eq : stmt =
+    mk_assert_eq
+      (Name { id = "result"; ctx = mk_ctx () })
+      (Name { id = "expected"; ctx = mk_ctx () })
+  in
+
+  let func_body =
+    [
+      ExprStmt { value = Constant { value = String docstr; kind = None } };
+      assign_call_result;
+      assign_expected;
+      assert_eq;
+    ]
+  in
+  FunctionDef
+    {
+      name = test_name;
+      args = empty_arguments ();
+      body = func_body;
+      decorator_list = [];
+      returns = None;
+      type_comment = None;
+      type_params = [];
+    }
