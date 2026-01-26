@@ -2,9 +2,7 @@
 
 open Common_
 open Printf
-
 module Sir = Semantic_ir.Types
-
 
 (** Parse a MIR term to Type expression and term expression.
 - Arg: Mir term
@@ -16,7 +14,7 @@ module Sir = Semantic_ir.Types
   - | Error of string
 *)
 let rec parse_term (term : Term.term) :
-    (Sir.type_expr option * Sir.value, string) result =
+    (Sir.type_expr * Sir.value, string) result =
   (* Dev note:
     A term has fields of:
       - view ((Term.t, Type.t) Term.view)
@@ -42,16 +40,16 @@ let rec parse_term (term : Term.term) :
   (* Constant *)
   | Term.Const const, _ -> (
       match const with
-      | Const_bool b -> Ok (Some (TBase "bool"), VConst (CBool b))
-      | Const_float f -> Ok (Some (TBase "float"), VConst (CFloat f))
+      | Const_bool b -> Ok (TBase "bool", VConst (CBool b))
+      | Const_float f -> Ok (TBase "float", VConst (CFloat f))
       | Const_q q ->
           let num = Q.num q in
           let den = Q.den q in
           (* Convert rational to float *)
           let float_val = Z.to_float num /. Z.to_float den in
-          Ok (Some (TBase "float"), VConst (CFloat float_val))
-      | Const_z z -> Ok (Some (TBase "int"), VConst (CInt (Z.to_int z)))
-      | Const_string s -> Ok (Some (TBase "str"), VConst (CString s))
+          Ok (TBase "float", VConst (CFloat float_val))
+      | Const_z z -> Ok (TBase "int", VConst (CInt (Z.to_int z)))
+      | Const_string s -> Ok (TBase "str", VConst (CString s))
       | c ->
           (* Uid and real_approx *)
           let msg = sprintf "unhandled const %s" (Imandrax_api.Const.show c) in
@@ -62,14 +60,9 @@ let rec parse_term (term : Term.term) :
         List.map (fun term -> parse_term term |> unwrap) terms
       in
       let type_annot_of_elems, term_of_elems = List.split parsed_elems in
-      let tuple_type =
-        type_annot_of_elems
-        |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
-      in
-      Ok (Some (TTuple tuple_type), Sir.VTuple term_of_elems)
+      Ok (TTuple type_annot_of_elems, Sir.VTuple term_of_elems)
   (* Record *)
-  | ( Term.Record { rows; rest = _ },
-      (ty : Type.t) ) ->
+  | Term.Record { rows; rest = _ }, (ty : Type.t) ->
       (* Get record type name from ty *)
       let ty_name =
         match ty.view with
@@ -82,12 +75,14 @@ let rec parse_term (term : Term.term) :
       let fields =
         rows
         |> List.map (fun (field_sym, term) ->
-               let field_name = (field_sym : Type.t Applied_symbol.t_poly).sym.id.name in
+               let field_name =
+                 (field_sym : Type.t Applied_symbol.t_poly).sym.id.name
+               in
                let _field_ty, field_val = parse_term term |> unwrap in
                (field_name, field_val))
       in
 
-      Ok (Some record_type, Sir.VRecord { type_name = ty_name; fields })
+      Ok (record_type, Sir.VRecord { type_name = ty_name; fields })
   (* Construct - LChar.t *)
   | ( Term.Construct
         {
@@ -122,7 +117,7 @@ let rec parse_term (term : Term.term) :
 
       (* Convert list of 8 bools to a char *)
       let char_val = char_of_bools bools in
-      Ok (Some (TBase "char"), Sir.VConst (Sir.CChar char_val))
+      Ok (TBase "char", Sir.VConst (Sir.CChar char_val))
   (* Construct - list *)
   | ( Term.Construct
         {
@@ -182,11 +177,12 @@ let rec parse_term (term : Term.term) :
                 | Sir.VList tail_elems -> Sir.VList (head :: tail_elems)
                 | _ ->
                     failwith
-                      "Never: tail of cons list should be a VList after parsing")
+                      "Never: tail of cons list should be a VList after parsing"
+                )
             | _ -> failwith "Never: more than 2 elements list for non-Nil")
       in
 
-      Ok (Some list_type, list_value)
+      Ok (list_type, list_value)
   (* Construct - other *)
   | ( Term.Construct
         {
@@ -198,9 +194,7 @@ let rec parse_term (term : Term.term) :
       (ty : Type.t) ) ->
       let variant_constr_name = construct.sym.id.name in
 
-      let variant_type, _type_vars =
-        type_expr_of_mir_ty_view_constr ty.view
-      in
+      let variant_type, _type_vars = type_expr_of_mir_ty_view_constr ty.view in
 
       let _constr_arg_type_annots, constr_arg_values =
         List.map (fun arg -> parse_term arg |> unwrap) construct_args
@@ -211,17 +205,18 @@ let rec parse_term (term : Term.term) :
         match variant_constr_name with
         (* map Option's None variant to CUnit *)
         | "None" -> Sir.VConst Sir.CUnit
-        | _ -> Sir.VConstruct { constructor = variant_constr_name; args = constr_arg_values }
+        | _ ->
+            Sir.VConstruct
+              { constructor = variant_constr_name; args = constr_arg_values }
       in
-      Ok (Some variant_type, value)
+      Ok (variant_type, value)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
       try
         (* Extract Map key and value type from ty *)
         let key_ty, val_ty =
           match ty.view with
           | Ty_view.Constr
-              ( { name = "Map.t"; _ },
-                ([ key_ty; val_ty ] : Type.t list) ) ->
+              ({ name = "Map.t"; _ }, ([ key_ty; val_ty ] : Type.t list)) ->
               let key_ty_expr, _ =
                 type_expr_of_mir_ty_view_constr key_ty.view
               in
@@ -332,7 +327,7 @@ let rec parse_term (term : Term.term) :
             }
         in
 
-        Ok (Some map_type, map_value)
+        Ok (map_type, map_value)
       with Early_return msg -> Error msg)
   | _, _ ->
       let msg = "case other than const, construct, or apply" in

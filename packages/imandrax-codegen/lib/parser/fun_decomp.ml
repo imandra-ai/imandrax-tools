@@ -136,21 +136,16 @@ let parse_fun_decomp (fun_decomp : Mir.Fun_decomp.t) : Sir.test_suite =
                List.map
                  (fun (arg_name, model) ->
                    let type_annot, term_expr = parse_term model |> unwrap in
-                   {
-                     name = arg_name;
-                     ty = type_annot |> CCOption.get_exn_or "Never";
-                     tm = term_expr;
-                   })
+                   { name = arg_name; ty = type_annot; tm = term_expr })
                  model_by_arg)
       in
 
       let ( (model_eval_type_annot_by_region : Sir.type_expr list),
             (model_eval_expr_by_region : Sir.value list) ) =
         model_eval_by_region
-        |> List.map (fun model_eval -> parse_term model_eval |> unwrap |> (
-          fun (type_annot_opt, term_expr) ->
-          (CCOption.get_exn_or "Never" type_annot_opt, term_expr)
-        ))
+        |> List.map (fun model_eval ->
+               parse_term model_eval |> unwrap
+               |> fun (type_annot_opt, term_expr) -> (type_annot_opt, term_expr))
         |> List.split
       in
 
