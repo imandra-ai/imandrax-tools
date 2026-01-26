@@ -12,9 +12,6 @@ module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
 module Sir = Semantic_ir
 
-(* TODO: this will be removed *)
-module Parser = Parser
-
 (* Model |-> applied symbol and term *)
 let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
     : Type.t Applied_symbol.t_poly * Term.term =
@@ -40,7 +37,7 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
     Ast.stmt =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
   let (sir_type_annot : Sir.type_expr), (sir_term_expr : Sir.value) =
-    match Parser.Term.parse_term term with
+    match Sir.Parser.Term.parse_term term with
     | Ok (type_annot, term_expr) -> (type_annot, term_expr)
     | Error msg -> failwith msg
   in
@@ -64,7 +61,7 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
 (** Parse a MIR Decl.t to corresponding AST statments for type declaration *)
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
-  match Parser.Decl.parse_decl decl with
+  match Sir.Parser.Decl.parse_decl decl with
   | Ok sir_type_decl ->
       let stmts = Transform.stmts_of_sir_type_decl sir_type_decl in
       Ok stmts
@@ -75,7 +72,7 @@ let parse_fun_decomp
     (test_format : [< `Dict | `Function ])
     (fun_decomp : Mir.Fun_decomp.t) : Ast.stmt list =
   let (test_suite : Sir.test_suite) =
-    Parser.Fun_decomp.parse_fun_decomp fun_decomp
+    Sir.Parser.Fun_decomp.parse_fun_decomp fun_decomp
   in
   match test_format with
   | `Function -> test_suite |> List.map Transform.test_func_def_of_test_decl

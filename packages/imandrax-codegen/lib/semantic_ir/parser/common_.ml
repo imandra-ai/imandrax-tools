@@ -11,7 +11,7 @@ module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
 
-module Sir = Semantic_ir
+module Sir = Types
 
 (* Utils
 ==================== *)

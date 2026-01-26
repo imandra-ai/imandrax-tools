@@ -5,7 +5,7 @@ let parse_term = Term.parse_term
 open Common_
 open Printf
 open CCFun
-module Sir = Semantic_ir
+module Sir = Types
 
 module Docstring_utils : sig
   val format_invariant_constraints_as_yaml_string :
