@@ -33,6 +33,10 @@ let zip5 l1 l2 l3 l4 l5 =
   List.combine l1 l2 |> List.combine l3 |> List.combine l4 |> List.combine l5
   |> List.map (fun (e, (d, (c, (a, b)))) -> (a, b, c, d, e))
 
+let zip6 l1 l2 l3 l4 l5 l6 =
+  List.combine l1 l2 |> List.combine l3 |> List.combine l4 |> List.combine l5 |> List.combine l6
+  |> List.map (fun (f, (e, (d, (c, (a, b))))) -> (a, b, c, d, e, f))
+
 (* [x, y, z] -> ([x; y], z) *)
 let split_last (xs : 'a list) : 'a list * 'a =
   match List.rev xs with

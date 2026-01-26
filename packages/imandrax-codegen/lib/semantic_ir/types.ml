@@ -2,6 +2,9 @@
   - lightweight, intuitive
 *)
 
+(* Type
+==================== *)
+
 (** Type expressions *)
 type type_expr =
   | TBase of string  (** Base type: int, bool, MyType *)
@@ -74,7 +77,7 @@ type bin_op =
   | Or  (** Logical or: || *)
 [@@deriving show, eq, yojson]
 
-(* Values
+(* Value
 ==================== *)
 
 (** Values *)
@@ -98,3 +101,18 @@ type value =
       entries : (value * value) list;  (** Map entries: (key, value) pairs *)
     }
 [@@deriving show, eq, yojson]
+
+(* Test declaration
+==================== *)
+
+(** One test *)
+type test_decl = {
+  name : string;
+  f_name : string;
+  f_args : (string * type_expr * value) list;
+  f_output : type_expr * value;
+  docstr : string;
+}
+
+(** Test suite *)
+type test_suite = test_decl list
