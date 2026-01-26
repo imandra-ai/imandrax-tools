@@ -2,7 +2,6 @@
 
 open Common_
 open Printf
-module Sir = Semantic_ir.Types
 
 (** Parse a MIR term to Type expression and term expression.
 - Arg: Mir term

@@ -1,7 +1,5 @@
 open Common_
 
-module Sir = Semantic_ir.Types
-
 (** Parse MIR Decl.t to SIR type declaration
 
 Arg:
@@ -13,7 +11,7 @@ Return:
     - Error if decl is not a Ty, i.e., it's Fun, Theorem, Rule_spec, or Verify
 *)
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
-    (Semantic_ir.Types.type_decl, string) result =
+    (Sir.type_decl, string) result =
   match decl with
   | Ty (ty_view_def : Type.t Ty_view.def_poly) ->
       let {
@@ -48,15 +46,15 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
 
              let (fields : Sir.variant_field list) = List.map2 (fun name ty ->
                match labels with
-               | None -> Semantic_ir.Types.Positional ty
-               | Some _ -> Semantic_ir.Types.Named (name, ty)
+               | None -> Sir.Positional ty
+               | Some _ -> Sir.Named (name, ty)
              ) field_names field_types in
 
-             { Semantic_ir.Types.vc_name = constructor_name;
+             { Sir.vc_name = constructor_name;
                vc_fields = fields }
            ) adt_rows in
 
-           Ok (Semantic_ir.Types.Variant {
+           Ok (Sir.Variant {
              name = decl_name;
              type_params;
              constructors;
@@ -69,11 +67,11 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
              let Type.{ view = arg_ty_view; generation = _ } = ty in
              let ty_expr, _params = type_expr_of_mir_ty_view_constr arg_ty_view in
 
-             { Semantic_ir.Types.rf_name = field_name;
+             { Sir.rf_name = field_name;
                rf_type = ty_expr }
            ) rec_rows in
 
-           Ok (Semantic_ir.Types.Record {
+           Ok (Sir.Record {
              name = decl_name;
              type_params;
              fields;

@@ -10,7 +10,7 @@ module Term = Imandrax_api_mir.Term
 module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
-module Sir = Semantic_ir.Types
+module Sir = Semantic_ir
 
 (* TODO: this will be removed *)
 module Parser = Parser

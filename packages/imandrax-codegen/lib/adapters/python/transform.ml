@@ -2,7 +2,7 @@
 
 (* Use Python adapter's own AST definitions *)
 open Ast
-module Sir = Semantic_ir.Types
+module Sir = Semantic_ir
 
 (** Convert SIR type_expr to Ast.type_expr (for mk_dataclass_def) *)
 let rec ast_type_expr_of_sir (te : Sir.type_expr) : Ast.type_expr =

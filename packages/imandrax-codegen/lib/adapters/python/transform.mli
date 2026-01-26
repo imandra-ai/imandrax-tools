@@ -1,7 +1,7 @@
 (** Transform Semantic IR to Python AST *)
 
 open Ast
-module Sir = Semantic_ir.Types
+module Sir = Semantic_ir
 
 (* TODO: is this really needed to be exposed? *)
 val annot_of_sir_type_expr : Sir.type_expr -> Ast.expr
