@@ -24,7 +24,7 @@ type config = {
   output: output_target;
   format: file_format;
   mode: parse_mode;
-  output_as_dict: bool;
+  test_format: [`Function | `Dict];
 }
 
 (* Helper functions *)
@@ -96,21 +96,22 @@ let parse_input config =
   | JSON -> parse_json_input config.mode config.input use_stdout
 
 (** Convert parsed input to Python AST statements. *)
-let convert_to_ast parsed_input use_stdout output_as_dict =
+let convert_to_ast parsed_input use_stdout test_format : Python_adapter.Ast.stmt list =
+(* let convert_to_ast parsed_input use_stdout output_as_dict : Codegen.Ast_types.stmt list = *)
   log use_stdout "Converting to Python AST...\n";
   match parsed_input with
-  | `Model model -> Codegen.Parse.parse_model model
-  | `FunDecomp fun_decomp -> Codegen.Parse.parse_fun_decomp ~output_as_dict fun_decomp
+  | `Model model -> [Python_adapter.Lib.parse_model model]
+  | `FunDecomp fun_decomp -> Python_adapter.Lib.parse_fun_decomp test_format fun_decomp
   | `Decl decl -> (
-    let parsed_decl = Codegen.Parse.parse_decl decl in
+    let parsed_decl = Python_adapter.Lib.parse_decl decl in
     match parsed_decl with
     | Ok ((stmts)) -> stmts
     | Error msg -> failwith msg
   )
 
 (** Write AST statements as JSON to stdout or a file. *)
-let write_output output stmts =
-  let json_out = `List (List.map Codegen.Ast.stmt_to_yojson stmts) in
+let write_output (output : output_target) (stmts : Python_adapter.Ast.stmt list) : unit =
+  let json_out = `List (List.map Python_adapter.Ast.stmt_to_yojson stmts) in
   match output with
   | Stdout ->
     Yojson.Safe.to_channel stdout json_out;
@@ -225,10 +226,10 @@ let () =
     | None -> "-"
     | Some f -> f
   in
-  let output_as_dict = !output_as_dict in
+  let test_format = if !output_as_dict then `Dict else `Function in
 
   (* Validate --as-dict only used with fun-decomp mode *)
-  if output_as_dict && mode = Model then (
+  if !output_as_dict && mode = Model then (
     eprintf "Warning: --as-dict flag is ignored for model mode\n"
   );
 
@@ -259,7 +260,7 @@ let () =
       exit 1
   in
 
-  let config = { input; output; format; mode; output_as_dict } in
+  let config = { input; output; format; mode; test_format } in
 
   (* Log configuration *)
   let use_stdout =
@@ -280,7 +281,7 @@ let () =
     let parsed = parse_input config in
     log use_stdout "Successfully parsed input\n";
 
-    let stmts = convert_to_ast parsed use_stdout config.output_as_dict in
+    let stmts = convert_to_ast parsed use_stdout config.test_format in
     log use_stdout "Generated %d statements\n" (List.length stmts);
 
     write_output output stmts

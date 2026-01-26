@@ -6,6 +6,7 @@
  (modules parse)
  (libraries
   imandrax_codegen
+  imandrax-codegen.adapters.python
   imandrax-api
   imandrax-api.mir
   imandrax-api.artifact
