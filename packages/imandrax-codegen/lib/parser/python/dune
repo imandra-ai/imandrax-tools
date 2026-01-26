@@ -1,8 +1,10 @@
 (library
  (name py_parser)
  (libraries
-  semantic_ir containers
+  semantic_ir
+  containers
   parser
+  python_adapter
  )
  (inline_tests)
  (flags

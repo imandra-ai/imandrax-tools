@@ -1,0 +1,356 @@
+open Common_
+module Sir = Semantic_ir.Types
+
+(** Parse a MIR term to SIR type expression and term expression.
+- Arg: Mir term
+
+- Return:
+  - | Ok of:
+    - type-annotation (expression option)
+    - expression (term)
+  - | Error of string
+*)
+let rec parse_term (term : Term.term) :
+    (Sir.type_expr option * Sir.value, string) result =
+  (* Dev note:
+    A term has fields of:
+      - view ((Term.t, Type.t) Term.view)
+      - ty (Type.t)
+
+    (Term.t, Type.t) Term.view is a variant of
+    - | Const of Const.t
+    - | Apply of { f : Term.t; l : Term.t list }
+    - | Construct of {
+      - c: Type.t Applied_symbol.t_poly
+      - args: Term.t list
+      - labels: Uid.t list option
+      - }
+    - | Tuple of { l : Term.t list }
+    - | Record of {
+      - rows: (Type.t Applied_symbol.t_poly * Term.t) list
+      - rest: Term.t option
+      - }
+    *)
+  let debug = true in
+
+  match ((term.view : (Term.term, Type.t) Term.view), (term.ty : Type.t)) with
+  (* Constant *)
+  | Term.Const const, _ -> (
+      match const with
+      | Const_bool b -> Ok (Some (TBase "bool"), VConst (CBool b))
+      | Const_float f -> Ok (Some (TBase "float"), VConst (CFloat f))
+      | Const_q q ->
+          let num = Q.num q in
+          let den = Q.den q in
+          (* printf "%s/%s" (Z.to_string num) (Z.to_string den); *)
+          let open Ast in
+          (* Should we use Decimal instead? *)
+          Ok
+            ( Some (mk_name_expr "float"),
+              Constant
+                {
+                  value = Float (Z.to_float num /. Z.to_float den);
+                  kind = None;
+                } )
+      | Const_z z ->
+          let open Ast in
+          Ok
+            ( Some (mk_name_expr "int"),
+              Ast.Constant { value = Int (Z.to_int z); kind = None } )
+      | Const_string s ->
+          let open Ast in
+          Ok
+            ( Some (mk_name_expr "str"),
+              Constant { value = String s; kind = None } )
+      | c ->
+          (* Uid and real_approx *)
+          let msg = sprintf "unhandled const %s" (Imandrax_api.Const.show c) in
+          Error msg)
+  (* Tuple *)
+  | Term.Tuple { l = (terms : Term.term list) }, (_ty : Type.t) ->
+      let parsed_elems =
+        List.map (fun term -> parse_term term |> unwrap) terms
+      in
+      let type_annot_of_elems, term_of_elems = List.split parsed_elems in
+      let tuple_annot =
+        type_annot_of_elems
+        |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
+        |> Ast.tuple_annot_of_annots
+      in
+      Ok (Some tuple_annot, Ast.tuple_of_exprs term_of_elems)
+  (* Record *)
+  | ( Term.Record
+        {
+          rows : (Type.t Applied_symbol.t_poly * Term.term) list;
+          rest = (_ : Term.term option);
+        },
+      (ty : Type.t) ) ->
+      (* Get dataclass name (constructor) from ty *)
+      let ty_name =
+        match ty.view with
+        | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
+        | _ -> failwith "Never: ty should be a constr"
+      in
+      let dataclass_type_annot =
+        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
+        Ast.type_annot_of_type_expr types
+      in
+
+      (* Extract values from rows, which will be used as arguments to the dataclass constructor *)
+      let row_val_exprs =
+        rows |> List.map snd
+        |> List.map (fun term -> term |> parse_term |> unwrap |> snd)
+      in
+
+      Ok
+        ( Some dataclass_type_annot,
+          Ast.mk_dataclass_value ty_name ~args:row_val_exprs ~kwargs:[] )
+  (* Construct - LChar.t *)
+  | ( Term.Construct
+        {
+          c = (_ : Type.t Applied_symbol.t_poly);
+          args = (construct_args : Term.term list);
+          labels = _;
+        },
+      {
+        view =
+          Ty_view.Constr
+            (Uid.{ name = "LChar.t"; view = _ }, ty_view_constr_args);
+        _;
+      } ) ->
+      if not debug then ()
+      else if List.length ty_view_constr_args <> 0 then
+        failwith "Never: LChar.t should have no args"
+      else ();
+
+      let _bool_type_annot_s, bool_terms =
+        List.map (fun arg -> parse_term arg |> unwrap) construct_args
+        |> List.split
+      in
+
+      let char_expr = Ast.char_expr_of_bool_list_expr bool_terms in
+      (* NOTE: Python has no char type, so we use str *)
+      Ok (Some (Ast.mk_name_expr "str"), char_expr)
+  (* Construct - list *)
+  | ( Term.Construct
+        {
+          c = (_ : Type.t Applied_symbol.t_poly);
+          args = (construct_args : Term.term list);
+          labels = _;
+        },
+      {
+        view =
+          Ty_view.Constr (Uid.{ name = "list"; view = _ }, ty_view_constr_args);
+        _;
+      } ) ->
+      (* For empty list, the construct arg is empty.
+      For non-empty list, the construct arg has two terms, with the first term
+      being the head and the second term being the tail (existing list).
+    *)
+      (if not debug then ()
+       else if List.length ty_view_constr_args <> 1 then
+         let args_str =
+           CCString.concat ", " (List.map Type.show ty_view_constr_args)
+         in
+         let msg =
+           sprintf "Never: list should have only 1 arg, got %d: %s"
+             (List.length ty_view_constr_args)
+             args_str
+         in
+         failwith msg);
+
+      let type_annot_of_elems, term_of_elems =
+        match construct_args with
+        | [] ->
+            (* Nil *)
+            (None, Ast.empty_list_expr ())
+        | _ -> (
+            let type_annot_of_elems, term_of_elems =
+              List.map (fun arg -> parse_term arg |> unwrap) construct_args
+              |> List.split
+            in
+            match term_of_elems with
+            | [] -> failwith "Never: empty constuct arg for non-Nil"
+            | [ _ ] -> failwith "Never: single element list for non-Nil"
+            | [ head; tail ] ->
+                let type_annot_of_elem =
+                  type_annot_of_elems |> List.hd
+                  |> CCOption.get_exn_or
+                       "No type annotation for the first list element"
+                in
+                let type_annot =
+                  Ast.(
+                    Subscript
+                      {
+                        value = Name { id = "list"; ctx = mk_ctx () };
+                        slice = type_annot_of_elem;
+                        ctx = mk_ctx ();
+                      })
+                in
+
+                (Some type_annot, Ast.cons_list_expr head tail)
+                (* let n_elem = CCList.length elems in
+          let except_last = CCList.take (n_elem - 1) elems in
+          Some (Ast.list_of_exprs except_last) *)
+            | _ -> failwith "Never: more than 2 elements list for non-Nil")
+      in
+
+      Ok (type_annot_of_elems, term_of_elems)
+  (* Construct - other *)
+  | ( Term.Construct
+        {
+          c = (construct : Type.t Applied_symbol.t_poly);
+          args = (construct_args : Term.term list);
+          (* TODO: labels are for inline records; handle them *)
+          labels = _;
+        },
+      (ty : Type.t) ) ->
+      let variant_constr_name = construct.sym.id.name in
+
+      let (dataclass_type_annot : Ast.expr) =
+        parse_constr_to_type_annot ty.view |> fun (types, _type_vars) ->
+        Ast.type_annot_of_type_expr types
+      in
+
+      let _constr_arg_type_annot_lists, constr_arg_terms =
+        List.map (fun arg -> parse_term arg |> unwrap) construct_args
+        |> List.split
+      in
+
+      let term =
+        match variant_constr_name with
+        (* map Option's None variant to Unit, which will be Python's None *)
+        | "None" -> Ast.Constant { value = Unit; kind = None }
+        | _ ->
+            Ast.mk_dataclass_value variant_constr_name ~args:constr_arg_terms
+              ~kwargs:[]
+      in
+      Ok (Some dataclass_type_annot, term)
+  | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
+      try
+        (* Extract Map key and value type from ty *)
+        let key_ty_name, val_ty_name =
+          match ty.view with
+          | Ty_view.Constr
+              ( { name = "Map.t"; _ },
+                ([
+                   {
+                     view = Ty_view.Constr (Uid.{ name = key_ty_name; _ }, _);
+                     _;
+                   };
+                   {
+                     view = Ty_view.Constr (Uid.{ name = val_ty_name; _ }, _);
+                     _;
+                   };
+                 ] :
+                  Type.t list) ) ->
+              (key_ty_name, val_ty_name)
+          | _ -> raise (Early_return "Non-map Apply term view")
+        in
+
+        (* printf "key_ty_name: %s\n" key_ty_name;
+       printf "val_ty_name: %s\n" val_ty_name; *)
+        let type_annot =
+          Ast.mk_defaultdict_type_annotation key_ty_name val_ty_name
+        in
+
+        (* Parse the [l] of Map.add'
+        - [Map.add' m k v] adds the pair (k, v) to map m
+        - it should be exactly 3 terms
+        - if the first term is `Map.const`, it contains the default value
+        - if the first term is `Map.add'` again, we recursively call parsing
+
+        Return:
+          - the key-value pairs that have been parsed so far
+          - the default value
+       *)
+        let rec parse_map_term_view
+            (f : Term.term)
+            (l : Term.term list)
+            (accu_key_val_pairs : (Term.term * Term.term) list) :
+            (Term.term * Term.term) list * Term.term =
+          let key_val_pairs, default =
+            match f with
+            | ({
+                 view =
+                   Term.Sym
+                     Applied_symbol.
+                       { sym = { id = Uid.{ name = "Map.add'"; _ }; _ }; _ };
+                 _;
+               } :
+                Term.term) ->
+                (* f is Map.add', l should have exactly 3 terms
+               - the first term, which should have view of Apply, goes to next call
+               - the second and third terms go to the key_val_pairs
+             *)
+                let key_val_pairs, default =
+                  match l with
+                  | [ inner_l1; inner_l2; inner_l3 ] ->
+                      let next_accu =
+                        accu_key_val_pairs @ [ (inner_l2, inner_l3) ]
+                      in
+                      let f_, l_ =
+                        match inner_l1.view with
+                        | Term.Apply { f; l; _ } -> (f, l)
+                        | _ ->
+                            failwith
+                              "Never: Map.add' first term should be Apply"
+                      in
+                      parse_map_term_view f_ l_ next_accu
+                  | _ ->
+                      let msg =
+                        sprintf
+                          "Never: Map.add' should have exactly 3 terms in the \
+                           l, but got %d"
+                          (List.length l)
+                      in
+                      failwith msg
+                in
+                (key_val_pairs, default)
+            | ({
+                 view =
+                   Term.Sym
+                     Applied_symbol.
+                       { sym = { id = Uid.{ name = "Map.const"; _ }; _ }; _ };
+                 _;
+               } :
+                Term.term) ->
+                (* f is Map.const, l should have only one term, which is default *)
+                let default_term =
+                  match l with
+                  | [ default_term ] -> default_term
+                  | _ ->
+                      failwith
+                        "Never: Map.const should have exactly 1 term in the l"
+                in
+                (accu_key_val_pairs, default_term)
+            | _ -> failwith "Never: Map.add' or Map.const not found"
+          in
+          (key_val_pairs, default)
+        in
+        let key_val_pairs, default = parse_map_term_view f l [] in
+
+        let _default_val_type_annot, default_val_expr =
+          default |> parse_term |> unwrap
+        in
+
+        let key_terms, val_terms = key_val_pairs |> List.rev |> List.split in
+
+        let _key_type_annots, key_exprs =
+          key_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
+        in
+
+        let _val_type_annots, val_exprs =
+          val_terms |> List.map (fun k -> parse_term k |> unwrap) |> List.split
+        in
+
+        let defaultdict_expr =
+          Ast.mk_defaultdict_value default_val_expr
+            (CCList.combine key_exprs val_exprs)
+        in
+
+        Ok (Some type_annot, defaultdict_expr)
+      with Early_return msg -> Error msg)
+  | _, _ ->
+      let msg = "case other than const, construct, or apply" in
+      Error msg
