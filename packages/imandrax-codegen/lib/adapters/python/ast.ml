@@ -146,11 +146,14 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
 *)
 type type_expr = Base of string | Generic of string * type_expr list
 
-let rec map_type_expr (ty_expr : type_expr) ~(f : string -> string) : type_expr =
+let rec map_type_expr (ty_expr : type_expr) ~(f : string -> string) : type_expr
+    =
   match ty_expr with
   | Base type_name -> Base (f type_name)
   | Generic (type_name, type_args) ->
-      let (type_args : type_expr list) = List.map (map_type_expr ~f) type_args in
+      let (type_args : type_expr list) =
+        List.map (map_type_expr ~f) type_args
+      in
       Generic (f type_name, type_args)
 
 let rec type_annot_of_type_expr (ty_expr : type_expr) : expr =
@@ -163,10 +166,11 @@ let rec type_annot_of_type_expr (ty_expr : type_expr) : expr =
       Subscript
         {
           value = Name { id = type_name; ctx = mk_ctx () };
-          slice = (match type_arg_exprs with
+          slice =
+            (match type_arg_exprs with
             | [] -> failwith "Never: empty type arg exprs"
-            | [one] -> one
-            |  _ -> tuple_of_exprs type_arg_exprs);
+            | [ one ] -> one
+            | _ -> tuple_of_exprs type_arg_exprs);
           ctx = mk_ctx ();
         }
 

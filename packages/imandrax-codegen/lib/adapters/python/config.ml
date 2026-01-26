@@ -3,18 +3,18 @@
 module Sir = Semantic_ir
 
 (** Mapping from language-neutral type names to Python type names *)
-let type_name_mapping = [
-  ("int", "int");
-  ("bool", "bool");
-  ("string", "str");
-  ("real", "float");
-  ("unit", "None");
-]
+let type_name_mapping =
+  [
+    ("int", "int");
+    ("bool", "bool");
+    ("string", "str");
+    ("real", "float");
+    ("unit", "None");
+  ]
 
 (** Map a SIR type name to a Python type name *)
 let map_type_name name =
-  List.assoc_opt name type_name_mapping
-  |> Option.value ~default:name
+  List.assoc_opt name type_name_mapping |> Option.value ~default:name
 
 (** Binary operator mapping from SIR to Python *)
 let map_bin_op (op : Sir.Types.bin_op) : Ast_types.operator =
@@ -35,7 +35,4 @@ let map_cmp_op (op : Sir.Types.bin_op) : Ast_types.cmpop =
 
 (** Boolean operator mapping *)
 let map_bool_op (op : Sir.Types.bin_op) : Ast_types.bool_op =
-  match op with
-  | And -> And
-  | Or -> Or
-  | _ -> failwith "Not a boolean operator"
+  match op with And -> And | Or -> Or | _ -> failwith "Not a boolean operator"

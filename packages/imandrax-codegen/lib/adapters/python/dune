@@ -1,9 +1,8 @@
 (library
  (name python_adapter)
- (libraries
-  semantic_ir
-  containers)
+ (libraries semantic_ir containers)
  (inline_tests)
- (flags (:standard -w -33))
+ (flags
+  (:standard -w -33))
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq ppx_deriving_yojson)))
