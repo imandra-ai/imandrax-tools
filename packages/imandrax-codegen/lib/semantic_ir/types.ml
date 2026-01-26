@@ -1,4 +1,6 @@
-(** Language-neutral Semantic IR types for representing code-generation-related ImandraX MIR *)
+(** Language-neutral Semantic IR types for representing code-generation-related ImandraX MIR
+  - lightweight, intuitive
+*)
 
 (** Type expressions *)
 type type_expr =
@@ -16,19 +18,19 @@ type variant_field =
   | Named of string * type_expr  (** Named field: name: type *)
 [@@deriving show, eq, yojson]
 
-(** Variant constructor definition *)
 type variant_constructor = {
   vc_name : string;  (** Constructor name *)
   vc_fields : variant_field list;  (** Constructor fields *)
 }
 [@@deriving show, eq, yojson]
+(** Variant constructor definition *)
 
-(** Record field definition *)
 type record_field = {
   rf_name : string;  (** Field name *)
   rf_type : type_expr;  (** Field type *)
 }
 [@@deriving show, eq, yojson]
+(** Record field definition *)
 
 (** Type declarations *)
 type type_decl =
@@ -71,6 +73,9 @@ type bin_op =
   | And  (** Logical and: && *)
   | Or  (** Logical or: || *)
 [@@deriving show, eq, yojson]
+
+(* Values
+==================== *)
 
 (** Values *)
 type value =
