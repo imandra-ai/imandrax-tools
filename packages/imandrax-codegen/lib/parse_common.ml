@@ -35,48 +35,6 @@ let unwrap : ('a, 'b) result -> 'a = function
   | Ok x -> x
   | Error msg -> failwith msg
 
-(** Parse Constr variant of Ty_view.view to type annotation
-
-Return:
-  0: a chained sequence of applied types
-  1: generic type parameters used
-*)
-let parse_constr_to_type_annot_ (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
-    string list * Uid.t list =
-  let rec helper
-      (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
-      (ty_acc : string list)
-      (params_acc : Uid.t list) : string list * Uid.t list =
-    match ty_view with
-    | Constr ((constr_uid : Uid.t), (constr_args : Type.t list)) -> (
-        let constr_name = constr_uid.name in
-        match constr_args with
-        | [] -> (constr_name :: ty_acc, params_acc)
-        | [ next_ty ] ->
-            let next_view = next_ty.view in
-            helper next_view (constr_name :: ty_acc) params_acc
-        | _next_ty :: _next_tys ->
-            List.iter (fun t -> print_endline (Type.show t)) constr_args;
-            failwith
-              "Never(parse_constr_to_type_annot): expected Constr with 0 or 1 \
-               args")
-    | Var (var_uid : Uid.t) ->
-        let type_var_name = var_uid.name in
-        (type_var_name :: ty_acc, var_uid :: params_acc)
-    | _ -> failwith "parse_constr_to_type_annot: expected Constr or Var"
-  in
-
-  let ty_acc, params_acc = helper ty_view [] [] in
-  (* Replace with python names *)
-  let ty_acc_py =
-    ty_acc
-    |> List.map (fun (caml_type : string) : string ->
-           CCList.assoc_opt ~eq:String.equal caml_type
-             Ast.ty_view_constr_name_mapping
-           |> Option.value ~default:caml_type)
-  in
-  (List.rev ty_acc_py, params_acc)
-
 type type_expr = Ast.type_expr
 
 (** Parse Constr variant of Ty_view.view to type annotation
@@ -128,7 +86,7 @@ let parse_constr_to_type_annot (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
       0: Semantic IR type expression
       1: generic type parameters used (as strings, not UIDs)
 *)
-let parse_constr_to_semantic_type (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
+let parse_constr_to_sir_type_expr (ty_view : (unit, Uid.t, Type.t) Ty_view.view) :
     Sir.Types.type_expr * string list =
   let rec helper
       (ty_view : (unit, Uid.t, Type.t) Ty_view.view)

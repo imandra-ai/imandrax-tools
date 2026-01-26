@@ -163,7 +163,7 @@ let parse_decl_to_semantic (decl : (Term.t, Type.t) Decl.t_poly) :
 
              let field_types = List.map (fun (arg : Type.t) ->
                let Type.{ view = arg_ty_view; generation = _ } = arg in
-               let ty_expr, _params = parse_constr_to_semantic_type arg_ty_view in
+               let ty_expr, _params = parse_constr_to_sir_type_expr arg_ty_view in
                ty_expr
              ) args in
 
@@ -188,7 +188,7 @@ let parse_decl_to_semantic (decl : (Term.t, Type.t) Decl.t_poly) :
              let Ty_view.{ f : Uid.t; ty : Type.t; doc = _ } = rec_row in
              let field_name = f.name in
              let Type.{ view = arg_ty_view; generation = _ } = ty in
-             let ty_expr, _params = parse_constr_to_semantic_type arg_ty_view in
+             let ty_expr, _params = parse_constr_to_sir_type_expr arg_ty_view in
 
              { Semantic_ir.Types.rf_name = field_name;
                rf_type = ty_expr }
