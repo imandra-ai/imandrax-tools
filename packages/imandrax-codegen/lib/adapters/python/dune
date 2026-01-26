@@ -1,6 +1,12 @@
 (library
  (name python_adapter)
- (libraries semantic_ir containers)
+ (libraries
+  semantic_ir
+  parser
+  containers
+  imandrax-api
+  imandrax-api.artifact
+  imandrax-api.mir)
  (inline_tests)
  (flags
   (:standard -w -33))

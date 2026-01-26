@@ -3,7 +3,7 @@
 module Sir = Semantic_ir
 
 (** Mapping from language-neutral type names to Python type names *)
-let type_name_mapping =
+let (type_name_mapping : (string * string) list) =
   [
     ("int", "int");
     ("bool", "bool");
@@ -13,11 +13,11 @@ let type_name_mapping =
   ]
 
 (** Map a SIR type name to a Python type name *)
-let map_type_name name =
+let map_type_name (name : string) : string =
   List.assoc_opt name type_name_mapping |> Option.value ~default:name
 
 (** Binary operator mapping from SIR to Python *)
-let map_bin_op (op : Sir.Types.bin_op) : Ast_types.operator =
+let map_bin_op (op : Sir.Types.bin_op) : Ast.operator =
   match op with
   | Add -> Add
   | Sub -> Sub
@@ -26,7 +26,7 @@ let map_bin_op (op : Sir.Types.bin_op) : Ast_types.operator =
   | _ -> failwith "Unsupported binary operator"
 
 (** Comparison operator mapping *)
-let map_cmp_op (op : Sir.Types.bin_op) : Ast_types.cmpop =
+let map_cmp_op (op : Sir.Types.bin_op) : Ast.cmpop =
   match op with
   | Eq -> Eq
   | Lt -> Lt
@@ -34,5 +34,5 @@ let map_cmp_op (op : Sir.Types.bin_op) : Ast_types.cmpop =
   | _ -> failwith "Not a comparison operator"
 
 (** Boolean operator mapping *)
-let map_bool_op (op : Sir.Types.bin_op) : Ast_types.bool_op =
+let map_bool_op (op : Sir.Types.bin_op) : Ast.bool_op =
   match op with And -> And | Or -> Or | _ -> failwith "Not a boolean operator"

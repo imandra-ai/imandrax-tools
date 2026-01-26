@@ -1,3 +1,5 @@
+(** Parser for transforming MIR terms to semantic IR *)
+
 open Common_
 open Printf
 
