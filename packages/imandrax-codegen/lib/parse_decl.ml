@@ -132,7 +132,7 @@ let parse_adt_row_to_dataclass_def (adt_row : (Uid.t, Type.t) Ty_view.adt_row) :
 
   (ast_stmt_dataclass_def, ast_expr_dataclass_annot)
 
-(** NEW: Parse declaration to Semantic IR (for refactored path) *)
+(** NEW: Parse declaration to Semantic IR *)
 let parse_decl_to_semantic (decl : (Term.t, Type.t) Decl.t_poly) :
     (Semantic_ir.Types.type_decl, string) result =
   match decl with
@@ -204,7 +204,7 @@ let parse_decl_to_semantic (decl : (Term.t, Type.t) Decl.t_poly) :
   | Fun _ -> Error "WIP: Fun"
   | _ -> Error "parse_decl_to_semantic: expected Ty | Fun"
 
-(** OLD: Parse declaration to Python AST (for backward compatibility) *)
+(** OLD: Parse declaration to Python AST *)
 let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
     (Ast.stmt list, string) result =
   match decl with

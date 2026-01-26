@@ -6,7 +6,7 @@ open Ast
 module Sir = Semantic_ir
 
 (** Convert SIR type_expr to Ast.type_expr (for mk_dataclass_def) *)
-let rec semantic_type_to_ast_type (te : Sir.Types.type_expr) : Ast.type_expr =
+let rec ast_type_expr_of_sir_type_expr (te : Sir.Types.type_expr) : Ast.type_expr =
   match te with
   | Sir.Types.TBase name -> Ast.Base (Config.map_type_name name)
   | Sir.Types.TVar name -> Ast.Base name
@@ -14,19 +14,19 @@ let rec semantic_type_to_ast_type (te : Sir.Types.type_expr) : Ast.type_expr =
       let mapped_name = Config.map_type_name name in
       match args with
       | [] -> Ast.Base mapped_name
-      | _ -> Ast.Generic (mapped_name, List.map semantic_type_to_ast_type args))
+      | _ -> Ast.Generic (mapped_name, List.map ast_type_expr_of_sir_type_expr args))
   | Sir.Types.TTuple exprs ->
-      Ast.Generic ("tuple", List.map semantic_type_to_ast_type exprs)
+      Ast.Generic ("tuple", List.map ast_type_expr_of_sir_type_expr exprs)
   | Sir.Types.TArrow (arg, ret) ->
       Ast.Generic
         ( "Callable",
           [
-            Ast.Generic ("list", [ semantic_type_to_ast_type arg ]);
-            semantic_type_to_ast_type ret;
+            Ast.Generic ("list", [ ast_type_expr_of_sir_type_expr arg ]);
+            ast_type_expr_of_sir_type_expr ret;
           ] )
 
 (** Convert SIR type_expr to Python type annotation *)
-let rec type_expr_to_annotation (te : Sir.Types.type_expr) : expr =
+let rec annot_of_sir_type_expr (te : Sir.Types.type_expr) : expr =
   match te with
   | Sir.Types.TBase name -> mk_name_expr (Config.map_type_name name)
   | Sir.Types.TVar name -> mk_name_expr name
@@ -38,18 +38,18 @@ let rec type_expr_to_annotation (te : Sir.Types.type_expr) : expr =
           Subscript
             {
               value = mk_name_expr mapped_name;
-              slice = type_expr_to_annotation single;
+              slice = annot_of_sir_type_expr single;
               ctx = Load;
             }
       | multiple ->
           Subscript
             {
               value = mk_name_expr mapped_name;
-              slice = tuple_of_exprs (List.map type_expr_to_annotation multiple);
+              slice = tuple_of_exprs (List.map annot_of_sir_type_expr multiple);
               ctx = Load;
             })
   | Sir.Types.TTuple exprs ->
-      tuple_annot_of_annots (List.map type_expr_to_annotation exprs)
+      tuple_annot_of_annots (List.map annot_of_sir_type_expr exprs)
   | Sir.Types.TArrow (arg, ret) ->
       (* Callable[[arg_type], ret_type] *)
       Subscript
@@ -58,14 +58,14 @@ let rec type_expr_to_annotation (te : Sir.Types.type_expr) : expr =
           slice =
             tuple_of_exprs
               [
-                list_of_exprs [ type_expr_to_annotation arg ];
-                type_expr_to_annotation ret;
+                list_of_exprs [ annot_of_sir_type_expr arg ];
+                annot_of_sir_type_expr ret;
               ];
           ctx = Load;
         }
 
 (** Generate TypeVar definitions for type parameters *)
-let type_params_to_stmts (params : string list) : stmt list =
+let stmts_of_type_params (params : string list) : stmt list =
   List.map
     (fun param ->
       (* Generate: a = TypeVar('a') *)
@@ -84,7 +84,7 @@ let type_params_to_stmts (params : string list) : stmt list =
     params
 
 (** Convert variant constructor to Python dataclass *)
-let variant_constructor_to_dataclass
+let dataclass_decl_of_variant_constructor
     (type_params : string list)
     (constr : Sir.Types.variant_constructor) : stmt =
   let rows : (string * Ast.type_expr) list =
@@ -92,19 +92,19 @@ let variant_constructor_to_dataclass
       (fun i field ->
         match field with
         | Sir.Types.Positional ty ->
-            ("arg" ^ string_of_int i, semantic_type_to_ast_type ty)
-        | Sir.Types.Named (name, ty) -> (name, semantic_type_to_ast_type ty))
+            ("arg" ^ string_of_int i, ast_type_expr_of_sir_type_expr ty)
+        | Sir.Types.Named (name, ty) -> (name, ast_type_expr_of_sir_type_expr ty))
       constr.vc_fields
   in
   mk_dataclass_def constr.vc_name type_params rows
 
 (** Convert SIR type_decl to Python statements *)
-let type_decl_to_stmts (decl : Sir.Types.type_decl) : stmt list =
+let stmts_of_sir_type_decl (decl : Sir.Types.type_decl) : stmt list =
   match decl with
   | Sir.Types.Variant { name; type_params; constructors } ->
-      let type_var_stmts = type_params_to_stmts type_params in
+      let type_var_stmts = stmts_of_type_params type_params in
       let constructor_defs =
-        List.map (variant_constructor_to_dataclass type_params) constructors
+        List.map (dataclass_decl_of_variant_constructor type_params) constructors
       in
       let union_type_expr =
         List.map
@@ -114,11 +114,11 @@ let type_decl_to_stmts (decl : Sir.Types.type_decl) : stmt list =
       let union_def = mk_union_def name union_type_expr in
       type_var_stmts @ constructor_defs @ [ union_def ]
   | Sir.Types.Record { name; type_params; fields } ->
-      let type_var_stmts = type_params_to_stmts type_params in
+      let type_var_stmts = stmts_of_type_params type_params in
       let rows : (string * Ast.type_expr) list =
         List.map
           (fun (rf : Sir.Types.record_field) ->
-            (rf.rf_name, semantic_type_to_ast_type rf.rf_type))
+            (rf.rf_name, ast_type_expr_of_sir_type_expr rf.rf_type))
           fields
       in
       let record_def = mk_dataclass_def name type_params rows in
@@ -129,13 +129,13 @@ let type_decl_to_stmts (decl : Sir.Types.type_decl) : stmt list =
         Assign
           {
             targets = [ mk_name_expr name ];
-            value = type_expr_to_annotation target;
+            value = annot_of_sir_type_expr target;
             type_comment = None;
           };
       ]
 
 (** Convert SIR constant to Python constant *)
-let const_to_python_value (c : Sir.Types.const_value) : constant_value =
+let ast_const_of_sir_const (c : Sir.Types.const_value) : constant_value =
   match c with
   | Sir.Types.CInt i -> Int i
   | Sir.Types.CFloat f -> Float f
@@ -145,24 +145,24 @@ let const_to_python_value (c : Sir.Types.const_value) : constant_value =
   | Sir.Types.CUnit -> Unit
 
 (** Convert SIR value to Python expression *)
-let rec value_to_expr (v : Sir.Types.value) : expr =
+let rec ast_expr_of_sir_value (v : Sir.Types.value) : expr =
   match v with
   | Sir.Types.VConst c ->
-      Constant { value = const_to_python_value c; kind = None }
-  | Sir.Types.VTuple vs -> tuple_of_exprs (List.map value_to_expr vs)
-  | Sir.Types.VList vs -> list_of_exprs (List.map value_to_expr vs)
+      Constant { value = ast_const_of_sir_const c; kind = None }
+  | Sir.Types.VTuple vs -> tuple_of_exprs (List.map ast_expr_of_sir_value vs)
+  | Sir.Types.VList vs -> list_of_exprs (List.map ast_expr_of_sir_value vs)
   | Sir.Types.VRecord { type_name; fields } ->
       let kwargs =
-        List.map (fun (name, value) -> (name, value_to_expr value)) fields
+        List.map (fun (name, value) -> (name, ast_expr_of_sir_value value)) fields
       in
       mk_dataclass_value type_name ~args:[] ~kwargs
   | Sir.Types.VConstruct { constructor; args } ->
-      let arg_exprs = List.map value_to_expr args in
+      let arg_exprs = List.map ast_expr_of_sir_value args in
       mk_dataclass_value constructor ~args:arg_exprs ~kwargs:[]
   | Sir.Types.VName name -> mk_name_expr name
   | Sir.Types.VBinOp (left, op, right) -> (
-      let left_expr = value_to_expr left in
-      let right_expr = value_to_expr right in
+      let left_expr = ast_expr_of_sir_value left in
+      let right_expr = ast_expr_of_sir_value right in
       match op with
       | Sir.Types.Eq | Sir.Types.Lt | Sir.Types.Gt ->
           Compare
@@ -179,9 +179,9 @@ let rec value_to_expr (v : Sir.Types.value) : expr =
           BinOp
             { left = left_expr; op = Config.map_bin_op op; right = right_expr })
   | Sir.Types.VIfThenElse (cond, then_val, else_val) ->
-      IfExp (value_to_expr cond, value_to_expr then_val, value_to_expr else_val)
+      IfExp (ast_expr_of_sir_value cond, ast_expr_of_sir_value then_val, ast_expr_of_sir_value else_val)
   | Sir.Types.VMap { default; entries } ->
       let key_val_pairs =
-        List.map (fun (k, v) -> (value_to_expr k, value_to_expr v)) entries
+        List.map (fun (k, v) -> (ast_expr_of_sir_value k, ast_expr_of_sir_value v)) entries
       in
-      mk_defaultdict_value (value_to_expr default) key_val_pairs
+      mk_defaultdict_value (ast_expr_of_sir_value default) key_val_pairs

@@ -30,7 +30,7 @@ let mk_string_expr (s : string) : expr =
 let mk_name_expr (id : string) : expr = Name { id; ctx = mk_ctx () }
 
 (* Convert 8-bit bool list to a char *)
-let bools_to_char (bools : bool list) : char =
+let char_of_bools (bools : bool list) : char =
   if List.length bools <> 8 then
     invalid_arg "bools_to_char: list must contain exactly 8 booleans"
   else
@@ -63,7 +63,7 @@ let char_expr_of_bool_list_expr (exprs : expr list) : expr =
         | _ -> invalid_arg "bool_list_expr_to_string: expected bool constant")
       exprs
   in
-  let char = bools_to_char bools in
+  let char = char_of_bools bools in
   mk_string_expr (String.make 1 char)
 
 (* Convert a list of expressions to a tuple expression *)
@@ -574,7 +574,7 @@ let mk_test_data_dict
 
 let%expect_test "bool list expr to string" =
   let bools = [ false; true; false; false; false; false; false; true ] in
-  let c = bools_to_char bools in
+  let c = char_of_bools bools in
   Printf.printf "%c\n" c;
   [%expect {| A |}]
 
