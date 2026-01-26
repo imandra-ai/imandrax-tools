@@ -42,6 +42,44 @@ let unwrap : ('a, 'b) result -> 'a = function
   | Ok x -> x
   | Error msg -> failwith msg
 
+
+(* Convert 8-bit bool list to a char *)
+let char_of_bools (bools : bool list) : char =
+  if List.length bools <> 8 then
+    invalid_arg "bools_to_char: list must contain exactly 8 booleans"
+  else
+    let rec bools_to_int acc = function
+      | [] -> acc
+      | b :: rest ->
+          let bit = if b then 1 else 0 in
+          bools_to_int ((acc lsl 1) lor bit) rest
+    in
+    let ascii_value = bools_to_int 0 bools in
+    Char.chr ascii_value
+
+(* Convert a char to a list of bools *)
+let bools_of_char (c : char) : bool list =
+  let ascii_value = Char.code c in
+  let rec int_to_bools acc n bit_pos =
+    if bit_pos < 0 then acc
+    else
+      let bit = (n lsr bit_pos) land 1 in
+      int_to_bools ((bit = 1) :: acc) n (bit_pos - 1)
+  in
+  int_to_bools [] ascii_value 7
+
+let%expect_test "bool list expr to string" =
+  let bools = [ false; true; false; false; false; false; false; true ] in
+  let c = char_of_bools bools in
+  Printf.printf "%c\n" c;
+  [%expect {| A |}]
+
+let%expect_test "char to bools" =
+  let c = '0' in
+  let bools = bools_of_char c in
+  List.iter (Printf.printf "%b ") bools;
+  [%expect {| false false false false true true false false |}]
+
 (* Mir gymnastics
 ==================== *)
 

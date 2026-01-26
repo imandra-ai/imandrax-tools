@@ -3,7 +3,8 @@ open Printf
 
 module Sir = Semantic_ir.Types
 
-(** Parse a MIR term to SIR type expression and term expression.
+
+(** Parse a MIR term to Type expression and term expression.
 - Arg: Mir term
 
 - Return:
@@ -63,13 +64,9 @@ let rec parse_term (term : Term.term) :
         type_annot_of_elems
         |> List.map (CCOption.get_exn_or "Tuple element has no type annotation")
       in
-      Ok (Some (TTuple tuple_type), VTuple term_of_elems)
+      Ok (Some (TTuple tuple_type), Sir.VTuple term_of_elems)
   (* Record *)
-  | ( Term.Record
-        {
-          rows : (Type.t Applied_symbol.t_poly * Term.term) list;
-          rest = (_ : Term.term option);
-        },
+  | ( Term.Record { rows; rest = _ },
       (ty : Type.t) ) ->
       (* Get record type name from ty *)
       let ty_name =
@@ -83,12 +80,12 @@ let rec parse_term (term : Term.term) :
       let fields =
         rows
         |> List.map (fun (field_sym, term) ->
-               let field_name = field_sym.sym.id.name in
+               let field_name = (field_sym : Type.t Applied_symbol.t_poly).sym.id.name in
                let _field_ty, field_val = parse_term term |> unwrap in
                (field_name, field_val))
       in
 
-      Ok (Some record_type, VRecord { type_name = ty_name; fields })
+      Ok (Some record_type, Sir.VRecord { type_name = ty_name; fields })
   (* Construct - LChar.t *)
   | ( Term.Construct
         {
@@ -116,14 +113,14 @@ let rec parse_term (term : Term.term) :
       let bools =
         List.map
           (function
-            | VConst (CBool b) -> b
+            | Sir.VConst (Sir.CBool b) -> b
             | _ -> failwith "LChar.t args must be boolean constants")
           bool_values
       in
 
-      (* Convert list of 8 bools to a char using Ast.bools_to_char *)
-      let char_val = Ast.bools_to_char bools in
-      Ok (Some (TBase "char"), VConst (CChar char_val))
+      (* Convert list of 8 bools to a char *)
+      let char_val = char_of_bools bools in
+      Ok (Some (TBase "char"), Sir.VConst (Sir.CChar char_val))
   (* Construct - list *)
   | ( Term.Construct
         {
@@ -162,15 +159,15 @@ let rec parse_term (term : Term.term) :
             ty_expr
         | _ -> failwith "Never: list should have exactly 1 type arg"
       in
-      let list_type = TApp ("list", [ elem_type ]) in
+      let list_type = Sir.TApp ("list", [ elem_type ]) in
 
       let list_value =
         match construct_args with
         | [] ->
             (* Nil - empty list *)
-            VList []
+            Sir.VList []
         | _ -> (
-            let type_annot_of_elems, term_of_elems =
+            let _type_annot_of_elems, term_of_elems =
               List.map (fun arg -> parse_term arg |> unwrap) construct_args
               |> List.split
             in
@@ -180,7 +177,7 @@ let rec parse_term (term : Term.term) :
             | [ head; tail ] -> (
                 (* Cons - need to flatten the tail into a full list *)
                 match tail with
-                | VList tail_elems -> VList (head :: tail_elems)
+                | Sir.VList tail_elems -> Sir.VList (head :: tail_elems)
                 | _ ->
                     failwith
                       "Never: tail of cons list should be a VList after parsing")
@@ -200,7 +197,7 @@ let rec parse_term (term : Term.term) :
       let variant_constr_name = construct.sym.id.name in
 
       let variant_type, _type_vars =
-        Parse_common.parse_constr_to_sir_type_expr ty.view
+        type_expr_of_mir_ty_view_constr ty.view
       in
 
       let _constr_arg_type_annots, constr_arg_values =
@@ -211,8 +208,8 @@ let rec parse_term (term : Term.term) :
       let value =
         match variant_constr_name with
         (* map Option's None variant to CUnit *)
-        | "None" -> VConst CUnit
-        | _ -> VConstruct { constructor = variant_constr_name; args = constr_arg_values }
+        | "None" -> Sir.VConst Sir.CUnit
+        | _ -> Sir.VConstruct { constructor = variant_constr_name; args = constr_arg_values }
       in
       Ok (Some variant_type, value)
   | Term.Apply { f : Term.term; l : Term.term list }, (ty : Type.t) -> (
@@ -233,7 +230,7 @@ let rec parse_term (term : Term.term) :
           | _ -> raise (Early_return "Non-map Apply term view")
         in
 
-        let map_type = TApp ("Map.t", [ key_ty; val_ty ]) in
+        let map_type = Sir.TApp ("Map.t", [ key_ty; val_ty ]) in
 
         (* Parse the [l] of Map.add'
         - [Map.add' m k v] adds the pair (k, v) to map m
@@ -326,7 +323,7 @@ let rec parse_term (term : Term.term) :
         in
 
         let map_value =
-          VMap
+          Sir.VMap
             {
               default = default_val;
               entries = CCList.combine key_vals val_vals;
