@@ -52,7 +52,7 @@ complex_variant_record
       - constraints:
           - not (u.active = Active)
       """
-      result: int = process_user(u=user(0, Inactive()))
+      result: int = process_user(u=user(id=0, active=Inactive()))
       expected: int = -1
       assert result == expected
 
@@ -65,7 +65,7 @@ complex_variant_record
           - u.active = Active
           - u.id <= 0
       """
-      result: int = process_user(u=user(0, Active()))
+      result: int = process_user(u=user(id=0, active=Active()))
       expected: int = 0
       assert result == expected
 
@@ -78,7 +78,7 @@ complex_variant_record
           - u.active = Active
           - u.id >= 1
       """
-      result: int = process_user(u=user(1, Active()))
+      result: int = process_user(u=user(id=1, active=Active()))
       expected: int = 1
       assert result == expected
 
@@ -98,7 +98,7 @@ composite_record
           - not (p.x + p.y = 0)
           - p.x + p.y >= 1
       """
-      result: str = distance_category(p=point(0, 1))
+      result: str = distance_category(p=point(x=0, y=1))
       expected: str = 'positive'
       assert result == expected
 
@@ -110,7 +110,7 @@ composite_record
       - constraints:
           - p.x + p.y = 0
       """
-      result: str = distance_category(p=point(-38, 38))
+      result: str = distance_category(p=point(x=-38, y=38))
       expected: str = 'origin'
       assert result == expected
 
@@ -122,7 +122,7 @@ composite_record
       - constraints:
           - p.x + p.y <= (-1)
       """
-      result: str = distance_category(p=point(0, -1))
+      result: str = distance_category(p=point(x=0, y=-1))
       expected: str = 'negative'
       assert result == expected
 

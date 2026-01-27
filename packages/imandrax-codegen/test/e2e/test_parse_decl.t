@@ -109,7 +109,7 @@ real_and_option
 
   @dataclass
   class my_ty:
-      x: float
+      x: real
       y: option[int]
       z: int
 

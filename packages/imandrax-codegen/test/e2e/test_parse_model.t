@@ -93,7 +93,7 @@ variant_and_record
   ```python
   from __future__ import annotations
 
-  w: movement = Move(position(1, 2, 3.0), North())
+  w: movement = Move(position(x=1, y=2, z=3.0), North())
 
   ```
 
@@ -198,7 +198,7 @@ record
   ```python
   from __future__ import annotations
 
-  w: user = user(1, True)
+  w: user = user(id=1, active=True)
 
   ```
 
