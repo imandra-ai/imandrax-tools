@@ -1,0 +1,18 @@
+(library
+ (name expect_test_sir_term)
+ (libraries
+  imandrax_codegen
+  imandrax-api
+  imandrax-api.artifact
+  imandrax-api.mir
+  imandrakit
+  imandrakit.twine
+  yojson
+  containers
+  base64
+  yaml
+  fmt)
+ (inline_tests
+  (deps
+   (source_tree ../../data)))
+ (preprocess (pps ppx_expect ppx_deriving.show ppx_deriving_yojson)))
