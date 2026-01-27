@@ -100,7 +100,7 @@ let convert_to_ast parsed_input use_stdout test_format : Python_adapter.Ast.stmt
 (* let convert_to_ast parsed_input use_stdout output_as_dict : Codegen.Ast_types.stmt list = *)
   log use_stdout "Converting to Python AST...\n";
   match parsed_input with
-  | `Model model -> [Python_adapter.Lib.parse_model model]
+  | `Model model -> Python_adapter.Lib.parse_model model
   | `FunDecomp fun_decomp -> Python_adapter.Lib.parse_fun_decomp test_format fun_decomp
   | `Decl decl -> (
     let parsed_decl = Python_adapter.Lib.parse_decl decl in

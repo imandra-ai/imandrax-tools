@@ -4,7 +4,7 @@ module Decl = Imandrax_api_mir.Decl
 module Mir = Imandrax_api_mir
 
 val parse_model :
-  (Term.term, Type.t) Imandrax_api_common.Model.t_poly -> Ast.stmt
+  (Term.term, Type.t) Imandrax_api_common.Model.t_poly -> Ast.stmt list
 (** Parse a MIR model into an AST assign statement *)
 
 val parse_decl : (Term.t, Type.t) Decl.t_poly -> (Ast.stmt list, string) result
