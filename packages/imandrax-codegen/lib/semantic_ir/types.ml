@@ -123,6 +123,7 @@ module Value_assignment = struct
     ty : type_expr;  (** Variable type *)
     tm : value;  (** Variable value *)
   }
+  [@@deriving show, eq, yojson]
 
   (** Extract type variables from value's type *)
   let type_var : t -> string list = fun v -> type_var_names_of_type_expr v.ty
