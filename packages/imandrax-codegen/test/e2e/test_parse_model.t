@@ -111,7 +111,7 @@ empty list
   ```python
   from __future__ import annotations
 
-  w = []
+  w: list[_a_0] = []
 
   ```
 
