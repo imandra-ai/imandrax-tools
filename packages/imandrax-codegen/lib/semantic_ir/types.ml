@@ -21,6 +21,21 @@ type variant_field =
   | Named of string * type_expr  (** Named field: name: type *)
 [@@deriving show, eq, yojson]
 
+let variant_field_type_expr (field : variant_field) : type_expr =
+  match field with
+  | Positional ty -> ty
+  | Named (_, ty) -> ty
+
+let type_var_names_of_type_expr (ty_expr : type_expr) : string list =
+  let rec helper (acc: string list) (ty_expr : type_expr) : string list =
+    match ty_expr with
+    | TVar ty_name -> [ty_name] @ acc
+    | TApp (_, args) -> CCList.fold_left helper acc args
+    | TTuple args -> CCList.fold_left helper acc args
+    | TArrow (arg, ret) -> helper acc arg @ helper acc ret
+    | _ -> []
+  in helper [] ty_expr
+
 type variant_constructor = {
   vc_name : string;  (** Constructor name, aka tag *)
   vc_fields : variant_field list;  (** Constructor fields *)

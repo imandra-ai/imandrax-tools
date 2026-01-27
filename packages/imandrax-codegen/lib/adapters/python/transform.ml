@@ -100,16 +100,40 @@ let dataclass_decl_of_variant_constructor
 let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
   match decl with
   | Sir.Variant { name; type_params; constructors } ->
-      let type_var_stmts = stmts_of_type_params type_params in
-      let constructor_defs =
-        List.map
-          (dataclass_decl_of_variant_constructor type_params)
-          constructors
+      let (type_var_stmts : stmt list) = stmts_of_type_params type_params in
+      let extract_field_type_params (vc : Sir.variant_constructor) : string list
+          =
+        vc.Sir.vc_fields
+        |> List.map (fun (v_field : Sir.variant_field) ->
+               let field_type_expr = Sir.variant_field_type_expr v_field in
+               Sir.type_var_names_of_type_expr field_type_expr
+        )
+        |> CCList.concat
+        |> CCList.uniq ~eq:CCString.equal
+      in
+      (* Map: constructor name -> unique type params *)
+      let vc_type_name_to_params_map : (string * string list) list =
+        constructors
+        |> List.map (fun (vc : Sir.variant_constructor) ->
+               let vc_type_name = vc.Sir.vc_name in
+               let vc_field_type_params = extract_field_type_params vc in
+               (vc_type_name, vc_field_type_params))
+      in
+      let (constructor_defs : stmt list) =
+        (constructors : Sir.variant_constructor list)
+        |> List.map (fun vc ->
+               let vc_type_params =
+                 List.assoc vc.Sir.vc_name vc_type_name_to_params_map
+               in
+               dataclass_decl_of_variant_constructor vc_type_params vc)
       in
       let union_type_expr =
-        List.map
-          (fun (c : Sir.variant_constructor) -> mk_name_expr c.vc_name)
-          constructors
+        (constructors : Sir.variant_constructor list)
+        |> List.map (fun (vc : Sir.variant_constructor) ->
+               let vc_type_params =
+                 List.assoc vc.Sir.vc_name vc_type_name_to_params_map
+               in
+               mk_generic_type_annot vc.Sir.vc_name vc_type_params)
       in
       let union_def = mk_union_def name union_type_expr in
       type_var_stmts @ constructor_defs @ [ union_def ]
@@ -315,7 +339,7 @@ let test_data_dict_of_test_suite (test_suite : Sir.test_suite) : stmt =
   in
 
   let (test_data_dict_items : expr list) =
-      test_suite |> List.map test_data_dict_of_test_decl
+    test_suite |> List.map test_data_dict_of_test_decl
   in
   let agg_dict =
     Dict
