@@ -8,9 +8,11 @@ let (type_name_mapping : (string * string) list) =
     ("int", "int");
     ("bool", "bool");
     ("string", "str");
-    ("real", "float");
+    ("LChar.t", "str");
+    ("char", "str");
     ("unit", "None");
     ("Map.t", "defaultdict");
+    (* ("real", "float"); *)
   ]
 
 (** Map a SIR type name to a Python type name *)
