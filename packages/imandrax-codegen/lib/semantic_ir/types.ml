@@ -22,19 +22,18 @@ type variant_field =
 [@@deriving show, eq, yojson]
 
 let variant_field_type_expr (field : variant_field) : type_expr =
-  match field with
-  | Positional ty -> ty
-  | Named (_, ty) -> ty
+  match field with Positional ty -> ty | Named (_, ty) -> ty
 
 let type_var_names_of_type_expr (ty_expr : type_expr) : string list =
-  let rec helper (acc: string list) (ty_expr : type_expr) : string list =
+  let rec helper (acc : string list) (ty_expr : type_expr) : string list =
     match ty_expr with
-    | TVar ty_name -> [ty_name] @ acc
+    | TVar ty_name -> [ ty_name ] @ acc
     | TApp (_, args) -> CCList.fold_left helper acc args
     | TTuple args -> CCList.fold_left helper acc args
     | TArrow (arg, ret) -> helper acc arg @ helper acc ret
     | _ -> []
-  in helper [] ty_expr
+  in
+  helper [] ty_expr
 
 type variant_constructor = {
   vc_name : string;  (** Constructor name, aka tag *)
@@ -117,10 +116,21 @@ type value =
     }
 [@@deriving show, eq, yojson]
 
+(** Information related to a value assignment *)
+module Value_assignment = struct
+  type t = {
+    var_name : string;  (** Variable name *)
+    ty : type_expr;  (** Variable type *)
+    tm : value;  (** Variable value *)
+  }
+
+  (** Extract type variables from value's type *)
+  let type_var : t -> string list = fun v -> type_var_names_of_type_expr v.ty
+end
+
 (* Test declaration
 ==================== *)
 
-(** One test *)
 type test_decl = {
   name : string;
   f_name : string;
@@ -128,6 +138,7 @@ type test_decl = {
   f_output : type_expr * value;
   docstr : string;
 }
+(** One test *)
 
-(** Test suite *)
 type test_suite = test_decl list
+(** Test suite *)
