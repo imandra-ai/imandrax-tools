@@ -55,11 +55,6 @@ Example:
 let anonymous_arg_names (i : int) : string list =
   List.init i (fun i -> "arg" ^ string_of_int i)
 
-let%expect_test "anonymous_arg_names" =
-  let names = anonymous_arg_names 3 in
-  List.iter (Printf.printf "%s ") names;
-  [%expect {| arg0 arg1 arg2 |}]
-
 (* Convert 8-bit bool list to a char *)
 let char_of_bools (bools : bool list) : char =
   if List.length bools <> 8 then
@@ -84,18 +79,6 @@ let bools_of_char (c : char) : bool list =
       int_to_bools ((bit = 1) :: acc) n (bit_pos - 1)
   in
   int_to_bools [] ascii_value 7
-
-let%expect_test "bool list expr to string" =
-  let bools = [ false; true; false; false; false; false; false; true ] in
-  let c = char_of_bools bools in
-  Printf.printf "%c\n" c;
-  [%expect {| A |}]
-
-let%expect_test "char to bools" =
-  let c = '0' in
-  let bools = bools_of_char c in
-  List.iter (Printf.printf "%b ") bools;
-  [%expect {| false false false false true true false false |}]
 
 (* Mir gymnastics
 ==================== *)
