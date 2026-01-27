@@ -37,7 +37,7 @@ copy-decl:  ## Copy decl artifacts to test data directories
 	@echo "Copying decl artifacts to test/data/decl/..."
 	rsync -av --delete scripts/gen_decl_art/result/ test/data/decl/
 
-gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp  ## Generate cram test files
+gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
 .PHONY: gen-cram-test-model
 gen-cram-test-model:
@@ -48,6 +48,11 @@ gen-cram-test-model:
 gen-cram-test-fun-decomp:
 	@echo "Regenerating test_parse_fun_decomp.t..."
 	bash test/e2e/cram_test_gen__fun_decomp.sh > test/e2e/test_parse_fun_decomp.t
+
+.PHONY: gen-cram-test-decl
+gen-cram-test-decl:
+	@echo "Regenerating test_parse_decl.t..."
+	bash test/e2e/cram_test_gen__decl.sh > test/e2e/test_parse_decl.t
 
 update-all:  ## Update all artifacts and regenerate cram test files
 	make gen-artifacts
