@@ -10,6 +10,7 @@ let (type_name_mapping : (string * string) list) =
     ("string", "str");
     ("real", "float");
     ("unit", "None");
+    ("Map.t", "defaultdict");
   ]
 
 (** Map a SIR type name to a Python type name *)
