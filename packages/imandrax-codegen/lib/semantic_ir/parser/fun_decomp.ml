@@ -119,11 +119,15 @@ let parse_region (region : (Term.term, Type.t) Mir.Region.t_poly)
   model, model_eval_term, (invariant, constraints)
 ;;
 
+let string_of_sexp = Sexplib.Std.string_of_sexp
+let sexp_of_string = Sexplib.Std.sexp_of_string
+
 type model =
   { name : string
   ; ty : Sir.type_expr
   ; tm : Sir.value
   }
+[@@deriving show, eq, yojson, sexp]
 
 let parse_fun_decomp (fun_decomp : Mir.Fun_decomp.t) : Sir.test_suite =
   match fun_decomp with

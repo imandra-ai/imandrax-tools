@@ -1,6 +1,7 @@
 (** Language-neutral Semantic IR types for representing code-generation-related ImandraX MIR
   - lightweight, intuitive
 *)
+open Sexplib.Std
 
 (* Type
 ==================== *)
@@ -13,14 +14,14 @@ type type_expr =
       (** Type application: list[int], option['a] *)
   | TTuple of type_expr list (** Tuple type: (int, bool) *)
   | TArrow of type_expr * type_expr (** Function type: int -> bool *)
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Variant constructor field types *)
 module Variant_field = struct
   type t =
     | Positional of type_expr (** Positional field. came from inline record *)
     | Named of string * type_expr (** Named field: name: type *)
-  [@@deriving show, eq, yojson]
+  [@@deriving show, eq, yojson, sexp]
 
   let type_expr (field : t) : type_expr =
     match field with Positional ty -> ty | Named (_, ty) -> ty
@@ -44,14 +45,14 @@ type variant_constructor =
   { vc_name : string (** Constructor name, aka tag *)
   ; vc_fields : Variant_field.t list (** Constructor fields *)
   }
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Record field definition *)
 type record_field =
   { rf_name : string (** Field name *)
   ; rf_type : type_expr (** Field type *)
   }
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Type declarations *)
 type type_decl =
@@ -70,7 +71,7 @@ type type_decl =
       ; type_params : string list (** Type parameters: ['a, 'b] *)
       ; target : type_expr (** Aliased type *)
       }
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Constant values *)
 type const_value =
@@ -80,7 +81,7 @@ type const_value =
   | CString of string (** String constant *)
   | CChar of char (** Character constant *)
   | CUnit (** Unit constant *)
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Binary operators *)
 type bin_op =
@@ -93,7 +94,7 @@ type bin_op =
   | Gt (** Greater than: > *)
   | And (** Logical and: && *)
   | Or (** Logical or: || *)
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (* Value
 ==================== *)
@@ -118,7 +119,7 @@ type value =
       { default : value (** Default value *)
       ; entries : (value * value) list (** Map entries: (key, value) pairs *)
       }
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]
 
 (** Information related to a value assignment *)
 module Value_assignment = struct
@@ -127,7 +128,7 @@ module Value_assignment = struct
     ; ty : type_expr (** Variable type *)
     ; tm : value (** Variable value *)
     }
-  [@@deriving show, eq, yojson]
+  [@@deriving show, eq, yojson, sexp]
 
   (** Extract type variables from value's type *)
   let type_var : t -> string list = fun v -> type_var_names_of_type_expr v.ty
@@ -144,6 +145,8 @@ type test_decl =
   ; f_output : type_expr * value
   ; docstr : string
   }
+[@@deriving show, eq, yojson, sexp]
 
 (** Test suite *)
 type test_suite = test_decl list
+[@@deriving show, eq, yojson, sexp]
