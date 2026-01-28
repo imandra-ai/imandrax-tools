@@ -1,38 +1,35 @@
 (** Emit TypeScript source code from Semantic IR *)
 
 module Sir = Semantic_ir
+
 let sprintf = Printf.sprintf
 
 (** Emit a type expression as TypeScript type annotation *)
 let rec emit_type_expr (te : Sir.type_expr) : string =
   match te with
   | Sir.TBase name -> Config.map_type_name name
-  | Sir.TVar name -> Config.map_type_var_name name
+  | Sir.TVar name -> name
   | Sir.TApp (name, args) ->
-    let mapped_name = Config.map_type_name name in
-    (match mapped_name, args with
-     | "Array", [ elem ] -> emit_type_expr elem ^ "[]"
-     | "Option", [ elem ] -> emit_type_expr elem ^ " | null"
-     | _, [] -> mapped_name
-     | _, _ ->
-       let args_str = args |> List.map emit_type_expr |> String.concat ", " in
-       mapped_name ^ "<" ^ args_str ^ ">")
+      let mapped_name = Config.map_type_name name in
+      (match mapped_name, args with
+      | "Array", [ elem ] -> emit_type_expr elem ^ "[]"
+      | "Option", [ elem ] -> emit_type_expr elem ^ " | null"
+      | _, [] -> mapped_name
+      | _, _ ->
+          let args_str =
+            args |> List.map emit_type_expr |> String.concat ", "
+          in
+          mapped_name ^ "<" ^ args_str ^ ">")
   | Sir.TTuple exprs ->
-    let elems = exprs |> List.map emit_type_expr |> String.concat ", " in
-    "[" ^ elems ^ "]"
+      let elems = exprs |> List.map emit_type_expr |> String.concat ", " in
+      "[" ^ elems ^ "]"
   | Sir.TArrow (arg, ret) ->
-    "(" ^ emit_type_expr arg ^ ") => " ^ emit_type_expr ret
+      "(" ^ emit_type_expr arg ^ ") => " ^ emit_type_expr ret
 ;;
 
-(** Emit type parameters as TypeScript generics: <A, B> *)
+(** Emit type parameters as TypeScript generics: <a, b> *)
 let emit_type_params (params : string list) : string =
-  match params with
-  | [] -> ""
-  | _ ->
-    let params_str =
-      params |> List.map Config.map_type_var_name |> String.concat ", "
-    in
-    "<" ^ params_str ^ ">"
+  match params with [] -> "" | _ -> "<" ^ String.concat ", " params ^ ">"
 ;;
 
 (** Emit a constant value as TypeScript literal *)
@@ -51,50 +48,52 @@ let rec emit_value (v : Sir.value) : string =
   match v with
   | Sir.VConst c -> emit_const c
   | Sir.VTuple vs ->
-    let elems = vs |> List.map emit_value |> String.concat ", " in
-    "[" ^ elems ^ "]"
+      let elems = vs |> List.map emit_value |> String.concat ", " in
+      "[" ^ elems ^ "]"
   | Sir.VList vs ->
-    let elems = vs |> List.map emit_value |> String.concat ", " in
-    "[" ^ elems ^ "]"
+      let elems = vs |> List.map emit_value |> String.concat ", " in
+      "[" ^ elems ^ "]"
   | Sir.VRecord { type_name = _; fields } ->
-    let field_strs =
-      fields
-      |> List.map (fun (name, value) -> name ^ ": " ^ emit_value value)
-      |> String.concat ", "
-    in
-    "{ " ^ field_strs ^ " }"
+      let field_strs =
+        fields
+        |> List.map (fun (name, value) -> name ^ ": " ^ emit_value value)
+        |> String.concat ", "
+      in
+      "{ " ^ field_strs ^ " }"
   | Sir.VConstruct { constructor; args } ->
-    (match args with
-     | [] ->
-       (* No-payload constructor: { tag: "Foo" } *)
-       "{ tag: \"" ^ constructor ^ "\" }"
-     | [ single ] ->
-       (* Single payload: { tag: "Foo", payload: value } *)
-       "{ tag: \"" ^ constructor ^ "\", payload: " ^ emit_value single ^ " }"
-     | multiple ->
-       (* Multiple payloads become tuple: { tag: "Foo", payload: [a, b] } *)
-       let tuple_str = multiple |> List.map emit_value |> String.concat ", " in
-       "{ tag: \"" ^ constructor ^ "\", payload: [" ^ tuple_str ^ "] }")
+      let payload =
+        match args with
+        | [] -> "null"
+        | [ single ] -> emit_value single
+        | multiple ->
+            let tuple_str =
+              multiple |> List.map emit_value |> String.concat ", "
+            in
+            "[" ^ tuple_str ^ "]"
+      in
+      "{ tag: \"" ^ constructor ^ "\", payload: " ^ payload ^ " }"
   | Sir.VName name -> name
   | Sir.VBinOp (left, op, right) ->
-    emit_value left ^ " " ^ Config.string_of_bin_op op ^ " " ^ emit_value right
+      emit_value left
+      ^ " "
+      ^ Config.string_of_bin_op op
+      ^ " "
+      ^ emit_value right
   | Sir.VIfThenElse (cond, then_val, else_val) ->
-    emit_value cond ^ " ? " ^ emit_value then_val ^ " : " ^ emit_value else_val
+      emit_value cond
+      ^ " ? "
+      ^ emit_value then_val
+      ^ " : "
+      ^ emit_value else_val
   | Sir.VMap { default; entries } ->
-    (* Emit as a Map with default handling via a wrapper or inline *)
-    let entries_str =
-      entries
-      |> List.map (fun (k, v) -> "[" ^ emit_value k ^ ", " ^ emit_value v ^ "]")
-      |> String.concat ", "
-    in
-    "new Map([" ^ entries_str ^ "]) /* default: " ^ emit_value default ^ " */"
-;;
-
-(** Check if a variant is a simple enum (all constructors have no payload) *)
-let is_simple_enum (constructors : Sir.variant_constructor list) : bool =
-  constructors
-  |> List.for_all (fun (vc : Sir.variant_constructor) ->
-    List.length vc.vc_fields = 0)
+      (* Emit as a Map with default handling via a wrapper or inline *)
+      let entries_str =
+        entries
+        |> List.map (fun (k, v) ->
+               "[" ^ emit_value k ^ ", " ^ emit_value v ^ "]")
+        |> String.concat ", "
+      in
+      "new Map([" ^ entries_str ^ "]) /* default: " ^ emit_value default ^ " */"
 ;;
 
 (** Emit variant constructor fields as TypeScript type *)
@@ -103,80 +102,68 @@ let emit_variant_payload (fields : Sir.Variant_field.t list) : string =
   | [] -> "null"
   | [ Sir.Variant_field.Positional ty ] -> emit_type_expr ty
   | [ Sir.Variant_field.Named (name, ty) ] ->
-    "{ " ^ name ^ ": " ^ emit_type_expr ty ^ " }"
+      "{ " ^ name ^ ": " ^ emit_type_expr ty ^ " }"
   | multiple ->
-    (* Check if all fields are named (inline record) or positional (tuple) *)
-    let all_named =
-      multiple
-      |> List.for_all (function
-        | Sir.Variant_field.Named _ -> true
-        | _ -> false)
-    in
-    if all_named then (
-      (* Emit as object type *)
-      let field_strs =
+      (* Check if all fields are named (inline record) or positional (tuple) *)
+      let all_named =
         multiple
-        |> List.map (function
-          | Sir.Variant_field.Named (name, ty) ->
-            name ^ ": " ^ emit_type_expr ty
-          | Sir.Variant_field.Positional _ -> failwith "unexpected positional")
-        |> String.concat "; "
+        |> List.for_all (function
+             | Sir.Variant_field.Named _ -> true
+             | _ -> false)
       in
-      "{ " ^ field_strs ^ " }")
-    else (
-      (* Emit as tuple type *)
-      let elem_strs =
-        multiple
-        |> List.map (fun field -> emit_type_expr (Sir.Variant_field.type_expr field))
-        |> String.concat ", "
-      in
-      "[" ^ elem_strs ^ "]")
+      if all_named
+      then (
+        (* Emit as object type *)
+        let field_strs =
+          multiple
+          |> List.map (function
+               | Sir.Variant_field.Named (name, ty) ->
+                   name ^ ": " ^ emit_type_expr ty
+               | Sir.Variant_field.Positional _ ->
+                   failwith "unexpected positional")
+          |> String.concat "; "
+        in
+        "{ " ^ field_strs ^ " }")
+      else (
+        (* Emit as tuple type *)
+        let elem_strs =
+          multiple
+          |> List.map (fun field ->
+                 emit_type_expr (Sir.Variant_field.type_expr field))
+          |> String.concat ", "
+        in
+        "[" ^ elem_strs ^ "]")
 ;;
 
 (** Emit a variant constructor as a TypeScript union member *)
 let emit_variant_constructor (vc : Sir.variant_constructor) : string =
-  match vc.vc_fields with
-  | [] -> "{ tag: \"" ^ vc.vc_name ^ "\" }"
-  | _ ->
-    let payload = emit_variant_payload vc.vc_fields in
-    "{ tag: \"" ^ vc.vc_name ^ "\"; payload: " ^ payload ^ " }"
+  let payload = emit_variant_payload vc.vc_fields in
+  "{ tag: \"" ^ vc.vc_name ^ "\"; payload: " ^ payload ^ " }"
 ;;
 
 (** Emit a type declaration as TypeScript source *)
 let emit_type_decl (decl : Sir.type_decl) : string =
   match decl with
   | Sir.Variant { name; type_params; constructors } ->
-    let ts_name = Config.to_pascal_case name in
-    let generics = emit_type_params type_params in
-    if is_simple_enum constructors then (
-      (* Simple enum: type Color = "Red" | "Green" | "Blue" *)
+      let generics = emit_type_params type_params in
       let members =
         constructors
-        |> List.map (fun (vc : Sir.variant_constructor) ->
-          "\"" ^ vc.vc_name ^ "\"")
-        |> String.concat " | "
+        |> List.map emit_variant_constructor
+        |> String.concat "\n  | "
       in
-      "type " ^ ts_name ^ generics ^ " = " ^ members ^ ";")
-    else (
-      (* Discriminated union *)
-      let members =
-        constructors |> List.map emit_variant_constructor |> String.concat "\n  | "
-      in
-      "type " ^ ts_name ^ generics ^ " =\n  | " ^ members ^ ";")
+      "type " ^ name ^ generics ^ " =\n  | " ^ members ^ ";"
   | Sir.Record { name; type_params; fields } ->
-    let ts_name = Config.to_pascal_case name in
-    let generics = emit_type_params type_params in
-    let field_strs =
-      fields
-      |> List.map (fun (rf : Sir.record_field) ->
-        "  " ^ rf.rf_name ^ ": " ^ emit_type_expr rf.rf_type ^ ";")
-      |> String.concat "\n"
-    in
-    "type " ^ ts_name ^ generics ^ " = {\n" ^ field_strs ^ "\n};"
+      let generics = emit_type_params type_params in
+      let field_strs =
+        fields
+        |> List.map (fun (rf : Sir.record_field) ->
+               "  " ^ rf.rf_name ^ ": " ^ emit_type_expr rf.rf_type ^ ";")
+        |> String.concat "\n"
+      in
+      "type " ^ name ^ generics ^ " = {\n" ^ field_strs ^ "\n};"
   | Sir.Alias { name; type_params; target } ->
-    let ts_name = Config.to_pascal_case name in
-    let generics = emit_type_params type_params in
-    "type " ^ ts_name ^ generics ^ " = " ^ emit_type_expr target ^ ";"
+      let generics = emit_type_params type_params in
+      "type " ^ name ^ generics ^ " = " ^ emit_type_expr target ^ ";"
 ;;
 
 (** Emit a value assignment as TypeScript const declaration *)
@@ -201,7 +188,11 @@ let emit_test_decl (test : Sir.test_decl) : string =
   const expected = %s;
   expect(result).toEqual(expected);
 });|}
-    test.name test.docstr test.f_name args_str expected_str
+    test.name
+    test.docstr
+    test.f_name
+    args_str
+    expected_str
 ;;
 
 (** Emit a test suite as TypeScript test data object *)
@@ -209,20 +200,25 @@ let emit_test_suite_dict (tests : Sir.test_suite) : string =
   let entries =
     tests
     |> List.map (fun (test : Sir.test_decl) ->
-      let args_obj =
-        test.f_args
-        |> List.map (fun (name, _ty, value) -> name ^ ": " ^ emit_value value)
-        |> String.concat ", "
-      in
-      let expected = emit_value (snd test.f_output) in
-      sprintf "  \"%s\": {\n    input: { %s },\n    expected: %s\n  }"
-        test.name args_obj expected)
+           let args_obj =
+             test.f_args
+             |> List.map (fun (name, _ty, value) ->
+                    name ^ ": " ^ emit_value value)
+             |> String.concat ", "
+           in
+           let expected = emit_value (snd test.f_output) in
+           sprintf
+             "  \"%s\": {\n    input: { %s },\n    expected: %s\n  }"
+             test.name
+             args_obj
+             expected)
     |> String.concat ",\n"
   in
   "const tests = {\n" ^ entries ^ "\n};"
 ;;
 
-(* Tests *)
+(* Tests
+==================== *)
 
 let%expect_test "emit_type_expr: base types" =
   print_endline (emit_type_expr (Sir.TBase "int"));
@@ -243,7 +239,8 @@ let%expect_test "emit_type_expr: type application" =
 ;;
 
 let%expect_test "emit_type_expr: tuple" =
-  print_endline (emit_type_expr (Sir.TTuple [ Sir.TBase "int"; Sir.TBase "bool" ]));
+  print_endline
+    (emit_type_expr (Sir.TTuple [ Sir.TBase "int"; Sir.TBase "bool" ]));
   [%expect {| [number, boolean] |}]
 ;;
 
@@ -260,7 +257,12 @@ let%expect_test "emit_type_decl: simple enum" =
       }
   in
   print_endline (emit_type_decl decl);
-  [%expect {| type Color = "Red" | "Green" | "Blue"; |}]
+  [%expect
+    {|
+    type color =
+      | { tag: "Red"; payload: null }
+      | { tag: "Green"; payload: null }
+      | { tag: "Blue"; payload: null }; |}]
 ;;
 
 let%expect_test "emit_type_decl: variant with payload" =
@@ -285,8 +287,8 @@ let%expect_test "emit_type_decl: variant with payload" =
   print_endline (emit_type_decl decl);
   [%expect
     {|
-    type Shape =
-      | { tag: "Point" }
+    type shape =
+      | { tag: "Point"; payload: null }
       | { tag: "Circle"; payload: number }
       | { tag: "Rectangle"; payload: [number, number] }; |}]
 ;;
@@ -304,7 +306,7 @@ let%expect_test "emit_type_decl: record" =
   in
   print_endline (emit_type_decl decl);
   [%expect {|
-    type Point = {
+    type point = {
       x: number;
       y: number;
     }; |}]
@@ -319,7 +321,7 @@ let%expect_test "emit_type_decl: alias" =
       }
   in
   print_endline (emit_type_decl decl);
-  [%expect {| type TwoInt = [number, number]; |}]
+  [%expect {| type two_int = [number, number]; |}]
 ;;
 
 let%expect_test "emit_type_decl: generic variant" =
@@ -338,9 +340,10 @@ let%expect_test "emit_type_decl: generic variant" =
   print_endline (emit_type_decl decl);
   [%expect
     {|
-    type Maybe<A> =
-      | { tag: "Just"; payload: A }
-      | { tag: "Nothing" }; |}]
+    type maybe<a> =
+      | { tag: "Just"; payload: a }
+      | { tag: "Nothing"; payload: null };
+    |}]
 ;;
 
 let%expect_test "emit_value: constants" =
@@ -356,11 +359,15 @@ let%expect_test "emit_value: constants" =
 let%expect_test "emit_value: construct" =
   print_endline
     (emit_value
-       (Sir.VConstruct { constructor = "Circle"; args = [ Sir.VConst (Sir.CInt 5) ] }));
-  print_endline (emit_value (Sir.VConstruct { constructor = "Point"; args = [] }));
-  [%expect {|
+       (Sir.VConstruct
+          { constructor = "Circle"; args = [ Sir.VConst (Sir.CInt 5) ] }));
+  print_endline
+    (emit_value (Sir.VConstruct { constructor = "Point"; args = [] }));
+  [%expect
+    {|
     { tag: "Circle", payload: 5 }
-    { tag: "Point" } |}]
+    { tag: "Point", payload: null }
+    |}]
 ;;
 
 let%expect_test "emit_value_assignment" =
