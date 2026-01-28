@@ -20,8 +20,8 @@ a = TypeVar('a')  # used in TargetType
 target_var: TargetType = target_value
 ```
 *)
-let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
-    Ast.stmt list =
+let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
+    : Ast.stmt list =
   let value_assign = Sir.Parser.Model.parse_model model in
 
   let type_params = Sir.Value_assignment.type_var value_assign in
@@ -36,31 +36,34 @@ let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly) :
   let assign_stmt =
     let target = value_assign.var_name in
     Ast.AnnAssign
-      {
-        target = Ast.Name { Ast.id = target; ctx = Ast.Load };
-        annotation = type_annot;
-        value = Some term_expr;
-        simple = 1;
+      { target = Ast.Name { Ast.id = target; ctx = Ast.Load }
+      ; annotation = type_annot
+      ; value = Some term_expr
+      ; simple = 1
       }
   in
   type_param_defs @ [ assign_stmt ]
+;;
 
 (** Parse a MIR Decl.t to corresponding AST statments for type declaration *)
-let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
-    (Ast.stmt list, string) result =
+let parse_decl (decl : (Term.t, Type.t) Decl.t_poly)
+    : (Ast.stmt list, string) result =
   match Sir.Parser.Decl.parse_decl decl with
   | Ok sir_type_decl ->
       let stmts = Transform.stmts_of_sir_type_decl sir_type_decl in
       Ok stmts
   | Error msg -> Error msg
+;;
 
 (** Parse a MIR Fun_decomp.t to corresponding AST statments for test definitions *)
 let parse_fun_decomp
     (test_format : [< `Dict | `Function ])
-    (fun_decomp : Mir.Fun_decomp.t) : Ast.stmt list =
+    (fun_decomp : Mir.Fun_decomp.t)
+    : Ast.stmt list =
   let (test_suite : Sir.test_suite) =
     Sir.Parser.Fun_decomp.parse_fun_decomp fun_decomp
   in
   match test_format with
   | `Function -> test_suite |> List.map Transform.test_func_def_of_test_decl
   | `Dict -> [ Transform.test_data_dict_of_test_suite test_suite ]
+;;

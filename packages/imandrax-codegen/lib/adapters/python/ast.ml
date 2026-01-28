@@ -17,6 +17,7 @@ let mk_bool_expr (b : bool) : expr = Constant { value = Bool b; kind = None }
 
 let mk_string_expr (s : string) : expr =
   Constant { value = String s; kind = None }
+;;
 
 let mk_name_expr (id : string) : expr = Name { id; ctx = mk_ctx () }
 
@@ -37,6 +38,7 @@ let char_expr_of_bool_list_expr (exprs : expr list) : expr =
 (* Convert a list of expressions to a tuple expression *)
 let tuple_of_exprs (exprs : expr list) : expr =
   Tuple { elts = exprs; ctx = Load; dims = [] }
+;;
 
 (* Create a tuple type annotation from a list of type annotation
 
@@ -45,11 +47,11 @@ Example:
 *)
 let tuple_annot_of_annots (annots : expr list) : expr =
   Subscript
-    {
-      value = Name { id = "tuple"; ctx = mk_ctx () };
-      slice = tuple_of_exprs annots;
-      ctx = mk_ctx ();
+    { value = Name { id = "tuple"; ctx = mk_ctx () }
+    ; slice = tuple_of_exprs annots
+    ; ctx = mk_ctx ()
     }
+;;
 
 (* Empty list expression: `[]` *)
 let empty_list_expr () : expr = List { elts = []; ctx = mk_ctx () }
@@ -60,6 +62,7 @@ Example: `1`, `2`, `3` -> `[1, 2, 3]`
 *)
 let list_of_exprs (exprs : expr list) : expr =
   List { elts = exprs; ctx = mk_ctx () }
+;;
 
 (* Create a list expresion from a singleton expression head and a list expression (tail)
 
@@ -69,42 +72,44 @@ let cons_list_expr (head : expr) (tail : expr) : expr =
   match tail with
   | List { elts; _ } -> List { elts = head :: elts; ctx = mk_ctx () }
   | _ -> invalid_arg "cons_list_expr: tail is not a list expr"
+;;
 
 let empty_arguments () : arguments =
-  {
-    posonlyargs = [];
-    args = [];
-    vararg = None;
-    kwonlyargs = [];
-    kw_defaults = [];
-    kwarg = None;
-    defaults = [];
+  { posonlyargs = []
+  ; args = []
+  ; vararg = None
+  ; kwonlyargs = []
+  ; kw_defaults = []
+  ; kwarg = None
+  ; defaults = []
   }
+;;
 
 (* Constructor APIs
 ==================== *)
 
 (* Type view constructor name to Python type name *)
 let ty_view_constr_name_mapping : (string * string) list =
-  [ ("int", "int"); ("bool", "bool"); ("string", "str"); ("real", "float") ]
+  [ "int", "int"; "bool", "bool"; "string", "str"; "real", "float" ]
+;;
 
 (* Create an assign statement from a target (LHS), an optional type annotation, and a value (RHS)
 
 Example:
 - `x`, `int`, `5` -> `x: int = 5`
 *)
-let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
-    stmt =
+let mk_assign (target : expr) (type_annotation : expr option) (value : expr)
+    : stmt =
   match type_annotation with
   | None -> Assign { targets = [ target ]; value; type_comment = None }
   | Some type_annotation ->
       AnnAssign
-        {
-          target;
-          annotation = type_annotation;
-          value = Some value;
-          simple = mk_ann_assign_simple_flat ();
+        { target
+        ; annotation = type_annotation
+        ; value = Some value
+        ; simple = mk_ann_assign_simple_flat ()
         }
+;;
 
 (*
 - A -> Base("A")
@@ -112,7 +117,9 @@ let mk_assign (target : expr) (type_annotation : expr option) (value : expr) :
 - A[B, C] -> Generic("A", [Base("B"); Base("C")])
 - A[B, C[D]] -> Generic("A", [Base("B"); Generic("C", [Base("D")])])
 *)
-type type_expr = Base of string | Generic of string * type_expr list
+type type_expr =
+  | Base of string
+  | Generic of string * type_expr list
 
 let rec map_type_expr (ty_expr : type_expr) ~(f : string -> string) : type_expr
     =
@@ -123,6 +130,7 @@ let rec map_type_expr (ty_expr : type_expr) ~(f : string -> string) : type_expr
         List.map (map_type_expr ~f) type_args
       in
       Generic (f type_name, type_args)
+;;
 
 let rec type_annot_of_type_expr (ty_expr : type_expr) : expr =
   match ty_expr with
@@ -132,15 +140,15 @@ let rec type_annot_of_type_expr (ty_expr : type_expr) : expr =
         List.map type_annot_of_type_expr type_args
       in
       Subscript
-        {
-          value = Name { id = type_name; ctx = mk_ctx () };
-          slice =
+        { value = Name { id = type_name; ctx = mk_ctx () }
+        ; slice =
             (match type_arg_exprs with
             | [] -> failwith "Never: empty type arg exprs"
             | [ one ] -> one
-            | _ -> tuple_of_exprs type_arg_exprs);
-          ctx = mk_ctx ();
+            | _ -> tuple_of_exprs type_arg_exprs)
+        ; ctx = mk_ctx ()
         }
+;;
 
 (** Create type annotation from a list of applied generic type names
 
@@ -159,12 +167,13 @@ let type_annot_of_chained_generic_types (type_names : string list) : expr =
       List.fold_left
         (fun (acc : expr) (next : string) ->
           Subscript
-            {
-              value = acc;
-              slice = Name { id = next; ctx = mk_ctx () };
-              ctx = mk_ctx ();
+            { value = acc
+            ; slice = Name { id = next; ctx = mk_ctx () }
+            ; ctx = mk_ctx ()
             })
-        base rest
+        base
+        rest
+;;
 
 (** Create type annotation
 Eg:
@@ -179,16 +188,16 @@ let mk_generic_type_annot (name : string) (type_vars : string list) : expr =
         List.map (fun var -> Name { id = var; ctx = mk_ctx () }) type_vars
       in
       let subs_slice_expr : expr =
-        if List.length type_var_expr_by_var = 1 then
-          List.hd type_var_expr_by_var
+        if List.length type_var_expr_by_var = 1
+        then List.hd type_var_expr_by_var
         else tuple_of_exprs type_var_expr_by_var
       in
       Subscript
-        {
-          value = Name { id = name; ctx = mk_ctx () };
-          slice = subs_slice_expr;
-          ctx = mk_ctx ();
+        { value = Name { id = name; ctx = mk_ctx () }
+        ; slice = subs_slice_expr
+        ; ctx = mk_ctx ()
         }
+;;
 
 (** Create a dataclass definition statement from its name and rows of fields
 
@@ -210,7 +219,8 @@ Example:
 let mk_dataclass_def
     (name : string)
     (base_type_vars : string list)
-    (rows : (string * type_expr) list) : stmt =
+    (rows : (string * type_expr) list)
+    : stmt =
   let body : stmt list =
     match rows with
     | [] -> [ Pass ]
@@ -218,11 +228,10 @@ let mk_dataclass_def
         List.map
           (fun ((tgt, row_types) : string * type_expr) ->
             AnnAssign
-              {
-                target = Name { id = tgt; ctx = mk_ctx () };
-                annotation = type_annot_of_type_expr row_types;
-                value = None;
-                simple = mk_ann_assign_simple_flat ();
+              { target = Name { id = tgt; ctx = mk_ctx () }
+              ; annotation = type_annot_of_type_expr row_types
+              ; value = None
+              ; simple = mk_ann_assign_simple_flat ()
               })
           rows
   in
@@ -232,13 +241,13 @@ let mk_dataclass_def
     | _ -> [ mk_generic_type_annot "Generic" base_type_vars ]
   in
   ClassDef
-    {
-      name;
-      bases = class_base;
-      keywords = [];
-      body;
-      decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ];
+    { name
+    ; bases = class_base
+    ; keywords = []
+    ; body
+    ; decorator_list = [ Name { id = "dataclass"; ctx = mk_ctx () } ]
     }
+;;
 
 (** Initiate a dataclass instance from its name and arguments (both pos and kw)
 
@@ -247,11 +256,13 @@ Example: `Foo`, `5`, `y='hello'` -> `Foo(5, y='hello')`
 let mk_dataclass_value
     (dataclass_name : string)
     ~(args : expr list)
-    ~(kwargs : (string * expr) list) : expr =
+    ~(kwargs : (string * expr) list)
+    : expr =
   let keywords : keyword list =
     List.map (fun (k, v) -> { arg = Some k; value = v }) kwargs
   in
   Call { func = Name { id = dataclass_name; ctx = mk_ctx () }; args; keywords }
+;;
 
 (** Create an union definition statement from a list of member type expr
 
@@ -276,6 +287,7 @@ let mk_union_def (name : string) (member_types : expr list) : stmt =
         mk_union member_types
   in
   Assign { targets = left_targets; value = right_value; type_comment = None }
+;;
 
 (* AST for defining types corresponding to variant
   - Each variant constructor is a dataclass with anonymous fields
@@ -307,24 +319,24 @@ let mk_union_def (name : string) (member_types : expr list) : stmt =
   constructor_defs @ [ mk_union_def name variant_types ] *)
 
 (** Create a defaultdict type annotation from its key and value types *)
-let mk_defaultdict_type_annotation (key_type : string) (value_type : string) :
-    expr =
+let mk_defaultdict_type_annotation (key_type : string) (value_type : string)
+    : expr =
   Subscript
-    {
-      value = Name { id = "defaultdict"; ctx = mk_ctx () };
-      slice =
+    { value = Name { id = "defaultdict"; ctx = mk_ctx () }
+    ; slice =
         tuple_of_exprs
-          [
-            Name { id = key_type; ctx = mk_ctx () };
-            Name { id = value_type; ctx = mk_ctx () };
-          ];
-      ctx = mk_ctx ();
+          [ Name { id = key_type; ctx = mk_ctx () }
+          ; Name { id = value_type; ctx = mk_ctx () }
+          ]
+    ; ctx = mk_ctx ()
     }
+;;
 
 (** Initiate a defaultdict instance *)
 let mk_defaultdict_value
     (default_value : expr)
-    (key_val_pairs : (expr * expr) list) : expr =
+    (key_val_pairs : (expr * expr) list)
+    : expr =
   let mk_no_arg_lambda ret : expr =
     Lambda { args = empty_arguments (); body = ret }
   in
@@ -336,14 +348,14 @@ let mk_defaultdict_value
   in
 
   Call
-    {
-      func = Name { id = "defaultdict"; ctx = mk_ctx () };
-      args =
-        (if List.length key_val_pairs = 0 then
-           [ mk_no_arg_lambda default_value ]
-         else [ mk_no_arg_lambda default_value; mk_dict key_val_pairs ]);
-      keywords = [];
+    { func = Name { id = "defaultdict"; ctx = mk_ctx () }
+    ; args =
+        (if List.length key_val_pairs = 0
+         then [ mk_no_arg_lambda default_value ]
+         else [ mk_no_arg_lambda default_value; mk_dict key_val_pairs ])
+    ; keywords = []
     }
+;;
 
 (* Test function related constructors
 -------------------- *)
@@ -351,10 +363,10 @@ let mk_defaultdict_value
 (* Create an assert statement from a left and right expressions *)
 let mk_assert_eq (left : expr) (right : expr) : stmt =
   Assert
-    {
-      test = Compare { left; ops = [ Eq ]; comparators = [ right ] };
-      msg = None;
+    { test = Compare { left; ops = [ Eq ]; comparators = [ right ] }
+    ; msg = None
     }
+;;
 
 (*
 Create a test function definition statement
@@ -382,17 +394,17 @@ let mk_test_function_def
     ~(docstr : string option)
     ~(f_args : (string * expr) list)
     ~(output_type_annot : expr option)
-    ~(expected : expr) : stmt =
+    ~(expected : expr)
+    : stmt =
   let call_keywords : keyword list =
     List.map (fun (k, v) -> { arg = Some k; value = v }) f_args
   in
   (* `f(x)` *)
   let call : expr =
     Call
-      {
-        func = Name { id = f_name; ctx = mk_ctx () };
-        args = [];
-        keywords = call_keywords;
+      { func = Name { id = f_name; ctx = mk_ctx () }
+      ; args = []
+      ; keywords = call_keywords
       }
   in
   (* `result = f(x)` *)
@@ -403,7 +415,8 @@ let mk_test_function_def
   let assign_expected : stmt =
     mk_assign
       (Name { id = "expected"; ctx = mk_ctx () })
-      output_type_annot expected
+      output_type_annot
+      expected
   in
 
   (* `assert result == expected` *)
@@ -417,23 +430,22 @@ let mk_test_function_def
     match docstr with
     | None -> [ assign_call_result; assign_expected; assert_eq ]
     | Some docstr ->
-        [
-          ExprStmt { value = Constant { value = String docstr; kind = None } };
-          assign_call_result;
-          assign_expected;
-          assert_eq;
+        [ ExprStmt { value = Constant { value = String docstr; kind = None } }
+        ; assign_call_result
+        ; assign_expected
+        ; assert_eq
         ]
   in
   FunctionDef
-    {
-      name = test_name;
-      args = empty_arguments ();
-      body = func_body;
-      decorator_list = [];
-      returns = None;
-      type_comment = None;
-      type_params = [];
+    { name = test_name
+    ; args = empty_arguments ()
+    ; body = func_body
+    ; decorator_list = []
+    ; returns = None
+    ; type_comment = None
+    ; type_params = []
     }
+;;
 
 (*
 Create a test data dictionary item (one test case) from its arguments and expected value
@@ -445,8 +457,8 @@ Create a test data dictionary item (one test case) from its arguments and expect
 }
 ```
 *)
-let mk_test_data_dict_item (args : (string * expr) list) (expected : expr) :
-    expr =
+let mk_test_data_dict_item (args : (string * expr) list) (expected : expr)
+    : expr =
   let input_kwargs_dict : expr =
     let keys, values = List.split args in
     let key_opt_exprs =
@@ -456,14 +468,13 @@ let mk_test_data_dict_item (args : (string * expr) list) (expected : expr) :
     Dict { keys = key_opt_exprs; values }
   in
   Dict
-    {
-      keys =
-        [
-          Some (Constant { value = String "input_kwargs"; kind = None });
-          Some (Constant { value = String "expected"; kind = None });
-        ];
-      values = [ input_kwargs_dict; expected ];
+    { keys =
+        [ Some (Constant { value = String "input_kwargs"; kind = None })
+        ; Some (Constant { value = String "expected"; kind = None })
+        ]
+    ; values = [ input_kwargs_dict; expected ]
     }
+;;
 
 (*
 Create a test data dictionary (multiple test cases)
@@ -479,7 +490,8 @@ tests: dict[str, dict[str, Any]] = {
 let mk_test_data_dict
     ~(test_names : string list)
     ~(f_args_list : (string * expr) list list)
-    ~(expected_list : expr list) : stmt =
+    ~(expected_list : expr list)
+    : stmt =
   let (test_data_dict_items : expr list) =
     List.map
       (fun (args, expected) -> mk_test_data_dict_item args expected)
@@ -487,55 +499,48 @@ let mk_test_data_dict
   in
   let agg_dict =
     Dict
-      {
-        keys =
+      { keys =
           List.map
             (fun test_name ->
               Some (Constant { value = String test_name; kind = None }))
-            test_names;
-        values = test_data_dict_items;
+            test_names
+      ; values = test_data_dict_items
       }
   in
   let agg_dict_type_annot =
     Subscript
-      {
-        value = Name { id = "dict"; ctx = mk_ctx () };
-        slice =
+      { value = Name { id = "dict"; ctx = mk_ctx () }
+      ; slice =
           Tuple
-            {
-              elts =
-                [
-                  Name { id = "str"; ctx = mk_ctx () };
-                  Subscript
-                    {
-                      value = Name { id = "dict"; ctx = mk_ctx () };
-                      slice =
+            { elts =
+                [ Name { id = "str"; ctx = mk_ctx () }
+                ; Subscript
+                    { value = Name { id = "dict"; ctx = mk_ctx () }
+                    ; slice =
                         Tuple
-                          {
-                            elts =
-                              [
-                                Name { id = "str"; ctx = mk_ctx () };
-                                Name { id = "Any"; ctx = mk_ctx () };
-                              ];
-                            ctx = mk_ctx ();
-                            dims = [];
-                          };
-                      ctx = mk_ctx ();
-                    };
-                ];
-              ctx = mk_ctx ();
-              dims = [];
-            };
-        ctx = mk_ctx ();
+                          { elts =
+                              [ Name { id = "str"; ctx = mk_ctx () }
+                              ; Name { id = "Any"; ctx = mk_ctx () }
+                              ]
+                          ; ctx = mk_ctx ()
+                          ; dims = []
+                          }
+                    ; ctx = mk_ctx ()
+                    }
+                ]
+            ; ctx = mk_ctx ()
+            ; dims = []
+            }
+      ; ctx = mk_ctx ()
       }
   in
   AnnAssign
-    {
-      target = Name { id = "tests"; ctx = mk_ctx () };
-      annotation = agg_dict_type_annot;
-      value = Some agg_dict;
-      simple = 1;
+    { target = Name { id = "tests"; ctx = mk_ctx () }
+    ; annotation = agg_dict_type_annot
+    ; value = Some agg_dict
+    ; simple = 1
     }
+;;
 
 (* Expect test
 ==================== *)
@@ -559,3 +564,4 @@ let%expect_test "build union" =
               (Ast_types.Name { Ast_types.id = "int"; ctx = Ast_types.Load }) });
          type_comment = None })
     |}]
+;;

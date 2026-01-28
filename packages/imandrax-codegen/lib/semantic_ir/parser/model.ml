@@ -12,20 +12,23 @@ let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
   | [] -> failwith "No constants\n"
   | [ const ] ->
       let app_sym, term = const in
-      (app_sym, term)
+      app_sym, term
   | _ ->
       let s =
-        sprintf "more than 1 const, not supported\n len = %d"
+        sprintf
+          "more than 1 const, not supported\n len = %d"
           (List.length model.Mir.Model.consts)
       in
       failwith s
+;;
 
 let parse_model (model : Mir.Model.t) : Sir.Value_assignment.t =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
   let (type_annot : Sir.type_expr), (sir_term_expr : Sir.value) =
     match parse_term term with
-    | Ok (type_annot, term_expr) -> (type_annot, term_expr)
+    | Ok (type_annot, term_expr) -> type_annot, term_expr
     | Error msg -> failwith msg
   in
   let var_name = app_sym.sym.id.name in
   { var_name; ty = type_annot; tm = sir_term_expr }
+;;

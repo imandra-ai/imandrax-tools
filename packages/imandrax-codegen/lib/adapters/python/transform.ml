@@ -9,59 +9,56 @@ let rec ast_type_expr_of_sir (te : Sir.type_expr) : Ast.type_expr =
   match te with
   | Sir.TBase name -> Ast.Base (Config.map_type_name name)
   | Sir.TVar name -> Ast.Base name
-  | Sir.TApp (name, args) -> (
+  | Sir.TApp (name, args) ->
       let mapped_name = Config.map_type_name name in
-      match args with
+      (match args with
       | [] -> Ast.Base mapped_name
       | _ -> Ast.Generic (mapped_name, List.map ast_type_expr_of_sir args))
   | Sir.TTuple exprs ->
       Ast.Generic ("tuple", List.map ast_type_expr_of_sir exprs)
   | Sir.TArrow (arg, ret) ->
       Ast.Generic
-        ( "Callable",
-          [
-            Ast.Generic ("list", [ ast_type_expr_of_sir arg ]);
-            ast_type_expr_of_sir ret;
+        ( "Callable"
+        , [ Ast.Generic ("list", [ ast_type_expr_of_sir arg ])
+          ; ast_type_expr_of_sir ret
           ] )
+;;
 
 (** Convert SIR type_expr to Python type annotation *)
 let rec annot_of_sir_type_expr (te : Sir.type_expr) : expr =
   match te with
   | Sir.TBase name -> mk_name_expr (Config.map_type_name name)
   | Sir.TVar name -> mk_name_expr name
-  | Sir.TApp (name, args) -> (
+  | Sir.TApp (name, args) ->
       let mapped_name = Config.map_type_name name in
-      match args with
+      (match args with
       | [] -> mk_name_expr mapped_name
       | [ single ] ->
           Subscript
-            {
-              value = mk_name_expr mapped_name;
-              slice = annot_of_sir_type_expr single;
-              ctx = Load;
+            { value = mk_name_expr mapped_name
+            ; slice = annot_of_sir_type_expr single
+            ; ctx = Load
             }
       | multiple ->
           Subscript
-            {
-              value = mk_name_expr mapped_name;
-              slice = tuple_of_exprs (List.map annot_of_sir_type_expr multiple);
-              ctx = Load;
+            { value = mk_name_expr mapped_name
+            ; slice = tuple_of_exprs (List.map annot_of_sir_type_expr multiple)
+            ; ctx = Load
             })
   | Sir.TTuple exprs ->
       tuple_annot_of_annots (List.map annot_of_sir_type_expr exprs)
   | Sir.TArrow (arg, ret) ->
       (* Callable[[arg_type], ret_type] *)
       Subscript
-        {
-          value = mk_name_expr "Callable";
-          slice =
+        { value = mk_name_expr "Callable"
+        ; slice =
             tuple_of_exprs
-              [
-                list_of_exprs [ annot_of_sir_type_expr arg ];
-                annot_of_sir_type_expr ret;
-              ];
-          ctx = Load;
+              [ list_of_exprs [ annot_of_sir_type_expr arg ]
+              ; annot_of_sir_type_expr ret
+              ]
+        ; ctx = Load
         }
+;;
 
 (** Generate TypeVar definitions for type parameters *)
 let stmts_of_type_params (params : string list) : stmt list =
@@ -69,33 +66,34 @@ let stmts_of_type_params (params : string list) : stmt list =
     (fun param ->
       (* Generate: a = TypeVar('a') *)
       Assign
-        {
-          targets = [ mk_name_expr param ];
-          value =
+        { targets = [ mk_name_expr param ]
+        ; value =
             Call
-              {
-                func = mk_name_expr "TypeVar";
-                args = [ mk_string_expr param ];
-                keywords = [];
-              };
-          type_comment = None;
+              { func = mk_name_expr "TypeVar"
+              ; args = [ mk_string_expr param ]
+              ; keywords = []
+              }
+        ; type_comment = None
         })
     params
+;;
 
 (** Convert variant constructor to Python dataclass *)
 let dataclass_decl_of_variant_constructor
     (type_params : string list)
-    (constr : Sir.variant_constructor) : stmt =
+    (constr : Sir.variant_constructor)
+    : stmt =
   let rows : (string * Ast.type_expr) list =
     List.mapi
       (fun i field ->
         match field with
         | Sir.Variant_field.Positional ty ->
-            ("arg" ^ string_of_int i, ast_type_expr_of_sir ty)
-        | Sir.Variant_field.Named (name, ty) -> (name, ast_type_expr_of_sir ty))
+            "arg" ^ string_of_int i, ast_type_expr_of_sir ty
+        | Sir.Variant_field.Named (name, ty) -> name, ast_type_expr_of_sir ty)
       constr.vc_fields
   in
   mk_dataclass_def constr.vc_name type_params rows
+;;
 
 (** Convert SIR type_decl to Python statements *)
 let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
@@ -117,7 +115,7 @@ let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
         |> List.map (fun (vc : Sir.variant_constructor) ->
                let vc_type_name = vc.Sir.vc_name in
                let vc_field_type_params = extract_field_type_params vc in
-               (vc_type_name, vc_field_type_params))
+               vc_type_name, vc_field_type_params)
       in
       let (constructor_defs : stmt list) =
         (constructors : Sir.variant_constructor list)
@@ -142,21 +140,20 @@ let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
       let rows : (string * Ast.type_expr) list =
         List.map
           (fun (rf : Sir.record_field) ->
-            (rf.rf_name, ast_type_expr_of_sir rf.rf_type))
+            rf.rf_name, ast_type_expr_of_sir rf.rf_type)
           fields
       in
       let record_def = mk_dataclass_def name type_params rows in
       type_var_stmts @ [ record_def ]
   | Sir.Alias { name; type_params = _; target } ->
       (* Generate: Name = target_type *)
-      [
-        Assign
-          {
-            targets = [ mk_name_expr name ];
-            value = annot_of_sir_type_expr target;
-            type_comment = None;
-          };
+      [ Assign
+          { targets = [ mk_name_expr name ]
+          ; value = annot_of_sir_type_expr target
+          ; type_comment = None
+          }
       ]
+;;
 
 (** Convert SIR constant to Python constant *)
 let ast_const_of_sir_const (c : Sir.const_value) : constant_value =
@@ -167,6 +164,7 @@ let ast_const_of_sir_const (c : Sir.const_value) : constant_value =
   | Sir.CString s -> String s
   | Sir.CChar ch -> String (String.make 1 ch)
   | Sir.CUnit -> Unit
+;;
 
 (** Convert SIR value to Python expression *)
 let rec ast_expr_of_sir_value (v : Sir.value) : expr =
@@ -176,25 +174,22 @@ let rec ast_expr_of_sir_value (v : Sir.value) : expr =
   | Sir.VList vs -> list_of_exprs (List.map ast_expr_of_sir_value vs)
   | Sir.VRecord { type_name; fields } ->
       let kwargs =
-        List.map
-          (fun (name, value) -> (name, ast_expr_of_sir_value value))
-          fields
+        List.map (fun (name, value) -> name, ast_expr_of_sir_value value) fields
       in
       mk_dataclass_value type_name ~args:[] ~kwargs
   | Sir.VConstruct { constructor; args } ->
       let arg_exprs = List.map ast_expr_of_sir_value args in
       mk_dataclass_value constructor ~args:arg_exprs ~kwargs:[]
   | Sir.VName name -> mk_name_expr name
-  | Sir.VBinOp (left, op, right) -> (
+  | Sir.VBinOp (left, op, right) ->
       let left_expr = ast_expr_of_sir_value left in
       let right_expr = ast_expr_of_sir_value right in
-      match op with
+      (match op with
       | Sir.Eq | Sir.Lt | Sir.Gt ->
           Compare
-            {
-              left = left_expr;
-              ops = [ Config.map_cmp_op op ];
-              comparators = [ right_expr ];
+            { left = left_expr
+            ; ops = [ Config.map_cmp_op op ]
+            ; comparators = [ right_expr ]
             }
       | Sir.And | Sir.Or ->
           (* TODO: BoolOp type in ast_types.ml is incomplete - it doesn't store operands *)
@@ -205,16 +200,17 @@ let rec ast_expr_of_sir_value (v : Sir.value) : expr =
             { left = left_expr; op = Config.map_bin_op op; right = right_expr })
   | Sir.VIfThenElse (cond, then_val, else_val) ->
       IfExp
-        ( ast_expr_of_sir_value cond,
-          ast_expr_of_sir_value then_val,
-          ast_expr_of_sir_value else_val )
+        ( ast_expr_of_sir_value cond
+        , ast_expr_of_sir_value then_val
+        , ast_expr_of_sir_value else_val )
   | Sir.VMap { default; entries } ->
       let key_val_pairs =
         List.map
-          (fun (k, v) -> (ast_expr_of_sir_value k, ast_expr_of_sir_value v))
+          (fun (k, v) -> ast_expr_of_sir_value k, ast_expr_of_sir_value v)
           entries
       in
       mk_defaultdict_value (ast_expr_of_sir_value default) key_val_pairs
+;;
 
 (*
 Create a test function definition statement
@@ -238,24 +234,24 @@ def name():
 ```
 *)
 let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
-  let ( (test_name : string),
-        (f_name : string),
-        (docstr : string),
-        (f_args : (string * expr * expr) list),
-        (output_type_annot : expr),
-        (expected : expr) ) =
+  let ( (test_name : string)
+      , (f_name : string)
+      , (docstr : string)
+      , (f_args : (string * expr * expr) list)
+      , (output_type_annot : expr)
+      , (expected : expr) ) =
     let f_args =
       test_decl.f_args
       |> List.map (fun (name, ty, tm) ->
-             (name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm))
+             name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm)
     in
     let output_type_annot, expected = test_decl.f_output in
-    ( test_decl.name,
-      test_decl.f_name,
-      test_decl.docstr,
-      f_args,
-      output_type_annot |> annot_of_sir_type_expr,
-      expected |> ast_expr_of_sir_value )
+    ( test_decl.name
+    , test_decl.f_name
+    , test_decl.docstr
+    , f_args
+    , output_type_annot |> annot_of_sir_type_expr
+    , expected |> ast_expr_of_sir_value )
   in
   let call_keywords : keyword list =
     List.map (fun (k, _, v) -> { arg = Some k; value = v }) f_args
@@ -263,23 +259,24 @@ let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
   (* `f(x)` *)
   let call : expr =
     Call
-      {
-        func = Name { id = f_name; ctx = mk_ctx () };
-        args = [];
-        keywords = call_keywords;
+      { func = Name { id = f_name; ctx = mk_ctx () }
+      ; args = []
+      ; keywords = call_keywords
       }
   in
   (* `result = f(x)` *)
   let assign_call_result : stmt =
     mk_assign
       (Name { id = "result"; ctx = mk_ctx () })
-      (Some output_type_annot) call
+      (Some output_type_annot)
+      call
   in
   (* `expected = ...` *)
   let assign_expected : stmt =
     mk_assign
       (Name { id = "expected"; ctx = mk_ctx () })
-      (Some output_type_annot) expected
+      (Some output_type_annot)
+      expected
   in
 
   (* `assert result == expected` *)
@@ -290,28 +287,27 @@ let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
   in
 
   let func_body =
-    [
-      ExprStmt { value = Constant { value = String docstr; kind = None } };
-      assign_call_result;
-      assign_expected;
-      assert_eq;
+    [ ExprStmt { value = Constant { value = String docstr; kind = None } }
+    ; assign_call_result
+    ; assign_expected
+    ; assert_eq
     ]
   in
   FunctionDef
-    {
-      name = test_name;
-      args = empty_arguments ();
-      body = func_body;
-      decorator_list = [];
-      returns = None;
-      type_comment = None;
-      type_params = [];
+    { name = test_name
+    ; args = empty_arguments ()
+    ; body = func_body
+    ; decorator_list = []
+    ; returns = None
+    ; type_comment = None
+    ; type_params = []
     }
+;;
 
 let test_data_dict_of_test_decl (test_decl : Sir.test_decl) : expr =
   let (args : (string * expr) list) =
     test_decl.f_args
-    |> List.map (fun (name, _ty, tm) -> (name, ast_expr_of_sir_value tm))
+    |> List.map (fun (name, _ty, tm) -> name, ast_expr_of_sir_value tm)
   in
   let (expected : expr) = test_decl.f_output |> snd |> ast_expr_of_sir_value in
   let input_kwargs_dict : expr =
@@ -323,14 +319,13 @@ let test_data_dict_of_test_decl (test_decl : Sir.test_decl) : expr =
     Dict { keys = key_opt_exprs; values }
   in
   Dict
-    {
-      keys =
-        [
-          Some (Constant { value = String "input_kwargs"; kind = None });
-          Some (Constant { value = String "expected"; kind = None });
-        ];
-      values = [ input_kwargs_dict; expected ];
+    { keys =
+        [ Some (Constant { value = String "input_kwargs"; kind = None })
+        ; Some (Constant { value = String "expected"; kind = None })
+        ]
+    ; values = [ input_kwargs_dict; expected ]
     }
+;;
 
 (** Parse SIR test suite to an assignment statement of a test data dictionary *)
 let test_data_dict_of_test_suite (test_suite : Sir.test_suite) : stmt =
@@ -343,52 +338,45 @@ let test_data_dict_of_test_suite (test_suite : Sir.test_suite) : stmt =
   in
   let agg_dict =
     Dict
-      {
-        keys =
+      { keys =
           List.map
             (fun test_name ->
               Some (Constant { value = String test_name; kind = None }))
-            test_names;
-        values = test_data_dict_items;
+            test_names
+      ; values = test_data_dict_items
       }
   in
   let agg_dict_type_annot =
     Subscript
-      {
-        value = Name { id = "dict"; ctx = mk_ctx () };
-        slice =
+      { value = Name { id = "dict"; ctx = mk_ctx () }
+      ; slice =
           Tuple
-            {
-              elts =
-                [
-                  Name { id = "str"; ctx = mk_ctx () };
-                  Subscript
-                    {
-                      value = Name { id = "dict"; ctx = mk_ctx () };
-                      slice =
+            { elts =
+                [ Name { id = "str"; ctx = mk_ctx () }
+                ; Subscript
+                    { value = Name { id = "dict"; ctx = mk_ctx () }
+                    ; slice =
                         Tuple
-                          {
-                            elts =
-                              [
-                                Name { id = "str"; ctx = mk_ctx () };
-                                Name { id = "Any"; ctx = mk_ctx () };
-                              ];
-                            ctx = mk_ctx ();
-                            dims = [];
-                          };
-                      ctx = mk_ctx ();
-                    };
-                ];
-              ctx = mk_ctx ();
-              dims = [];
-            };
-        ctx = mk_ctx ();
+                          { elts =
+                              [ Name { id = "str"; ctx = mk_ctx () }
+                              ; Name { id = "Any"; ctx = mk_ctx () }
+                              ]
+                          ; ctx = mk_ctx ()
+                          ; dims = []
+                          }
+                    ; ctx = mk_ctx ()
+                    }
+                ]
+            ; ctx = mk_ctx ()
+            ; dims = []
+            }
+      ; ctx = mk_ctx ()
       }
   in
   AnnAssign
-    {
-      target = Name { id = "tests"; ctx = mk_ctx () };
-      annotation = agg_dict_type_annot;
-      value = Some agg_dict;
-      simple = 1;
+    { target = Name { id = "tests"; ctx = mk_ctx () }
+    ; annotation = agg_dict_type_annot
+    ; value = Some agg_dict
+    ; simple = 1
     }
+;;
