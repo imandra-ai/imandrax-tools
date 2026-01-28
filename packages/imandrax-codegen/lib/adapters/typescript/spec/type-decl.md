@@ -196,6 +196,16 @@ let color_value = fun c ->
 type Color = "Red" | "Green" | "Blue";
 ```
 
+Or?
+
+```ts
+type Color = 
+  | { tag: "Red", payload: null }
+  | { tag: "Green", payload: null }
+  | { tag: "Blue", payload: null }
+```
+
+
 
 ## variant_poly
 
