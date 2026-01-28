@@ -5,11 +5,10 @@ set -euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ARTIFACT_TYPE="decl"
-TEST_DATA_DIR="$SCRIPT_DIR/../data/$ARTIFACT_TYPE"
+TEST_DATA_DIR="$SCRIPT_DIR/../../data/model"
 
 # Directories to exclude (space-separated list)
-EXCLUDE_DIRS=""
+EXCLUDE_DIRS="polymorphic"
 
 # Print setup helper
 cat <<'EOF'
@@ -17,8 +16,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    yq ".get_decls_res.decls[0].artifact" "test/data/decl/$1" -o json \
-  >    | py-gen-parse - - --mode decl \
+  >    py-gen-parse "test/data/model/$1" - --mode model \
   >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }
@@ -35,7 +33,7 @@ find_cmd="$find_cmd -type f -name \"*.yaml\" -print"
 # Find all YAML files and generate test cases
 eval "$find_cmd" | sort | while read -r yaml_file; do
     # Get relative path from test/data/
-    rel_path="${yaml_file#$SCRIPT_DIR/../data/$ARTIFACT_TYPE/}"
+    rel_path="${yaml_file#$SCRIPT_DIR/../../data/model/}"
 
     # Extract test name from YAML and capitalize first letter
     test_name=$(yq -r '.name' "$yaml_file" 2>/dev/null || basename "$yaml_file" .yaml)

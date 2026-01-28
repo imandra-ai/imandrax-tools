@@ -42,17 +42,17 @@ gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl 
 .PHONY: gen-cram-test-model
 gen-cram-test-model:
 	@echo "Regenerating test_parse_model.t..."
-	bash test/e2e/cram_test_gen__model.sh > test/e2e/test_parse_model.t
+	bash test/e2e/python/cram_test_gen__model.sh > test/e2e/python/test_parse_model.t
 
 .PHONY: gen-cram-test-fun-decomp
 gen-cram-test-fun-decomp:
 	@echo "Regenerating test_parse_fun_decomp.t..."
-	bash test/e2e/cram_test_gen__fun_decomp.sh > test/e2e/test_parse_fun_decomp.t
+	bash test/e2e/python/cram_test_gen__fun_decomp.sh > test/e2e/python/test_parse_fun_decomp.t
 
 .PHONY: gen-cram-test-decl
 gen-cram-test-decl:
 	@echo "Regenerating test_parse_decl.t..."
-	bash test/e2e/cram_test_gen__decl.sh > test/e2e/test_parse_decl.t
+	bash test/e2e/python/cram_test_gen__decl.sh > test/e2e/python/test_parse_decl.t
 
 update-all:  ## Update all artifacts and regenerate cram test files
 	make gen-artifacts

@@ -1,8 +1,0 @@
-(cram
- (deps
-  %{bin:py-gen-parse}
-  (source_tree ../data)
-  ../../pyproject.toml
-  ../../uv.lock
-  ../../README.md
-  (glob_files ../../python/**/*.py)))
