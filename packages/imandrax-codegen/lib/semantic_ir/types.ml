@@ -16,13 +16,15 @@ type type_expr =
 [@@deriving show, eq, yojson]
 
 (** Variant constructor field types *)
-type variant_field =
-  | Positional of type_expr  (** Positional field. came from inline record *)
-  | Named of string * type_expr  (** Named field: name: type *)
-[@@deriving show, eq, yojson]
+module Variant_field = struct
+  type t =
+    | Positional of type_expr  (** Positional field. came from inline record *)
+    | Named of string * type_expr  (** Named field: name: type *)
+  [@@deriving show, eq, yojson]
 
-let variant_field_type_expr (field : variant_field) : type_expr =
-  match field with Positional ty -> ty | Named (_, ty) -> ty
+  let variant_field_type_expr (field : t) : type_expr =
+    match field with Positional ty -> ty | Named (_, ty) -> ty
+end
 
 let type_var_names_of_type_expr (ty_expr : type_expr) : string list =
   let rec helper (acc : string list) (ty_expr : type_expr) : string list =
@@ -37,7 +39,7 @@ let type_var_names_of_type_expr (ty_expr : type_expr) : string list =
 
 type variant_constructor = {
   vc_name : string;  (** Constructor name, aka tag *)
-  vc_fields : variant_field list;  (** Constructor fields *)
+  vc_fields : Variant_field.t list;  (** Constructor fields *)
 }
 [@@deriving show, eq, yojson]
 (** Variant constructor definition *)
@@ -126,7 +128,8 @@ module Value_assignment = struct
   [@@deriving show, eq, yojson]
 
   (** Extract type variables from value's type *)
-  let type_var : t -> string list = fun v -> type_var_names_of_type_expr v.ty
+  let type_var : t -> string list =
+   fun v -> type_var_names_of_type_expr v.ty
 end
 
 (* Test declaration

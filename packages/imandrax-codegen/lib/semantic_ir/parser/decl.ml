@@ -44,10 +44,10 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) :
                ty_expr
              ) args in
 
-             let (fields : Sir.variant_field list) = List.map2 (fun name ty ->
+             let (fields : Sir.Variant_field.t list) = List.map2 (fun name ty ->
                match labels with
-               | None -> Sir.Positional ty
-               | Some _ -> Sir.Named (name, ty)
+               | None -> Sir.Variant_field.Positional ty
+               | Some _ -> Sir.Variant_field.Named (name, ty)
              ) field_names field_types in
 
              { Sir.vc_name = constructor_name;
