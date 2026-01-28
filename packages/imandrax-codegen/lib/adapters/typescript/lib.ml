@@ -13,8 +13,7 @@ module Sir = Semantic_ir
     ```
 *)
 let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
-  : string
-  =
+    : string =
   let value_assign = Sir.Parser.Model.parse_model model in
   Emit.emit_value_assignment value_assign
 ;;
@@ -28,17 +27,14 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly) : (string, string) result =
 
 (** Parse a MIR Fun_decomp.t to corresponding TypeScript test definitions *)
 let parse_fun_decomp
-  (test_format : [< `Dict | `Function ])
-  (fun_decomp : Mir.Fun_decomp.t)
-  : string
-  =
+    (test_format : [< `Dict | `Function ])
+    (fun_decomp : Mir.Fun_decomp.t)
+    : string =
   let (test_suite : Sir.test_suite) =
     Sir.Parser.Fun_decomp.parse_fun_decomp fun_decomp
   in
   match test_format with
   | `Function ->
-    test_suite
-    |> List.map Emit.emit_test_decl
-    |> String.concat "\n\n"
+      test_suite |> List.map Emit.emit_test_decl |> String.concat "\n\n"
   | `Dict -> Emit.emit_test_suite_dict test_suite
 ;;

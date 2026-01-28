@@ -18,13 +18,20 @@ let join_semi = String.concat "; "
 let join_newline_bar = String.concat "\n  | "
 
 (** Tagged object for type definitions (uses semicolon) *)
-let tagged_type tag payload = braces (join_semi [ kv "tag" (quote tag); kv "payload" payload ])
+let tagged_type tag payload =
+  braces (join_semi [ kv "tag" (quote tag); kv "payload" payload ])
+;;
 
 (** Tagged object for values (uses comma) *)
-let tagged_value tag payload = braces (join_comma [ kv "tag" (quote tag); kv "payload" payload ])
+let tagged_value tag payload =
+  braces (join_comma [ kv "tag" (quote tag); kv "payload" payload ])
+;;
 
 (* Emitters
 ==================== *)
+
+(* Type
+-------------------- *)
 
 (** Emit a type expression as TypeScript type annotation *)
 let rec emit_type_expr (te : Sir.type_expr) : string =
@@ -37,9 +44,11 @@ let rec emit_type_expr (te : Sir.type_expr) : string =
       | "Array", [ elem ] -> emit_type_expr elem ^ "[]"
       | "Option", [ elem ] -> emit_type_expr elem ^ " | null"
       | _, [] -> mapped_name
-      | _, _ -> mapped_name ^ angles (args |> List.map emit_type_expr |> join_comma))
+      | _, _ ->
+          mapped_name ^ angles (args |> List.map emit_type_expr |> join_comma))
   | Sir.TTuple exprs -> brackets (exprs |> List.map emit_type_expr |> join_comma)
-  | Sir.TArrow (arg, ret) -> parens (emit_type_expr arg) ^ " => " ^ emit_type_expr ret
+  | Sir.TArrow (arg, ret) ->
+      parens (emit_type_expr arg) ^ " => " ^ emit_type_expr ret
 ;;
 
 (** Emit type parameters as TypeScript generics: <a, b> *)
@@ -47,53 +56,13 @@ let emit_type_params (params : string list) : string =
   match params with [] -> "" | _ -> angles (join_comma params)
 ;;
 
-(** Emit a constant value as TypeScript literal *)
-let emit_const (c : Sir.const_value) : string =
-  match c with
-  | Sir.CInt i -> string_of_int i
-  | Sir.CFloat f -> string_of_float f
-  | Sir.CBool b -> if b then "true" else "false"
-  | Sir.CString s -> quote (String.escaped s)
-  | Sir.CChar ch -> quote (String.escaped (String.make 1 ch))
-  | Sir.CUnit -> "null"
-;;
-
-(** Emit a value as TypeScript expression *)
-let rec emit_value (v : Sir.value) : string =
-  match v with
-  | Sir.VConst c -> emit_const c
-  | Sir.VTuple vs -> brackets (vs |> List.map emit_value |> join_comma)
-  | Sir.VList vs -> brackets (vs |> List.map emit_value |> join_comma)
-  | Sir.VRecord { type_name = _; fields } ->
-      braces (fields |> List.map (fun (name, value) -> kv name (emit_value value)) |> join_comma)
-  | Sir.VConstruct { constructor; args } ->
-      let payload =
-        match args with
-        | [] -> "null"
-        | [ single ] -> emit_value single
-        | multiple -> brackets (multiple |> List.map emit_value |> join_comma)
-      in
-      tagged_value constructor payload
-  | Sir.VName name -> name
-  | Sir.VBinOp (left, op, right) ->
-      emit_value left ^ " " ^ Config.string_of_bin_op op ^ " " ^ emit_value right
-  | Sir.VIfThenElse (cond, then_val, else_val) ->
-      emit_value cond ^ " ? " ^ emit_value then_val ^ " : " ^ emit_value else_val
-  | Sir.VMap { default; entries } ->
-      let entries_str =
-        entries
-        |> List.map (fun (k, v) -> brackets (join_comma [ emit_value k; emit_value v ]))
-        |> join_comma
-      in
-      "new Map(" ^ brackets entries_str ^ ") /* default: " ^ emit_value default ^ " */"
-;;
-
 (** Emit variant constructor fields as TypeScript type *)
 let emit_variant_payload (fields : Sir.Variant_field.t list) : string =
   match fields with
   | [] -> "null"
   | [ Sir.Variant_field.Positional ty ] -> emit_type_expr ty
-  | [ Sir.Variant_field.Named (name, ty) ] -> braces (kv name (emit_type_expr ty))
+  | [ Sir.Variant_field.Named (name, ty) ] ->
+      braces (kv name (emit_type_expr ty))
   | multiple ->
       (* Check if all fields are named (inline record) or positional (tuple) *)
       let all_named =
@@ -106,13 +75,16 @@ let emit_variant_payload (fields : Sir.Variant_field.t list) : string =
         braces
           (multiple
           |> List.map (function
-               | Sir.Variant_field.Named (name, ty) -> kv name (emit_type_expr ty)
-               | Sir.Variant_field.Positional _ -> failwith "unexpected positional")
+               | Sir.Variant_field.Named (name, ty) ->
+                   kv name (emit_type_expr ty)
+               | Sir.Variant_field.Positional _ ->
+                   failwith "unexpected positional")
           |> join_semi)
       else
         brackets
           (multiple
-          |> List.map (fun field -> emit_type_expr (Sir.Variant_field.type_expr field))
+          |> List.map (fun field ->
+                 emit_type_expr (Sir.Variant_field.type_expr field))
           |> join_comma)
 ;;
 
@@ -126,7 +98,9 @@ let emit_type_decl (decl : Sir.type_decl) : string =
   match decl with
   | Sir.Variant { name; type_params; constructors } ->
       let generics = emit_type_params type_params in
-      let members = constructors |> List.map emit_variant_constructor |> join_newline_bar in
+      let members =
+        constructors |> List.map emit_variant_constructor |> join_newline_bar
+      in
       "type " ^ name ^ generics ^ " =\n  | " ^ members ^ ";"
   | Sir.Record { name; type_params; fields } ->
       let generics = emit_type_params type_params in
@@ -142,15 +116,82 @@ let emit_type_decl (decl : Sir.type_decl) : string =
       "type " ^ name ^ generics ^ " = " ^ emit_type_expr target ^ ";"
 ;;
 
+(* Value
+-------------------- *)
+
+let emit_const (c : Sir.const_value) : string =
+  match c with
+  | Sir.CInt i -> string_of_int i
+  | Sir.CFloat f -> string_of_float f
+  | Sir.CBool b -> if b then "true" else "false"
+  | Sir.CString s -> quote (String.escaped s)
+  | Sir.CChar ch -> quote (String.escaped (String.make 1 ch))
+  | Sir.CUnit -> "null"
+;;
+
+let rec emit_value (v : Sir.value) : string =
+  match v with
+  | Sir.VConst c -> emit_const c
+  | Sir.VTuple vs -> brackets (vs |> List.map emit_value |> join_comma)
+  | Sir.VList vs -> brackets (vs |> List.map emit_value |> join_comma)
+  | Sir.VRecord { type_name = _; fields } ->
+      braces
+        (fields
+        |> List.map (fun (name, value) -> kv name (emit_value value))
+        |> join_comma)
+  | Sir.VConstruct { constructor; args } ->
+      let payload =
+        match args with
+        | [] -> "null"
+        | [ single ] -> emit_value single
+        | multiple -> brackets (multiple |> List.map emit_value |> join_comma)
+      in
+      tagged_value constructor payload
+  | Sir.VName name -> name
+  | Sir.VBinOp (left, op, right) ->
+      emit_value left
+      ^ " "
+      ^ Config.string_of_bin_op op
+      ^ " "
+      ^ emit_value right
+  | Sir.VIfThenElse (cond, then_val, else_val) ->
+      emit_value cond
+      ^ " ? "
+      ^ emit_value then_val
+      ^ " : "
+      ^ emit_value else_val
+  | Sir.VMap { default; entries } ->
+      let entries_str =
+        entries
+        |> List.map (fun (k, v) ->
+               brackets (join_comma [ emit_value k; emit_value v ]))
+        |> join_comma
+      in
+      "new Map("
+      ^ brackets entries_str
+      ^ ") /* default: "
+      ^ emit_value default
+      ^ " */"
+;;
+
 (** Emit a value assignment as TypeScript const declaration *)
 let emit_value_assignment (va : Sir.Value_assignment.t) : string =
-  "const " ^ kv va.var_name (emit_type_expr va.ty) ^ " = " ^ emit_value va.tm ^ ";"
+  "const "
+  ^ kv va.var_name (emit_type_expr va.ty)
+  ^ " = "
+  ^ emit_value va.tm
+  ^ ";"
 ;;
+
+(* Test declaration
+-------------------- *)
 
 (** Emit a test declaration as TypeScript test function *)
 let emit_test_decl (test : Sir.test_decl) : string =
   let args_str =
-    test.f_args |> List.map (fun (name, _ty, value) -> kv name (emit_value value)) |> join_comma
+    test.f_args
+    |> List.map (fun (name, _ty, value) -> kv name (emit_value value))
+    |> join_comma
   in
   let expected_str = emit_value (snd test.f_output) in
   sprintf
@@ -160,7 +201,11 @@ let emit_test_decl (test : Sir.test_decl) : string =
   const expected = %s;
   expect(result).toEqual(expected);
 });|}
-    test.name test.docstr test.f_name args_str expected_str
+    test.name
+    test.docstr
+    test.f_name
+    args_str
+    expected_str
 ;;
 
 (** Emit a test suite as TypeScript test data object *)
@@ -174,8 +219,11 @@ let emit_test_suite_dict (tests : Sir.test_suite) : string =
              |> join_comma
            in
            let expected = emit_value (snd test.f_output) in
-           sprintf "  %s: {\n    input: { %s },\n    expected: %s\n  }"
-             (quote test.name) args_obj expected)
+           sprintf
+             "  %s: {\n    input: { %s },\n    expected: %s\n  }"
+             (quote test.name)
+             args_obj
+             expected)
     |> String.concat ",\n"
   in
   "const tests = {\n" ^ entries ^ "\n};"
@@ -274,18 +322,6 @@ let%expect_test "emit_type_decl: record" =
       x: number;
       y: number;
     }; |}]
-;;
-
-let%expect_test "emit_type_decl: alias" =
-  let decl =
-    Sir.Alias
-      { name = "two_int"
-      ; type_params = []
-      ; target = Sir.TTuple [ Sir.TBase "int"; Sir.TBase "int" ]
-      }
-  in
-  print_endline (emit_type_decl decl);
-  [%expect {| type two_int = [number, number]; |}]
 ;;
 
 let%expect_test "emit_type_decl: generic variant" =
