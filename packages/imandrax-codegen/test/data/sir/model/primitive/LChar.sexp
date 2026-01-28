@@ -1,0 +1,1 @@
+((var_name w) (ty (TBase char)) (tm (VConst (CChar "\000"))))

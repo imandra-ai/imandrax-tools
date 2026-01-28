@@ -37,6 +37,11 @@ copy-decl:  ## Copy decl artifacts to test data directories
 	@echo "Copying decl artifacts to test/data/decl/..."
 	rsync -av --delete scripts/gen_decl_art/result/ test/data/decl/
 
+.PHONY: gen-sir
+gen-sir:  ## Generate SIR S-expressions from twine data
+	@echo "Generating SIR S-expressions..."
+	cd test/gen_sir && dune exec ./gen_sir.exe
+
 gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
 .PHONY: gen-cram-test-model
