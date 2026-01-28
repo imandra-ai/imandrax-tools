@@ -1,7 +1,14 @@
 .PHONY: help
 help:  ## Show this help message
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@awk '\
+		/^# .+$$/ && !/^# [-=]+$$/ { pending=substr($$0, 3); next } \
+		/^# =+$$/ && pending { printf "\033[1;33m=== %s ===\033[0m\n", pending; pending=""; next } \
+		/^# -+$$/ && pending { printf "\033[1;33m--- %s ---\033[0m\n", pending; pending=""; next } \
+		{ pending="" } \
+		/^[a-zA-Z_-]+:.*## / { \
+			split($$0, a, ":.*## "); \
+			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
+		}' $(MAKEFILE_LIST)
 
 gen-artifacts: gen-model-art gen-fun-decomp-art gen-decl-art  ## Generate all artifacts
 
