@@ -1,4 +1,5 @@
 ; Executable to parse JSON/YAML artifacts to Python AST
+
 (executable
  (name parse)
  (public_name py-gen-parse)

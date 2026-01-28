@@ -10,7 +10,6 @@ module Term = Imandrax_api_mir.Term
 module Decl = Imandrax_api_mir.Decl
 module Applied_symbol = Imandrax_api_common.Applied_symbol
 module Region = Imandrax_api_mir.Region
-
 module Sir = Types
 
 (* Utils
@@ -34,7 +33,8 @@ let zip5 l1 l2 l3 l4 l5 =
   |> List.map (fun (e, (d, (c, (a, b)))) -> (a, b, c, d, e))
 
 let zip6 l1 l2 l3 l4 l5 l6 =
-  List.combine l1 l2 |> List.combine l3 |> List.combine l4 |> List.combine l5 |> List.combine l6
+  List.combine l1 l2 |> List.combine l3 |> List.combine l4 |> List.combine l5
+  |> List.combine l6
   |> List.map (fun (f, (e, (d, (c, (a, b))))) -> (a, b, c, d, e, f))
 
 (* [x, y, z] -> ([x; y], z) *)
@@ -116,8 +116,9 @@ Return: tuple of:
   0: Semantic IR type expression
   1: generic type parameters used (as strings, not UIDs)
 *)
-let type_expr_of_mir_ty_view_constr (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
-    : Sir.type_expr * string list =
+let type_expr_of_mir_ty_view_constr
+    (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : Sir.type_expr * string list
+    =
   let rec helper
       (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
       (params_acc : string list) : Sir.type_expr * string list =

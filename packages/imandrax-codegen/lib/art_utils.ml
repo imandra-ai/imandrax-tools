@@ -83,10 +83,8 @@ let art_data_to_fun_decomp
   in
   fun_decomp
 
-let art_data_to_decl
-    ?(debug = false)
-    (data_b64 : string)
-    (kind_str : string) : Mir.Decl.t =
+let art_data_to_decl ?(debug = false) (data_b64 : string) (kind_str : string) :
+    Mir.Decl.t =
   let art = art_data_to_art ~debug data_b64 kind_str in
   let decl : Mir.Decl.t =
     match Artifact.as_decl art with
@@ -106,8 +104,7 @@ let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t) :
   let data_b64, kind_str = json_to_art_data ~debug json in
   art_data_to_fun_decomp ~debug data_b64 kind_str
 
-let json_to_decl ?(debug = false) (json : Yojson.Safe.t) :
-    Mir.Decl.t =
+let json_to_decl ?(debug = false) (json : Yojson.Safe.t) : Mir.Decl.t =
   let data_b64, kind_str = json_to_art_data ~debug json in
   art_data_to_decl ~debug data_b64 kind_str
 

@@ -311,9 +311,11 @@ let pp_decl out (decl : (Term.term, Type.t) Decl.t_poly) =
       in
 
       (* Pretty print type schema *)
-      let pp_type_schema out (ts : Type.t Imandrax_api_common.Type_schema.t_poly)
-          =
-        fprintf out "@[<hv 2>{ @[<hv 2>params =@ [@[<hv>%a@]]@];@ @[<hv 2>ty =@ %a@] }@]"
+      let pp_type_schema
+          out
+          (ts : Type.t Imandrax_api_common.Type_schema.t_poly) =
+        fprintf out
+          "@[<hv 2>{ @[<hv 2>params =@ [@[<hv>%a@]]@];@ @[<hv 2>ty =@ %a@] }@]"
           (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") Uid.pp)
           ts.params pp_type ts.ty
       in
