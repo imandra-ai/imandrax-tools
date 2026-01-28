@@ -5,8 +5,8 @@ module Codegen = Imandrax_codegen
 module Sir = Semantic_ir
 
 (* Directory configuration *)
-let data_dir = "../data"
-let sir_dir = "../data/sir"
+let art_dir = Sys.getenv "TEST_DATA_ART_DIR"
+let sir_dir = Sys.getenv "TEST_DATA_SIR_DIR"
 
 (* Supported modes *)
 type mode =
@@ -122,7 +122,7 @@ let process_file (mode : mode) (src_path : string) (dst_path : string) : bool =
 
 (* Process all files for a given mode *)
 let process_mode (mode : mode) : int * int =
-  let src_dir = Filename.concat data_dir (string_of_mode mode) in
+  let src_dir = Filename.concat art_dir (string_of_mode mode) in
   let dst_dir = Filename.concat sir_dir (string_of_mode mode) in
 
   if not (Sys.file_exists src_dir) then begin

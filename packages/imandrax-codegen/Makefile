@@ -63,7 +63,7 @@ copy-art-decl:
 .PHONY: gen-sir
 gen-sir:  ## Generate SIR S-expressions from twine data
 	@echo "Generating SIR S-expressions..."
-	cd test/gen-sir && dune exec ./gen_sir.exe
+	dune exec test/gen-sir/gen_sir.exe
 
 gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
