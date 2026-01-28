@@ -22,7 +22,7 @@ module Variant_field = struct
     | Named of string * type_expr  (** Named field: name: type *)
   [@@deriving show, eq, yojson]
 
-  let variant_field_type_expr (field : t) : type_expr =
+  let type_expr (field : t) : type_expr =
     match field with Positional ty -> ty | Named (_, ty) -> ty
 end
 

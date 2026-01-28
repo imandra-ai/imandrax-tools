@@ -90,8 +90,8 @@ let dataclass_decl_of_variant_constructor
     List.mapi
       (fun i field ->
         match field with
-        | Sir.Positional ty -> ("arg" ^ string_of_int i, ast_type_expr_of_sir ty)
-        | Sir.Named (name, ty) -> (name, ast_type_expr_of_sir ty))
+        | Sir.Variant_field.Positional ty -> ("arg" ^ string_of_int i, ast_type_expr_of_sir ty)
+        | Sir.Variant_field.Named (name, ty) -> (name, ast_type_expr_of_sir ty))
       constr.vc_fields
   in
   mk_dataclass_def constr.vc_name type_params rows
@@ -104,8 +104,8 @@ let stmts_of_sir_type_decl (decl : Sir.type_decl) : stmt list =
       let extract_field_type_params (vc : Sir.variant_constructor) : string list
           =
         vc.Sir.vc_fields
-        |> List.map (fun (v_field : Sir.variant_field) ->
-               let field_type_expr = Sir.variant_field_type_expr v_field in
+        |> List.map (fun (v_field : Sir.Variant_field.t) ->
+               let field_type_expr = Sir.Variant_field.type_expr v_field in
                Sir.type_var_names_of_type_expr field_type_expr
         )
         |> CCList.concat
