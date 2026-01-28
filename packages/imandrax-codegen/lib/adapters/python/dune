@@ -4,8 +4,6 @@
  (libraries
   semantic_ir
   containers
-  imandrax-api
-  imandrax-api.artifact
   imandrax-api.mir)
  (inline_tests)
  (flags

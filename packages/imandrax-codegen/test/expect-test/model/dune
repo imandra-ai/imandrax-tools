@@ -2,16 +2,7 @@
  (name expect_test_sir_term)
  (libraries
   imandrax_codegen
-  imandrax-api
-  imandrax-api.artifact
-  imandrax-api.mir
-  imandrakit
-  imandrakit.twine
-  yojson
-  containers
-  base64
-  yaml
-  fmt)
+  containers)
  (inline_tests
   (deps
    (source_tree ../../data)))
