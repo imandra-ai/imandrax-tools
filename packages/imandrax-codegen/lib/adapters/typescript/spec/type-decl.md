@@ -1,5 +1,18 @@
 Type Declaration
 
+## Preliminaries
+Option lib
+```ts
+interface Some<T> {
+  value: T;
+}
+
+type Option<T> = Some<T> | null;
+```
+
+Note: we model variant types as discriminated unions, with tag and payload fields
+to avoid property name collisions.
+
 ## tuple_two_int
 
 ```iml
@@ -7,7 +20,7 @@ type two_int = int * int
 ```
 
 ```ts
-
+type TwoInt = [number, number];
 ```
 
 
@@ -18,7 +31,10 @@ type point = { x: int; y: int }
 ```
 
 ```ts
-
+type Point = {
+  x: number;
+  y: number;
+};
 ```
 
 
@@ -33,7 +49,20 @@ type my_ty = {
 ```
 
 ```ts
+type MyTy = {
+  x: number;
+  y: Option<number>;
+  z: number;
+}
+```
 
+Or (lossy),
+```ts
+type MyTy = {
+  x: number;
+  y: number | null;
+  z: number;
+};
 ```
 
 
@@ -45,20 +74,7 @@ type shape2 =
 ```
 
 ```ts
-
-```
-
-
-## GADT_monomorphic
-
-```iml
-type _ expr =
-  | Int: int -> int expr
-  | Add: int expr * int expr -> int expr
-```
-
-```ts
-
+type Shape2 = { tag: "Circle"; payload: Option<number> };
 ```
 
 
@@ -71,7 +87,9 @@ type shape = {
 ```
 
 ```ts
-
+type Shape = {
+  circle: Option<number>;
+};
 ```
 
 
@@ -86,7 +104,11 @@ type shape =
 ```
 
 ```ts
-
+type Shape =
+  | { tag: "Point"; payload: null }
+  | { tag: "Circle"; payload: number }
+  | { tag: "Rectangle"; payload: [ number, number ] }
+  | { tag: "Triangle"; payload: { a: number; b: number; c: number } };
 ```
 
 
@@ -113,7 +135,25 @@ type my_ty =
 ```
 
 ```ts
+type Identity<A> = { tag: "Identity"; payload: A };
 
+type Maybe<A> =
+  | { tag: "Just"; payload: A }
+  | { tag: "Nothing", payload: null };
+
+type Validated<A> =
+  | { tag: "Valid"; payload: A }
+  | { tag: "Invalid"; payload: string };
+
+type Tagged<A> = {
+  value: A;
+  tag: string;
+};
+
+type MyTy = {
+  tag: "MyTy";
+  payload: Tagged<Validated<Maybe<Identity<number>>>>;
+};
 ```
 
 
@@ -130,7 +170,13 @@ type shape =
 ```
 
 ```ts
+type Rect =
+  | { tag: "Rectangle"; value: [number, number] }
+  | { tag: "Square"; value: number };
 
+type Shape =
+  | { tag: "Circle"; value: number }
+  | { tag: "Polygon"; value: Rect };
 ```
 
 
@@ -147,7 +193,7 @@ let color_value = fun c ->
 ```
 
 ```ts
-
+type Color = "Red" | "Green" | "Blue";
 ```
 
 
@@ -162,7 +208,11 @@ type 'a shape_poly =
 ```
 
 ```ts
-
+type ShapePoly<A> =
+  | { tag: "Point" }
+  | { tag: "Circle"; payload: A }
+  | { tag: "Rectangle"; payload: [A, A] }
+  | { tag: "Triangle"; payload: { a: A; b: A; c: A } };
 ```
 
 
@@ -175,7 +225,9 @@ type tree =
 ```
 
 ```ts
-
+type Tree =
+  | { tag: "Leaf"; payload: number }
+  | { tag: "Node"; payload: [ Tree, Tree ] };
 ```
 
 ## variant_poly_two_var
@@ -190,5 +242,26 @@ type ('a, 'b) container =
 ```
 
 ```ts
+type Container<A, B> =
+  | { tag: "Empty" }
+  | { tag: "Single"; payload: A }
+  | { tag: "Pair"; payload: [A, B] }
+  | { tag: "Labeled"; payload: { key: A; value: B } }
+  | { tag: "Multi"; payload: [A[], B[]] };
+```
 
+
+
+## GADT_monomorphic
+
+```iml
+type _ expr =
+  | Int: int -> int expr
+  | Add: int expr * int expr -> int expr
+```
+
+```ts
+type Expr<T> =
+  | { tag: "Int"; payload: number }
+  | { tag: "Add"; payload: [Expr<number>, Expr<number>] };
 ```
