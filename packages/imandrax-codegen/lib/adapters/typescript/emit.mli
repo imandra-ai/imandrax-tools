@@ -36,8 +36,5 @@ val emit_value_assignment : Sir.Value_assignment.t -> string
 
 (** {1 Test Generation} *)
 
-(** Emit a test declaration as TypeScript test function *)
-val emit_test_decl : Sir.test_decl -> string
-
 (** Emit a test suite as TypeScript test data object *)
 val emit_test_suite_dict : Sir.test_suite -> string

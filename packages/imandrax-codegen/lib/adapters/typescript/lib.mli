@@ -13,5 +13,5 @@ val parse_model
 (** Parse a MIR Decl.t to corresponding TypeScript type declaration *)
 val parse_decl : (Term.t, Type.t) Decl.t_poly -> (string, string) result
 
-(** Parse a MIR Fun_decomp.t to corresponding TypeScript test definitions *)
-val parse_fun_decomp : [< `Dict | `Function ] -> Mir.Fun_decomp.t -> string
+(** Parse a MIR Fun_decomp.t to corresponding TypeScript test data object *)
+val parse_fun_decomp : Mir.Fun_decomp.t -> string

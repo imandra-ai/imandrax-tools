@@ -186,28 +186,6 @@ let emit_value_assignment (va : Sir.Value_assignment.t) : string =
 (* Test declaration
 -------------------- *)
 
-(** Emit a test declaration as TypeScript test function *)
-let emit_test_decl (test : Sir.test_decl) : string =
-  let args_str =
-    test.f_args
-    |> List.map (fun (name, _ty, value) -> kv name (emit_value value))
-    |> join_comma
-  in
-  let expected_str = emit_value (snd test.f_output) in
-  sprintf
-    {|test("%s", () => {
-  // %s
-  const result = %s({ %s });
-  const expected = %s;
-  expect(result).toEqual(expected);
-});|}
-    test.name
-    test.docstr
-    test.f_name
-    args_str
-    expected_str
-;;
-
 (** Emit a test suite as TypeScript test data object *)
 let emit_test_suite_dict (tests : Sir.test_suite) : string =
   let entries =
