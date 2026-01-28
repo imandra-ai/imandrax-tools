@@ -3,7 +3,6 @@
 open Ast
 module Sir = Semantic_ir
 
-(* TODO: is this really needed to be exposed? *)
 val annot_of_sir_type_expr : Sir.type_expr -> Ast.expr
 val stmts_of_type_params : string list -> stmt list
 val ast_expr_of_sir_value : Sir.value -> Ast.expr
