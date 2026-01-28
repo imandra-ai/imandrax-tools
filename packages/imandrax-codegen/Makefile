@@ -10,44 +10,60 @@ help:  ## Show this help message
 			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
 		}' $(MAKEFILE_LIST)
 
+TEST_DATA_ART_DIR := test/data/art
+TEST_DATA_SIR_DIR := test/data/sir
+
+reload-env:  ## Reload .env file
+	rm .env
+	@touch .env
+	@echo "TEST_DATA_ART_DIR=$(TEST_DATA_ART_DIR)" >> .env
+	@echo "TEST_DATA_SIR_DIR=$(TEST_DATA_SIR_DIR)" >> .env
+
+# Test data generation
+# ====================
+
+# Clean generated artifacts
+.PHONY: clean-artifacts
+clean-artifacts:
+	rm -rf scripts/gen_model_art/result/*
+	rm -rf scripts/gen_fun_decomp_art/result/*
+	rm -rf scripts/gen_decl_art/result/*
+
 gen-artifacts: gen-model-art gen-fun-decomp-art gen-decl-art  ## Generate all artifacts
 
 .PHONY: gen-model-art
 gen-model-art:
-	@echo "Generating model artifacts..."
 	uv run scripts/gen_model_art
 
 .PHONY: gen-fun-decomp-art
 gen-fun-decomp-art:
-	@echo "Generating fun_decomp artifacts..."
 	uv run scripts/gen_fun_decomp_art
 
 .PHONY: gen-decl-art
-gen-decl-art:  ## Generate decl artifacts
-	@echo "Generating decl artifacts..."
+gen-decl-art:
 	uv run scripts/gen_decl_art
 
 copy-artifacts: copy-model copy-fun-decomp copy-decl  ## Copy artifacts to test data directories
 
-.PHONY: copy-model
-copy-model:
+.PHONY: copy-art-model
+copy-art-model:
 	@echo "Copying model artifacts to test/data/model/..."
-	rsync -av --delete scripts/gen_model_art/result/ test/data/model/
+	rsync -av --delete scripts/gen_model_art/result/ $(TEST_DATA_ART_DIR)/model/
 
-.PHONY: copy-fun-decomp
-copy-fun-decomp:
+.PHONY: copy-art-fun-decomp
+copy-art-fun-decomp:
 	@echo "Copying fun_decomp artifacts to test/data/fun_decomp/..."
-	rsync -av --delete scripts/gen_fun_decomp_art/result/ test/data/fun_decomp/
+	rsync -av --delete scripts/gen_fun_decomp_art/result/ $(TEST_DATA_ART_DIR)/fun_decomp/
 
-.PHONY: copy-decl
-copy-decl:  ## Copy decl artifacts to test data directories
+.PHONY: copy-art-decl
+copy-art-decl:
 	@echo "Copying decl artifacts to test/data/decl/..."
-	rsync -av --delete scripts/gen_decl_art/result/ test/data/decl/
+	rsync -av --delete scripts/gen_decl_art/result/ $(TEST_DATA_ART_DIR)/decl/
 
 .PHONY: gen-sir
 gen-sir:  ## Generate SIR S-expressions from twine data
 	@echo "Generating SIR S-expressions..."
-	cd test/gen_sir && dune exec ./gen_sir.exe
+	cd test/gen-sir && dune exec ./gen_sir.exe
 
 gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
@@ -66,29 +82,15 @@ gen-cram-test-decl:
 	@echo "Regenerating test_parse_decl.t..."
 	bash test/e2e/python/cram_test_gen__decl.sh > test/e2e/python/test_parse_decl.t
 
-update-all:  ## Update all artifacts and regenerate cram test files
-	make gen-artifacts
-	make copy-artifacts
-	make gen-cram-tests
-	@echo "All artifacts generated, copied, and tests regenerated!"
-	@echo "Run 'dune test' to execute the tests and 'dune promote' to accept new outputs."
+# Cross-platform binary builds
+# ====================
 
-# Clean generated artifacts
-.PHONY: clean-artifacts
-clean-artifacts:
-	rm -rf scripts/gen_model_art/result/*
-	rm -rf scripts/gen_fun_decomp_art/result/*
-	rm -rf scripts/gen_decl_art/result/*
+BIN_DIR := .bin
 
 .PHONY: clean-binaries
 clean-binaries:  ## Clean built binaries
 	rm -rf $(BIN_DIR)
 	rm -rf _build-linux  # Docker build directory
-
-# Cross-platform binary builds
-# ====================
-
-BIN_DIR := .bin
 
 .PHONY: build-linux-bin
 build-linux-bin:  ## Build Linux binary using Docker
