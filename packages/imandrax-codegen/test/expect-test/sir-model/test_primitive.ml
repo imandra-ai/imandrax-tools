@@ -1,4 +1,4 @@
-open Test_utils
+open Utils
 open Printf
 module Sir = Semantic_ir
 
