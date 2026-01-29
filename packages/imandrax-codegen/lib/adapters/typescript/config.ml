@@ -2,6 +2,25 @@
 
 module Sir = Semantic_ir
 
+module Extra_imports = struct
+  type t = {
+    option : bool;
+    default_map : bool;
+  }
+
+  let empty = { option = false; default_map = false }
+  let option = { empty with option = true }
+  let default_map = { empty with default_map = true }
+
+  let union a b = {
+    option = a.option || b.option;
+    default_map = a.default_map || b.default_map;
+  }
+
+  let union_list xs = List.fold_left union empty xs
+end
+
+
 (** Mapping from language-neutral type names to TypeScript type names *)
 let type_name_mapping : (string * string) list =
   [ "int", "number"

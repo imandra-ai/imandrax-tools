@@ -12,9 +12,9 @@ let ts_dir = Sys.getenv "TEST_DATA_TS_DIR"
 
 (** Mode name -> SIR deserializer -> TypeScript emitter *)
 let (modes : (string * (Sexplib.Sexp.t -> string)) list) =
-  [ "model", (fun s -> Sir.Value_assignment.t_of_sexp s |> Typescript_adapter.Emit.emit_value_assignment)
-  ; "decl", (fun s -> Sir.type_decl_of_sexp s |> Typescript_adapter.Emit.emit_type_decl)
-  ; "fun_decomp", (fun s -> Sir.test_suite_of_sexp s |> Typescript_adapter.Emit.emit_test_suite_dict)
+  [ "model", (fun s -> Sir.Value_assignment.t_of_sexp s |> Typescript_adapter.Emit.emit_value_assignment |> fst)
+  ; "decl", (fun s -> Sir.type_decl_of_sexp s |> Typescript_adapter.Emit.emit_type_decl |> fst)
+  ; "fun_decomp", (fun s -> Sir.test_suite_of_sexp s |> Typescript_adapter.Emit.emit_test_suite_dict |> fst)
   ]
 
 let rec ensure_dir path =

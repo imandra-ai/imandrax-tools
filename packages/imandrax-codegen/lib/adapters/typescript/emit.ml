@@ -1,6 +1,7 @@
 (** Emit TypeScript source code from Semantic IR *)
 
 module Sir = Semantic_ir
+module Extra_imports = Config.Extra_imports
 
 let sprintf = Printf.sprintf
 
@@ -34,21 +35,39 @@ let tagged_value tag payload =
 -------------------- *)
 
 (** Emit a type expression as TypeScript type annotation *)
-let rec emit_type_expr (te : Sir.type_expr) : string =
+let rec emit_type_expr (te : Sir.type_expr) : string * Extra_imports.t =
   match te with
-  | Sir.TBase name -> Config.map_type_name name
-  | Sir.TVar name -> name
+  | Sir.TBase name -> (Config.map_type_name name, Extra_imports.empty)
+  | Sir.TVar name -> (name, Extra_imports.empty)
   | Sir.TApp (name, args) ->
       let mapped_name = Config.map_type_name name in
       (match mapped_name, args with
-      | "Array", [ elem ] -> emit_type_expr elem ^ "[]"
-      | "Option", [ elem ] -> "Option" ^ angles (emit_type_expr elem)
-      | _, [] -> mapped_name
+      | "Array", [ elem ] ->
+          let code, imports = emit_type_expr elem in
+          (code ^ "[]", imports)
+      | "Option", [ elem ] ->
+          let code, imports = emit_type_expr elem in
+          ("Option" ^ angles code, Extra_imports.union Extra_imports.option imports)
+      | "DefaultMap", args ->
+          let codes, imports = emit_type_exprs args in
+          ("DefaultMap" ^ angles (join_comma codes), Extra_imports.union Extra_imports.default_map imports)
+      | _, [] -> (mapped_name, Extra_imports.empty)
       | _, _ ->
-          mapped_name ^ angles (args |> List.map emit_type_expr |> join_comma))
-  | Sir.TTuple exprs -> brackets (exprs |> List.map emit_type_expr |> join_comma)
+          let codes, imports = emit_type_exprs args in
+          (mapped_name ^ angles (join_comma codes), imports))
+  | Sir.TTuple exprs ->
+      let codes, imports = emit_type_exprs exprs in
+      (brackets (join_comma codes), imports)
   | Sir.TArrow (arg, ret) ->
-      parens (emit_type_expr arg) ^ " => " ^ emit_type_expr ret
+      let arg_code, arg_imports = emit_type_expr arg in
+      let ret_code, ret_imports = emit_type_expr ret in
+      (parens arg_code ^ " => " ^ ret_code, Extra_imports.union arg_imports ret_imports)
+
+and emit_type_exprs (exprs : Sir.type_expr list) : string list * Extra_imports.t =
+  let results = List.map emit_type_expr exprs in
+  let codes = List.map fst results in
+  let imports = Extra_imports.union_list (List.map snd results) in
+  (codes, imports)
 ;;
 
 (** Emit type parameters as TypeScript generics: <a, b> *)
@@ -57,12 +76,13 @@ let emit_type_params (params : string list) : string =
 ;;
 
 (** Emit variant constructor fields as TypeScript type *)
-let emit_variant_payload (fields : Sir.Variant_field.t list) : string =
+let emit_variant_payload (fields : Sir.Variant_field.t list) : string * Extra_imports.t =
   match fields with
-  | [] -> "null"
+  | [] -> ("null", Extra_imports.empty)
   | [ Sir.Variant_field.Positional ty ] -> emit_type_expr ty
   | [ Sir.Variant_field.Named (name, ty) ] ->
-      braces (kv name (emit_type_expr ty))
+      let code, imports = emit_type_expr ty in
+      (braces (kv name code), imports)
   | multiple ->
       (* Check if all fields are named (inline record) or positional (tuple) *)
       let all_named =
@@ -72,148 +92,189 @@ let emit_variant_payload (fields : Sir.Variant_field.t list) : string =
       in
       if all_named
       then
-        braces
-          (multiple
+        let results =
+          multiple
           |> List.map (function
                | Sir.Variant_field.Named (name, ty) ->
-                   kv name (emit_type_expr ty)
+                   let code, imports = emit_type_expr ty in
+                   (kv name code, imports)
                | Sir.Variant_field.Positional _ ->
                    failwith "unexpected positional")
-          |> join_semi)
+        in
+        let codes = List.map fst results in
+        let imports = Extra_imports.union_list (List.map snd results) in
+        (braces (join_semi codes), imports)
       else
-        brackets
-          (multiple
+        let results =
+          multiple
           |> List.map (fun field ->
                  emit_type_expr (Sir.Variant_field.type_expr field))
-          |> join_comma)
+        in
+        let codes = List.map fst results in
+        let imports = Extra_imports.union_list (List.map snd results) in
+        (brackets (join_comma codes), imports)
 ;;
 
 (** Emit a variant constructor as a TypeScript union member *)
-let emit_variant_constructor (vc : Sir.variant_constructor) : string =
-  tagged_type vc.vc_name (emit_variant_payload vc.vc_fields)
+let emit_variant_constructor (vc : Sir.variant_constructor) : string * Extra_imports.t =
+  let payload, imports = emit_variant_payload vc.vc_fields in
+  (tagged_type vc.vc_name payload, imports)
 ;;
 
 (** Emit a type declaration as TypeScript source *)
-let emit_type_decl (decl : Sir.type_decl) : string =
+let emit_type_decl (decl : Sir.type_decl) : string * Extra_imports.t =
   match decl with
   | Sir.Variant { name; type_params; constructors } ->
       let generics = emit_type_params type_params in
-      let members =
-        constructors |> List.map emit_variant_constructor |> join_newline_bar
-      in
-      "type " ^ name ^ generics ^ " =\n  | " ^ members ^ ";"
+      let results = List.map emit_variant_constructor constructors in
+      let members = results |> List.map fst |> join_newline_bar in
+      let imports = Extra_imports.union_list (List.map snd results) in
+      ("type " ^ name ^ generics ^ " =\n  | " ^ members ^ ";", imports)
   | Sir.Record { name; type_params; fields } ->
       let generics = emit_type_params type_params in
-      let field_strs =
+      let results =
         fields
         |> List.map (fun (rf : Sir.record_field) ->
-               "  " ^ kv rf.rf_name (emit_type_expr rf.rf_type) ^ ";")
-        |> String.concat "\n"
+               let code, imports = emit_type_expr rf.rf_type in
+               ("  " ^ kv rf.rf_name code ^ ";", imports))
       in
-      "type " ^ name ^ generics ^ " = {\n" ^ field_strs ^ "\n};"
+      let field_strs = results |> List.map fst |> String.concat "\n" in
+      let imports = Extra_imports.union_list (List.map snd results) in
+      ("type " ^ name ^ generics ^ " = {\n" ^ field_strs ^ "\n};", imports)
   | Sir.Alias { name; type_params; target } ->
       let generics = emit_type_params type_params in
-      "type " ^ name ^ generics ^ " = " ^ emit_type_expr target ^ ";"
+      let code, imports = emit_type_expr target in
+      ("type " ^ name ^ generics ^ " = " ^ code ^ ";", imports)
 ;;
 
 (* Value
 -------------------- *)
 
-let emit_const (c : Sir.const_value) : string =
-  match c with
-  | Sir.CInt i -> string_of_int i
-  | Sir.CFloat f -> string_of_float f
-  | Sir.CBool b -> if b then "true" else "false"
-  | Sir.CString s -> quote (String.escaped s)
-  | Sir.CChar ch -> quote (String.escaped (String.make 1 ch))
-  | Sir.CUnit -> "null"
+let emit_const (c : Sir.const_value) : string * Extra_imports.t =
+  let code =
+    match c with
+    | Sir.CInt i -> string_of_int i
+    | Sir.CFloat f -> string_of_float f
+    | Sir.CBool b -> if b then "true" else "false"
+    | Sir.CString s -> quote (String.escaped s)
+    | Sir.CChar ch -> quote (String.escaped (String.make 1 ch))
+    | Sir.CUnit -> "null"
+  in
+  (code, Extra_imports.empty)
 ;;
 
-let rec emit_value (v : Sir.value) : string =
+let rec emit_value (v : Sir.value) : string * Extra_imports.t =
   match v with
   | Sir.VConst c -> emit_const c
-  | Sir.VTuple vs -> brackets (vs |> List.map emit_value |> join_comma)
-  | Sir.VList vs -> brackets (vs |> List.map emit_value |> join_comma)
+  | Sir.VTuple vs ->
+      let codes, imports = emit_values vs in
+      (brackets (join_comma codes), imports)
+  | Sir.VList vs ->
+      let codes, imports = emit_values vs in
+      (brackets (join_comma codes), imports)
   | Sir.VRecord { type_name = _; fields } ->
-      braces
-        (fields
-        |> List.map (fun (name, value) -> kv name (emit_value value))
-        |> join_comma)
-  | Sir.VConstruct { constructor; args } ->
-      let payload =
-        match args with
-        | [] -> "null"
-        | [ single ] -> emit_value single
-        | multiple -> brackets (multiple |> List.map emit_value |> join_comma)
+      let results =
+        fields |> List.map (fun (name, value) ->
+            let code, imports = emit_value value in
+            (kv name code, imports))
       in
-      tagged_value constructor payload
-  | Sir.VName name -> name
+      let codes = List.map fst results in
+      let imports = Extra_imports.union_list (List.map snd results) in
+      (braces (join_comma codes), imports)
+  | Sir.VConstruct { constructor; args } ->
+      let payload, imports =
+        match args with
+        | [] -> ("null", Extra_imports.empty)
+        | [ single ] -> emit_value single
+        | multiple ->
+            let codes, imports = emit_values multiple in
+            (brackets (join_comma codes), imports)
+      in
+      (tagged_value constructor payload, imports)
+  | Sir.VName name -> (name, Extra_imports.empty)
   | Sir.VBinOp (left, op, right) ->
-      emit_value left
-      ^ " "
-      ^ Config.string_of_bin_op op
-      ^ " "
-      ^ emit_value right
+      let left_code, left_imports = emit_value left in
+      let right_code, right_imports = emit_value right in
+      ( left_code ^ " " ^ Config.string_of_bin_op op ^ " " ^ right_code,
+        Extra_imports.union left_imports right_imports )
   | Sir.VIfThenElse (cond, then_val, else_val) ->
-      emit_value cond
-      ^ " ? "
-      ^ emit_value then_val
-      ^ " : "
-      ^ emit_value else_val
+      let cond_code, cond_imports = emit_value cond in
+      let then_code, then_imports = emit_value then_val in
+      let else_code, else_imports = emit_value else_val in
+      ( cond_code ^ " ? " ^ then_code ^ " : " ^ else_code,
+        Extra_imports.union_list [ cond_imports; then_imports; else_imports ] )
   | Sir.VMap { default; entries } ->
-      let entries_str =
+      let default_code, default_imports = emit_value default in
+      let entry_results =
         entries
         |> List.map (fun (k, v) ->
-               brackets (join_comma [ emit_value k; emit_value v ]))
-        |> join_comma
+               let k_code, k_imports = emit_value k in
+               let v_code, v_imports = emit_value v in
+               (brackets (join_comma [ k_code; v_code ]),
+                Extra_imports.union k_imports v_imports))
       in
-      "new DefaultMap("
-      ^ parens ("() => " ^ emit_value default)
-      ^ ", "
-      ^ brackets entries_str
-      ^ ")"
+      let entries_str = entry_results |> List.map fst |> join_comma in
+      let entries_imports = Extra_imports.union_list (List.map snd entry_results) in
+      ( "new DefaultMap("
+        ^ parens ("() => " ^ default_code)
+        ^ ", "
+        ^ brackets entries_str
+        ^ ")",
+        Extra_imports.union_list [ Extra_imports.default_map; default_imports; entries_imports ] )
+
+and emit_values (vs : Sir.value list) : string list * Extra_imports.t =
+  let results = List.map emit_value vs in
+  let codes = List.map fst results in
+  let imports = Extra_imports.union_list (List.map snd results) in
+  (codes, imports)
 ;;
 
 (** Emit a value assignment as TypeScript const declaration *)
-let emit_value_assignment (va : Sir.Value_assignment.t) : string =
-  "const "
-  ^ kv va.var_name (emit_type_expr va.ty)
-  ^ " = "
-  ^ emit_value va.tm
-  ^ ";"
+let emit_value_assignment (va : Sir.Value_assignment.t) : string * Extra_imports.t =
+  let ty_code, ty_imports = emit_type_expr va.ty in
+  let tm_code, tm_imports = emit_value va.tm in
+  ( "const " ^ kv va.var_name ty_code ^ " = " ^ tm_code ^ ";",
+    Extra_imports.union ty_imports tm_imports )
 ;;
 
 (* Test declaration
 -------------------- *)
 
 (** Emit a test suite as TypeScript test data object *)
-let emit_test_suite_dict (tests : Sir.test_suite) : string =
-  let entries =
+let emit_test_suite_dict (tests : Sir.test_suite) : string * Extra_imports.t =
+  let results =
     tests
     |> List.map (fun (test : Sir.test_decl) ->
-           let args_obj =
+           let arg_results =
              test.f_args
-             |> List.map (fun (name, _ty, value) -> kv name (emit_value value))
-             |> join_comma
+             |> List.map (fun (name, _ty, value) ->
+                    let code, imports = emit_value value in
+                    (kv name code, imports))
            in
-           let expected = emit_value (snd test.f_output) in
-           sprintf
-             "  %s: {\n    input: { %s },\n    expected: %s\n  }"
-             (quote test.name)
-             args_obj
-             expected)
-    |> String.concat ",\n"
+           let args_obj = arg_results |> List.map fst |> join_comma in
+           let args_imports = Extra_imports.union_list (List.map snd arg_results) in
+           let expected_code, expected_imports = emit_value (snd test.f_output) in
+           let entry =
+             sprintf
+               "  %s: {\n    input: { %s },\n    expected: %s\n  }"
+               (quote test.name)
+               args_obj
+               expected_code
+           in
+           (entry, Extra_imports.union args_imports expected_imports))
   in
-  "const tests = {\n" ^ entries ^ "\n};"
+  let entries = results |> List.map fst |> String.concat ",\n" in
+  let imports = Extra_imports.union_list (List.map snd results) in
+  ("const tests = {\n" ^ entries ^ "\n};", imports)
 ;;
 
 (* Tests
 ==================== *)
 
 let%expect_test "emit_type_expr: base types" =
-  print_endline (emit_type_expr (Sir.TBase "int"));
-  print_endline (emit_type_expr (Sir.TBase "bool"));
-  print_endline (emit_type_expr (Sir.TBase "string"));
+  print_endline (fst (emit_type_expr (Sir.TBase "int")));
+  print_endline (fst (emit_type_expr (Sir.TBase "bool")));
+  print_endline (fst (emit_type_expr (Sir.TBase "string")));
   [%expect {|
     number
     boolean
@@ -221,16 +282,16 @@ let%expect_test "emit_type_expr: base types" =
 ;;
 
 let%expect_test "emit_type_expr: type application" =
-  print_endline (emit_type_expr (Sir.TApp ("list", [ Sir.TBase "int" ])));
-  print_endline (emit_type_expr (Sir.TApp ("option", [ Sir.TBase "string" ])));
+  print_endline (fst (emit_type_expr (Sir.TApp ("list", [ Sir.TBase "int" ]))));
+  print_endline (fst (emit_type_expr (Sir.TApp ("option", [ Sir.TBase "string" ]))));
   [%expect {|
     number[]
-    string | null |}]
+    Option<string> |}]
 ;;
 
 let%expect_test "emit_type_expr: tuple" =
   print_endline
-    (emit_type_expr (Sir.TTuple [ Sir.TBase "int"; Sir.TBase "bool" ]));
+    (fst (emit_type_expr (Sir.TTuple [ Sir.TBase "int"; Sir.TBase "bool" ])));
   [%expect {| [number, boolean] |}]
 ;;
 
@@ -246,7 +307,7 @@ let%expect_test "emit_type_decl: simple enum" =
           ]
       }
   in
-  print_endline (emit_type_decl decl);
+  print_endline (fst (emit_type_decl decl));
   [%expect
     {|
     type color =
@@ -274,7 +335,7 @@ let%expect_test "emit_type_decl: variant with payload" =
           ]
       }
   in
-  print_endline (emit_type_decl decl);
+  print_endline (fst (emit_type_decl decl));
   [%expect
     {|
     type shape =
@@ -294,7 +355,7 @@ let%expect_test "emit_type_decl: record" =
           ]
       }
   in
-  print_endline (emit_type_decl decl);
+  print_endline (fst (emit_type_decl decl));
   [%expect {|
     type point = {
       x: number;
@@ -315,7 +376,7 @@ let%expect_test "emit_type_decl: generic variant" =
           ]
       }
   in
-  print_endline (emit_type_decl decl);
+  print_endline (fst (emit_type_decl decl));
   [%expect
     {|
     type maybe<a> =
@@ -325,9 +386,9 @@ let%expect_test "emit_type_decl: generic variant" =
 ;;
 
 let%expect_test "emit_value: constants" =
-  print_endline (emit_value (Sir.VConst (Sir.CInt 42)));
-  print_endline (emit_value (Sir.VConst (Sir.CBool true)));
-  print_endline (emit_value (Sir.VConst (Sir.CString "hello")));
+  print_endline (fst (emit_value (Sir.VConst (Sir.CInt 42))));
+  print_endline (fst (emit_value (Sir.VConst (Sir.CBool true))));
+  print_endline (fst (emit_value (Sir.VConst (Sir.CString "hello"))));
   [%expect {|
     42
     true
@@ -336,11 +397,11 @@ let%expect_test "emit_value: constants" =
 
 let%expect_test "emit_value: construct" =
   print_endline
-    (emit_value
+    (fst (emit_value
        (Sir.VConstruct
-          { constructor = "Circle"; args = [ Sir.VConst (Sir.CInt 5) ] }));
+          { constructor = "Circle"; args = [ Sir.VConst (Sir.CInt 5) ] })));
   print_endline
-    (emit_value (Sir.VConstruct { constructor = "Point"; args = [] }));
+    (fst (emit_value (Sir.VConstruct { constructor = "Point"; args = [] })));
   [%expect
     {|
     { tag: "Circle", payload: 5 }
@@ -352,6 +413,6 @@ let%expect_test "emit_value_assignment" =
   let va : Sir.Value_assignment.t =
     { var_name = "x"; ty = Sir.TBase "int"; tm = Sir.VConst (Sir.CInt 42) }
   in
-  print_endline (emit_value_assignment va);
+  print_endline (fst (emit_value_assignment va));
   [%expect {| const x: number = 42; |}]
 ;;

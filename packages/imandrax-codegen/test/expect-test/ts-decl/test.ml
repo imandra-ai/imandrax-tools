@@ -40,7 +40,7 @@ let read_sir (name : string) : Sir.type_decl =
         [%string
           "let%expect_test \"%{name}\" =
   let sir = read_sir \"%{name}\" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {||}]
@@ -52,7 +52,7 @@ let read_sir (name : string) : Sir.type_decl =
 *)
 let%expect_test "real_and_option" =
   let sir = read_sir "real_and_option" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -66,7 +66,7 @@ let%expect_test "real_and_option" =
 
 let%expect_test "record" =
   let sir = read_sir "record" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -79,7 +79,7 @@ let%expect_test "record" =
 
 let%expect_test "record_with_composite_type" =
   let sir = read_sir "record_with_composite_type" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -91,7 +91,7 @@ let%expect_test "record_with_composite_type" =
 
 let%expect_test "variant_simple" =
   let sir = read_sir "variant_simple" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -104,7 +104,7 @@ let%expect_test "variant_simple" =
 
 let%expect_test "variant_two" =
   let sir = read_sir "variant_two" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -116,7 +116,7 @@ let%expect_test "variant_two" =
 
 let%expect_test "variant_with_payload" =
   let sir = read_sir "variant_with_payload" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -130,7 +130,7 @@ let%expect_test "variant_with_payload" =
 
 let%expect_test "variant_with_composite_payload" =
   let sir = read_sir "variant_with_composite_payload" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -141,7 +141,7 @@ let%expect_test "variant_with_composite_payload" =
 
 let%expect_test "variant_poly" =
   let sir = read_sir "variant_poly" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -155,7 +155,7 @@ let%expect_test "variant_poly" =
 
 let%expect_test "variant_poly_two_var" =
   let sir = read_sir "variant_poly_two_var" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
@@ -170,7 +170,7 @@ let%expect_test "variant_poly_two_var" =
 
 let%expect_test "nested_generics" =
   let sir = read_sir "nested_generics" in
-  let code = Typescript_adapter.Emit.emit_type_decl sir in
+  let code, _ = Typescript_adapter.Emit.emit_type_decl sir in
   print_endline code;
   [%expect
     {|
