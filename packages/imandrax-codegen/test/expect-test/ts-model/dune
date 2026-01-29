@@ -11,7 +11,7 @@
   (pps ppx_expect ppx_deriving.show ppx_deriving_yojson)))
 
 (cinaps
-  (files test_primitive.ml)
+  (files test.ml)
   (preprocess
    (pps ppx_string))
   )
