@@ -167,11 +167,11 @@ let rec emit_value (v : Sir.value) : string =
                brackets (join_comma [ emit_value k; emit_value v ]))
         |> join_comma
       in
-      "new Map("
+      "new DefaultMap("
+      ^ parens ("() => " ^ emit_value default)
+      ^ ", "
       ^ brackets entries_str
-      ^ ") /* default: "
-      ^ emit_value default
-      ^ " */"
+      ^ ")"
 ;;
 
 (** Emit a value assignment as TypeScript const declaration *)

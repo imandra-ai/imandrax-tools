@@ -13,7 +13,7 @@ let type_name_mapping : (string * string) list =
   ; "unit", "null"
   ; "list", "Array"
   ; "option", "Option"
-  ; "Map.t", "Map"
+  ; "Map.t", "DefaultMap"
   ]
 ;;
 
