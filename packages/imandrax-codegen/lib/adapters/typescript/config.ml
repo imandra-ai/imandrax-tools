@@ -18,6 +18,13 @@ module Extra_imports = struct
   }
 
   let union_list xs = List.fold_left union empty xs
+
+  let lib_content : t -> string = fun t ->
+    let buf = Buffer.create 100 in
+    if t.option then Buffer.add_string buf Helper_lib.option else ();
+    if t.default_map then Buffer.add_string buf Helper_lib.default_map else ();
+    if t.option || t.default_map then Buffer.add_char buf '\n' else ();
+    Buffer.contents buf
 end
 
 

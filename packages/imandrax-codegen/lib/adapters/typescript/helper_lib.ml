@@ -1,42 +1,54 @@
 (** Inlined helper lib *)
 
+[@@@ocamlformat "break-string-literals=never"]
+
 (*$
-let pascal_to_snake s =
-  let buf = Buffer.create (String.length s * 2) in
-  String.iteri (fun i c ->
-    if Char.uppercase_ascii c = c && c <> '_' && i > 0 then
-      Buffer.add_char buf '_';
-    Buffer.add_char buf (Char.lowercase_ascii c)
-  ) s;
-  Buffer.contents buf
-
+  let pascal_to_snake s =
+    let buf = Buffer.create (String.length s * 2) in
+    String.iteri
+      (fun i c ->
+        if Char.uppercase_ascii c = c && c <> '_' && i > 0
+        then Buffer.add_char buf '_';
+        Buffer.add_char buf (Char.lowercase_ascii c))
+      s;
+    Buffer.contents buf
   in
 
-let escape_quote s =
-  let buf = Buffer.create (String.length s * 2) in
-  String.iter (function
-    | '\\' -> Buffer.add_string buf "\\\\"
-    | '"' -> Buffer.add_string buf "\\\""
-    | c -> Buffer.add_char buf c
-  ) s;
-  Buffer.contents buf
-
+  let escape_quote s =
+    let buf = Buffer.create (String.length s * 2) in
+    String.iter
+      (function
+        | '\\' -> Buffer.add_string buf "\\\\"
+        | '"' -> Buffer.add_string buf "\\\""
+        | c -> Buffer.add_char buf c)
+      s;
+    Buffer.contents buf
   in
 
-let lib_names = ["DefaultMap"; "Option"] in
-let read_lib_content lib =
-  let file_path = Sys.getcwd () ^ "/helper_lib/" ^ lib ^ ".ts" in
-  CCIO.File.read_exn file_path
-in
-let lib_content = List.map (fun lib_name -> escape_quote (read_lib_content lib_name)) lib_names in
-let var_names = List.map pascal_to_snake lib_names in
-let gen_code var lib_content = [%string "
-let %{var} = \"%{lib_content}\"
-"] in
-let codes = List.map2 gen_code var_names lib_content in
-List.iter print_endline codes;
+  let lib_names = [ "DefaultMap"; "Option" ] in
+  let read_lib_content lib =
+    let file_path = Sys.getcwd () ^ "/helper_lib/" ^ lib ^ ".ts" in
+    CCIO.File.read_exn file_path
+  in
+  let lib_content =
+    List.map
+      (fun lib_name -> escape_quote (read_lib_content lib_name))
+      lib_names
+  in
+  let var_names = List.map pascal_to_snake lib_names in
+  let gen_code var lib_content =
+    [%string "
+let %{var} =
+\"%{lib_content}\"
+;;"]
+  in
+  let codes = List.map2 gen_code var_names lib_content in
+  List.iter print_endline codes
 *)
-let default_map = "class DefaultMap<K, V extends NonNullable<unknown>> implements Map<K, V> {
+let default_map =
+"export class DefaultMap<K, V extends NonNullable<unknown>>
+	implements Map<K, V>
+{
 	private map: Map<K, V>;
 
 	constructor(
@@ -108,13 +120,14 @@ let default_map = "class DefaultMap<K, V extends NonNullable<unknown>> implement
 	}
 }
 "
+;;
 
-
-let option = "interface Some<T> {
+let option =
+"interface Some<T> {
 	value: T;
 }
 
-type Option<T> = Some<T> | null;
+export type Option<T> = Some<T> | null;
 "
-
+;;
 (*$*)

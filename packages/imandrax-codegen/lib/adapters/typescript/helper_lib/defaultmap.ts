@@ -1,4 +1,6 @@
-class DefaultMap<K, V extends NonNullable<unknown>> implements Map<K, V> {
+export class DefaultMap<K, V extends NonNullable<unknown>>
+	implements Map<K, V>
+{
 	private map: Map<K, V>;
 
 	constructor(

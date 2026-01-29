@@ -2,4 +2,4 @@ interface Some<T> {
 	value: T;
 }
 
-type Option<T> = Some<T> | null;
+export type Option<T> = Some<T> | null;
