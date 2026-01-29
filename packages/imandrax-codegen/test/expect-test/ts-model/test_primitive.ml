@@ -14,9 +14,47 @@ let load_sir_model (sub_dir : string) (name : string) : Sir.Value_assignment.t =
   let sir_sexp = CCIO.File.read_exn (art_data_model_dir ^ "/" ^ sir_file) in
   Sir.Value_assignment.t_of_sexp (Sexplib.Sexp.of_string sir_sexp)
 
+(*$
+let data = [ ("primitive", "bool_list")
+            ; ("primitive", "empty_list")
+            ; ("primitive", "int")
+            ] in
+print_endline "";
+List.iter (fun (sub_dir, name) ->
+  let test_name = sub_dir ^ "/" ^ name in
+  let code = [%string
+    "let%expect_test \"%{test_name}\" =
+let sir_val_assignment = load_sir_model \"%{sub_dir}\" \"%{name}\" in
+let code = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
+  print_endline code;
+[%expect {||}];
+;;
+  " ] in
+  print_endline code
+) data;
+*)
 
-let%expect_test "bool list" =
-  let bool_list = load_sir_model "primitive" "bool_list" in
-  let code = Typescript_adapter.Emit.emit_value_assignment (bool_list) in
-    print_endline code;
- [%expect {| const w: boolean[] = [true, false]; |}];
+let%expect_test "primitive/bool_list" =
+let sir_val_assignment = load_sir_model "primitive" "bool_list" in
+let code = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
+  print_endline code;
+[%expect {| const w: boolean[] = [true, false]; |}];
+;;
+
+
+let%expect_test "primitive/empty_list" =
+let sir_val_assignment = load_sir_model "primitive" "empty_list" in
+let code = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
+  print_endline code;
+[%expect {| const w: _a_0[] = []; |}];
+;;
+
+
+let%expect_test "primitive/int" =
+let sir_val_assignment = load_sir_model "primitive" "int" in
+let code = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
+  print_endline code;
+[%expect {| const w: number = 2; |}];
+;;
+
+(*$*)

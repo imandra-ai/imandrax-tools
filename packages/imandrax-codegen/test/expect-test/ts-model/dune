@@ -9,3 +9,9 @@
    (source_tree ../../data)))
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving_yojson)))
+
+(cinaps
+  (files test_primitive.ml)
+  (preprocess
+   (pps ppx_string))
+  )
