@@ -1,1 +1,1 @@
-Tests for generating TypeScript source code from SIR model
+Testing TypeScript adapter for generating source code from SIR model
