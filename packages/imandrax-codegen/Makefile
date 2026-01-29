@@ -12,12 +12,18 @@ help:  ## Show this help message
 
 TEST_DATA_ART_DIR := test/data/art
 TEST_DATA_SIR_DIR := test/data/sir
+TEST_DATA_TS_DIR := test/data/ts
+
+export TEST_DATA_ART_DIR
+export TEST_DATA_SIR_DIR
+export TEST_DATA_TS_DIR
 
 reload-env:  ## Reload .env file
 	rm .env
 	@touch .env
 	@echo "TEST_DATA_ART_DIR=$(TEST_DATA_ART_DIR)" >> .env
 	@echo "TEST_DATA_SIR_DIR=$(TEST_DATA_SIR_DIR)" >> .env
+	@echo "TEST_DATA_TS_DIR=$(TEST_DATA_TS_DIR)" >> .env
 
 # Test data generation
 # ====================
@@ -63,7 +69,12 @@ copy-art-decl:
 .PHONY: gen-sir
 gen-sir:  ## Generate SIR S-expressions from twine data
 	@echo "Generating SIR S-expressions..."
-	dune exec test/gen-sir/gen_sir.exe
+	dune exec test/data/gen-sir/gen_sir.exe
+
+.PHONY: gen-ts
+gen-ts:  ## Generate TypeScript code from SIR data
+	@echo "Generating TypeScript code..."
+	dune exec test/data/gen-ts/gen_ts.exe
 
 gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
