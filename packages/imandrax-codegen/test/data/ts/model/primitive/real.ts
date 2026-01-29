@@ -1,0 +1,1 @@
+const w: float = 3.14;

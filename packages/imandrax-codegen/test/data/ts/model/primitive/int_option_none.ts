@@ -1,0 +1,1 @@
+const w: _a_0 | null = null;

@@ -1,0 +1,1 @@
+const w: Map<number, number> = new Map([[1, 2], [3, 1], [2, 2]]) /* default: 0 */;

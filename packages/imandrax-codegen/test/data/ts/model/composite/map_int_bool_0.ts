@@ -1,0 +1,1 @@
+const w: Map<number, boolean> = new Map([]) /* default: false */;

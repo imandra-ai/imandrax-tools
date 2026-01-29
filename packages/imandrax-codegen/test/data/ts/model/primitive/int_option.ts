@@ -1,0 +1,1 @@
+const w: number | null = { tag: "Some", payload: 2 };

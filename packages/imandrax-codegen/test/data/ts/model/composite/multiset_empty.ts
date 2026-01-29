@@ -1,0 +1,1 @@
+const w: Map<_a_0, number> = new Map([]) /* default: 0 */;
