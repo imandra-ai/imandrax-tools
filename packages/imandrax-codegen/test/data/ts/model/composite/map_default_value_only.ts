@@ -1,1 +1,1 @@
-const w: Map<_a_0, boolean> = new Map([]) /* default: false */;
+const w: DefaultMap<_a_0, boolean> = new DefaultMap((() => false), []);

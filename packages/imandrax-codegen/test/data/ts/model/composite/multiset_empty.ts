@@ -1,1 +1,1 @@
-const w: Map<_a_0, number> = new Map([]) /* default: 0 */;
+const w: DefaultMap<_a_0, number> = new DefaultMap((() => 0), []);

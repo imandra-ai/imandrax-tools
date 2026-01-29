@@ -1,1 +1,1 @@
-const w: Map<number, boolean> = new Map([[2, true], [3, false]]) /* default: false */;
+const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[2, true], [3, false]]);
