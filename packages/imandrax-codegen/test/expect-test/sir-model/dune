@@ -1,8 +1,6 @@
 (library
  (name expect_test_sir_term)
- (libraries
-  imandrax_codegen
-  containers)
+ (libraries imandrax_codegen containers)
  (inline_tests
   (deps
    (source_tree ../../data)))

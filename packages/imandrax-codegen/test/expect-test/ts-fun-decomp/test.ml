@@ -21,23 +21,23 @@ let read_sir (name : string) : Sir.test_suite =
 
 (*$
   let data =
-  [ "basic"
-  ; "nested_conditions"
-  ; "variant_simple"
-  ; "complex_variant_record"
-  ; "option_type"
-  ; "variant_with_data"
-  ; "composite_record"
-  ; "primitive_bool"
-  ; "with_basis"
-  ; "composite_tuple"
-  ; "primitive_int"
-  ; "with_guards"
-  ; "list_operations"
-  ; "primitive_real"
-  ; "multiple_parameters"
-  ; "variant_poly"
-  ]
+    [ "basic"
+    ; "nested_conditions"
+    ; "variant_simple"
+    ; "complex_variant_record"
+    ; "option_type"
+    ; "variant_with_data"
+    ; "composite_record"
+    ; "primitive_bool"
+    ; "with_basis"
+    ; "composite_tuple"
+    ; "primitive_int"
+    ; "with_guards"
+    ; "list_operations"
+    ; "primitive_real"
+    ; "multiple_parameters"
+    ; "variant_poly"
+    ]
   in
   print_endline "";
   List.iter
