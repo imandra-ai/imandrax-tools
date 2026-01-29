@@ -1,9 +1,6 @@
 (library
  (name expect_test_ts_model)
- (libraries
-  imandrax_codegen
-  imandrax-codegen.adapters.typescript
-  containers)
+ (libraries imandrax_codegen imandrax-codegen.adapters.typescript containers)
  (inline_tests
   (deps
    (source_tree ../../data)))
@@ -11,7 +8,6 @@
   (pps ppx_expect ppx_deriving.show ppx_deriving_yojson)))
 
 (cinaps
-  (files test.ml)
-  (preprocess
-   (pps ppx_string))
-  )
+ (files test.ml)
+ (preprocess
+  (pps ppx_string)))
