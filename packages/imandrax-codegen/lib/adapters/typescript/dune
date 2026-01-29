@@ -10,3 +10,11 @@
   (:standard -w -33))
  (preprocess
   (pps ppx_expect ppx_deriving.show ppx_deriving.eq ppx_deriving_yojson)))
+
+(data_only_dirs helper_lib spec)
+
+(cinaps
+ (files helper_lib.ml)
+ (libraries containers)
+ (preprocess (pps ppx_string))
+ (runtime_deps (source_tree helper_lib)))
