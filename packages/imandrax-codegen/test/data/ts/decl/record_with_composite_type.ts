@@ -1,3 +1,3 @@
 type shape = {
-  circle: number | null;
+  circle: Option<number>;
 };

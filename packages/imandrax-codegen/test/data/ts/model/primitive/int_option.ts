@@ -1,1 +1,1 @@
-const w: number | null = { tag: "Some", payload: 2 };
+const w: Option<number> = { tag: "Some", payload: 2 };

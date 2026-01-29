@@ -1,5 +1,5 @@
 type my_ty = {
   x: number;
-  y: number | null;
+  y: Option<number>;
   z: number;
 };

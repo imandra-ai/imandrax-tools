@@ -42,7 +42,7 @@ let rec emit_type_expr (te : Sir.type_expr) : string =
       let mapped_name = Config.map_type_name name in
       (match mapped_name, args with
       | "Array", [ elem ] -> emit_type_expr elem ^ "[]"
-      | "Option", [ elem ] -> emit_type_expr elem ^ " | null"
+      | "Option", [ elem ] -> "Option" ^ angles (emit_type_expr elem)
       | _, [] -> mapped_name
       | _, _ ->
           mapped_name ^ angles (args |> List.map emit_type_expr |> join_comma))

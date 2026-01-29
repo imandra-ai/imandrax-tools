@@ -1,1 +1,1 @@
-const w: _a_0 | null = null;
+const w: Option<_a_0> = null;
