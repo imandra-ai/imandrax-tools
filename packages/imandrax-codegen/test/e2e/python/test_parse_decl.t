@@ -11,63 +11,63 @@ Setup: Define helper function
 function
   $ run_test function.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function1
   $ run_test function1.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function2
   $ run_test function2.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function3
   $ run_test function3.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function4
   $ run_test function4.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function5
   $ run_test function5.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function6
   $ run_test function6.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 function7
   $ run_test function7.yaml
   ```python
-  Error parsing input: WIP: Fun
+  Error: WIP: Fun
   imandrax_codegen error: Input is empty
   ```
 
 GADT_monomorphic
   $ run_test GADT_monomorphic.yaml
   ```python
-  Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
+  Error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
   imandrax_codegen error: Input is empty
   ```
 
@@ -158,7 +158,7 @@ record
 tuple_two_int
   $ run_test tuple_two_int.yaml
   ```python
-  Unexpected error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
+  Error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
   imandrax_codegen error: Input is empty
   ```
 
