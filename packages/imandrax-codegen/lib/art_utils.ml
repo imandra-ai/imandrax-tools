@@ -4,23 +4,8 @@ module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term
 
-let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
-  let log fmt = if debug then printf fmt else ifprintf stdout fmt in
-
-  (* Extract fields *)
-  let kind_str = Yojson.Safe.Util.(json |> member "kind" |> to_string) in
-  let data_b64 = Yojson.Safe.Util.(json |> member "data" |> to_string) in
-  let api_version =
-    Yojson.Safe.Util.(json |> member "api_version" |> to_string)
-  in
-
-  (* log "Kind: %s\n" kind_str; *)
-  log "API Version: %s\n" api_version;
-
-  (* log.log "Data (base64): %s...\n"
-    (String.sub data_b64 0 (min 50 (String.length data_b64))); *)
-  data_b64, kind_str
-;;
+(* twine -> Art
+==================== *)
 
 let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string)
     : Artifact.t =
@@ -99,22 +84,25 @@ let art_data_to_decl ?(debug = false) (data_b64 : string) (kind_str : string)
   decl
 ;;
 
-(* <><><><><><><><><><> *)
+(* JSON/YAML -> twine
+==================== *)
 
-let json_to_model ?(debug = false) (json : Yojson.Safe.t) : Mir.Model.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_model ~debug data_b64 kind_str
-;;
+let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
+  let log fmt = if debug then printf fmt else ifprintf stdout fmt in
 
-let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t)
-    : Mir.Fun_decomp.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_fun_decomp ~debug data_b64 kind_str
-;;
+  (* Extract fields *)
+  let kind_str = Yojson.Safe.Util.(json |> member "kind" |> to_string) in
+  let data_b64 = Yojson.Safe.Util.(json |> member "data" |> to_string) in
+  let api_version =
+    Yojson.Safe.Util.(json |> member "api_version" |> to_string)
+  in
 
-let json_to_decl ?(debug = false) (json : Yojson.Safe.t) : Mir.Decl.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_decl ~debug data_b64 kind_str
+  (* log "Kind: %s\n" kind_str; *)
+  log "API Version: %s\n" api_version;
+
+  (* log.log "Data (base64): %s...\n"
+    (String.sub data_b64 0 (min 50 (String.length data_b64))); *)
+  data_b64, kind_str
 ;;
 
 let yaml_to_art ?(debug = false) (yaml : Yaml.value) : string * string =
@@ -137,6 +125,25 @@ let yaml_to_art ?(debug = false) (yaml : Yaml.value) : string * string =
 
       data_b64, kind_str
   | _ -> failwith "Expected YAML mapping (object)"
+;;
+
+(* JSON/YAML -> Art
+==================== *)
+
+let json_to_model ?(debug = false) (json : Yojson.Safe.t) : Mir.Model.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_model ~debug data_b64 kind_str
+;;
+
+let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t)
+    : Mir.Fun_decomp.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_fun_decomp ~debug data_b64 kind_str
+;;
+
+let json_to_decl ?(debug = false) (json : Yojson.Safe.t) : Mir.Decl.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_decl ~debug data_b64 kind_str
 ;;
 
 let yaml_to_model ?(debug = false) (yaml : Yaml.value) : Mir.Model.t =
