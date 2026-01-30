@@ -5,7 +5,7 @@ export class DefaultMap<K, V extends NonNullable<unknown>>
 
 	constructor(
 		private readonly defaultFactory: () => V,
-		entries?: Iterable<[K, V]>,
+		entries?: Iterable<readonly [K, V]>,
 	) {
 		this.map = new Map(entries);
 	}
@@ -72,4 +72,4 @@ export class DefaultMap<K, V extends NonNullable<unknown>>
 	}
 }
 
-const w: DefaultMap<number, number> = new DefaultMap((() => 0), [[1, 2], [3, 1], [2, 2]]);
+const w: DefaultMap<number, number> = new DefaultMap((() => 0), [[1, 2] as const, [3, 1] as const, [2, 2] as const]);

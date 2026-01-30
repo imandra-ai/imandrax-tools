@@ -53,7 +53,7 @@ let default_map =
 
 	constructor(
 		private readonly defaultFactory: () => V,
-		entries?: Iterable<[K, V]>,
+		entries?: Iterable<readonly [K, V]>,
 	) {
 		this.map = new Map(entries);
 	}

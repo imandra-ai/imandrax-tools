@@ -103,29 +103,9 @@ model/composite/map_int_bool_0
 
 model/composite/map_int_bool_1
   $ run_tsc model/composite/map_int_bool_1.ts
-  ../../data/ts/model/composite/map_int_bool_1.ts(75,7): error TS2322: Type 'DefaultMap<number | boolean, number | boolean>' is not assignable to type 'DefaultMap<number, boolean>'.
-    Type 'number | boolean' is not assignable to type 'number'.
-      Type 'boolean' is not assignable to type 'number'.
-  ../../data/ts/model/composite/map_int_bool_1.ts(75,70): error TS2345: Argument of type '(number | boolean)[][]' is not assignable to parameter of type 'Iterable<[number | boolean, number | boolean]>'.
-    The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
-      Type 'IteratorResult<(number | boolean)[], undefined>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-        Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-          Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorYieldResult<[number | boolean, number | boolean]>'.
-            Type '(number | boolean)[]' is not assignable to type '[number | boolean, number | boolean]'.
-              Target requires 2 element(s) but source may have fewer.
 
 model/composite/map_int_bool_2
   $ run_tsc model/composite/map_int_bool_2.ts
-  ../../data/ts/model/composite/map_int_bool_2.ts(75,7): error TS2322: Type 'DefaultMap<number | boolean, number | boolean>' is not assignable to type 'DefaultMap<number, boolean>'.
-    Type 'number | boolean' is not assignable to type 'number'.
-      Type 'boolean' is not assignable to type 'number'.
-  ../../data/ts/model/composite/map_int_bool_2.ts(75,70): error TS2345: Argument of type '(number | boolean)[][]' is not assignable to parameter of type 'Iterable<[number | boolean, number | boolean]>'.
-    The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
-      Type 'IteratorResult<(number | boolean)[], undefined>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-        Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-          Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorYieldResult<[number | boolean, number | boolean]>'.
-            Type '(number | boolean)[]' is not assignable to type '[number | boolean, number | boolean]'.
-              Target requires 2 element(s) but source may have fewer.
 
 model/composite/multiset_empty
   $ run_tsc model/composite/multiset_empty.ts
@@ -133,13 +113,6 @@ model/composite/multiset_empty
 
 model/composite/multiset_nonempty
   $ run_tsc model/composite/multiset_nonempty.ts
-  ../../data/ts/model/composite/multiset_nonempty.ts(75,65): error TS2345: Argument of type 'number[][]' is not assignable to parameter of type 'Iterable<[number, number]>'.
-    The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
-      Type 'IteratorResult<number[], undefined>' is not assignable to type 'IteratorResult<[number, number], any>'.
-        Type 'IteratorYieldResult<number[]>' is not assignable to type 'IteratorResult<[number, number], any>'.
-          Type 'IteratorYieldResult<number[]>' is not assignable to type 'IteratorYieldResult<[number, number]>'.
-            Type 'number[]' is not assignable to type '[number, number]'.
-              Target requires 2 element(s) but source may have fewer.
 
 model/composite/set_empty
   $ run_tsc model/composite/set_empty.ts
@@ -147,16 +120,6 @@ model/composite/set_empty
 
 model/composite/set_nonempty
   $ run_tsc model/composite/set_nonempty.ts
-  ../../data/ts/model/composite/set_nonempty.ts(75,7): error TS2322: Type 'DefaultMap<number | boolean, number | boolean>' is not assignable to type 'DefaultMap<number, boolean>'.
-    Type 'number | boolean' is not assignable to type 'number'.
-      Type 'boolean' is not assignable to type 'number'.
-  ../../data/ts/model/composite/set_nonempty.ts(75,70): error TS2345: Argument of type '(number | boolean)[][]' is not assignable to parameter of type 'Iterable<[number | boolean, number | boolean]>'.
-    The types returned by '[Symbol.iterator]().next(...)' are incompatible between these types.
-      Type 'IteratorResult<(number | boolean)[], undefined>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-        Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorResult<[number | boolean, number | boolean], any>'.
-          Type 'IteratorYieldResult<(number | boolean)[]>' is not assignable to type 'IteratorYieldResult<[number | boolean, number | boolean]>'.
-            Type '(number | boolean)[]' is not assignable to type '[number | boolean, number | boolean]'.
-              Target requires 2 element(s) but source may have fewer.
 
 model/composite/variant_and_record
   $ run_tsc model/composite/variant_and_record.ts

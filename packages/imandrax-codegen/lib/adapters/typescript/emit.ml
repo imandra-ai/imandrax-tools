@@ -210,7 +210,7 @@ let rec emit_value (v : Sir.value) : string * Extra_imports.t =
         |> List.map (fun (k, v) ->
                let k_code, k_imports = emit_value k in
                let v_code, v_imports = emit_value v in
-               (brackets (join_comma [ k_code; v_code ]),
+               (brackets (join_comma [ k_code; v_code ]) ^ " as const",
                 Extra_imports.union k_imports v_imports))
       in
       let entries_str = entry_results |> List.map fst |> join_comma in
