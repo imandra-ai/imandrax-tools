@@ -1,3 +1,10 @@
+open Sexplib.Std
+
+let sexp_of_bytes b = Sexplib.Sexp.Atom (Bytes.to_string b)
+let bytes_of_sexp = function
+  | Sexplib.Sexp.Atom s -> Bytes.of_string s
+  | sexp -> Sexplib.Conv.of_sexp_error "bytes_of_sexp: expected Atom" sexp
+
 type location =
   { lineno : int
   ; col_offset : int
@@ -257,4 +264,4 @@ and type_var =
   ; bound : expr option
   ; default_value : expr option
   }
-[@@deriving show, eq, yojson]
+[@@deriving show, eq, yojson, sexp]

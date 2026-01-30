@@ -212,6 +212,25 @@ let rec ast_expr_of_sir_value (v : Sir.value) : expr =
       mk_defaultdict_value (ast_expr_of_sir_value default) key_val_pairs
 ;;
 
+let ast_stmts_of_sir_value_assignment (value_assign : Sir.Value_assignment.t)
+    : stmt list =
+  let type_params = Sir.Value_assignment.type_var value_assign in
+  let type_param_defs = stmts_of_type_params type_params in
+  let type_annot : Ast.expr = value_assign.ty |> annot_of_sir_type_expr in
+  let term_expr : Ast.expr = value_assign.tm |> ast_expr_of_sir_value in
+
+  let assign_stmt =
+    let target = value_assign.var_name in
+    Ast.AnnAssign
+      { target = Ast.Name { Ast.id = target; ctx = Ast.Load }
+      ; annotation = type_annot
+      ; value = Some term_expr
+      ; simple = 1
+      }
+  in
+  type_param_defs @ [ assign_stmt ]
+;;
+
 (*
 Create a test function definition statement
 

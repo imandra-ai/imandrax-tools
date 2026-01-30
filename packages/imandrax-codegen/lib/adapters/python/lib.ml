@@ -23,26 +23,7 @@ target_var: TargetType = target_value
 let parse_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
     : Ast.stmt list =
   let value_assign = Sir.Parser.Model.parse_model model in
-
-  let type_params = Sir.Value_assignment.type_var value_assign in
-  let type_param_defs = Transform.stmts_of_type_params type_params in
-  let type_annot : Ast.expr =
-    value_assign.ty |> Transform.annot_of_sir_type_expr
-  in
-  let term_expr : Ast.expr =
-    value_assign.tm |> Transform.ast_expr_of_sir_value
-  in
-
-  let assign_stmt =
-    let target = value_assign.var_name in
-    Ast.AnnAssign
-      { target = Ast.Name { Ast.id = target; ctx = Ast.Load }
-      ; annotation = type_annot
-      ; value = Some term_expr
-      ; simple = 1
-      }
-  in
-  type_param_defs @ [ assign_stmt ]
+  Transform.ast_stmts_of_sir_value_assignment value_assign
 ;;
 
 (** Parse a MIR Decl.t to corresponding AST statments for type declaration *)
