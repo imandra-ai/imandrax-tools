@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEST_DATA_DIR="$SCRIPT_DIR/../../data/model"
+TEST_DATA_DIR="$SCRIPT_DIR/../../data/art/model"
 
 # Directories to exclude (space-separated list)
 EXCLUDE_DIRS="polymorphic"
@@ -16,7 +16,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    py-gen-parse "test/data/model/$1" - --mode model \
+  >    py-gen-parse "test/data/art/model/$1" - --mode model \
   >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }
@@ -32,8 +32,8 @@ find_cmd="$find_cmd -type f -name \"*.yaml\" -print"
 
 # Find all YAML files and generate test cases
 eval "$find_cmd" | sort | while read -r yaml_file; do
-    # Get relative path from test/data/
-    rel_path="${yaml_file#$SCRIPT_DIR/../../data/model/}"
+    # Get relative path from TEST_DATA_DIR
+    rel_path="${yaml_file#$TEST_DATA_DIR/}"
 
     # Extract test name from YAML and capitalize first letter
     test_name=$(yq -r '.name' "$yaml_file" 2>/dev/null || basename "$yaml_file" .yaml)
