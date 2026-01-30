@@ -29,7 +29,7 @@ let parse_model (model : Mir.Model.t) : Sir.Value_assignment.t =
   A example will be `let w = []`
   *)
   let type_annot, _type_vars =
-    type_expr_of_mir_ty_view_constr app_sym.ty.view
+    type_expr_of_mir_ty_view app_sym.ty.view
   in
   let (_type_annot : Sir.type_expr), (sir_term_expr : Sir.value) =
     match parse_term term with

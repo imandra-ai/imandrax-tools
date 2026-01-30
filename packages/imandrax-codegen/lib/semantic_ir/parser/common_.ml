@@ -126,15 +126,15 @@ let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
 (* SIR
 ==================== *)
 
-(** Parse Constr variant of MIR Ty_view.view to Semantic IR type_expr
+(** Parse MIR Ty_view.view to Semantic IR type_expr
 
-@param [ty_view]: Constr variant of Mir Ty_view.view
+@param [ty_view]: Mir Ty_view.view (Constr, Var, Arrow, or Tuple)
 
 @return: tuple of:
   0: Semantic IR type expression
-  1: generic type parameters used. as names.
+  1: generic type parameters used, as names.
 *)
-let type_expr_of_mir_ty_view_constr
+let type_expr_of_mir_ty_view
     (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
     : Sir.type_expr * string list =
   let rec helper
@@ -158,7 +158,16 @@ let type_expr_of_mir_ty_view_constr
     | Var (var_uid : Uid.t) ->
         let type_var_name = var_uid.name in
         Sir.TVar type_var_name, type_var_name :: params_acc
-    | _ -> failwith "parse_constr_to_semantic_type: expected Constr or Var"
+    | Arrow (_, left_t, right_t) ->
+        let left_expr, left_params = helper left_t.view [] in
+        let right_expr, right_params = helper right_t.view [] in
+        ( Sir.TArrow (left_expr, right_expr)
+        , params_acc @ left_params @ right_params )
+    | Tuple ts ->
+        let exprs, params_lists =
+          ts |> List.map (fun (t : Type.t) -> helper t.view []) |> List.split
+        in
+        Sir.TTuple exprs, params_acc @ (params_lists |> List.flatten)
   in
 
   let ty_expr, params_acc = helper ty_view [] in

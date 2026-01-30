@@ -46,7 +46,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly)
                     (fun (arg : Type.t) ->
                       let Type.{ view = arg_ty_view; generation = _ } = arg in
                       let ty_expr, _params =
-                        type_expr_of_mir_ty_view_constr arg_ty_view
+                        type_expr_of_mir_ty_view arg_ty_view
                       in
                       ty_expr)
                     args
@@ -75,7 +75,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly)
                 let field_name = f.name in
                 let Type.{ view = arg_ty_view; generation = _ } = ty in
                 let ty_expr, _params =
-                  type_expr_of_mir_ty_view_constr arg_ty_view
+                  type_expr_of_mir_ty_view arg_ty_view
                 in
 
                 { Sir.rf_name = field_name; rf_type = ty_expr })

@@ -68,7 +68,7 @@ let rec parse_term (term : Term.term)
         | Ty_view.Constr (constr_name_uid, _constr_args) -> constr_name_uid.name
         | _ -> failwith "Never: ty should be a constr"
       in
-      let record_type, _type_vars = type_expr_of_mir_ty_view_constr ty.view in
+      let record_type, _type_vars = type_expr_of_mir_ty_view ty.view in
 
       (* Extract field names and values from rows *)
       let fields =
@@ -150,7 +150,7 @@ let rec parse_term (term : Term.term)
         match ty_view_constr_args with
         | [ elem_ty ] ->
             let ty_expr, _params =
-              type_expr_of_mir_ty_view_constr elem_ty.view
+              type_expr_of_mir_ty_view elem_ty.view
             in
             ty_expr
         | _ -> failwith "Never: list should have exactly 1 type arg"
@@ -191,7 +191,7 @@ let rec parse_term (term : Term.term)
     , (ty : Type.t) ) ->
       let variant_constr_name = construct.sym.id.name in
 
-      let variant_type, _type_vars = type_expr_of_mir_ty_view_constr ty.view in
+      let variant_type, _type_vars = type_expr_of_mir_ty_view ty.view in
 
       let _constr_arg_type_annots, constr_arg_values =
         List.map (fun arg -> parse_term arg |> unwrap) construct_args
@@ -215,10 +215,10 @@ let rec parse_term (term : Term.term)
            | Ty_view.Constr
                ({ name = "Map.t"; _ }, ([ key_ty; val_ty ] : Type.t list)) ->
                let key_ty_expr, _ =
-                 type_expr_of_mir_ty_view_constr key_ty.view
+                 type_expr_of_mir_ty_view key_ty.view
                in
                let val_ty_expr, _ =
-                 type_expr_of_mir_ty_view_constr val_ty.view
+                 type_expr_of_mir_ty_view val_ty.view
                in
                key_ty_expr, val_ty_expr
            | _ -> raise (Early_return "Non-map Apply term view")
