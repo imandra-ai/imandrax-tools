@@ -38,6 +38,7 @@ let load_sir_model (sub_dir : string) (name : string) : Sir.Value_assignment.t =
     ; "primitive", "empty_list"
     ; "primitive", "int_option"
     ; "primitive", "int_option_none"
+    ; "composite", "multiset_empty"
     ]
   in
   print_endline "";
@@ -318,6 +319,43 @@ let%expect_test "primitive/int_option_none" =
          ((value (Name ((id option) (ctx Load))))
           (slice (Name ((id a) (ctx Load)))) (ctx Load))))
        (value ((Constant ((value Unit) (kind ()))))) (simple 1)))
+     |}]
+;;
+
+let%expect_test "composite/multiset_empty" =
+  let sir_val_assignment = load_sir_model "composite" "multiset_empty" in
+  let stmts = Python_adapter.Transform.ast_stmts_of_sir_value_assignment sir_val_assignment in
+  List.iter (fun stmt -> print_endline (Python_adapter.Ast.sexp_of_stmt stmt |> Sexplib.Sexp.to_string_hum)) stmts;
+   [%expect
+     {|
+     (Assign
+      ((targets ((Name ((id a) (ctx Load)))))
+       (value
+        (Call
+         ((func (Name ((id TypeVar) (ctx Load))))
+          (args ((Constant ((value (String a)) (kind ()))))) (keywords ()))))
+       (type_comment ())))
+     (AnnAssign
+      ((target (Name ((id w) (ctx Load))))
+       (annotation
+        (Subscript
+         ((value (Name ((id defaultdict) (ctx Load))))
+          (slice
+           (Tuple
+            ((elts ((Name ((id a) (ctx Load))) (Name ((id int) (ctx Load)))))
+             (ctx Load) (dims ()))))
+          (ctx Load))))
+       (value
+        ((Call
+          ((func (Name ((id defaultdict) (ctx Load))))
+           (args
+            ((Lambda
+              ((args
+                ((posonlyargs ()) (args ()) (vararg ()) (kwonlyargs ())
+                 (kw_defaults ()) (kwarg ()) (defaults ())))
+               (body (Constant ((value (Int 0)) (kind ()))))))))
+           (keywords ())))))
+       (simple 1)))
      |}]
 ;;
 

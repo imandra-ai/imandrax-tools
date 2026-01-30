@@ -21,6 +21,9 @@ map_default_value_only
   ```python
   from __future__ import annotations
   
+  from typing import TypeVar
+  
+  a = TypeVar('a')
   w: defaultdict[a, bool] = defaultdict(lambda: False)
   
   ```
@@ -57,6 +60,9 @@ multiset_empty
   ```python
   from __future__ import annotations
   
+  from typing import TypeVar
+  
+  a = TypeVar('a')
   w: defaultdict[a, int] = defaultdict(lambda: 0)
   
   ```
@@ -75,6 +81,9 @@ set_empty
   ```python
   from __future__ import annotations
   
+  from typing import TypeVar
+  
+  a = TypeVar('a')
   w: defaultdict[a, bool] = defaultdict(lambda: False)
   
   ```

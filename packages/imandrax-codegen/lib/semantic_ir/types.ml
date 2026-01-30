@@ -35,9 +35,19 @@ let type_var_names_of_type_expr (ty_expr : type_expr) : string list =
     | TApp (_, args) -> CCList.fold_left helper acc args
     | TTuple args -> CCList.fold_left helper acc args
     | TArrow (arg, ret) -> helper acc arg @ helper acc ret
-    | _ -> []
+    | TBase _ -> acc
   in
   helper [] ty_expr
+;;
+
+let%expect_test _ =
+  let sexp_type_expr = "(TApp Map.t ((TVar a) (TBase int)))" in
+  let ty_expr = type_expr_of_sexp (Sexplib.Sexp.of_string sexp_type_expr) in
+  print_endline (Sexplib.Sexp.to_string_hum (sexp_of_type_expr ty_expr));
+  [%expect {| (TApp Map.t ((TVar a) (TBase int))) |}];
+  let type_var_names = type_var_names_of_type_expr ty_expr in
+  List.iter (fun name -> print_endline name) type_var_names;
+  [%expect {| a |}]
 ;;
 
 (** Variant constructor definition *)
@@ -148,5 +158,4 @@ type test_decl =
 [@@deriving show, eq, yojson, sexp]
 
 (** Test suite *)
-type test_suite = test_decl list
-[@@deriving show, eq, yojson, sexp]
+type test_suite = test_decl list [@@deriving show, eq, yojson, sexp]
