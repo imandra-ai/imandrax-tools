@@ -25,3 +25,5 @@
   ppx_deriving
   ppx_deriving_yojson
   ppx_expect))
+
+(using cinaps 1.3)

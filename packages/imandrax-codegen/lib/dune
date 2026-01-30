@@ -2,7 +2,8 @@
 
 (library
  (name imandrax_codegen)
- (flags (:standard -w -30))
+ (flags
+  (:standard -w -30))
  (libraries
   imandrax-api
   imandrax-api.artifact
@@ -13,7 +14,7 @@
   containers
   base64
   yaml
-  fmt)
+  semantic_ir)
  (inline_tests
   (deps
    (source_tree ../examples)

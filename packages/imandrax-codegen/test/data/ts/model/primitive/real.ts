@@ -1,0 +1,1 @@
+const w: number = 3.14;

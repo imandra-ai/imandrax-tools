@@ -1,0 +1,1 @@
+const w: user = { id: 1, active: true };

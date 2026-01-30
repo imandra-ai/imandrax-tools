@@ -1,0 +1,1 @@
+const w: container3<number, number, container2<number, number>> = { v: [1, 2, { v: [3, 4] }] };

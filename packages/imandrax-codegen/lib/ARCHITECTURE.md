@@ -1,0 +1,23 @@
+Pipeline
+- Binary artifact (twine)
+  - : data from ImandraX API
+- Mir.Decl.t, Mir.Model.t, Mir.Fun_decomp.t
+  - : parsed types from ImandraX API
+  - transform: twine data --Imandrax_api art parser--> self
+- SIR (semantic IR)
+  - : language-agnostic intermediate representation
+  - type declarations
+     - type expression
+     - type declaration
+       - | Variant
+         - { name
+         - , type_params
+         - , constructors
+         - }
+       - | Record
+         - {...}
+       - | Alias
+  - value
+  - test declaration
+- Language-specific adapter
+  - : transform SIR to AST or source code directly

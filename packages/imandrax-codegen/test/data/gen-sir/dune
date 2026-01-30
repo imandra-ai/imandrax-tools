@@ -1,0 +1,10 @@
+(executable
+ (name gen_sir)
+ (libraries
+  imandrax_codegen
+  imandrax-codegen.semantic_ir
+  yaml
+  containers
+  sexplib)
+ (preprocess
+  (pps ppx_sexp_conv)))
