@@ -1,8 +1,4 @@
-interface Some<T> {
-	value: T;
-}
-
-export type Option<T> = Some<T> | null;
+export type Option<T> = { tag: "Some"; payload: T } | null;
 
 type my_ty = {
   x: number;
