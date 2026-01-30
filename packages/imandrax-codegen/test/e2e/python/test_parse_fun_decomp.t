@@ -2,7 +2,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    yq ".decomp_res.artifact" "test/data/fun_decomp/$1" -o json \
+  >    yq ".decomp_res.artifact" "test/data/art/fun_decomp/$1" -o json \
   >    | py-gen-parse - - --mode fun-decomp \
   >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence

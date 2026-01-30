@@ -2,7 +2,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    py-gen-parse "test/data/model/$1" - --mode model \
+  >    py-gen-parse "test/data/art/model/$1" - --mode model \
   >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }
@@ -21,7 +21,7 @@ map_default_value_only
   ```python
   from __future__ import annotations
   
-  w: defaultdict[_a_0, bool] = defaultdict(lambda: False)
+  w: defaultdict[a, bool] = defaultdict(lambda: False)
   
   ```
 
@@ -57,7 +57,7 @@ multiset_empty
   ```python
   from __future__ import annotations
   
-  w: defaultdict[_a_0, int] = defaultdict(lambda: 0)
+  w: defaultdict[a, int] = defaultdict(lambda: 0)
   
   ```
 
@@ -75,7 +75,7 @@ set_empty
   ```python
   from __future__ import annotations
   
-  w: defaultdict[_a_0, bool] = defaultdict(lambda: False)
+  w: defaultdict[a, bool] = defaultdict(lambda: False)
   
   ```
 
@@ -111,7 +111,10 @@ empty list
   ```python
   from __future__ import annotations
   
-  w: list[_a_0] = []
+  from typing import TypeVar
+  
+  a = TypeVar('a')
+  w: list[a] = []
   
   ```
 
@@ -132,7 +135,8 @@ int option none
   
   
   option: TypeAlias = Some[T] | None
-  w: option[_a_0] = None
+  a = TypeVar('a')
+  w: option[a] = None
   
   ```
 
@@ -189,7 +193,7 @@ real
   ```python
   from __future__ import annotations
   
-  w: float = 3.14
+  w: real = 3.14
   
   ```
 
