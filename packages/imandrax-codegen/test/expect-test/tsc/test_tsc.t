@@ -96,7 +96,6 @@ model/composite/inline_record
 
 model/composite/map_default_value_only
   $ run_tsc model/composite/map_default_value_only.ts
-  ../../data/ts/model/composite/map_default_value_only.ts(75,21): error TS2304: Cannot find name 'a'.
 
 model/composite/map_int_bool_0
   $ run_tsc model/composite/map_int_bool_0.ts
@@ -109,14 +108,12 @@ model/composite/map_int_bool_2
 
 model/composite/multiset_empty
   $ run_tsc model/composite/multiset_empty.ts
-  ../../data/ts/model/composite/multiset_empty.ts(75,21): error TS2304: Cannot find name 'a'.
 
 model/composite/multiset_nonempty
   $ run_tsc model/composite/multiset_nonempty.ts
 
 model/composite/set_empty
   $ run_tsc model/composite/set_empty.ts
-  ../../data/ts/model/composite/set_empty.ts(75,21): error TS2304: Cannot find name 'a'.
 
 model/composite/set_nonempty
   $ run_tsc model/composite/set_nonempty.ts
@@ -131,7 +128,6 @@ model/polymorphic/annotated_polymorphic_weird_type_name
 
 model/polymorphic/annotated_polymorphic
   $ run_tsc model/polymorphic/annotated_polymorphic.ts
-  ../../data/ts/model/polymorphic/annotated_polymorphic.ts(1,10): error TS2304: Cannot find name 'a'.
 
 model/polymorphic/nested_poly
   $ run_tsc model/polymorphic/nested_poly.ts
@@ -147,11 +143,9 @@ model/primitive/bool_list
 
 model/primitive/empty_list
   $ run_tsc model/primitive/empty_list.ts
-  ../../data/ts/model/primitive/empty_list.ts(1,10): error TS2304: Cannot find name 'a'.
 
 model/primitive/int_option_none
   $ run_tsc model/primitive/int_option_none.ts
-  ../../data/ts/model/primitive/int_option_none.ts(3,17): error TS2304: Cannot find name 'a'.
 
 model/primitive/int_option
   $ run_tsc model/primitive/int_option.ts

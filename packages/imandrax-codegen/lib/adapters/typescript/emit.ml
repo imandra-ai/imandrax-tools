@@ -247,12 +247,24 @@ and emit_values (vs : Sir.value list) : string list * Extra_imports.t =
   (codes, imports)
 ;;
 
-(** Emit a value assignment as TypeScript const declaration *)
+(** Emit a value assignment as TypeScript const declaration.
+    When the type contains type variables, emit type aliases first:
+    type a = unknown;
+    const w: a[] = []; *)
 let emit_value_assignment (va : Sir.Value_assignment.t) : string * Extra_imports.t =
+  let type_vars = Sir.Value_assignment.type_var va in
   let ty_code, ty_imports = emit_type_expr va.ty in
   let tm_code, tm_imports = emit_value va.tm in
-  ( "const " ^ kv va.var_name ty_code ^ " = " ^ tm_code ^ ";",
-    Extra_imports.union ty_imports tm_imports )
+  let imports = Extra_imports.union ty_imports tm_imports in
+  let type_aliases =
+    type_vars
+    |> List.map (fun tv -> "type " ^ tv ^ " = unknown;")
+    |> String.concat "\n"
+  in
+  let const_decl = "const " ^ kv va.var_name ty_code ^ " = " ^ tm_code ^ ";" in
+  match type_vars with
+  | [] -> (const_decl, imports)
+  | _ -> (type_aliases ^ "\n" ^ const_decl, imports)
 ;;
 
 (* Test declaration
@@ -433,4 +445,14 @@ let%expect_test "emit_value_assignment" =
   in
   print_endline (fst (emit_value_assignment va));
   [%expect {| const x: number = 42; |}]
+;;
+
+let%expect_test "emit_value_assignment with type variables" =
+  let va : Sir.Value_assignment.t =
+    { var_name = "w"; ty = Sir.TApp ("list", [ Sir.TVar "a" ]); tm = Sir.VList [] }
+  in
+  print_endline (fst (emit_value_assignment va));
+  [%expect {|
+    type a = unknown;
+    const w: a[] = []; |}]
 ;;

@@ -72,4 +72,5 @@ export class DefaultMap<K, V extends NonNullable<unknown>>
 	}
 }
 
+type a = unknown;
 const w: DefaultMap<a, number> = new DefaultMap((() => 0), []);
