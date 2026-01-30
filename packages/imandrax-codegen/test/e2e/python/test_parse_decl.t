@@ -67,7 +67,7 @@ function7
 GADT_monomorphic
   $ run_test GADT_monomorphic.yaml
   ```python
-  Error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
+  Error: Expected YAML mapping (object)
   imandrax_codegen error: Input is empty
   ```
 
@@ -158,7 +158,7 @@ record
 tuple_two_int
   $ run_test tuple_two_int.yaml
   ```python
-  Error: Yojson__Safe.Util.Type_error("Can't get member 'kind' of non-object type null", 870828711)
+  Error: Expected YAML mapping (object)
   imandrax_codegen error: Input is empty
   ```
 
