@@ -44,6 +44,20 @@ let rec pp_type out (ty : Type.t) =
     ty.generation
 ;;
 
+(* Pretty printer for Applied_symbol.t_poly *)
+let pp_applied_symbol out (app_sym : Type.t Imandrax_api_common.Applied_symbol.t_poly) =
+  let open Format in
+  fprintf
+    out
+    "@[<hv 2>{ @[<hv 2>sym.id =@ %a@];@ @[<hv 2>args =@ [@[<hv>%a@]]@];@ @[<hv 2>ty =@ %a@] }@]"
+    Uid.pp
+    app_sym.sym.id
+    (pp_print_list ~pp_sep:(fun out () -> fprintf out ";@ ") pp_type)
+    app_sym.args
+    pp_type
+    app_sym.ty
+;;
+
 (* Custom pretty-printer for Term.view with better indentation *)
 let pp_term_view pp_t out (v : (_, _) Term.view) =
   let open Format in
