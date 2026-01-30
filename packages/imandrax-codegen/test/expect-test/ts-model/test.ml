@@ -70,7 +70,7 @@ let%expect_test "primitive/real" =
   let code, _ = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
   print_endline code;
    [%expect
-     {| const w: float = 3.14; |}]
+     {| const w: number = 3.14; |}]
 ;;
 
 let%expect_test "primitive/LChar" =
@@ -150,7 +150,7 @@ let%expect_test "primitive/empty_list" =
   let code, _ = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
   print_endline code;
    [%expect
-     {| const w: _a_0[] = []; |}]
+     {| const w: a[] = []; |}]
 ;;
 
 let%expect_test "primitive/int_option" =
@@ -158,7 +158,7 @@ let%expect_test "primitive/int_option" =
   let code, _ = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
   print_endline code;
    [%expect
-     {| const w: number | null = { tag: "Some", payload: 2 }; |}]
+     {| const w: Option<number> = { tag: "Some", payload: 2 }; |}]
 ;;
 
 let%expect_test "primitive/int_option_none" =
@@ -166,7 +166,7 @@ let%expect_test "primitive/int_option_none" =
   let code, _ = Typescript_adapter.Emit.emit_value_assignment sir_val_assignment in
   print_endline code;
    [%expect
-     {| const w: _a_0 | null = null; |}]
+     {| const w: Option<a> = null; |}]
 ;;
 
 (*$*)

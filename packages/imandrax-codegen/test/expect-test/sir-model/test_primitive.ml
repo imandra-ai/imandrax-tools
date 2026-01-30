@@ -44,7 +44,7 @@ let%expect_test "empty list" =
   [%expect
     {|
     { Types.Value_assignment.var_name = "w";
-      ty = (Types.TApp ("list", [(Types.TBase "_a_0")])); tm = (Types.VList []) }
+      ty = (Types.TApp ("list", [(Types.TVar "a")])); tm = (Types.VList []) }
     |}]
 ;;
 
@@ -104,7 +104,7 @@ let%expect_test "LChar" =
   print_endline (Sir.Value_assignment.show (parse_model model));
   [%expect
     {|
-    { Types.Value_assignment.var_name = "w"; ty = (Types.TBase "char");
+    { Types.Value_assignment.var_name = "w"; ty = (Types.TBase "LChar.t");
       tm = (Types.VConst (Types.CChar '\000')) }
     |}]
 ;;
@@ -146,7 +146,7 @@ let%expect_test "real" =
   print_endline (Sir.Value_assignment.show (parse_model model));
   [%expect
     {|
-    { Types.Value_assignment.var_name = "w"; ty = (Types.TBase "float");
+    { Types.Value_assignment.var_name = "w"; ty = (Types.TBase "real");
       tm = (Types.VConst (Types.CFloat 3.14)) }
     |}]
 ;;

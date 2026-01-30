@@ -58,7 +58,7 @@ let%expect_test "real_and_option" =
     {|
     type my_ty = {
       x: number;
-      y: number | null;
+      y: Option<number>;
       z: number;
     };
     |}]
@@ -84,7 +84,7 @@ let%expect_test "record_with_composite_type" =
   [%expect
     {|
     type shape = {
-      circle: number | null;
+      circle: Option<number>;
     };
     |}]
 ;;
@@ -135,7 +135,7 @@ let%expect_test "variant_with_composite_payload" =
   [%expect
     {|
     type shape2 =
-      | { tag: "Circle"; payload: number | null };
+      | { tag: "Circle"; payload: Option<number> };
     |}]
 ;;
 
