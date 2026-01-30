@@ -150,14 +150,32 @@ let emit_type_decl (decl : Sir.type_decl) : string * Extra_imports.t =
 (* Value
 -------------------- *)
 
+(** Escape a string for TypeScript using hex escapes (not octal) *)
+let ts_escape_string s =
+  let buf = Buffer.create (String.length s * 2) in
+  String.iter
+    (fun c ->
+      match c with
+      | '\\' -> Buffer.add_string buf "\\\\"
+      | '"' -> Buffer.add_string buf "\\\""
+      | '\n' -> Buffer.add_string buf "\\n"
+      | '\r' -> Buffer.add_string buf "\\r"
+      | '\t' -> Buffer.add_string buf "\\t"
+      | c when Char.code c < 32 || Char.code c > 126 ->
+          Buffer.add_string buf (sprintf "\\x%02x" (Char.code c))
+      | c -> Buffer.add_char buf c)
+    s;
+  Buffer.contents buf
+;;
+
 let emit_const (c : Sir.const_value) : string * Extra_imports.t =
   let code =
     match c with
     | Sir.CInt i -> string_of_int i
     | Sir.CFloat f -> string_of_float f
     | Sir.CBool b -> if b then "true" else "false"
-    | Sir.CString s -> quote (String.escaped s)
-    | Sir.CChar ch -> quote (String.escaped (String.make 1 ch))
+    | Sir.CString s -> quote (ts_escape_string s)
+    | Sir.CChar ch -> quote (ts_escape_string (String.make 1 ch))
     | Sir.CUnit -> "null"
   in
   (code, Extra_imports.empty)

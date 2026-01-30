@@ -1,1 +1,1 @@
-const w: string = "\000";
+const w: string = "\x00";

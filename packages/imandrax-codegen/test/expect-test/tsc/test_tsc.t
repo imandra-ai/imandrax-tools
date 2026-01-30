@@ -161,7 +161,6 @@ model/primitive/int
 
 model/primitive/LChar
   $ run_tsc model/primitive/LChar.ts
-  ../../data/ts/model/primitive/LChar.ts(1,20): error TS1487: Octal escape sequences are not allowed. Use the syntax '\x00'.
 
 model/primitive/LString
   $ run_tsc model/primitive/LString.ts
