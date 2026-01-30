@@ -42,7 +42,7 @@ yq "." artifact.yaml -o json | dune exec bin/parse.exe -- - --mode model | uv ru
 │   ├── unparse.py          # Converts Python AST to source code
 │   └── utils.py            # Utilities
 ├── test/
-│   ├── data/               # Test input YAML files
+│   ├── data/art               # Test input YAML files
 │   │   ├── decl/           # Declaration tests
 │   │   ├── model/          # Model tests
 │   │   └── fun_decomp/     # Function decomposition tests
