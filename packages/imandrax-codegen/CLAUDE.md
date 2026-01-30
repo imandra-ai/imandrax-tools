@@ -15,7 +15,7 @@ YAML/JSON Artifact → OCaml Parser (parse.exe) → JSON AST → Python Codegen 
 
 ### Complete pipeline example:
 ```bash
-yq "." artifact.yaml -o json | dune exec bin/parse.exe -- - --mode model | uv run imandrax-codegen -
+yq "." artifact.yaml -o json | dune exec bin/parse.exe -- - --mode model | uv run code-of-ast -
 ```
 
 ## Project Structure
