@@ -160,3 +160,45 @@ let yaml_to_decl ?(debug = false) (yaml : Yaml.value) : Mir.Decl.t =
   let data_b64, kind_str = yaml_to_art ~debug yaml in
   art_data_to_decl ~debug data_b64 kind_str
 ;;
+
+let%expect_test _ =
+  let file_path = "../test/data/art/model/primitive/empty_list.yaml" in
+  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
+  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
+  [%expect {|
+    Applied symbol: { sym.id = w/69277;
+                      args = [{ view = (Var a/69276);
+                                generation = 1 }];
+                      ty =
+                        { view =
+                            (Constr
+                              (list,[{ view = (Var a/69276);
+                                       generation = 1 }]));
+                          generation = 1 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect {|
+    Term: { view =
+              Construct
+                {
+                c =
+                  ([] : { view =
+                            (Constr
+                              (list,
+                               [{ view = (Constr (_a_0/0[temp],[]));
+                                  generation = 1 }]));
+                          generation = 1 });
+                args = []
+                };
+            ty =
+              { view =
+                  (Constr
+                    (list,[{ view = (Constr (_a_0/0[temp],[]));
+                             generation = 1 }]));
+                generation = 1 };
+            generation = 0;
+            sub_anchor = None }
+    |}];
