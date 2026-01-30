@@ -1,2 +1,2 @@
-((var_name w) (ty (TApp Map.t ((TBase _a_0) (TBase bool))))
+((var_name w) (ty (TApp Map.t ((TVar a) (TBase bool))))
  (tm (VMap (default (VConst (CBool false))) (entries ()))))

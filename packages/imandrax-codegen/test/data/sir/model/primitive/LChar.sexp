@@ -1,1 +1,1 @@
-((var_name w) (ty (TBase char)) (tm (VConst (CChar "\000"))))
+((var_name w) (ty (TBase LChar.t)) (tm (VConst (CChar "\000"))))

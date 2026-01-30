@@ -1,1 +1,1 @@
-((var_name w) (ty (TApp option ((TBase _a_0)))) (tm (VConst CUnit)))
+((var_name w) (ty (TApp option ((TVar a)))) (tm (VConst CUnit)))

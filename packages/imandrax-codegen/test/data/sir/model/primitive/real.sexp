@@ -1,1 +1,1 @@
-((var_name w) (ty (TBase float)) (tm (VConst (CFloat 3.14))))
+((var_name w) (ty (TBase real)) (tm (VConst (CFloat 3.14))))
