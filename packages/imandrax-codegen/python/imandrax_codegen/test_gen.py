@@ -4,13 +4,12 @@ import re
 from pathlib import Path
 from typing import Any, cast
 
-import imandrax_codegen.ast_types as ast_types
 from imandrax_api import Client, url_dev, url_prod  # noqa: F401
 from imandrax_api.bindings.artmsg_pb2 import Art as PbArt
 from imandrax_api_models import Art, DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
 
-from .art_parse import Lang, ast_of_art, codegen
+from .art_parse import Lang, ast_of_art, code_of_art
 
 curr_dir = Path(__file__).parent
 
@@ -68,8 +67,11 @@ def extract_type_decl_names(iml_code: str) -> list[str]:
 def gen_test_cases(
     iml: str,
     decomp_name: str,
+    lang: Lang,
     other_decomp_kwargs: dict[str, Any] | None = None,
-) -> list[ast_types.stmt]:
+) -> str:
+    """Decomp, get decl, and generate test cases as source code."""
+
     other_decomp_kwargs = other_decomp_kwargs or {}
 
     c = ImandraXClient(
@@ -91,63 +93,33 @@ def gen_test_cases(
     # The decoding of fun-decomp artifact is broken, we fallback to the naive
     # API client which does not have region extraction
     decomp_res_proto = Client.decompose(c, decomp_name, **other_decomp_kwargs)
-    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))  # type: ignore[reportUnknownMemberType]
+    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))
     assert decomp_art, 'No artifact returned from decompose'
 
     arg_types: list[str] = extract_type_decl_names(iml)
 
-    # Type declarations
     decls = c.get_decls(arg_types)
-    type_def_stmts_by_decl = [
-        ast_of_art(decl.artifact, mode='decl') for decl in decls.decls
-    ]
-    type_def_stmts = [stmt for stmts in type_def_stmts_by_decl for stmt in stmts]
+    match lang:
+        case 'python':
+            from .unparse import unparse
 
-    # Test function definitions
-    test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
-
-    return [
-        *type_def_stmts,
-        *test_def_stmts,
-    ]
-
-
-def gen_test_cases_source(
-    iml: str,
-    decomp_name: str,
-    lang: Lang = 'python',
-    other_decomp_kwargs: dict[str, Any] | None = None,
-) -> str:
-    """Generate test cases as source code."""
-    from .unparse import unparse
-
-    if lang == 'python':
-        stmts = gen_test_cases(iml, decomp_name, other_decomp_kwargs)
-        return unparse(stmts)
-
-    # TypeScript
-    other_decomp_kwargs = other_decomp_kwargs or {}
-
-    c = ImandraXClient(
-        auth_token=os.environ['IMANDRAX_API_KEY'],
-        url=url_prod,
-    )
-
-    eval_res: EvalRes = c.eval_src(iml)
-    if eval_res.success is not True:
-        error_msgs = [repr(err.msg) for err in eval_res.errors]
-        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
-
-    decomp_res_proto = Client.decompose(c, decomp_name, **other_decomp_kwargs)
-    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))  # type: ignore[reportUnknownMemberType]
-    assert decomp_art, 'No artifact returned from decompose'
-
-    arg_types: list[str] = extract_type_decl_names(iml)
-    decls = c.get_decls(arg_types)
-
-    parts: list[str] = []
-    for decl in decls.decls:
-        parts.append(codegen(decl.artifact, mode='decl', lang='typescript'))
-    parts.append(codegen(decomp_art, mode='fun-decomp', lang='typescript'))
-
-    return '\n'.join(parts)
+            # Type declarations
+            type_def_stmts_by_decl = [
+                ast_of_art(decl.artifact, mode='decl') for decl in decls.decls
+            ]
+            type_def_stmts = [
+                stmt for stmts in type_def_stmts_by_decl for stmt in stmts
+            ]
+            # Test function definitions
+            test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
+            return unparse([
+                *type_def_stmts,
+                *test_def_stmts,
+            ])
+        case 'typescript':
+            type_def_src = code_of_art(decls.decls, mode='decl', lang='typescript')
+            test_def_src = code_of_art(decomp_art, mode='fun-decomp', lang='typescript')
+            return '\n'.join([
+                type_def_src,
+                test_def_src,
+            ])

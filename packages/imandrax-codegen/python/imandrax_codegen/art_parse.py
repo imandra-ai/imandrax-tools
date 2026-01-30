@@ -2,7 +2,6 @@ import base64
 import json
 import subprocess
 import sys
-from functools import singledispatch
 from pathlib import Path
 from typing import Literal
 
@@ -95,41 +94,22 @@ def _run_parser(art_str: str, mode: Mode, lang: Lang) -> str:
     return result.stdout
 
 
-@singledispatch
 def ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
-    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
-
-
-@ast_of_art.register
-def _(art: str, mode: Mode) -> list[ast_types.stmt]:
-    """Use the codegen executable to generate ASTs for a given artifact."""
+    if isinstance(art, Art):
+        art = _serialize_artifact(art)
     output = _run_parser(art, mode, 'python')
     return stmts_of_json(output)
 
 
-@ast_of_art.register
-def _(art: Art, mode: Mode) -> list[ast_types.stmt]:
-    return ast_of_art(_serialize_artifact(art), mode)
-
-
-@singledispatch
-def codegen(art: str | Art, mode: Mode, lang: Lang = 'python') -> str:
+def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
     """Generate source code from an artifact."""
-    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
+    if isinstance(art, Art):
+        art = _serialize_artifact(art)
+    match lang:
+        case 'python':
+            from imandrax_codegen.unparse import unparse
 
-
-@codegen.register
-def _(art: str, mode: Mode, lang: Lang = 'python') -> str:
-    """Generate source code from an artifact string."""
-    from imandrax_codegen.unparse import unparse
-
-    if lang == 'typescript':
-        return _run_parser(art, mode, 'typescript')
-    else:
-        stmts = ast_of_art(art, mode)
-        return unparse(stmts)
-
-
-@codegen.register
-def _(art: Art, mode: Mode, lang: Lang = 'python') -> str:
-    return codegen(_serialize_artifact(art), mode, lang)
+            stmts = ast_of_art(art, mode)
+            return unparse(stmts)
+        case 'typescript':
+            return _run_parser(art, mode, 'typescript')
