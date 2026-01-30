@@ -1,1 +1,1 @@
-const w: _a_0[] = [];
+const w: a[] = [];

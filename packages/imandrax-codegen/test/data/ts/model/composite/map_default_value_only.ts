@@ -72,4 +72,4 @@ export class DefaultMap<K, V extends NonNullable<unknown>>
 	}
 }
 
-const w: DefaultMap<_a_0, boolean> = new DefaultMap((() => false), []);
+const w: DefaultMap<a, boolean> = new DefaultMap((() => false), []);

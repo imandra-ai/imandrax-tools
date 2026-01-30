@@ -1,1 +1,1 @@
-const w: float = 3.14;
+const w: number = 3.14;
