@@ -8,7 +8,7 @@ from imandrax_codegen.unparse import unparse
 from inline_snapshot import snapshot
 
 curr_dir = Path(__file__).parent
-DATA_DIR = curr_dir.parent / 'data' / 'fun_decomp'
+DATA_DIR = curr_dir.parent / 'data' / 'art' / 'fun_decomp'
 
 
 @dataclass
