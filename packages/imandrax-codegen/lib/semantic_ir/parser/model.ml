@@ -24,7 +24,14 @@ let unpack_model (model : (Term.term, Type.t) Imandrax_api_common.Model.t_poly)
 
 let parse_model (model : Mir.Model.t) : Sir.Value_assignment.t =
   let (app_sym : Type.t Applied_symbol.t_poly), term = unpack_model model in
-  let (type_annot : Sir.type_expr), (sir_term_expr : Sir.value) =
+  (* We use the type annotation derived in the applied symbol instead of
+  in the term because in the term, the type variable information is lost.
+  A example will be `let w = []`
+  *)
+  let type_annot, _type_vars =
+    type_expr_of_mir_ty_view_constr app_sym.ty.view
+  in
+  let (_type_annot : Sir.type_expr), (sir_term_expr : Sir.value) =
     match parse_term term with
     | Ok (type_annot, term_expr) -> type_annot, term_expr
     | Error msg -> failwith msg
