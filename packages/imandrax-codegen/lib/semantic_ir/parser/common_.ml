@@ -128,11 +128,11 @@ let unpack_arrows (ty_view : (unit, Uid.t, Type.t) Ty_view.view) : string list =
 
 (** Parse Constr variant of MIR Ty_view.view to Semantic IR type_expr
 
-Arg:
-  ty_view: Constr variant of Mir Ty_view.view
-Return: tuple of:
+@param [ty_view]: Constr variant of Mir Ty_view.view
+
+@return: tuple of:
   0: Semantic IR type expression
-  1: generic type parameters used (as strings, not UIDs)
+  1: generic type parameters used. as names.
 *)
 let type_expr_of_mir_ty_view_constr
     (ty_view : (unit, Uid.t, Type.t) Ty_view.view)
