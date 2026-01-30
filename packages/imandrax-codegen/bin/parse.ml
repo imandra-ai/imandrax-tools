@@ -2,9 +2,14 @@ module Codegen = Imandrax_codegen
 
 type parse_mode = Model | FunDecomp | Decl
 type test_format = [ `Function | `Dict ]
+type lang = Python | TypeScript
 
-let is_yaml path =
+let is_yaml_file path =
   Filename.check_suffix path ".yaml" || Filename.check_suffix path ".yml"
+
+let is_json_content content =
+  let trimmed = String.trim content in
+  String.length trimmed > 0 && (trimmed.[0] = '{' || trimmed.[0] = '[')
 
 let read_and_parse mode input =
   let content = match input with
@@ -25,12 +30,13 @@ let read_and_parse mode input =
     | FunDecomp -> `FunDecomp (Codegen.Art_utils.yaml_to_fun_decomp ~debug:false yaml)
     | Decl -> `Decl (Codegen.Art_utils.yaml_to_decl ~debug:false yaml)
   in
-  if input <> "-" && is_yaml input then
+  let use_yaml = (input <> "-" && is_yaml_file input) || (input = "-" && not (is_json_content content)) in
+  if use_yaml then
     parse_yaml (Yaml.of_string_exn content)
   else
     parse_json (Yojson.Safe.from_string content)
 
-let to_ast test_format = function
+let to_python_ast test_format = function
   | `Model m -> Python_adapter.Lib.parse_model m
   | `FunDecomp fd -> Python_adapter.Lib.parse_fun_decomp test_format fd
   | `Decl d ->
@@ -38,19 +44,34 @@ let to_ast test_format = function
     | Ok stmts -> stmts
     | Error msg -> failwith msg
 
-let stmts_to_json stmts =
+let to_typescript = function
+  | `Model m ->
+    let code, imports = Typescript_adapter.Lib.parse_model m in
+    Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
+  | `FunDecomp fd ->
+    let code, imports = Typescript_adapter.Lib.parse_fun_decomp fd in
+    Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
+  | `Decl d ->
+    match Typescript_adapter.Lib.parse_decl d with
+    | Ok (code, imports) ->
+      Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
+    | Error msg -> failwith msg
+
+let python_ast_to_json stmts =
   `List (List.map Python_adapter.Ast.stmt_to_yojson stmts)
 
-let write_output output json =
+let write_json output json =
   match output with
-  | "-" ->
-    Yojson.Safe.to_channel stdout json;
-    print_newline ()
-  | path ->
-    CCIO.with_out path (fun out -> Yojson.Safe.pretty_to_channel out json)
+  | "-" -> Yojson.Safe.to_channel stdout json; print_newline ()
+  | path -> CCIO.with_out path (fun out -> Yojson.Safe.pretty_to_channel out json)
+
+let write_string output s =
+  match output with
+  | "-" -> print_string s; if not (String.ends_with ~suffix:"\n" s) then print_newline ()
+  | path -> CCIO.File.write_exn path s
 
 let usage () =
-  Printf.eprintf "Usage: %s <input|-) [output|-] --mode <model|fun-decomp|decl> [--as-dict]\n"
+  Printf.eprintf "Usage: %s <input|-> [output|-] --mode <model|fun-decomp|decl> [--lang <python|typescript>] [--as-dict]\n"
     Sys.argv.(0);
   exit 1
 
@@ -60,9 +81,15 @@ let parse_mode_of_string = function
   | "decl" -> Decl
   | s -> failwith (Printf.sprintf "Invalid mode '%s'" s)
 
+let parse_lang_of_string = function
+  | "python" | "py" -> Python
+  | "typescript" | "ts" -> TypeScript
+  | s -> failwith (Printf.sprintf "Invalid lang '%s'" s)
+
 let () =
   let args = Array.to_list Sys.argv |> List.tl in
   let mode = ref None in
+  let lang = ref Python in
   let as_dict = ref false in
   let positional = ref [] in
 
@@ -70,6 +97,9 @@ let () =
     | [] -> ()
     | "--mode" :: m :: rest ->
       mode := Some (parse_mode_of_string m);
+      parse rest
+    | "--lang" :: l :: rest ->
+      lang := parse_lang_of_string l;
       parse rest
     | "--as-dict" :: rest ->
       as_dict := true;
@@ -84,6 +114,7 @@ let () =
   (try parse args with Failure msg -> Printf.eprintf "Error: %s\n" msg; usage ());
 
   let mode = match !mode with Some m -> m | None -> Printf.eprintf "Error: --mode required\n"; usage () in
+  let lang = !lang in
   let positional = List.rev !positional in
   let input, output = match positional with
     | [i] -> i, "-"
@@ -93,10 +124,12 @@ let () =
   let test_format : test_format = if !as_dict then `Dict else `Function in
 
   try
-    read_and_parse mode input
-    |> to_ast test_format
-    |> stmts_to_json
-    |> write_output output
+    let parsed = read_and_parse mode input in
+    match lang with
+    | Python ->
+      parsed |> to_python_ast test_format |> python_ast_to_json |> write_json output
+    | TypeScript ->
+      parsed |> to_typescript |> write_string output
   with
   | Failure msg -> Printf.eprintf "Error: %s\n" msg; exit 1
   | Yojson.Json_error msg ->

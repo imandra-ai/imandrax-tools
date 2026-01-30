@@ -10,7 +10,7 @@ from imandrax_api.bindings.artmsg_pb2 import Art as PbArt
 from imandrax_api_models import Art, DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
 
-from .art_parse import ast_of_art
+from .art_parse import Lang, ast_of_art, codegen
 
 curr_dir = Path(__file__).parent
 
@@ -110,3 +110,44 @@ def gen_test_cases(
         *type_def_stmts,
         *test_def_stmts,
     ]
+
+
+def gen_test_cases_source(
+    iml: str,
+    decomp_name: str,
+    lang: Lang = 'python',
+    other_decomp_kwargs: dict[str, Any] | None = None,
+) -> str:
+    """Generate test cases as source code."""
+    from .unparse import unparse
+
+    if lang == 'python':
+        stmts = gen_test_cases(iml, decomp_name, other_decomp_kwargs)
+        return unparse(stmts)
+
+    # TypeScript
+    other_decomp_kwargs = other_decomp_kwargs or {}
+
+    c = ImandraXClient(
+        auth_token=os.environ['IMANDRAX_API_KEY'],
+        url=url_prod,
+    )
+
+    eval_res: EvalRes = c.eval_src(iml)
+    if eval_res.success is not True:
+        error_msgs = [repr(err.msg) for err in eval_res.errors]
+        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
+
+    decomp_res_proto = Client.decompose(c, decomp_name, **other_decomp_kwargs)
+    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))  # type: ignore[reportUnknownMemberType]
+    assert decomp_art, 'No artifact returned from decompose'
+
+    arg_types: list[str] = extract_type_decl_names(iml)
+    decls = c.get_decls(arg_types)
+
+    parts: list[str] = []
+    for decl in decls.decls:
+        parts.append(codegen(decl.artifact, mode='decl', lang='typescript'))
+    parts.append(codegen(decomp_art, mode='fun-decomp', lang='typescript'))
+
+    return '\n'.join(parts)

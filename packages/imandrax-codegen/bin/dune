@@ -8,6 +8,7 @@
  (libraries
   imandrax_codegen
   imandrax-codegen.adapters.python
+  imandrax-codegen.adapters.typescript
   imandrax-api
   imandrax-api.mir
   imandrax-api.artifact
