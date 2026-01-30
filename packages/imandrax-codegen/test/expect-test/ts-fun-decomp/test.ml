@@ -19,6 +19,12 @@ let read_sir (name : string) : Sir.test_suite =
   Sir.test_suite_of_sexp (Sexplib.Sexp.of_string sir_sexp)
 ;;
 
+let run_test : string -> unit = fun name ->
+    let sir = read_sir name in
+    let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
+    print_endline code;
+;;
+
 (*$
   let data =
     [ "basic"
@@ -45,9 +51,7 @@ let read_sir (name : string) : Sir.test_suite =
       let test =
         [%string
           "let%expect_test \"%{name}\" =
-  let sir = read_sir \"%{name}\" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test \"%{name}\";
   [%expect
     {||}]
 ;;
@@ -57,9 +61,7 @@ let read_sir (name : string) : Sir.test_suite =
     data
 *)
 let%expect_test "basic" =
-  let sir = read_sir "basic" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "basic";
   [%expect
     {|
     const tests = {
@@ -76,9 +78,7 @@ let%expect_test "basic" =
 ;;
 
 let%expect_test "nested_conditions" =
-  let sir = read_sir "nested_conditions" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "nested_conditions";
   [%expect
     {|
     const tests = {
@@ -103,9 +103,7 @@ let%expect_test "nested_conditions" =
 ;;
 
 let%expect_test "variant_simple" =
-  let sir = read_sir "variant_simple" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "variant_simple";
   [%expect
     {|
     const tests = {
@@ -126,9 +124,7 @@ let%expect_test "variant_simple" =
 ;;
 
 let%expect_test "complex_variant_record" =
-  let sir = read_sir "complex_variant_record" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "complex_variant_record";
   [%expect
     {|
     const tests = {
@@ -149,9 +145,7 @@ let%expect_test "complex_variant_record" =
 ;;
 
 let%expect_test "option_type" =
-  let sir = read_sir "option_type" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "option_type";
   [%expect
     {|
     const tests = {
@@ -172,9 +166,7 @@ let%expect_test "option_type" =
 ;;
 
 let%expect_test "variant_with_data" =
-  let sir = read_sir "variant_with_data" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "variant_with_data";
   [%expect
     {|
     const tests = {
@@ -191,9 +183,7 @@ let%expect_test "variant_with_data" =
 ;;
 
 let%expect_test "composite_record" =
-  let sir = read_sir "composite_record" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "composite_record";
   [%expect
     {|
     const tests = {
@@ -214,9 +204,7 @@ let%expect_test "composite_record" =
 ;;
 
 let%expect_test "primitive_bool" =
-  let sir = read_sir "primitive_bool" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "primitive_bool";
   [%expect
     {|
     const tests = {
@@ -241,9 +229,7 @@ let%expect_test "primitive_bool" =
 ;;
 
 let%expect_test "with_basis" =
-  let sir = read_sir "with_basis" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "with_basis";
   [%expect
     {|
     const tests = {
@@ -260,9 +246,7 @@ let%expect_test "with_basis" =
 ;;
 
 let%expect_test "composite_tuple" =
-  let sir = read_sir "composite_tuple" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "composite_tuple";
   [%expect
     {|
     const tests = {
@@ -283,9 +267,7 @@ let%expect_test "composite_tuple" =
 ;;
 
 let%expect_test "primitive_int" =
-  let sir = read_sir "primitive_int" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "primitive_int";
   [%expect
     {|
     const tests = {
@@ -306,9 +288,7 @@ let%expect_test "primitive_int" =
 ;;
 
 let%expect_test "with_guards" =
-  let sir = read_sir "with_guards" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "with_guards";
   [%expect
     {|
     const tests = {
@@ -337,9 +317,7 @@ let%expect_test "with_guards" =
 ;;
 
 let%expect_test "list_operations" =
-  let sir = read_sir "list_operations" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "list_operations";
   [%expect
     {|
     const tests = {
@@ -360,9 +338,7 @@ let%expect_test "list_operations" =
 ;;
 
 let%expect_test "primitive_real" =
-  let sir = read_sir "primitive_real" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "primitive_real";
   [%expect
     {|
     const tests = {
@@ -375,9 +351,7 @@ let%expect_test "primitive_real" =
 ;;
 
 let%expect_test "multiple_parameters" =
-  let sir = read_sir "multiple_parameters" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "multiple_parameters";
   [%expect
     {|
     const tests = {
@@ -410,9 +384,7 @@ let%expect_test "multiple_parameters" =
 ;;
 
 let%expect_test "variant_poly" =
-  let sir = read_sir "variant_poly" in
-  let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
-  print_endline code;
+  run_test "variant_poly";
   [%expect
     {|
     const tests = {

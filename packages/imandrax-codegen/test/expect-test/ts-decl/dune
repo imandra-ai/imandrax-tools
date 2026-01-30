@@ -1,5 +1,6 @@
 (library
  (name expect_test_ts_decl)
+ (modules test)
  (libraries imandrax_codegen imandrax-codegen.adapters.typescript containers)
  (inline_tests
   (deps
@@ -8,6 +9,6 @@
   (pps ppx_expect ppx_string)))
 
 (cinaps
- (files test.ml)
+ (files test.orig.ml)
  (preprocess
   (pps ppx_string)))
