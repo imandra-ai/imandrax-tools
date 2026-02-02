@@ -96,7 +96,7 @@ def _run_parser(art_str: str, mode: Mode, lang: Lang) -> str:
     return result.stdout
 
 
-def _ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
+def ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
     if isinstance(art, Art):
         art = _serialize_artifact(art)
     output = _run_parser(art, mode, 'python')
@@ -111,7 +111,7 @@ def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
         case 'python':
             from imandrax_codegen.unparse import unparse
 
-            stmts = _ast_of_art(art, mode)
+            stmts = ast_of_art(art, mode)
             return unparse(stmts)
         case 'typescript':
             return _run_parser(art, mode, 'typescript')

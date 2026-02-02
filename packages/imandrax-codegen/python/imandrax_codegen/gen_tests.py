@@ -6,9 +6,9 @@ from typing import Any
 from imandrax_api import Client, url_dev, url_prod  # noqa: F401
 from imandrax_api_models import Art, DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
-from imandrax_codegen.unparse import format_code
+from imandrax_codegen.unparse import unparse
 
-from .art_parse import Lang, code_of_art
+from .art_parse import Lang, ast_of_art, code_of_art
 
 curr_dir = Path(__file__).parent
 
@@ -98,11 +98,28 @@ def gen_test_cases(
 
     decls = c.get_decls(arg_types)
 
-    type_def_srcs = [
-        code_of_art(decl.artifact, mode='decl', lang=lang) for decl in decls.decls
-    ]
-    test_def_src = code_of_art(decomp_art, mode='fun-decomp', lang=lang)
-    return '\n'.join([
-        *type_def_srcs,
-        test_def_src,
-    ])
+    match lang:
+        case 'typescript':
+            type_def_srcs = [
+                code_of_art(decl.artifact, mode='decl', lang=lang)
+                for decl in decls.decls
+            ]
+            test_def_src = code_of_art(decomp_art, mode='fun-decomp', lang=lang)
+            return '\n'.join([
+                *type_def_srcs,
+                test_def_src,
+            ])
+        case 'python':
+            # TODO(#20):
+            # Python still needs two-stage generation otherwise
+            # we get two `from __future__ import annotations`
+            type_defs_stmts = [
+                ast_of_art(decl.artifact, mode='decl') for decl in decls.decls
+            ]
+            type_def_stmts = [stmt for stmts in type_defs_stmts for stmt in stmts]
+            test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
+            code = unparse([
+                *type_def_stmts,
+                *test_def_stmts,
+            ])
+            return code
