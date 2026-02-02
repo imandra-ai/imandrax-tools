@@ -1,14 +1,32 @@
 """Convert custom AST to Python stdlib AST and unparse to source code."""
 
 import ast as stdlib_ast
+import shutil
 import subprocess
 from typing import Any, Final, cast
 
-from ruff.__main__ import find_ruff_bin
-
 from . import ast_types as custom_ast
 
-ruff_bin = find_ruff_bin()
+
+def _find_ruff_bin() -> str:
+    """Find the ruff binary, with fallback to PATH lookup.
+
+    The ruff package's find_ruff_bin() can fail in ephemeral environments
+    (e.g., uv run --with) due to stale cached paths. Fall back to shutil.which().
+    See: https://github.com/astral-sh/uv/issues/14874
+    """
+    try:
+        from ruff.__main__ import find_ruff_bin
+
+        return str(find_ruff_bin())
+    except FileNotFoundError:
+        ruff_path = shutil.which('ruff')
+        if ruff_path:
+            return ruff_path
+        raise FileNotFoundError('ruff binary not found in package or PATH') from None
+
+
+ruff_bin = _find_ruff_bin()
 
 
 OPTION_LIB_SRC: Final[str] = """\
