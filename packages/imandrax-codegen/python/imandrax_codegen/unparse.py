@@ -67,7 +67,7 @@ def fix_ruff_check(code: str, rules: list[str]) -> str:
     if not rules:
         return code
 
-    ruff_bin = find_ruff_bin()
+    ruff_bin = _find_ruff_bin()
 
     try:
         result = subprocess.run(
