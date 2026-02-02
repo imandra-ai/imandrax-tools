@@ -1,20 +1,24 @@
-__test__ = False  # this is not a test
 import os
 import re
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from imandrax_api import Client, url_dev, url_prod  # noqa: F401
-from imandrax_api.bindings.artmsg_pb2 import Art as PbArt
 from imandrax_api_models import Art, DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
+from imandrax_codegen.unparse import format_code
 
-from .art_parse import Lang, ast_of_art, code_of_art
+from .art_parse import Lang, code_of_art
 
 curr_dir = Path(__file__).parent
 
 
-def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] | None:
+# TODO: Not used
+def _get_fun_arg_types(  # pyright: ignore[reportUnusedFunction]
+    fun_name: str,
+    iml: str,
+    c: ImandraXClient,
+) -> list[str] | None:
     """Get the argument types of a function."""
     tc_res = c.typecheck(iml)
     name_ty_map = {ty.name: ty.ty for ty in tc_res.types}
@@ -24,7 +28,7 @@ def get_fun_arg_types(fun_name: str, iml: str, c: ImandraXClient) -> list[str] |
     return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
 
 
-def extract_type_decl_names(iml_code: str) -> list[str]:
+def _extract_type_decl_names(iml_code: str) -> list[str]:
     """
     Extract all type definition names from OCaml code using regex.
 
@@ -86,40 +90,19 @@ def gen_test_cases(
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    # TODO: it's fixed. We should revert this change
-    # decomp_res: DecomposeRes = c.decompose(decomp_name, **other_decomp_kwargs)
-    # decomp_art = decomp_res.artifact
-    # assert decomp_art, 'No artifact returned from decompose'
-    # The decoding of fun-decomp artifact is broken, we fallback to the naive
-    # API client which does not have region extraction
-    decomp_res_proto = Client.decompose(c, decomp_name, **other_decomp_kwargs)
-    decomp_art = Art.model_validate(cast(PbArt, decomp_res_proto.artifact))
+    decomp_res: DecomposeRes = c.decompose(decomp_name, **other_decomp_kwargs)
+    decomp_art = decomp_res.artifact
     assert decomp_art, 'No artifact returned from decompose'
 
-    arg_types: list[str] = extract_type_decl_names(iml)
+    arg_types: list[str] = _extract_type_decl_names(iml)
 
     decls = c.get_decls(arg_types)
-    match lang:
-        case 'python':
-            from .unparse import unparse
 
-            # Type declarations
-            type_def_stmts_by_decl = [
-                ast_of_art(decl.artifact, mode='decl') for decl in decls.decls
-            ]
-            type_def_stmts = [
-                stmt for stmts in type_def_stmts_by_decl for stmt in stmts
-            ]
-            # Test function definitions
-            test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
-            return unparse([
-                *type_def_stmts,
-                *test_def_stmts,
-            ])
-        case 'typescript':
-            type_def_src = code_of_art(decls.decls, mode='decl', lang='typescript')
-            test_def_src = code_of_art(decomp_art, mode='fun-decomp', lang='typescript')
-            return '\n'.join([
-                type_def_src,
-                test_def_src,
-            ])
+    type_def_srcs = [
+        code_of_art(decl.artifact, mode='decl', lang=lang) for decl in decls.decls
+    ]
+    test_def_src = code_of_art(decomp_art, mode='fun-decomp', lang=lang)
+    return '\n'.join([
+        *type_def_srcs,
+        test_def_src,
+    ])

@@ -1,3 +1,5 @@
+"""Wrapper around art_parse.exe."""
+
 import base64
 import json
 import subprocess
@@ -16,7 +18,7 @@ Mode = Literal['fun-decomp', 'model', 'decl']
 Lang = Literal['python', 'typescript']
 
 
-def find_art_parse_exe() -> Path:
+def _find_art_parse_exe() -> Path:
     """Find the art_parse executable.
 
     Raises:
@@ -39,7 +41,7 @@ def find_art_parse_exe() -> Path:
     return exe_path
 
 
-CODEGEN_EXE_PATH = find_art_parse_exe()
+CODEGEN_EXE_PATH = _find_art_parse_exe()
 
 
 def _convert_to_standard_base64(data: str | bytes) -> str:
@@ -94,7 +96,7 @@ def _run_parser(art_str: str, mode: Mode, lang: Lang) -> str:
     return result.stdout
 
 
-def ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
+def _ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
     if isinstance(art, Art):
         art = _serialize_artifact(art)
     output = _run_parser(art, mode, 'python')
@@ -109,7 +111,7 @@ def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
         case 'python':
             from imandrax_codegen.unparse import unparse
 
-            stmts = ast_of_art(art, mode)
+            stmts = _ast_of_art(art, mode)
             return unparse(stmts)
         case 'typescript':
             return _run_parser(art, mode, 'typescript')
