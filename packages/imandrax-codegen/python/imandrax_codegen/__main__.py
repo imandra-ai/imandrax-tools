@@ -6,16 +6,19 @@ from typing import Annotated
 
 import typer
 from imandrax_codegen.art_parse import code_of_art
-from imandrax_codegen.test_gen import gen_test_cases
+from imandrax_codegen.gen_tests import Lang, gen_test_cases
 
 app = typer.Typer()
 
 
-class Lang(StrEnum):
-    python = 'python'
-    typescript = 'typescript'
-    py = 'py'
-    ts = 'ts'
+def _parse_lang(lang: str) -> Lang | Exception:
+    if lang.lower() in ('typescript', 'ts'):
+        return 'typescript'
+    elif lang.lower() in ('python', 'py'):
+        return 'python'
+    return typer.BadParameter(
+        f'Unsupported language: {lang}. Only TypeScript and Python are supported.'
+    )
 
 
 class Mode(StrEnum):
@@ -41,9 +44,9 @@ def write_output(output: str | None, content: str) -> None:
 def main(
     ctx: typer.Context,
     lang: Annotated[
-        Lang | None,
+        str,
         typer.Option('-l', '--lang', help='Target language'),
-    ] = None,
+    ],
     input_path: Annotated[
         str,
         typer.Option('-i', '--input', help='Input artifact file (use "-" for stdin)'),
@@ -61,16 +64,15 @@ def main(
     if ctx.invoked_subcommand is not None:
         return
 
-    if lang is None:
-        raise typer.BadParameter('--lang is required')
-
     content = read_input(input_path)
-    target_lang = 'typescript' if lang in (Lang.typescript, Lang.ts) else 'python'
+    target_lang = _parse_lang(lang)
+    if isinstance(target_lang, Exception):
+        raise target_lang
     result = code_of_art(content, mode.value, target_lang)
     write_output(output, result)
 
 
-def gen_test(
+def gen_test_command(
     iml_path: Annotated[
         str,
         typer.Argument(
@@ -84,7 +86,7 @@ def gen_test(
         ),
     ],
     lang: Annotated[
-        Lang,
+        str,
         typer.Option('-l', '--lang', help='Target language'),
     ],
     output: Annotated[
@@ -92,14 +94,17 @@ def gen_test(
         typer.Option('-o', '--output', help='Output file path (defaults to stdout)'),
     ] = None,
 ) -> None:
-    """Generate test cases for IML."""
+    """Typer command for generating test cases from IML."""
     iml = read_input(iml_path)
-    target_lang = 'typescript' if lang in (Lang.typescript, Lang.ts) else 'python'
+    target_lang = _parse_lang(lang)
+    if isinstance(target_lang, Exception):
+        raise target_lang
+
     result = gen_test_cases(iml, function, lang=target_lang)
     write_output(output, result)
 
 
-app.command()(gen_test)
+app.command()(gen_test_command)
 
 if __name__ == '__main__':
     app()
