@@ -202,3 +202,136 @@ let%expect_test _ =
             generation = 0;
             sub_anchor = None }
     |}];
+;;
+
+let%expect_test _ =
+  let file_path = "../test/data/art/model/primitive/tuple_of_bool_and_int.yaml" in
+  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
+  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
+  [%expect {|
+    Applied symbol: { sym.id = w/69260;
+                      args = [];
+                      ty =
+                        { view =
+                            (Tuple
+                              [{ view = (Constr (bool,[]));
+                                 generation = 3 };
+                                { view = (Constr (int,[]));
+                                  generation = 3 }]);
+                          generation = 3 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect {|
+    Term: { view =
+              Tuple
+                {
+                l =
+                  [{ view = (Const true);
+                     ty = { view = (Constr (bool,[]));
+                            generation = 3 };
+                     generation = 1;
+                     sub_anchor = None };
+                    { view = (Const 2);
+                      ty = { view = (Constr (int,[]));
+                             generation = 3 };
+                      generation = 1;
+                      sub_anchor = None }]
+                };
+            ty =
+              { view =
+                  (Tuple
+                    [{ view = (Constr (bool,[]));
+                       generation = 3 };
+                      { view = (Constr (int,[]));
+                        generation = 3 }]);
+                generation = 3 };
+            generation = 1;
+            sub_anchor = None }
+    |}];
+;;
+
+let%expect_test _ =
+  let file_path = "../test/data/art/model/composite/set_empty.yaml" in
+  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
+  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
+  [%expect {|
+    Applied symbol: { sym.id = w/69694;
+                      args = [{ view = (Var a/69693);
+                                generation = 5 }];
+                      ty =
+                        { view =
+                            (Constr
+                              (Map.t,
+                               [{ view = (Var a/69693);
+                                  generation = 5 };
+                                { view = (Constr (bool,[]));
+                                  generation = 5 }]));
+                          generation = 5 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect {|
+    Term: { view =
+              Apply {f = { view =
+                             (Sym
+                               (Map.const : { view =
+                                                (Arrow ((),
+                                                        { view =
+                                                            (Constr (bool,[]));
+                                                          generation = 5 },
+                                                        { view =
+                                                            (Constr
+                                                              (Map.t,
+                                                               [{ view =
+                                                                    (Constr
+                                                                      (_a_0/2[temp],
+                                                                       []));
+                                                                  generation = 5 };
+                                                                { view =
+                                                                    (Constr
+                                                                      (bool,[]));
+                                                                  generation = 5 }]));
+                                                          generation = 5 }));
+                                              generation = 5 }));
+                           ty =
+                             { view =
+                                 (Arrow ((),
+                                         { view = (Constr (bool,[]));
+                                           generation = 5 },
+                                         { view =
+                                             (Constr
+                                               (Map.t,
+                                                [{ view =
+                                                     (Constr (_a_0/2[temp],[]));
+                                                   generation = 5 };
+                                                 { view = (Constr (bool,[]));
+                                                   generation = 5 }]));
+                                           generation = 5 }));
+                               generation = 5 };
+                           generation = 2;
+                           sub_anchor = None };
+                     l =
+                       [{ view = (Const false);
+                          ty = { view = (Constr (bool,[]));
+                                 generation = 5 };
+                          generation = 2;
+                          sub_anchor = None }]
+                     };
+            ty =
+              { view =
+                  (Constr
+                    (Map.t,
+                     [{ view = (Constr (_a_0/2[temp],[]));
+                        generation = 5 };
+                      { view = (Constr (bool,[]));
+                        generation = 5 }]));
+                generation = 5 };
+            generation = 2;
+            sub_anchor = None }
+    |}];
+  ;;
