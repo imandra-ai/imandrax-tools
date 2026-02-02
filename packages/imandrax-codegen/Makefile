@@ -164,44 +164,48 @@ upload-binaries: upload-linux-bin upload-macos-bin  ## Upload all binaries to Gi
 
 .PHONY: build-py-macos
 build-py-macos: build-macos-bin  ## Build macOS wheel locally
-		@echo "Building macOS wheel..."
-		rm -rf ./dist/imandrax_codegen-*
-		cp $(BIN_DIR)/art_parse-darwin-arm64 python/imandrax_codegen/art_parse.exe
-		uv build --wheel
-		@echo "Retagging wheel for macOS..."
-		uv tool run wheel tags --platform-tag macosx_11_0_arm64 --remove dist/*.whl
-		@echo "macOS wheel built: $$(ls dist/*.whl)"
+	@echo "Building macOS wheel..."
+	rm -rf ./dist/imandrax_codegen-*
+	cp $(BIN_DIR)/art_parse-darwin-arm64 python/imandrax_codegen/art_parse.exe
+	uv build --wheel
+	@echo "Retagging wheel for macOS..."
+	uv tool run wheel tags --platform-tag macosx_11_0_arm64 --remove dist/*.whl
+	@echo "macOS wheel built: $$(ls dist/*.whl)"
 
 .PHONY: build-py-linux
 build-py-linux:  ## Build Linux wheel locally
-		@echo "Building Linux wheel..."
-		rm -rf ./dist/imandrax_codegen-*
-		cp $(BIN_DIR)/art_parse-linux-x86_64 python/imandrax_codegen/art_parse.exe
-		uv build --wheel
-		@echo "Retagging wheel for Linux..."
-		uv tool run wheel tags --platform-tag manylinux_2_17_x86_64 --remove dist/*.whl
-		@echo "Linux wheel built: $$(ls dist/*.whl)"
+	@echo "Building Linux wheel..."
+	rm -rf ./dist/imandrax_codegen-*
+	cp $(BIN_DIR)/art_parse-linux-x86_64 python/imandrax_codegen/art_parse.exe
+	uv build --wheel
+	@echo "Retagging wheel for Linux..."
+	uv tool run wheel tags --platform-tag manylinux_2_17_x86_64 --remove dist/*.whl
+	@echo "Linux wheel built: $$(ls dist/*.whl)"
 
 .PHONY: test-py
 test-py:  ## Run tests for Python package
-		uv run pytest test/python
+	uv run pytest test/python
 
-.PHONY: pre-release-test
-pre-release-test:  ## Run pre-release tests for Python package
-		uv run pytest test/python
+.PHONY: pre-release-test-linux
+pre-release-test-linux:  ## Run pre-release tests for Linux Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+
+.PHONY: pre-release-test-macos
+pre-release-test-macos:  ## Run pre-release tests for macOS Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*macos*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
 
 .PHONY: publish-testpypi
-publish-testpypi: pre-release-test  ## Publish to test.pypi.org
-		uv publish \
-		--publish-url https://test.pypi.org/legacy/ \
-		-u __token__ \
-		-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
-		./dist/imandrax_codegen-*
+publish-testpypi:  ## Publish to test.pypi.org
+	uv publish \
+	--publish-url https://test.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*
 
 .PHONY: publish-pypi
-publish-pypi: pre-release-test  ## Publish to pypi.org
-		uv publish \
-		--publish-url https://upload.pypi.org/legacy/ \
-		-u __token__ \
-		-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
-		./dist/imandrax_codegen-*
+publish-pypi:  ## Publish to pypi.org
+	uv publish \
+	--publish-url https://upload.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*
