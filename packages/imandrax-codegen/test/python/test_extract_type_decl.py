@@ -3,15 +3,6 @@
 from imandrax_codegen.gen_tests import (
     _extract_type_decl_names,  # pyright: ignore[reportPrivateUsage]
 )
-from IPython.core.getipython import get_ipython
-
-if ip := get_ipython():
-    ip.run_line_magic('reload_ext', 'autoreload')
-    ip.run_line_magic('autoreload', '2')
-
-from pathlib import Path
-
-curr_dir = Path.cwd() if ip else Path(__file__).parent
 
 
 def test_simple_type():
