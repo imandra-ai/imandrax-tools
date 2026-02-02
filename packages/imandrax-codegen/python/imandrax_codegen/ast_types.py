@@ -1,4 +1,6 @@
-"""This module closely follows the structure from lib/ast.ml with
+"""AST Types
+
+This module closely follows the structure from lib/ast.ml with
 dataclass decorators added.
 """
 

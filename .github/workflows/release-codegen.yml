@@ -86,8 +86,8 @@ jobs:
           name: dist-macos
           path: packages/imandrax-codegen/dist/
 
-      - name: Run pre-release tests
-        run: make pre-release-test
+      - name: Run pre-release tests for Linux
+        run: make pre-release-test-linux
         working-directory: packages/imandrax-codegen
         env:
           IMANDRAX_API_KEY: ${{ secrets.IMANDRA_UNIVERSE_API_KEY }}

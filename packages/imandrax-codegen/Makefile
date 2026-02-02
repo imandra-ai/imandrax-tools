@@ -1,60 +1,32 @@
 .PHONY: help
 help:  ## Show this help message
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@awk '\
+		/^# .+$$/ && !/^# [-=]+$$/ { pending=substr($$0, 3); next } \
+		/^# =+$$/ && pending { printf "\033[1;33m=== %s ===\033[0m\n", pending; pending=""; next } \
+		/^# -+$$/ && pending { printf "\033[1;33m--- %s ---\033[0m\n", pending; pending=""; next } \
+		{ pending="" } \
+		/^[a-zA-Z_-]+:.*## / { \
+			split($$0, a, ":.*## "); \
+			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
+		}' $(MAKEFILE_LIST)
 
-gen-artifacts: gen-model-art gen-fun-decomp-art gen-decl-art  ## Generate all artifacts
+TEST_DATA_ART_DIR := test/data/art
+TEST_DATA_SIR_DIR := test/data/sir
+TEST_DATA_TS_DIR := test/data/ts
 
-.PHONY: gen-model-art
-gen-model-art:
-	@echo "Generating model artifacts..."
-	uv run scripts/gen_model_art
+export TEST_DATA_ART_DIR
+export TEST_DATA_SIR_DIR
+export TEST_DATA_TS_DIR
 
-.PHONY: gen-fun-decomp-art
-gen-fun-decomp-art:
-	@echo "Generating fun_decomp artifacts..."
-	uv run scripts/gen_fun_decomp_art
+reload-env:  ## Reload .env file
+	rm .env
+	@touch .env
+	@echo "TEST_DATA_ART_DIR=$(TEST_DATA_ART_DIR)" >> .env
+	@echo "TEST_DATA_SIR_DIR=$(TEST_DATA_SIR_DIR)" >> .env
+	@echo "TEST_DATA_TS_DIR=$(TEST_DATA_TS_DIR)" >> .env
 
-.PHONY: gen-decl-art
-gen-decl-art:  ## Generate decl artifacts
-	@echo "Generating decl artifacts..."
-	uv run scripts/gen_decl_art
-
-copy-artifacts: copy-model copy-fun-decomp copy-decl  ## Copy artifacts to test data directories
-
-.PHONY: copy-model
-copy-model:
-	@echo "Copying model artifacts to test/data/model/..."
-	rsync -av --delete scripts/gen_model_art/result/ test/data/model/
-
-.PHONY: copy-fun-decomp
-copy-fun-decomp:
-	@echo "Copying fun_decomp artifacts to test/data/fun_decomp/..."
-	rsync -av --delete scripts/gen_fun_decomp_art/result/ test/data/fun_decomp/
-
-.PHONY: copy-decl
-copy-decl:  ## Copy decl artifacts to test data directories
-	@echo "Copying decl artifacts to test/data/decl/..."
-	rsync -av --delete scripts/gen_decl_art/result/ test/data/decl/
-
-gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp  ## Generate cram test files
-
-.PHONY: gen-cram-test-model
-gen-cram-test-model:
-	@echo "Regenerating test_parse_model.t..."
-	bash test/e2e/cram_test_gen__model.sh > test/e2e/test_parse_model.t
-
-.PHONY: gen-cram-test-fun-decomp
-gen-cram-test-fun-decomp:
-	@echo "Regenerating test_parse_fun_decomp.t..."
-	bash test/e2e/cram_test_gen__fun_decomp.sh > test/e2e/test_parse_fun_decomp.t
-
-update-all:  ## Update all artifacts and regenerate cram test files
-	make gen-artifacts
-	make copy-artifacts
-	make gen-cram-tests
-	@echo "All artifacts generated, copied, and tests regenerated!"
-	@echo "Run 'dune test' to execute the tests and 'dune promote' to accept new outputs."
+# Test data generation
+# ====================
 
 # Clean generated artifacts
 .PHONY: clean-artifacts
@@ -63,15 +35,73 @@ clean-artifacts:
 	rm -rf scripts/gen_fun_decomp_art/result/*
 	rm -rf scripts/gen_decl_art/result/*
 
-.PHONY: clean-binaries
-clean-binaries:  ## Clean built binaries
-	rm -rf $(BIN_DIR)
-	rm -rf _build-linux  # Docker build directory
+gen-artifacts: gen-model-art gen-fun-decomp-art gen-decl-art  ## Generate all artifacts
+
+.PHONY: gen-model-art
+gen-model-art:
+	uv run scripts/gen_model_art
+
+.PHONY: gen-fun-decomp-art
+gen-fun-decomp-art:
+	uv run scripts/gen_fun_decomp_art
+
+.PHONY: gen-decl-art
+gen-decl-art:
+	uv run scripts/gen_decl_art
+
+copy-artifacts: copy-model copy-fun-decomp copy-decl  ## Copy artifacts to test data directories
+
+.PHONY: copy-art-model
+copy-art-model:
+	@echo "Copying model artifacts to test/data/model/..."
+	rsync -av --delete scripts/gen_model_art/result/ $(TEST_DATA_ART_DIR)/model/
+
+.PHONY: copy-art-fun-decomp
+copy-art-fun-decomp:
+	@echo "Copying fun_decomp artifacts to test/data/fun_decomp/..."
+	rsync -av --delete scripts/gen_fun_decomp_art/result/ $(TEST_DATA_ART_DIR)/fun_decomp/
+
+.PHONY: copy-art-decl
+copy-art-decl:
+	@echo "Copying decl artifacts to test/data/decl/..."
+	rsync -av --delete scripts/gen_decl_art/result/ $(TEST_DATA_ART_DIR)/decl/
+
+.PHONY: gen-sir
+gen-sir:  ## Generate SIR S-expressions from twine data
+	@echo "Generating SIR S-expressions..."
+	dune exec test/data/gen-sir/gen_sir.exe
+
+.PHONY: gen-ts
+gen-ts:  ## Generate TypeScript code from SIR data
+	@echo "Generating TypeScript code..."
+	dune exec test/data/gen-ts/gen_ts.exe
+
+gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
+
+.PHONY: gen-cram-test-model
+gen-cram-test-model:
+	@echo "Regenerating test_parse_model.t..."
+	bash test/e2e/python/cram_test_gen__model.sh > test/e2e/python/test_parse_model.t
+
+.PHONY: gen-cram-test-fun-decomp
+gen-cram-test-fun-decomp:
+	@echo "Regenerating test_parse_fun_decomp.t..."
+	bash test/e2e/python/cram_test_gen__fun_decomp.sh > test/e2e/python/test_parse_fun_decomp.t
+
+.PHONY: gen-cram-test-decl
+gen-cram-test-decl:
+	@echo "Regenerating test_parse_decl.t..."
+	bash test/e2e/python/cram_test_gen__decl.sh > test/e2e/python/test_parse_decl.t
 
 # Cross-platform binary builds
 # ====================
 
 BIN_DIR := .bin
+
+.PHONY: clean-binaries
+clean-binaries:  ## Clean built binaries
+	rm -rf $(BIN_DIR)
+	rm -rf _build-linux  # Docker build directory
 
 .PHONY: build-linux-bin
 build-linux-bin:  ## Build Linux binary using Docker
@@ -134,45 +164,48 @@ upload-binaries: upload-linux-bin upload-macos-bin  ## Upload all binaries to Gi
 
 .PHONY: build-py-macos
 build-py-macos: build-macos-bin  ## Build macOS wheel locally
-		@echo "Building macOS wheel..."
-		rm -rf ./dist/imandrax_codegen-*
-		cp $(BIN_DIR)/art_parse-darwin-arm64 python/imandrax_codegen/art_parse.exe
-		uv build --wheel
-		@echo "Retagging wheel for macOS..."
-		uv tool run wheel tags --platform-tag macosx_11_0_arm64 --remove dist/*.whl
-		@echo "macOS wheel built: $$(ls dist/*.whl)"
+	@echo "Building macOS wheel..."
+	rm -rf ./dist/imandrax_codegen-*
+	cp $(BIN_DIR)/art_parse-darwin-arm64 python/imandrax_codegen/art_parse.exe
+	uv build --wheel
+	@echo "Retagging wheel for macOS..."
+	uv tool run wheel tags --platform-tag macosx_11_0_arm64 --remove dist/*.whl
+	@echo "macOS wheel built: $$(ls dist/*.whl)"
 
 .PHONY: build-py-linux
 build-py-linux:  ## Build Linux wheel locally
-		@echo "Building Linux wheel..."
-		rm -rf ./dist/imandrax_codegen-*
-		cp $(BIN_DIR)/art_parse-linux-x86_64 python/imandrax_codegen/art_parse.exe
-		uv build --wheel
-		@echo "Retagging wheel for Linux..."
-		uv tool run wheel tags --platform-tag manylinux_2_17_x86_64 --remove dist/*.whl
-		@echo "Linux wheel built: $$(ls dist/*.whl)"
+	@echo "Building Linux wheel..."
+	rm -rf ./dist/imandrax_codegen-*
+	cp $(BIN_DIR)/art_parse-linux-x86_64 python/imandrax_codegen/art_parse.exe
+	uv build --wheel
+	@echo "Retagging wheel for Linux..."
+	uv tool run wheel tags --platform-tag manylinux_2_17_x86_64 --remove dist/*.whl
+	@echo "Linux wheel built: $$(ls dist/*.whl)"
 
 .PHONY: test-py
 test-py:  ## Run tests for Python package
-		uv run pytest test/python
+	uv run pytest test/python
 
-.PHONY: pre-release-test
-pre-release-test:  ## Run pre-release tests for Python package
-		# uv run pytest test/python
-		true  # disable in CI because we don't target platform outside of MacOS
+.PHONY: pre-release-test-linux
+pre-release-test-linux:  ## Run pre-release tests for Linux Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+
+.PHONY: pre-release-test-macos
+pre-release-test-macos:  ## Run pre-release tests for macOS Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*macos*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
 
 .PHONY: publish-testpypi
-publish-testpypi: pre-release-test  ## Publish to test.pypi.org
-		uv publish \
-		--publish-url https://test.pypi.org/legacy/ \
-		-u __token__ \
-		-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
-		./dist/imandrax_codegen-*
+publish-testpypi:  ## Publish to test.pypi.org
+	uv publish \
+	--publish-url https://test.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-test-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*
 
 .PHONY: publish-pypi
-publish-pypi: pre-release-test  ## Publish to pypi.org
-		uv publish \
-		--publish-url https://upload.pypi.org/legacy/ \
-		-u __token__ \
-		-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
-		./dist/imandrax_codegen-*
+publish-pypi:  ## Publish to pypi.org
+	uv publish \
+	--publish-url https://upload.pypi.org/legacy/ \
+	-u __token__ \
+	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
+	./dist/imandrax_codegen-*

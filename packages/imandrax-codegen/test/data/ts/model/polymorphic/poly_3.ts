@@ -1,0 +1,1 @@
+const w: container3<number, number, number> = { tag: "Three", payload: [1, 2, 3] };

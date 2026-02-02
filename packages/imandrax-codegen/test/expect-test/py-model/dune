@@ -1,0 +1,14 @@
+(library
+ (name expect_test_py_model)
+ (modules test)
+ (libraries imandrax_codegen imandrax-codegen.adapters.python containers)
+ (inline_tests
+  (deps
+   (source_tree ../../data)))
+ (preprocess
+  (pps ppx_expect ppx_string)))
+
+(cinaps
+ (files test.orig.ml)
+ (preprocess
+  (pps ppx_string)))

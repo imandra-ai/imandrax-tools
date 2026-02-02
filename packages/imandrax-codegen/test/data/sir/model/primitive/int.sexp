@@ -1,0 +1,1 @@
+((var_name w) (ty (TBase int)) (tm (VConst (CInt 2))))

@@ -1,10 +1,11 @@
-(subdir imandrax_codegen
-  (rule
-    (target art_parse.exe)
-    (deps ../../bin/parse.exe)
-    (mode promote)
-    (action (copy %{deps} %{target})))
-
-  (alias
-    (name python-setup)
-    (deps art_parse.exe)))
+(subdir
+ imandrax_codegen
+ (rule
+  (target art_parse.exe)
+  (deps ../../bin/parse.exe)
+  (mode promote)
+  (action
+   (copy %{deps} %{target})))
+ (alias
+  (name python-setup)
+  (deps art_parse.exe)))

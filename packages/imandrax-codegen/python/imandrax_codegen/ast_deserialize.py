@@ -12,7 +12,7 @@ from typing import Any, cast
 from . import ast_types as ast
 
 
-def deserialize_constant_value(value: Any) -> Any:
+def _deserialize_constant_value(value: Any) -> Any:
     """Deserialize constant value from OCaml tagged format."""
     if not isinstance(value, list):
         return value
@@ -29,7 +29,7 @@ def deserialize_constant_value(value: Any) -> Any:
     return cast(Any, value)
 
 
-def deserialize(value: Any) -> Any:
+def _deserialize(value: Any) -> Any:
     """Recursively deserialize OCaml yojson to Python AST objects."""
     if value is None:
         return None
@@ -42,7 +42,7 @@ def deserialize(value: Any) -> Any:
         value_dict = cast(dict[str, Any], value)
         result: dict[str, Any] = {}
         for k, v in value_dict.items():
-            result[k] = deserialize(v)
+            result[k] = _deserialize(v)
         return result
 
     if isinstance(value, list):
@@ -70,20 +70,20 @@ def deserialize(value: Any) -> Any:
                     kwargs: dict[str, Any] = {}
                     for k, v in data.items():
                         if k != 'value':  # Skip 'value' - handle it specially below
-                            kwargs[k] = deserialize(v)
-                    kwargs['value'] = deserialize_constant_value(data['value'])
+                            kwargs[k] = _deserialize(v)
+                    kwargs['value'] = _deserialize_constant_value(data['value'])
                     return cls(**kwargs)
 
                 # Recursively deserialize all fields
                 kwargs2: dict[str, Any] = {}
                 for k, v in data.items():
-                    kwargs2[k] = deserialize(v)
+                    kwargs2[k] = _deserialize(v)
                 return cls(**kwargs2)
 
         # Plain list - recursively deserialize elements
         result_list: list[Any] = []
         for item in value_list:
-            result_list.append(deserialize(item))
+            result_list.append(_deserialize(item))
         return result_list
 
     return value
@@ -91,7 +91,7 @@ def deserialize(value: Any) -> Any:
 
 def _stmts_of_json_data(json_data: list[Any]) -> list[ast.stmt]:
     """Load a list of statements from OCaml JSON."""
-    return deserialize(json_data)
+    return _deserialize(json_data)
 
 
 def stmts_of_json(json_string: str) -> list[ast.stmt]:

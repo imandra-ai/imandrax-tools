@@ -1,8 +1,9 @@
+"""Wrapper around art_parse.exe."""
+
 import base64
 import json
 import subprocess
 import sys
-from functools import singledispatch
 from pathlib import Path
 from typing import Literal
 
@@ -13,8 +14,11 @@ from imandrax_codegen.ast_deserialize import stmts_of_json
 
 SUPPORTED_PLATFORMS = ('darwin', 'linux')
 
+Mode = Literal['fun-decomp', 'model', 'decl']
+Lang = Literal['python', 'typescript']
 
-def find_art_parse_exe() -> Path:
+
+def _find_art_parse_exe() -> Path:
     """Find the art_parse executable.
 
     Raises:
@@ -37,7 +41,7 @@ def find_art_parse_exe() -> Path:
     return exe_path
 
 
-CODEGEN_EXE_PATH = find_art_parse_exe()
+CODEGEN_EXE_PATH = _find_art_parse_exe()
 
 
 def _convert_to_standard_base64(data: str | bytes) -> str:
@@ -77,43 +81,37 @@ def _serialize_artifact(art: Art) -> str:
     return json.dumps(art_dict)
 
 
-@singledispatch
-def ast_of_art(
-    art: str | Art, mode: Literal['fun-decomp', 'model', 'decl']
-) -> list[ast_types.stmt]:
-    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
-
-
-@ast_of_art.register
-def _(
-    art: str,
-    mode: Literal['fun-decomp', 'model', 'decl'],
-) -> list[ast_types.stmt]:
-    """Use the codegen executable to generate ASTs for a given artifact."""
+def _run_parser(art_str: str, mode: Mode, lang: Lang) -> str:
+    """Run the parser executable and return raw output."""
+    cmd = [CODEGEN_EXE_PATH, '-', '-', '--mode', mode, '--lang', lang]
     result = subprocess.run(
-        [
-            CODEGEN_EXE_PATH,
-            '-',
-            '-',
-            '--mode',
-            mode,
-        ],
+        cmd,
         check=False,
-        input=art,
+        input=art_str,
         text=True,
         capture_output=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f'Failed to run generate AST: {result.stderr}')
-    return stmts_of_json(result.stdout)
+        raise RuntimeError(f'Failed to run parser: {result.stderr}')
+    return result.stdout
 
 
-@ast_of_art.register
-def _(
-    art: Art,
-    mode: Literal['fun-decomp', 'model', 'decl'],
-) -> list[ast_types.stmt]:
-    return ast_of_art(_serialize_artifact(art), mode)
+def ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
+    if isinstance(art, Art):
+        art = _serialize_artifact(art)
+    output = _run_parser(art, mode, 'python')
+    return stmts_of_json(output)
 
 
-# END [[ast_of_art]]>
+def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
+    """Generate source code from an artifact."""
+    if isinstance(art, Art):
+        art = _serialize_artifact(art)
+    match lang:
+        case 'python':
+            from imandrax_codegen.unparse import unparse
+
+            stmts = ast_of_art(art, mode)
+            return unparse(stmts)
+        case 'typescript':
+            return _run_parser(art, mode, 'typescript')

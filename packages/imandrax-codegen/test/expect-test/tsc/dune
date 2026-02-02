@@ -1,0 +1,7 @@
+(cram
+ (deps
+  (source_tree ../../data/ts)
+  package.json
+  pnpm-lock.yaml
+  tsconfig.json
+  (source_tree node_modules)))

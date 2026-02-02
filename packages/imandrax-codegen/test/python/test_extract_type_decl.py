@@ -1,15 +1,8 @@
 """Test cases for extract_type_decl_names function."""
 
-from imandrax_codegen.test_gen import extract_type_decl_names
-from IPython.core.getipython import get_ipython
-
-if ip := get_ipython():
-    ip.run_line_magic('reload_ext', 'autoreload')
-    ip.run_line_magic('autoreload', '2')
-
-from pathlib import Path
-
-curr_dir = Path.cwd() if ip else Path(__file__).parent
+from imandrax_codegen.gen_tests import (
+    _extract_type_decl_names,  # pyright: ignore[reportPrivateUsage]
+)
 
 
 def test_simple_type():
@@ -17,7 +10,7 @@ def test_simple_type():
     iml = """\
 type direction = North | South | East | West
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['direction'], f"Expected ['direction'], got {types}"
 
 
@@ -26,7 +19,7 @@ def test_single_param_type():
     iml = """\
 type 'a option = None | Some of 'a
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['option'], f"Expected ['option'], got {types}"
     print('✓ test_single_param_type passed')
 
@@ -41,7 +34,7 @@ type ('a, 'b) container =
     | Labeled of { key: 'a; value: 'b }
     | Multi of 'a list * 'b list
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['container'], f"Expected ['container'], got {types}"
 
 
@@ -51,7 +44,7 @@ def test_mutually_recursive_types():
 type tree = Leaf | Node of node_data
 and node_data = { value: int; left: tree; right: tree }
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['tree', 'node_data'], (
         f"Expected ['tree', 'node_data'], got {types}"
     )
@@ -66,7 +59,7 @@ type 'a list_wrapper = List of 'a list
 
 type ('k, 'v) map = Empty | Node of 'k * 'v * ('k, 'v) map * ('k, 'v) map
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['color', 'list_wrapper', 'map'], (
         f"Expected ['color', 'list_wrapper', 'map'], got {types}"
     )
@@ -77,7 +70,7 @@ def test_record_type():
     iml = """\
 type person = { name: string; age: int; email: string }
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['person'], f"Expected ['person'], got {types}"
 
 
@@ -87,7 +80,7 @@ def test_type_alias():
 type int_pair = int * int
 type string_list = string list
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['int_pair', 'string_list'], (
         f"Expected ['int_pair', 'string_list'], got {types}"
     )
@@ -98,7 +91,7 @@ def test_complex_param_type():
     iml = """\
 type ('a, 'b, 'c) triple = { first: 'a; second: 'b; third: 'c }
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['triple'], f"Expected ['triple'], got {types}"
 
 
@@ -111,7 +104,7 @@ type _ expr =
   | Add : int expr * int expr -> int expr
   | Eq : 'a expr * 'a expr -> bool expr
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['expr'], f"Expected ['expr'], got {types}"
 
 
@@ -122,7 +115,7 @@ type (_, _) vec =
   | Nil : ('a, 'z) vec
   | Cons : 'a * ('a, 'n) vec -> ('a, 'n succ) vec
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['vec'], f"Expected ['vec'], got {types}"
 
 
@@ -135,5 +128,5 @@ type _ term =
   | App : ('a -> 'b) term * 'a term -> 'b term
   | Lam : ('a -> 'b term) -> ('a -> 'b) term
 """
-    types = extract_type_decl_names(iml)
+    types = _extract_type_decl_names(iml)
     assert types == ['term'], f"Expected ['term'], got {types}"
