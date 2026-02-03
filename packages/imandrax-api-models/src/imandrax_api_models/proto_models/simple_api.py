@@ -219,6 +219,11 @@ class Verified_upto(BaseModel):
     msg: str | None = Field(default=None)
 
 
+class Qcheck_ok(BaseModel):
+    num_steps: int
+    seed: int
+
+
 class Unsat(BaseModel):
     proof_pp: str | None = Field(default=None)
 
@@ -252,6 +257,7 @@ class PO_Res(BaseModel):
     proof: Proved | None = Field(default=None)
     instance: CounterSat | None = Field(default=None)
     verified_upto: Verified_upto | None = Field(default=None)
+    qcheck_ok: Qcheck_ok | None = Field(default=None)
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
@@ -269,6 +275,7 @@ class PO_Res(BaseModel):
                 self.proof,
                 self.instance,
                 self.verified_upto,
+                self.qcheck_ok,
             ]
             if r is not None
         )
@@ -431,18 +438,25 @@ class TypecheckRes(TypecheckResProto):
 
 
 class GetDeclsReq(BaseModel):
-    name: list[str]
+    name: list[str] = Field(description='names of the desired declarations')
+    str_: str | None = Field(
+        default=None, alias='str', description='if true, include string representation'
+    )
 
 
 class DeclWithName(BaseModel):
     name: str
-    artifact: Art
-    str_: str | None = Field(default=None, alias='str')
+    artifact: Art = Field(description='artifact with the decl in it')
+    str_: str | None = Field(
+        default=None,
+        alias='str',
+        description='included if `str` was true in `GetDeclsReq`',
+    )
 
 
 class GetDeclsRes(BaseModel):
-    decls: list[DeclWithName]
-    not_found: list[str]
+    decls: list[DeclWithName] = Field(description='decls that were found')
+    not_found: list[str] = Field(description='names that were not found')
 
 
 class OneshotReq(BaseModel):
