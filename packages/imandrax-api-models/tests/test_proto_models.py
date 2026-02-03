@@ -228,7 +228,7 @@ module M = struct
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                 }
@@ -301,7 +301,7 @@ module M = struct
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                 }
@@ -321,7 +321,7 @@ def test_decompose(c: Client):
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v18',
+                'api_version': 'v19',
                 'storage': [],
             },
             'err': None,
@@ -417,7 +417,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -427,7 +427,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -437,7 +437,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -477,3 +477,42 @@ def test_art_zip(c: Client):
     art_zip = ArtifactZip.model_validate(art_zip_pb)
     art = art_zip.to_artifact()
     assert isinstance(art, xtypes.Tasks_PO_res_shallow_poly)
+
+
+def test_eval_qcheck_found_cx(c: Client):
+    """Quickcheck found a counter-example. TacticEval error."""
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gt_3 = fun x -> f (g x) - x > 3
+
+    qcheck f_g_x_gt_3
+    """
+    eval_res_msg: Message = c.eval_src(iml)
+    eval_res = EvalRes.model_validate(eval_res_msg)
+    assert eval_res.success
+    assert len(eval_res.messages) == 1
+    assert 'Quickcheck found a counter-example' in eval_res.messages[0]
+    assert len(eval_res.errors) == 0
+    assert len(eval_res.po_results) == 1
+    assert eval_res.po_results[0].err is not None
+
+
+def test_eval_qcheck_ok(c: Client):
+    """qcheck_ok in PO_res."""
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
+
+    qcheck f_g_x_gte_3
+    """
+    eval_res_msg: Message = c.eval_src(iml)
+    eval_res = EvalRes.model_validate(eval_res_msg)
+    assert eval_res.success
+    assert len(eval_res.po_results) == 1
+    assert eval_res.po_results[0].qcheck_ok is not None
