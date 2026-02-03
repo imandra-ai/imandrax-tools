@@ -27,7 +27,7 @@ build-backend = "uv_build"
 
 
 [tool.uv.sources]
-# imandrax-api = { path = "../../../imandrax-api/src/py" }
+imandrax-api = { path = "../../../imandrax-api/src/py" }
 
 [dependency-groups]
 dev = [
