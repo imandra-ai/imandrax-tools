@@ -332,16 +332,16 @@ def _get_imandrax_api_key() -> str | None:
 
 
 def get_imandrax_client(
-    imandra_api_key: str | None = None,
+    auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
 ) -> ImandraXClient:
     url = _get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
-    if imandra_api_key is None:
+    if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = imandra_api_key or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or _get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
@@ -352,16 +352,16 @@ def get_imandrax_client(
 
 
 def get_imandrax_async_client(
-    imandra_api_key: str | None = None,
+    auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
 ) -> ImandraXAsyncClient:
     url = _get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
-    if imandra_api_key is None:
+    if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = imandra_api_key or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or _get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
