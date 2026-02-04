@@ -320,7 +320,8 @@ def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
     return url
 
 
-def _get_imandrax_api_key() -> str | None:
+def get_imandrax_api_key() -> str | None:
+    """Get the API key from the environment variable or default config location."""
     api_key: str | None = os.getenv('IMANDRAX_API_KEY')
 
     if not api_key:
@@ -341,7 +342,7 @@ def get_imandrax_client(
 
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = auth_token or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
@@ -361,7 +362,7 @@ def get_imandrax_async_client(
 
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = auth_token or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
