@@ -215,8 +215,9 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     if not eval_res.has_errors:
+        # Check additional error in message (internal errors)
         errs_in_eval_msg: list[str] = [
-            msg for msg in eval_res.messages if 'error' in msg
+            msg for msg in eval_res.messages if 'error' in msg.lower()
         ]
         if len(errs_in_eval_msg) == 0:
             s = 'Eval success!'
