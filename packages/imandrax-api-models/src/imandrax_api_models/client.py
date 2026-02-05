@@ -1,4 +1,4 @@
-"""Extended client with Pydantic model validation."""
+"""Extended imandrax-api client with Pydantic model validation."""
 
 import os
 from pathlib import Path
