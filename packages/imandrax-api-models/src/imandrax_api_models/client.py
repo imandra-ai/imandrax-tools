@@ -31,6 +31,8 @@ from imandrax_api_models import (
     TypecheckRes,
     VerifyRes,
 )
+from imandrax_api_models.proto_models.api import ArtifactListResult, ArtifactZip
+from imandrax_api_models.proto_models.task import Task
 
 if TYPE_CHECKING:
 
@@ -69,6 +71,17 @@ if TYPE_CHECKING:
             names: list[str],
             timeout: float | None = None,
         ) -> GetDeclsRes: ...
+        async def list_artifacts(
+            self,
+            task: Any,
+            timeout: float | None = None,
+        ) -> ArtifactListResult: ...
+        async def get_artifact_zip(
+            self,
+            task: Any,
+            kind: str,
+            timeout: float | None = None,
+        ) -> ArtifactZip: ...
         async def __aenter__(self) -> Self: ...
         async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 else:
@@ -165,6 +178,23 @@ class ImandraXClient(imandrax_api.Client):
     ) -> GetDeclsRes:
         res = super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
+
+    def list_artifacts(  # type: ignore[override]
+        self,
+        task: Task,
+        timeout: float | None = None,
+    ) -> ArtifactListResult:
+        res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
+        return ArtifactListResult.model_validate(res)
+
+    def get_artifact_zip(  # type: ignore[override]
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> ArtifactZip:
+        res = super().get_artifact_zip(task=task.to_proto(), kind=kind, timeout=timeout)
+        return ArtifactZip.model_validate(res)
 
     def __enter__(self) -> Self:  # type: ignore[override]
         super().__enter__()
@@ -277,6 +307,25 @@ class ImandraXAsyncClient(AsyncClient):
     ) -> GetDeclsRes:
         res = await super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
+
+    async def list_artifacts(
+        self,
+        task: Task,
+        timeout: float | None = None,
+    ) -> ArtifactListResult:
+        res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
+        return ArtifactListResult.model_validate(res)
+
+    async def get_artifact_zip(
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> ArtifactZip:
+        res = await super().get_artifact_zip(
+            task=task.to_proto(), kind=kind, timeout=timeout
+        )
+        return ArtifactZip.model_validate(res)
 
     async def __aenter__(self, *_: Any) -> Self:
         await super().__aenter__()
