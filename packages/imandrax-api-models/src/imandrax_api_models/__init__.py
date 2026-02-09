@@ -1,5 +1,7 @@
 from .proto_models import (
     Art,
+    ArtifactListResult,
+    ArtifactZip,
     CounterSat,
     DecomposeReq,
     DecomposeRes,
@@ -49,6 +51,8 @@ from .proto_models import (
 
 __all__ = [
     'Art',
+    'ArtifactListResult',
+    'ArtifactZip',
     'CounterSat',
     'DecomposeReq',
     'DecomposeRes',
