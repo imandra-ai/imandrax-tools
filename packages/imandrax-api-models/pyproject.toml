@@ -107,6 +107,7 @@ invalid-argument-type = "ignore"
 invalid-return-type = "ignore"
 possibly-missing-import = "ignore"
 unresolved-import = "ignore"
+possibly-missing-attribute = "ignore"
 
 [tool.pyright]
 venvPath = "."
