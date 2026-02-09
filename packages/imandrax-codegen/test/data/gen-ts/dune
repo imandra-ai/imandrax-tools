@@ -1,0 +1,9 @@
+(executable
+ (name gen_ts)
+ (libraries
+  imandrax_codegen
+  imandrax-codegen.semantic_ir
+  imandrax-codegen.adapters.typescript
+  yaml
+  containers
+  sexplib))

@@ -1,0 +1,1 @@
+const w: [boolean, number] = [true, 2];

@@ -1,0 +1,1 @@
+((var_name w) (ty (TApp list ((TVar a)))) (tm (VList ())))

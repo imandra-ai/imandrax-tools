@@ -4,27 +4,8 @@ module Mir = Imandrax_api_mir
 module Type = Imandrax_api_mir.Type
 module Term = Imandrax_api_mir.Term
 
-(* TODO: rename to art_data_of_json *)
-let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
-  let log fmt = if debug then printf fmt else ifprintf stdout fmt in
-
-  (* Extract fields *)
-  let kind_str = Yojson.Safe.Util.(json |> member "kind" |> to_string) in
-  let data_b64 = Yojson.Safe.Util.(json |> member "data" |> to_string) in
-  let api_version =
-    Yojson.Safe.Util.(json |> member "api_version" |> to_string)
-  in
-
-  (* log "Kind: %s\n" kind_str; *)
-  log "API Version: %s\n" api_version;
-
-  (* log.log "Data (base64): %s...\n"
-    (String.sub data_b64 0 (min 50 (String.length data_b64))); *)
-  (data_b64, kind_str)
-
-(* TODO: rename to art_of_art_data *)
-let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string) :
-    Artifact.t =
+let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string)
+    : Artifact.t =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
 
   match Artifact.kind_of_string kind_str with
@@ -62,9 +43,10 @@ let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string) :
         artifact
       in
       art
+;;
 
-let art_data_to_model ?(debug = false) (data_b64 : string) (kind_str : string) :
-    Mir.Model.t =
+let art_data_to_model ?(debug = false) (data_b64 : string) (kind_str : string)
+    : Mir.Model.t =
   let art = art_data_to_art ~debug data_b64 kind_str in
   let model : Mir.Model.t =
     match Artifact.as_model art with
@@ -72,11 +54,13 @@ let art_data_to_model ?(debug = false) (data_b64 : string) (kind_str : string) :
     | None -> raise (Failure "Error: artifact is not a model")
   in
   model
+;;
 
 let art_data_to_fun_decomp
     ?(debug = false)
     (data_b64 : string)
-    (kind_str : string) : Mir.Fun_decomp.t =
+    (kind_str : string)
+    : Mir.Fun_decomp.t =
   let art = art_data_to_art ~debug data_b64 kind_str in
   let fun_decomp : Mir.Fun_decomp.t =
     match Artifact.as_fun_decomp art with
@@ -84,11 +68,10 @@ let art_data_to_fun_decomp
     | None -> raise (Failure "Error: artifact is not a model")
   in
   fun_decomp
+;;
 
-let art_data_to_decl
-    ?(debug = false)
-    (data_b64 : string)
-    (kind_str : string) : Mir.Decl.t =
+let art_data_to_decl ?(debug = false) (data_b64 : string) (kind_str : string)
+    : Mir.Decl.t =
   let art = art_data_to_art ~debug data_b64 kind_str in
   let decl : Mir.Decl.t =
     match Artifact.as_decl art with
@@ -96,22 +79,28 @@ let art_data_to_decl
     | None -> raise (Failure "Error: artifact is not a model")
   in
   decl
+;;
 
-(* <><><><><><><><><><> *)
+(* JSON/YAML -> twine
+==================== *)
 
-let json_to_model ?(debug = false) (json : Yojson.Safe.t) : Mir.Model.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_model ~debug data_b64 kind_str
+let json_to_art_data ?(debug = false) (json : Yojson.Safe.t) : string * string =
+  let log fmt = if debug then printf fmt else ifprintf stdout fmt in
 
-let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t) :
-    Mir.Fun_decomp.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_fun_decomp ~debug data_b64 kind_str
+  (* Extract fields *)
+  let kind_str = Yojson.Safe.Util.(json |> member "kind" |> to_string) in
+  let data_b64 = Yojson.Safe.Util.(json |> member "data" |> to_string) in
+  let api_version =
+    Yojson.Safe.Util.(json |> member "api_version" |> to_string)
+  in
 
-let json_to_decl ?(debug = false) (json : Yojson.Safe.t) :
-    Mir.Decl.t =
-  let data_b64, kind_str = json_to_art_data ~debug json in
-  art_data_to_decl ~debug data_b64 kind_str
+  (* log "Kind: %s\n" kind_str; *)
+  log "API Version: %s\n" api_version;
+
+  (* log.log "Data (base64): %s...\n"
+    (String.sub data_b64 0 (min 50 (String.length data_b64))); *)
+  data_b64, kind_str
+;;
 
 let yaml_to_art ?(debug = false) (yaml : Yaml.value) : string * string =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
@@ -131,17 +120,253 @@ let yaml_to_art ?(debug = false) (yaml : Yaml.value) : string * string =
       log "Kind: %s\n" kind_str;
       log "API Version: %s\n" api_version;
 
-      (data_b64, kind_str)
+      data_b64, kind_str
   | _ -> failwith "Expected YAML mapping (object)"
+;;
+
+(* JSON/YAML -> Art
+==================== *)
+
+let json_to_model ?(debug = false) (json : Yojson.Safe.t) : Mir.Model.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_model ~debug data_b64 kind_str
+;;
+
+let json_to_fun_decomp ?(debug = false) (json : Yojson.Safe.t)
+    : Mir.Fun_decomp.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_fun_decomp ~debug data_b64 kind_str
+;;
+
+let json_to_decl ?(debug = false) (json : Yojson.Safe.t) : Mir.Decl.t =
+  let data_b64, kind_str = json_to_art_data ~debug json in
+  art_data_to_decl ~debug data_b64 kind_str
+;;
 
 let yaml_to_model ?(debug = false) (yaml : Yaml.value) : Mir.Model.t =
   let data_b64, kind_str = yaml_to_art ~debug yaml in
   art_data_to_model ~debug data_b64 kind_str
+;;
 
 let yaml_to_fun_decomp ?(debug = false) (yaml : Yaml.value) : Mir.Fun_decomp.t =
   let data_b64, kind_str = yaml_to_art ~debug yaml in
   art_data_to_fun_decomp ~debug data_b64 kind_str
+;;
 
 let yaml_to_decl ?(debug = false) (yaml : Yaml.value) : Mir.Decl.t =
   let data_b64, kind_str = yaml_to_art ~debug yaml in
   art_data_to_decl ~debug data_b64 kind_str
+;;
+
+let%expect_test _ =
+  let file_path = "../test/data/art/model/primitive/empty_list.yaml" in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
+    Applied symbol: { sym.id = w/69277;
+                      args = [{ view = (Var a/69276);
+                                generation = 1 }];
+                      ty =
+                        { view =
+                            (Constr
+                              (list,[{ view = (Var a/69276);
+                                       generation = 1 }]));
+                          generation = 1 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect
+    {|
+    Term: { view =
+              Construct
+                {
+                c =
+                  ([] : { view =
+                            (Constr
+                              (list,
+                               [{ view = (Constr (_a_0/0[temp],[]));
+                                  generation = 1 }]));
+                          generation = 1 });
+                args = []
+                };
+            ty =
+              { view =
+                  (Constr
+                    (list,[{ view = (Constr (_a_0/0[temp],[]));
+                             generation = 1 }]));
+                generation = 1 };
+            generation = 0;
+            sub_anchor = None }
+    |}]
+;;
+
+let%expect_test _ =
+  let file_path =
+    "../test/data/art/model/primitive/tuple_of_bool_and_int.yaml"
+  in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
+    Applied symbol: { sym.id = w/69260;
+                      args = [];
+                      ty =
+                        { view =
+                            (Tuple
+                              [{ view = (Constr (bool,[]));
+                                 generation = 3 };
+                                { view = (Constr (int,[]));
+                                  generation = 3 }]);
+                          generation = 3 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect
+    {|
+    Term: { view =
+              Tuple
+                {
+                l =
+                  [{ view = (Const true);
+                     ty = { view = (Constr (bool,[]));
+                            generation = 3 };
+                     generation = 1;
+                     sub_anchor = None };
+                    { view = (Const 2);
+                      ty = { view = (Constr (int,[]));
+                             generation = 3 };
+                      generation = 1;
+                      sub_anchor = None }]
+                };
+            ty =
+              { view =
+                  (Tuple
+                    [{ view = (Constr (bool,[]));
+                       generation = 3 };
+                      { view = (Constr (int,[]));
+                        generation = 3 }]);
+                generation = 3 };
+            generation = 1;
+            sub_anchor = None }
+    |}]
+;;
+
+let%expect_test _ =
+  let file_path = "../test/data/art/model/composite/set_empty.yaml" in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
+  let model = yaml_to_model y in
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
+    Applied symbol: { sym.id = w/69694;
+                      args = [{ view = (Var a/69693);
+                                generation = 5 }];
+                      ty =
+                        { view =
+                            (Constr
+                              (Map.t,
+                               [{ view = (Var a/69693);
+                                  generation = 5 };
+                                { view = (Constr (bool,[]));
+                                  generation = 5 }]));
+                          generation = 5 } }
+    |}];
+
+  CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
+  [%expect
+    {|
+    Term: { view =
+              Apply {f = { view =
+                             (Sym
+                               (Map.const : { view =
+                                                (Arrow ((),
+                                                        { view =
+                                                            (Constr (bool,[]));
+                                                          generation = 5 },
+                                                        { view =
+                                                            (Constr
+                                                              (Map.t,
+                                                               [{ view =
+                                                                    (Constr
+                                                                      (_a_0/2[temp],
+                                                                       []));
+                                                                  generation = 5 };
+                                                                { view =
+                                                                    (Constr
+                                                                      (bool,[]));
+                                                                  generation = 5 }]));
+                                                          generation = 5 }));
+                                              generation = 5 }));
+                           ty =
+                             { view =
+                                 (Arrow ((),
+                                         { view = (Constr (bool,[]));
+                                           generation = 5 },
+                                         { view =
+                                             (Constr
+                                               (Map.t,
+                                                [{ view =
+                                                     (Constr (_a_0/2[temp],[]));
+                                                   generation = 5 };
+                                                 { view = (Constr (bool,[]));
+                                                   generation = 5 }]));
+                                           generation = 5 }));
+                               generation = 5 };
+                           generation = 2;
+                           sub_anchor = None };
+                     l =
+                       [{ view = (Const false);
+                          ty = { view = (Constr (bool,[]));
+                                 generation = 5 };
+                          generation = 2;
+                          sub_anchor = None }]
+                     };
+            ty =
+              { view =
+                  (Constr
+                    (Map.t,
+                     [{ view = (Constr (_a_0/2[temp],[]));
+                        generation = 5 };
+                      { view = (Constr (bool,[]));
+                        generation = 5 }]));
+                generation = 5 };
+            generation = 2;
+            sub_anchor = None }
+    |}]
+;;

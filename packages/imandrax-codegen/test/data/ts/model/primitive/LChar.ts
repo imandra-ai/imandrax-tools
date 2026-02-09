@@ -1,0 +1,1 @@
+const w: string = "\x00";
