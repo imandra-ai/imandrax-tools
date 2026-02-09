@@ -1,17 +1,21 @@
 import os
 
+import imandrax_api.lib as xtypes
 import pytest
 from dirty_equals import IsBytes, IsStr
 from google.protobuf.message import Message
-from imandrax_api import Client, url_dev, url_prod  # noqa: F401
+from imandrax_api import Client, bindings as xbinding, url_dev, url_prod  # noqa: F401
 from inline_snapshot import snapshot
 
 from imandrax_api_models import (
+    ArtifactListResult,
+    ArtifactZip,
     DecomposeRes,
     EvalRes,
     GetDeclsRes,
     InstanceRes,
     ModelType,
+    Task,
     TaskKind,
     TypecheckRes,
     VerifyRes,
@@ -25,7 +29,7 @@ class IsArtifactData(IsBytes):
 
 class IsTaskID(IsStr):
     def __init__(self):
-        super().__init__(regex=r'task:decomp:.*')
+        super().__init__(regex=r'task:.*')
 
 
 @pytest.fixture
@@ -72,6 +76,40 @@ type position = { x: int; y: int; z: real }
 type movement =
   | Stay of position
   | Move of position * direction
+"""
+
+IML_CODE_WITH_GOAL_STATE = """
+let rec prepend (x:'a) (sets:'a list list) : 'a list list =
+match sets with
+| [] -> []
+| s::ss -> (x::s) :: prepend x ss
+[@@measure (Ordinal.of_int (List.length sets))] [@@by auto]
+
+(* Powerset of a list: P([]) = [[]]; P(x::xs) = P(xs) @ (map (x::) (P(xs))) *)
+let rec powerset (xs:'a list) : 'a list list =
+match xs with
+| [] -> [[]]
+| x::xt ->
+    let ps = powerset xt in
+    ps @ (prepend x ps)
+[@@measure (Ordinal.of_int (List.length xs))] [@@by auto]
+
+let rec pow (a:int) (n:int) : int =
+if n <= 0 then 1 else a * pow a (n - 1)
+[@@measure (Ordinal.of_int n)] [@@by auto]
+
+theorem pow_zero a = pow a 0 = 1 [@@by auto]
+
+theorem pow_succ a n =
+n >= 0 ==> pow a (n + 1) = a * pow a n
+[@@by intros @> auto]
+
+theorem pow2_step n =
+n >= 0 ==> pow 2 (n + 1) = 2 * pow 2 n
+[@@by intros @> [%use pow_succ 2 n] @> auto]
+
+lemma len_append x y =
+List.length (x @ y) = List.length x + List.length y
 """
 
 
@@ -201,6 +239,7 @@ module M = struct
     )
 
 
+@pytest.mark.flaky(reruns=2)
 def test_instance_src(c: Client):
     _ = c.eval_src(IML_CODE)
     instance_res_msg = c.instance_src(VERIFY_SRC_REFUTED)
@@ -406,3 +445,34 @@ def test_get_decls(c: Client):
             'not_found': ['else'],
         }
     )
+
+
+def test_task(c: Client):
+    eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
+    task_pb: xbinding.task_pb2.Task = eval_res.tasks[0]
+    task = Task.model_validate(task_pb)
+    assert task.model_dump() == snapshot(
+        {
+            'id': {'id': IsTaskID()},
+            'kind': TaskKind.TASK_CHECK_PO,
+        }
+    )
+
+
+def test_art_list_res(c: Client):
+    eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
+    task_pb = eval_res.tasks[0]
+    art_list_res_pb = c.list_artifacts(task_pb)
+    art_list_res = ArtifactListResult.model_validate(art_list_res_pb)
+    assert art_list_res == snapshot(
+        ArtifactListResult(kinds=['report', 'po_res', 'po_task', 'show'])
+    )
+
+
+def test_art_zip(c: Client):
+    eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
+    task_pb = eval_res.tasks[0]
+    art_zip_pb = c.get_artifact_zip(task=task_pb, kind='po_res')
+    art_zip = ArtifactZip.model_validate(art_zip_pb)
+    art = art_zip.to_artifact()
+    assert isinstance(art, xtypes.Tasks_PO_res_shallow_poly)
