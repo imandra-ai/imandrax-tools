@@ -5,7 +5,7 @@ help:  ## Show this help message
 		/^# =+$$/ && pending { printf "\033[1;33m=== %s ===\033[0m\n", pending; pending=""; next } \
 		/^# -+$$/ && pending { printf "\033[1;33m--- %s ---\033[0m\n", pending; pending=""; next } \
 		{ pending="" } \
-		/^[a-zA-Z_-]+:.*## / { \
+		/^[a-zA-Z0-9_-]+:.*## / { \
 			split($$0, a, ":.*## "); \
 			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
 		}' $(MAKEFILE_LIST)
@@ -101,11 +101,14 @@ BIN_DIR := .bin
 .PHONY: clean-binaries
 clean-binaries:  ## Clean built binaries
 	rm -rf $(BIN_DIR)
-	rm -rf _build-linux  # Docker build directory
+	rm -rf _build-linux _build-linux-aarch64  # Docker build directories
 
-.PHONY: build-linux-bin
-build-linux-bin:  ## Build Linux binary using Docker
-	@echo "Building Linux binary via Docker..."
+.PHONY: build-linux-binaries
+build-linux-binaries: build-linux-x86_64-bin build-linux-aarch64-bin  ## Build both Linux x86_64 and Linux aarch64 binaries
+
+.PHONY: build-linux-x86_64-bin
+build-linux-x86_64-bin:  ## Build Linux x86_64 binary using Docker
+	@echo "Building Linux x86_64 binary via Docker..."
 	@mkdir -p $(BIN_DIR)
 	docker run --rm --platform linux/amd64 \
 		-v $(PWD)/../..:/workspace/imandrax-tools \
@@ -120,7 +123,26 @@ build-linux-bin:  ## Build Linux binary using Docker
 			opam install . --deps-only -y && \
 			dune build --root=. --build-dir=_build-linux bin/parse.exe && \
 			cp _build-linux/default/bin/parse.exe .bin/art_parse-linux-x86_64"
-	@echo "Linux binary built at $(BIN_DIR)/art_parse-linux-x86_64"
+	@echo "Linux x86_64 binary built at $(BIN_DIR)/art_parse-linux-x86_64"
+
+.PHONY: build-linux-aarch64-bin
+build-linux-aarch64-bin:  ## Build Linux aarch64 binary using Docker
+	@echo "Building Linux aarch64 binary via Docker..."
+	@mkdir -p $(BIN_DIR)
+	docker run --rm --platform linux/arm64 \
+		-v $(PWD)/../..:/workspace/imandrax-tools \
+		-v $(PWD)/../../../imandrax-api:/workspace/imandrax-api \
+		-w /workspace/imandrax-tools/packages/imandrax-codegen \
+		ocaml/opam:ubuntu-24.04-ocaml-5.3 \
+		bash -c "\
+			sudo apt-get update && sudo apt-get install -y pkg-config libgmp-dev zlib1g-dev libprotobuf-dev protobuf-compiler && \
+			opam update && \
+			opam pin add -n imandrax-api /workspace/imandrax-api && \
+			opam pin add -n imandra-proof-system /workspace/imandrax-api && \
+			opam install . --deps-only -y && \
+			dune build --root=. --build-dir=_build-linux-aarch64 bin/parse.exe && \
+			cp _build-linux-aarch64/default/bin/parse.exe .bin/art_parse-linux-aarch64"
+	@echo "Linux aarch64 binary built at $(BIN_DIR)/art_parse-linux-aarch64"
 
 .PHONY: build-macos-bin
 build-macos-bin:  ## Build MacOS binary (native)
@@ -131,25 +153,27 @@ build-macos-bin:  ## Build MacOS binary (native)
 	@echo "MacOS binary built at $(BIN_DIR)/art_parse-darwin-arm64"
 
 .PHONY: build-binaries
-build-binaries: build-macos-bin build-linux-bin  ## Build all binaries
-
-.PHONY: test-linux-wheel
-test-linux-wheel: build-py-linux  ## Build and test Linux wheel in Docker
-	@echo "Testing Linux wheel import..."
-	docker run --rm --platform linux/amd64 -v $(PWD):/workspace python:3.12 \
-		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
+build-binaries: build-macos-bin build-linux-binaries  ## Build all binaries (2 linux binaries, 1 macOS binary)
 
 # Default release tag for binaries
 BINARY_RELEASE_TAG ?= codegen-binaries
 
+.PHONY: upload-linux-bin  ## Upload Linux binaries to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
+upload-linux-bin: upload-linux-x86_64-bin upload-linux-aarch64-bin  ## Upload all Linux binaries to GitHub release
+
 # The --clobber flag in the Makefile means:
-# - First upload: Creates art_parse-linux-x86_64 and art_parse-darwin-arm64 in the
-# codegen-binaries release
+# - First upload: Creates art_parse-linux-x86_64, art_parse-linux-aarch64 and
+# art_parse-darwin-arm64 in the codegen-binaries release
 # - Subsequent uploads: Overwrites the existing binaries with the new ones
-.PHONY: upload-linux-bin
-upload-linux-bin:  ## Upload Linux binary to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
-	@echo "Uploading Linux binary to release $(BINARY_RELEASE_TAG)..."
+.PHONY: upload-linux-x86_64-bin
+upload-linux-x86_64-bin:  ## Upload Linux x86_64 binary to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
+	@echo "Uploading Linux x86_64 binary to release $(BINARY_RELEASE_TAG)..."
 	gh release upload $(BINARY_RELEASE_TAG) $(BIN_DIR)/art_parse-linux-x86_64 --clobber
+
+.PHONY: upload-linux-aarch64-bin
+upload-linux-aarch64-bin:  ## Upload Linux aarch64 binary to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
+	@echo "Uploading Linux aarch64 binary to release $(BINARY_RELEASE_TAG)..."
+	gh release upload $(BINARY_RELEASE_TAG) $(BIN_DIR)/art_parse-linux-aarch64 --clobber
 
 .PHONY: upload-macos-bin
 upload-macos-bin:  ## Upload MacOS binary to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
@@ -172,23 +196,49 @@ build-py-macos: build-macos-bin  ## Build macOS wheel locally
 	uv tool run wheel tags --platform-tag macosx_11_0_arm64 --remove dist/*.whl
 	@echo "macOS wheel built: $$(ls dist/*.whl)"
 
-.PHONY: build-py-linux
-build-py-linux:  ## Build Linux wheel locally
-	@echo "Building Linux wheel..."
+.PHONY: build-py-linux-x86_64
+build-py-linux-x86_64:  ## Build Linux x86_64 wheel locally
+	@echo "Building Linux x86_64 wheel..."
 	rm -rf ./dist/imandrax_codegen-*
 	cp $(BIN_DIR)/art_parse-linux-x86_64 python/imandrax_codegen/art_parse.exe
 	uv build --wheel
-	@echo "Retagging wheel for Linux..."
+	@echo "Retagging wheel for Linux x86_64..."
 	uv tool run wheel tags --platform-tag manylinux_2_17_x86_64 --remove dist/*.whl
-	@echo "Linux wheel built: $$(ls dist/*.whl)"
+	@echo "Linux x86_64 wheel built: $$(ls dist/*.whl)"
+
+.PHONY: build-py-linux-aarch64
+build-py-linux-aarch64:  ## Build Linux aarch64 wheel locally
+	@echo "Building Linux aarch64 wheel..."
+	rm -rf ./dist/imandrax_codegen-*
+	cp $(BIN_DIR)/art_parse-linux-aarch64 python/imandrax_codegen/art_parse.exe
+	uv build --wheel
+	@echo "Retagging wheel for Linux aarch64..."
+	uv tool run wheel tags --platform-tag manylinux_2_17_aarch64 --remove dist/*.whl
+	@echo "Linux aarch64 wheel built: $$(ls dist/*.whl)"
+
+.PHONY: test-linux-x86_64-wheel
+test-linux-x86_64-wheel: build-py-linux-x86_64  ## Build and test Linux x86_64 wheel in Docker
+	@echo "Testing Linux x86_64 wheel import..."
+	docker run --rm --platform linux/amd64 -v $(PWD):/workspace python:3.12 \
+		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*x86_64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
+
+.PHONY: test-linux-aarch64-wheel
+test-linux-aarch64-wheel: build-py-linux-aarch64  ## Build and test Linux aarch64 wheel in Docker
+	@echo "Testing Linux aarch64 wheel import..."
+	docker run --rm --platform linux/arm64 -v $(PWD):/workspace python:3.12 \
+		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*aarch64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
 
 .PHONY: test-py
 test-py:  ## Run tests for Python package
 	uv run pytest test/python
 
-.PHONY: pre-release-test-linux
-pre-release-test-linux:  ## Run pre-release tests for Linux Python wheel
-	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+.PHONY: pre-release-test-linux-x86_64
+pre-release-test-linux-x86_64:  ## Run pre-release tests for Linux x86_64 Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*x86_64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+
+.PHONY: pre-release-test-linux-aarch64
+pre-release-test-linux-aarch64:  ## Run pre-release tests for Linux aarch64 Python wheel
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*aarch64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
 
 .PHONY: pre-release-test-macos
 pre-release-test-macos:  ## Run pre-release tests for macOS Python wheel
