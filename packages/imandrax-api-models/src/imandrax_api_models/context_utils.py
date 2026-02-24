@@ -269,8 +269,9 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
             s += format_error(err)
         return s
     res = vg_res.res
-    data = res.model_dump()
+    res_type = vg_res.res_type
 
+    data = {res_type: res.model_dump()}
     data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
 

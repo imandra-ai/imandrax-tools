@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- Show result type in VG result context formatting
 
 ## [18.1.0] - 2026-02-09
 
