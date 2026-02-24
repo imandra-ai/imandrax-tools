@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [18.3.0] - 2026-02-24
+
+- Add linux+aarch64 support
+
 ## [18.1.4] - 2026-01-19
 
 - Fix MacOS build
