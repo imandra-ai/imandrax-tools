@@ -1,6 +1,6 @@
 """verify and instance requests related."""
 
-from typing import NotRequired, Required, TypedDict, cast
+from typing import Required, TypedDict, cast
 
 from tree_sitter import Range, Tree
 
@@ -21,18 +21,22 @@ from iml_query.tree_sitter_utils import (
 
 class VerifyReqArgs(TypedDict):
     src: Required[str]
-    hints: NotRequired[str | None]
+    hints: Required[str | None]
 
 
 def verify_capture_to_req(
     capture: VerifyCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from a verify statement node."""
-    node = capture.verify_expr
-    req: dict[str, str] = {}
-    src_raw = unwrap_bytes(node.text).decode('utf-8')
+    req: dict[str, str | None] = {}
+    if capture.verify_attr is not None:
+        req['hints'] = unwrap_bytes(capture.verify_attr.text).decode('utf-8')
+    else:
+        req['hints'] = None
 
-    # Trim and remove parentheses
+    expr_node = capture.verify_expr
+    src_raw = unwrap_bytes(expr_node.text).decode('utf-8')
+    # Trim and remove parentheses in src
     src_trimmed = src_raw.strip()
     if src_trimmed.startswith('(') and src_trimmed.endswith(')'):
         src = src_trimmed[1:-1].strip()
@@ -40,16 +44,20 @@ def verify_capture_to_req(
         src = src_trimmed
 
     req['src'] = src
-    return (cast(VerifyReqArgs, req), node.range)
+    return (cast(VerifyReqArgs, req), expr_node.range)
 
 
 def instance_capture_to_req(
     capture: InstanceCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from an instance statement node."""
-    node = capture.instance_expr
-    req: dict[str, str] = {}
+    req: dict[str, str | None] = {}
+    if capture.instance_attr is not None:
+        req['hints'] = unwrap_bytes(capture.instance_attr.text).decode('utf-8')
+    else:
+        req['hints'] = None
 
+    expr_node = capture.instance_expr
     instance_src = (
         unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
     )
@@ -57,7 +65,7 @@ def instance_capture_to_req(
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()
     req['src'] = instance_src
-    return (cast(VerifyReqArgs, req), node.range)
+    return (cast(VerifyReqArgs, req), expr_node.range)
 
 
 def _remove_verify_reqs(

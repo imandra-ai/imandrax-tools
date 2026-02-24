@@ -10,6 +10,8 @@ from tree_sitter import Node
 
 @dataclass(frozen=True)
 class BaseCapture:
+    """Base class for all capture classes."""
+
     @classmethod
     def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
         """
@@ -34,6 +36,7 @@ VERIFY_QUERY_SRC = r"""
     "verify" .
     ; `(_)` captures whatever named node
     (_) @verify_expr
+    (item_attribute)? @verify_attr
 ) @verify_statement
 """
 
@@ -44,14 +47,14 @@ class VerifyCapture(BaseCapture):
     verify_expr: (
         Node  # the expression after `verify`, excluding item attributes
     )
+    verify_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
 INSTANCE_QUERY_SRC = r"""
 (instance_statement
-    ; `.` means "immediately followed by"
     "instance" .
-    ; `(_)` captures whatever named node
     (_) @instance_expr
+    (item_attribute)? @instance_attr
 ) @instance_statement
 """
 
@@ -62,6 +65,21 @@ class InstanceCapture(BaseCapture):
     instance_expr: (
         Node  # the expression after `instance`, excluding item attributes
     )
+    instance_attr: Node | None = None  # e.g. `[@@by simp]`
+
+
+QCHECK_QUERY_SRC = r"""
+(qcheck_statement
+    "qcheck" .
+    _ @qcheck_expr
+) @qcheck_statement
+"""
+
+
+@dataclass(slots=True, frozen=True)
+class QCheckCapture(BaseCapture):
+    qcheck_statement: Node  # the entire `qcheck` statement
+    qcheck_expr: Node  # the expression right after `qcheck`
 
 
 AXIOM_QUERY_SRC = r"""
