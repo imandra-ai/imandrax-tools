@@ -3,8 +3,10 @@ from inline_snapshot import snapshot
 from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
+    QCHECK_QUERY_SRC,
     VERIFY_QUERY_SRC,
     InstanceCapture,
+    QCheckCapture,
     VerifyCapture,
 )
 from iml_query.tree_sitter_utils import (
@@ -95,7 +97,7 @@ def test_edge_cases_empty_content():
     assert len(matches_simple) == 0
 
 
-def test_statements_with_attributes():
+def test_VG_parsing():
     """Test parsing verify and instance queries."""
     iml = """\
 verify (fun x y -> x > 0) [@@by auto]
@@ -137,3 +139,23 @@ instance (fun x -> x > 0) [@@by auto]
     assert instance_capture.instance_expr.text == b'(fun x -> x > 0)'
     assert instance_capture.instance_attr is not None
     assert instance_capture.instance_attr.text == b'[@@by auto]'
+
+
+def test_qcheck_parsing():
+    iml = """\
+let f = fun x -> x + 1
+
+let g = fun x -> x + 2
+
+let f_g_x_gt_3 = fun x -> f (g x) - x > 3
+
+qcheck f_g_x_gt_3
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    qc_matches = run_query(mk_query(QCHECK_QUERY_SRC), node=tree.root_node)
+    assert len(qc_matches) == 1
+    qc_capture = QCheckCapture.from_ts_capture(qc_matches[0][1])
+    assert qc_capture.qcheck_statement.text == b'qcheck f_g_x_gt_3'
+    assert qc_capture.qcheck_expr.text == b'f_g_x_gt_3'
