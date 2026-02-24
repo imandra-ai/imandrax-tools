@@ -47,7 +47,7 @@ class VerifyCapture(BaseCapture):
     verify_expr: (
         Node  # the expression after `verify`, excluding item attributes
     )
-    verify_attr: Node | None  # e.g. `[@@by simp]`
+    verify_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
 INSTANCE_QUERY_SRC = r"""
@@ -65,7 +65,7 @@ class InstanceCapture(BaseCapture):
     instance_expr: (
         Node  # the expression after `instance`, excluding item attributes
     )
-    instance_attr: Node | None  # e.g. `[@@by simp]`
+    instance_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
 QCHECK_QUERY_SRC = r"""

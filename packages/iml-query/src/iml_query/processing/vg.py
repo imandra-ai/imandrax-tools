@@ -1,6 +1,6 @@
 """verify and instance requests related."""
 
-from typing import NotRequired, Required, TypedDict, cast
+from typing import Required, TypedDict, cast
 
 from tree_sitter import Range, Tree
 
@@ -21,16 +21,18 @@ from iml_query.tree_sitter_utils import (
 
 class VerifyReqArgs(TypedDict):
     src: Required[str]
-    hints: NotRequired[str | None]
+    hints: Required[str | None]
 
 
 def verify_capture_to_req(
     capture: VerifyCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from a verify statement node."""
-    req: dict[str, str] = {}
+    req: dict[str, str | None] = {}
     if capture.verify_attr is not None:
-        req['hint'] = unwrap_bytes(capture.verify_attr.text).decode('utf-8')
+        req['hints'] = unwrap_bytes(capture.verify_attr.text).decode('utf-8')
+    else:
+        req['hints'] = None
 
     expr_node = capture.verify_expr
     src_raw = unwrap_bytes(expr_node.text).decode('utf-8')
@@ -49,9 +51,11 @@ def instance_capture_to_req(
     capture: InstanceCapture,
 ) -> tuple[VerifyReqArgs, Range]:
     """Extract ImandraX request from an instance statement node."""
-    req: dict[str, str] = {}
+    req: dict[str, str | None] = {}
     if capture.instance_attr is not None:
-        req['hint'] = unwrap_bytes(capture.instance_attr.text).decode('utf-8')
+        req['hints'] = unwrap_bytes(capture.instance_attr.text).decode('utf-8')
+    else:
+        req['hints'] = None
 
     expr_node = capture.instance_expr
     instance_src = (
