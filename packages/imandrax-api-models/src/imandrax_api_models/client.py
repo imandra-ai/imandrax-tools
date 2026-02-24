@@ -28,6 +28,7 @@ from imandrax_api_models import (
     EvalRes,
     GetDeclsRes,
     InstanceRes,
+    QCheckRes,
     TypecheckRes,
     VerifyRes,
 )
@@ -66,6 +67,18 @@ if TYPE_CHECKING:
             hints: str | None = None,
             timeout: float | None = None,
         ) -> InstanceRes: ...
+        async def qcheck_src(
+            self,
+            src: str,
+            hints: str | None = None,
+            timeout: float | None = None,
+        ) -> QCheckRes: ...
+        async def qcheck_name(
+            self,
+            name: str,
+            hints: str | None = None,
+            timeout: float | None = None,
+        ) -> QCheckRes: ...
         async def get_decls(
             self,
             names: list[str],
@@ -170,6 +183,24 @@ class ImandraXClient(imandrax_api.Client):
     ) -> InstanceRes:
         res = super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
+
+    def qcheck_src(  # type: ignore[override]
+        self,
+        src: str,
+        seed: int | None = None,
+        timeout: float | None = None,
+    ) -> QCheckRes:
+        res = super().qcheck_src(src=src, seed=seed, timeout=timeout)
+        return QCheckRes.model_validate(res)
+
+    def qcheck_name(  # type: ignore[override]
+        self,
+        name: str,
+        seed: int | None = None,
+        timeout: float | None = None,
+    ) -> QCheckRes:
+        res = super().qcheck_name(name=name, seed=seed, timeout=timeout)
+        return QCheckRes.model_validate(res)
 
     def get_decls(  # type: ignore[override]
         self,
