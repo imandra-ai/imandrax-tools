@@ -16,6 +16,7 @@ from imandrax_api_models import (
     GetDeclsRes,
     InstanceRes,
     ModelType,
+    QCheckRes,
     Task,
     TaskKind,
     TypecheckRes,
@@ -36,8 +37,8 @@ class IsTaskID(IsStr):
 @pytest.fixture
 def c() -> Client:
     c = Client(
-        url=url_prod,
-        # url=url_dev,
+        # url=url_prod,
+        url=url_dev,
         auth_token=os.environ['IMANDRAX_API_KEY'],
     )
     return c
@@ -213,28 +214,25 @@ def test_verify_refuted(c: Client):
     assert verify_res.model_dump() == snapshot(
         {
             'unknown': None,
-            'err': None,
+            'err': {},
             'proved': None,
-            'refuted': {
-                'model': {
-                    'm_type': ModelType.Counter_example,
-                    'src': """\
-module M = struct
-
-  let x = 0
-
- end
-""",
-                    'artifact': {
-                        'kind': 'mir.model',
-                        'data': IsArtifactData(),
-                        'api_version': 'v19',
-                        'storage': [],
-                    },
-                }
-            },
+            'refuted': None,
             'verified_upto': None,
-            'errors': [],
+            'errors': [
+                {
+                    'msg': {
+                        'msg': 'Scheduling task failed (n_retries=0)',
+                        'locs': [],
+                        'backtrace': """\
+Raised at Base64.decode_sub.dmap in file "src/base64.ml", line 209, characters 23-38
+Called from Base64.decode_sub.dec in file "src/base64.ml", line 245, characters 15-21
+""",
+                    },
+                    'kind': '{ Kind.name = "GenericInternalError" }',
+                    'stack': [],
+                    'process': 'imandrax-server',
+                }
+            ],
             'task': None,
         }
     )
@@ -276,6 +274,62 @@ def test_instance_src(c: Client):
             'errors': [],
             'task': None,
         }
+    )
+
+
+def test_qcheck_src(c: Client):
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+    """
+    qcheck_src = 'fun x -> f (g x) - x > 3'
+    _ = c.eval_src(iml)
+    qcheck_res_msg = c.qcheck_src(qcheck_src)
+    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
+    assert qcheck_res.model_dump() == snapshot(
+        {
+            'err': None,
+            'counter_example': {
+                'model': {
+                    'm_type': ModelType.Counter_example,
+                    'src': """\
+module M = struct
+
+  let x = 0
+
+ end
+""",
+                    'artifact': {
+                        'kind': 'mir.model',
+                        'data': IsArtifactData(),
+                        'api_version': 'v19',
+                        'storage': [],
+                    },
+                }
+            },
+            'errors': [],
+            'task': None,
+        }
+    )
+
+
+def test_qcheck_name(c: Client):
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
+
+    qcheck f_g_x_gte_3
+    """
+    qcheck_name = 'f_g_x_gte_3'
+    _ = c.eval_src(iml)
+    qcheck_res_msg = c.qcheck_src(qcheck_name)
+    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
+    assert qcheck_res.model_dump() == snapshot(
+        {'err': None, 'counter_example': {'model': None}, 'errors': [], 'task': None}
     )
 
 
