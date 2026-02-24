@@ -10,4 +10,4 @@ docs/
 !*.json
 
 *local*
-_build-linux
+_build-linux*
