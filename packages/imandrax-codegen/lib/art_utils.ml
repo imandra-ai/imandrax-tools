@@ -6,7 +6,6 @@ module Term = Imandrax_api_mir.Term
 
 (* twine -> Art
 ==================== *)
-
 let art_data_to_art ?(debug = false) (data_b64 : string) (kind_str : string)
     : Artifact.t =
   let log fmt = if debug then printf fmt else ifprintf stdout fmt in
@@ -163,11 +162,22 @@ let yaml_to_decl ?(debug = false) (yaml : Yaml.value) : Mir.Decl.t =
 
 let%expect_test _ =
   let file_path = "../test/data/art/model/primitive/empty_list.yaml" in
-  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
   let model = yaml_to_model y in
-  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
-  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
-  [%expect {|
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
     Applied symbol: { sym.id = w/69277;
                       args = [{ view = (Var a/69276);
                                 generation = 1 }];
@@ -180,7 +190,8 @@ let%expect_test _ =
     |}];
 
   CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
-  [%expect {|
+  [%expect
+    {|
     Term: { view =
               Construct
                 {
@@ -201,16 +212,29 @@ let%expect_test _ =
                 generation = 1 };
             generation = 0;
             sub_anchor = None }
-    |}];
+    |}]
 ;;
 
 let%expect_test _ =
-  let file_path = "../test/data/art/model/primitive/tuple_of_bool_and_int.yaml" in
-  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let file_path =
+    "../test/data/art/model/primitive/tuple_of_bool_and_int.yaml"
+  in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
   let model = yaml_to_model y in
-  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
-  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
-  [%expect {|
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
     Applied symbol: { sym.id = w/69260;
                       args = [];
                       ty =
@@ -224,7 +248,8 @@ let%expect_test _ =
     |}];
 
   CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
-  [%expect {|
+  [%expect
+    {|
     Term: { view =
               Tuple
                 {
@@ -250,16 +275,27 @@ let%expect_test _ =
                 generation = 3 };
             generation = 1;
             sub_anchor = None }
-    |}];
+    |}]
 ;;
 
 let%expect_test _ =
   let file_path = "../test/data/art/model/composite/set_empty.yaml" in
-  let y = CCIO.File.read_exn (CCIO.File.make file_path) |> Yaml.of_string |> CCResult.get_exn in
+  let y =
+    CCIO.File.read_exn (CCIO.File.make file_path)
+    |> Yaml.of_string
+    |> CCResult.get_exn
+  in
   let model = yaml_to_model y in
-  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term = Semantic_ir.Parser.Model.unpack_model model in
-  CCFormat.printf "Applied symbol: %a\n@." Pretty_print.pp_applied_symbol applied_symbol;
-  [%expect {|
+  let (applied_symbol : Type.t Imandrax_api_common.Applied_symbol.t_poly), term
+      =
+    Semantic_ir.Parser.Model.unpack_model model
+  in
+  CCFormat.printf
+    "Applied symbol: %a\n@."
+    Pretty_print.pp_applied_symbol
+    applied_symbol;
+  [%expect
+    {|
     Applied symbol: { sym.id = w/69694;
                       args = [{ view = (Var a/69693);
                                 generation = 5 }];
@@ -275,7 +311,8 @@ let%expect_test _ =
     |}];
 
   CCFormat.printf "Term: %a\n@." Pretty_print.pp_term term;
-  [%expect {|
+  [%expect
+    {|
     Term: { view =
               Apply {f = { view =
                              (Sym
@@ -333,5 +370,5 @@ let%expect_test _ =
                 generation = 5 };
             generation = 2;
             sub_anchor = None }
-    |}];
-  ;;
+    |}]
+;;

@@ -1,4 +1,4 @@
-"""Extended client with Pydantic model validation."""
+"""Extended imandrax-api client with Pydantic model validation."""
 
 import os
 from pathlib import Path
@@ -31,6 +31,8 @@ from imandrax_api_models import (
     TypecheckRes,
     VerifyRes,
 )
+from imandrax_api_models.proto_models.api import ArtifactListResult, ArtifactZip
+from imandrax_api_models.proto_models.task import Task
 
 if TYPE_CHECKING:
 
@@ -69,6 +71,17 @@ if TYPE_CHECKING:
             names: list[str],
             timeout: float | None = None,
         ) -> GetDeclsRes: ...
+        async def list_artifacts(
+            self,
+            task: Any,
+            timeout: float | None = None,
+        ) -> ArtifactListResult: ...
+        async def get_artifact_zip(
+            self,
+            task: Any,
+            kind: str,
+            timeout: float | None = None,
+        ) -> ArtifactZip: ...
         async def __aenter__(self) -> Self: ...
         async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
 else:
@@ -165,6 +178,23 @@ class ImandraXClient(imandrax_api.Client):
     ) -> GetDeclsRes:
         res = super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
+
+    def list_artifacts(  # type: ignore[override]
+        self,
+        task: Task,
+        timeout: float | None = None,
+    ) -> ArtifactListResult:
+        res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
+        return ArtifactListResult.model_validate(res)
+
+    def get_artifact_zip(  # type: ignore[override]
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> ArtifactZip:
+        res = super().get_artifact_zip(task=task.to_proto(), kind=kind, timeout=timeout)
+        return ArtifactZip.model_validate(res)
 
     def __enter__(self) -> Self:  # type: ignore[override]
         super().__enter__()
@@ -278,6 +308,25 @@ class ImandraXAsyncClient(AsyncClient):
         res = await super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
+    async def list_artifacts(
+        self,
+        task: Task,
+        timeout: float | None = None,
+    ) -> ArtifactListResult:
+        res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
+        return ArtifactListResult.model_validate(res)
+
+    async def get_artifact_zip(
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> ArtifactZip:
+        res = await super().get_artifact_zip(
+            task=task.to_proto(), kind=kind, timeout=timeout
+        )
+        return ArtifactZip.model_validate(res)
+
     async def __aenter__(self, *_: Any) -> Self:
         await super().__aenter__()
         return self
@@ -320,7 +369,8 @@ def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
     return url
 
 
-def _get_imandrax_api_key() -> str | None:
+def get_imandrax_api_key() -> str | None:
+    """Get the API key from the environment variable or default config location."""
     api_key: str | None = os.getenv('IMANDRAX_API_KEY')
 
     if not api_key:
@@ -332,16 +382,16 @@ def _get_imandrax_api_key() -> str | None:
 
 
 def get_imandrax_client(
-    imandra_api_key: str | None = None,
+    auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
 ) -> ImandraXClient:
     url = _get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
-    if imandra_api_key is None:
+    if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = imandra_api_key or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
@@ -352,16 +402,16 @@ def get_imandrax_client(
 
 
 def get_imandrax_async_client(
-    imandra_api_key: str | None = None,
+    auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
 ) -> ImandraXAsyncClient:
     url = _get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
-    if imandra_api_key is None:
+    if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = imandra_api_key or _get_imandrax_api_key()
+    imandrax_api_key = auth_token or get_imandrax_api_key()
 
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')

@@ -87,7 +87,7 @@ let%expect_test "primitive/real" =
 let%expect_test "primitive/LChar" =
    run_test "primitive/LChar";
    [%expect
-     {| const w: string = "\000"; |}]
+     {| const w: string = "\x00"; |}]
 ;;
 
 let%expect_test "primitive/LString" =
@@ -141,7 +141,10 @@ let%expect_test "primitive/single_element_int_list" =
 let%expect_test "primitive/empty_list" =
    run_test "primitive/empty_list";
    [%expect
-     {| const w: a[] = []; |}]
+     {|
+     type a = unknown;
+     const w: a[] = [];
+     |}]
 ;;
 
 let%expect_test "primitive/int_option" =
@@ -153,7 +156,10 @@ let%expect_test "primitive/int_option" =
 let%expect_test "primitive/int_option_none" =
    run_test "primitive/int_option_none";
    [%expect
-     {| const w: Option<a> = null; |}]
+     {|
+     type a = unknown;
+     const w: Option<a> = null;
+     |}]
 ;;
 
 let%expect_test "composite/variant_and_record" =
@@ -171,7 +177,10 @@ let%expect_test "composite/inline_record" =
 let%expect_test "composite/map_default_value_only" =
    run_test "composite/map_default_value_only";
    [%expect
-     {| const w: DefaultMap<a, boolean> = new DefaultMap((() => false), []); |}]
+     {|
+     type a = unknown;
+     const w: DefaultMap<a, boolean> = new DefaultMap((() => false), []);
+     |}]
 ;;
 
 let%expect_test "composite/map_int_bool_0" =
@@ -183,43 +192,52 @@ let%expect_test "composite/map_int_bool_0" =
 let%expect_test "composite/map_int_bool_1" =
    run_test "composite/map_int_bool_1";
    [%expect
-     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[2, true]]); |}]
+     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[2, true] as const]); |}]
 ;;
 
 let%expect_test "composite/map_int_bool_2" =
    run_test "composite/map_int_bool_2";
    [%expect
-     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[2, true], [3, false]]); |}]
+     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[2, true] as const, [3, false] as const]); |}]
 ;;
 
 let%expect_test "composite/multiset_empty" =
    run_test "composite/multiset_empty";
    [%expect
-     {| const w: DefaultMap<a, number> = new DefaultMap((() => 0), []); |}]
+     {|
+     type a = unknown;
+     const w: DefaultMap<a, number> = new DefaultMap((() => 0), []);
+     |}]
 ;;
 
 let%expect_test "composite/multiset_nonempty" =
    run_test "composite/multiset_nonempty";
    [%expect
-     {| const w: DefaultMap<number, number> = new DefaultMap((() => 0), [[1, 2], [3, 1], [2, 2]]); |}]
+     {| const w: DefaultMap<number, number> = new DefaultMap((() => 0), [[1, 2] as const, [3, 1] as const, [2, 2] as const]); |}]
 ;;
 
 let%expect_test "composite/set_empty" =
    run_test "composite/set_empty";
    [%expect
-     {| const w: DefaultMap<a, boolean> = new DefaultMap((() => false), []); |}]
+     {|
+     type a = unknown;
+     const w: DefaultMap<a, boolean> = new DefaultMap((() => false), []);
+     |}]
 ;;
 
 let%expect_test "composite/set_nonempty" =
    run_test "composite/set_nonempty";
    [%expect
-     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[1, true], [3, true], [2, true]]); |}]
+     {| const w: DefaultMap<number, boolean> = new DefaultMap((() => false), [[1, true] as const, [3, true] as const, [2, true] as const]); |}]
 ;;
 
 let%expect_test "polymorphic/annotated_polymorphic" =
    run_test "polymorphic/annotated_polymorphic";
    [%expect
-     {| const w: a[] = []; |}]
+     {|
+     type a = unknown;
+     const w: a[] = [];
+     |}]
 ;;
 
 let%expect_test "polymorphic/annotated_polymorphic_weird_type_name" =

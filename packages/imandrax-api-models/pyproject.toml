@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "18.0.0"
+version = "18.1.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -36,6 +36,7 @@ dev = [
     "ipykernel>=7.1.0",
     "pdbpp>=0.11.7",
     "pytest>=9.0.1",
+    "pytest-retry>=1.7.0",
     "pyyaml>=6.0.3",
 ]
 
@@ -106,6 +107,7 @@ invalid-argument-type = "ignore"
 invalid-return-type = "ignore"
 possibly-missing-import = "ignore"
 unresolved-import = "ignore"
+possibly-missing-attribute = "ignore"
 
 [tool.pyright]
 venvPath = "."

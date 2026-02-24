@@ -1,8 +1,10 @@
 """Utility functions for formatting ImandraX models to LLM context."""
 
-from typing import Any, cast
+from pathlib import Path
+from typing import Any, Final, cast
 
 import yaml
+from imandrax_api.bindings import api_pb2
 
 from imandrax_api_models import (
     DecomposeRes,
@@ -178,20 +180,61 @@ def format_eval_res_errors(
 def format_eval_output(eval_output: EvalOutput) -> str: ...
 
 
-def format_po_res(po_res: PO_Res) -> str: ...
+def _extract_internal_error(msg: str, max_len: int = 300) -> str:
+    """
+    Extract error message from internal error, truncating if necessary.
+
+    Looks for patterns like:
+        Error{ Kind.name = "LowerRirError" }:
+          Lower-RIR.Term: Cannot make closure...
+
+    Returns the error kind and message, truncated before backtrace/context.
+    Falls back to truncated raw message if extraction fails.
+    """
+    import re
+
+    # Match Error{ Kind.name = "..." }: followed by the error message
+    pattern = (
+        r'Error\{\s*Kind\.name\s*=\s*"([^"]+)"\s*\}:\s*(.+?)(?=backtrace:|Context:|$)'
+    )
+    match = re.search(pattern, msg, re.DOTALL)
+    if match:
+        kind = match.group(1)
+        error_text = match.group(2).strip()
+        # Clean up whitespace (the original has lots of padding spaces)
+        error_text = re.sub(r'\s+', ' ', error_text)
+        result = f'[{kind}] {error_text}'
+    else:
+        # Fallback: just clean up and truncate the raw message
+        result = re.sub(r'\s+', ' ', msg).strip()
+
+    if len(result) > max_len:
+        result = result[: max_len - 3] + '...'
+    return result
 
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     if not eval_res.has_errors:
-        s = 'Eval success!'
-        if eval_res.eval_results:
-            s += '\n'
-        for i, eval_result in enumerate(eval_res.eval_results, 1):
-            s += f'\nEval result #{i}:\n'
-            success = eval_result.success
-            s += f'- success: {success}\n'
-            s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
-        return s
+        # Check additional error in message (internal errors)
+        errs_in_eval_msg: list[str] = [
+            msg for msg in eval_res.messages if 'error' in msg.lower()
+        ]
+        if len(errs_in_eval_msg) == 0:
+            s = 'Eval success!'
+            if eval_res.eval_results:
+                s += '\n'
+            for i, eval_result in enumerate(eval_res.eval_results, 1):
+                s += f'\nEval result #{i}:\n'
+                success = eval_result.success
+                s += f'- success: {success}\n'
+                s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
+            return s
+        else:
+            s = 'ImandraX internal error'
+            # Extract error details from the first error message
+            if errs_in_eval_msg:
+                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
+            return s
 
     else:
         s = ''
@@ -237,3 +280,51 @@ def format_decomp_res(decomp_res: DecomposeRes) -> str:
 
     data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
+
+
+# PP Goal State
+# ====================
+
+
+def format_goal_state(po_res: PO_Res) -> str: ...
+
+
+def get_goal_state_pp_bin_path() -> Path:
+    curr_dir = Path(__file__).parent
+    WORKSPACE_DIR: Final[Path] = curr_dir.parent.parent.parent.parent
+    GOAL_STATE_PP_BIN_PATH: Final[Path] = (
+        WORKSPACE_DIR.parent
+        / 'imandrax'
+        / '_build'
+        / 'default'
+        / 'src/pp-goal-state/bin/pp_goal_state.exe'
+    )
+    return GOAL_STATE_PP_BIN_PATH
+
+
+def pp_goal_state(po_res_zip: Path | bytes | api_pb2.ArtifactZip) -> str:
+    import subprocess
+    import tempfile
+
+    GOAL_STATE_PP_BIN_PATH = get_goal_state_pp_bin_path()
+
+    match po_res_zip:
+        case Path():
+            out = subprocess.run(
+                [
+                    f'{str(GOAL_STATE_PP_BIN_PATH)}',
+                    f'{str(po_res_zip)}',
+                ],
+                capture_output=True,
+            )
+            if out.returncode != 0:
+                raise RuntimeError(f'pp_goal_state failed: {out.stderr.decode()}')
+            return out.stdout.decode()
+        case bytes():
+            # Write temp zip file
+            with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
+                tmp.write_bytes(po_res_zip)
+                tmp.flush()
+                return pp_goal_state(Path(tmp.name))
+        case api_pb2.ArtifactZip():
+            return pp_goal_state(po_res_zip.art_zip)
