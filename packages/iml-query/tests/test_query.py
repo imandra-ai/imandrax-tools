@@ -3,8 +3,10 @@ from inline_snapshot import snapshot
 from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
+    QCHECK_QUERY_SRC,
     VERIFY_QUERY_SRC,
     InstanceCapture,
+    QCheckCapture,
     VerifyCapture,
 )
 from iml_query.tree_sitter_utils import (
@@ -95,8 +97,8 @@ def test_edge_cases_empty_content():
     assert len(matches_simple) == 0
 
 
-def test_statements_with_attributes():
-    """Test that verify and instance queries exclude item attributes."""
+def test_VG_parsing():
+    """Test parsing verify and instance queries."""
     iml = """\
 verify (fun x y -> x > 0) [@@by auto]
 instance (fun x -> x > 0) [@@by auto]
@@ -105,29 +107,55 @@ instance (fun x -> x > 0) [@@by auto]
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
     # Test VERIFY query
+    # --------------------
+
     verify_matches = run_query(mk_query(VERIFY_QUERY_SRC), node=tree.root_node)
     assert len(verify_matches) == 1
     verify_capture = VerifyCapture.from_ts_capture(verify_matches[0][1])
 
-    # verify_statement should include the attribute
+    # verify_statement should be the full statement
     assert (
         verify_capture.verify_statement.text
         == b'verify (fun x y -> x > 0) [@@by auto]'
     )
     # verify_expr should exclude the attribute
     assert verify_capture.verify_expr.text == b'(fun x y -> x > 0)'
+    # verify_attr should capture the attribute
+    assert verify_capture.verify_attr is not None
+    assert verify_capture.verify_attr.text == b'[@@by auto]'
 
-    # Test INSTANCE query
+    # Test INSTANCE query (mirrors VERIFY query)
+    # --------------------
     instance_matches = run_query(
         mk_query(INSTANCE_QUERY_SRC), node=tree.root_node
     )
     assert len(instance_matches) == 1
     instance_capture = InstanceCapture.from_ts_capture(instance_matches[0][1])
 
-    # instance_statement should include the attribute
     assert (
         instance_capture.instance_statement.text
         == b'instance (fun x -> x > 0) [@@by auto]'
     )
-    # instance_expr should exclude the attribute
     assert instance_capture.instance_expr.text == b'(fun x -> x > 0)'
+    assert instance_capture.instance_attr is not None
+    assert instance_capture.instance_attr.text == b'[@@by auto]'
+
+
+def test_qcheck_parsing():
+    iml = """\
+let f = fun x -> x + 1
+
+let g = fun x -> x + 2
+
+let f_g_x_gt_3 = fun x -> f (g x) - x > 3
+
+qcheck f_g_x_gt_3
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    qc_matches = run_query(mk_query(QCHECK_QUERY_SRC), node=tree.root_node)
+    assert len(qc_matches) == 1
+    qc_capture = QCheckCapture.from_ts_capture(qc_matches[0][1])
+    assert qc_capture.qcheck_statement.text == b'qcheck f_g_x_gt_3'
+    assert qc_capture.qcheck_expr.text == b'f_g_x_gt_3'
