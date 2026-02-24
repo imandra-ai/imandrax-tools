@@ -4,6 +4,7 @@
 
 - added
   - extract attributes attached to VGs
+  - qcheck statement parsing
 
 ## v0.5.2 - 2025.11.21
 
