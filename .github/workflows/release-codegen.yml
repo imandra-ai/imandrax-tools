@@ -12,7 +12,10 @@ jobs:
         include:
           - platform-tag: manylinux_2_17_x86_64
             binary-name: art_parse-linux-x86_64
-            artifact-suffix: linux
+            artifact-suffix: linux-x86_64
+          - platform-tag: manylinux_2_17_aarch64
+            binary-name: art_parse-linux-aarch64
+            artifact-suffix: linux-aarch64
           - platform-tag: macosx_11_0_arm64
             binary-name: art_parse-darwin-arm64
             artifact-suffix: macos
@@ -75,10 +78,15 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      # Download both platform artifacts
+      # Download all platform artifacts
       - uses: actions/download-artifact@v6
         with:
-          name: dist-linux
+          name: dist-linux-x86_64
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux-aarch64
           path: packages/imandrax-codegen/dist/
 
       - uses: actions/download-artifact@v6
@@ -86,8 +94,8 @@ jobs:
           name: dist-macos
           path: packages/imandrax-codegen/dist/
 
-      - name: Run pre-release tests for Linux
-        run: make pre-release-test-linux
+      - name: Run pre-release tests for Linux x86_64
+        run: make pre-release-test-linux-x86_64
         working-directory: packages/imandrax-codegen
         env:
           IMANDRAX_API_KEY: ${{ secrets.IMANDRA_UNIVERSE_API_KEY }}
@@ -100,10 +108,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Download both platform artifacts
+      # Download all platform artifacts
       - uses: actions/download-artifact@v6
         with:
-          name: dist-linux
+          name: dist-linux-x86_64
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux-aarch64
           path: packages/imandrax-codegen/dist/
 
       - uses: actions/download-artifact@v6
@@ -125,10 +138,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Download both platform artifacts
+      # Download all platform artifacts
       - uses: actions/download-artifact@v6
         with:
-          name: dist-linux
+          name: dist-linux-x86_64
+          path: packages/imandrax-codegen/dist/
+
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist-linux-aarch64
           path: packages/imandrax-codegen/dist/
 
       - uses: actions/download-artifact@v6
