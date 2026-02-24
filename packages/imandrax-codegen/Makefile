@@ -5,7 +5,7 @@ help:  ## Show this help message
 		/^# =+$$/ && pending { printf "\033[1;33m=== %s ===\033[0m\n", pending; pending=""; next } \
 		/^# -+$$/ && pending { printf "\033[1;33m--- %s ---\033[0m\n", pending; pending=""; next } \
 		{ pending="" } \
-		/^[a-zA-Z_-]+:.*## / { \
+		/^[a-zA-Z0-9_-]+:.*## / { \
 			split($$0, a, ":.*## "); \
 			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
 		}' $(MAKEFILE_LIST)
