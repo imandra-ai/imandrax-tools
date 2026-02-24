@@ -503,7 +503,7 @@ requires-dist = [
     { name = "sexpdata", specifier = ">=1.0.2" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tree-sitter", specifier = ">=0.25.1" },
-    { name = "tree-sitter-iml" },
+    { name = "tree-sitter-iml", specifier = ">=0.26" },
 ]
 
 [package.metadata.requires-dev]
@@ -1238,11 +1238,11 @@ wheels = [
 
 [[package]]
 name = "tree-sitter-iml"
-version = "0.25.2"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/22/ec/9bc96aa94db6656cbed3c911fdd2a99693cdd165bc94e22ecc4bc8136c2a/tree_sitter_iml-0.25.2.tar.gz", hash = "sha256:74c16612b41362fcbf8c42a77dca8a8d85c3784bb1acf1e1b57acee0aa0eff34", size = 2290267, upload-time = "2025-09-29T15:29:36.561Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/b7/b2f87e2e4ddd37fe84a9ccb43435fd3cf8d89a4137048dfcfcaa483b5d27/tree_sitter_iml-0.26.0.tar.gz", hash = "sha256:cb49f123917c89a662f1a1d1477e06427c05a1aa24af5b88a87550d051c84094", size = 2288724, upload-time = "2026-02-03T14:42:09.379Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/36/f11162aa3f290f807ace028d0b9b6b99d4045b3920d1fa98422d9a8fe906/tree_sitter_iml-0.25.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:4aefa2a6c4502ddf1e6159ef6c3543aac73990801be6aabe2ac3fcdb53dc196d", size = 957429, upload-time = "2025-09-29T15:29:34.142Z" },
+    { url = "https://files.pythonhosted.org/packages/66/d9/7e887a48acc97ff5f8a739e7feb06b803f8849c005432aa510c85a756cfe/tree_sitter_iml-0.26.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b316f1bf8207c7fa478f73e1b8568b503c2e1659effd1fb4d2c2b8fbe0af7f84", size = 958304, upload-time = "2026-02-03T14:42:07.06Z" },
 ]
 
 [[package]]
