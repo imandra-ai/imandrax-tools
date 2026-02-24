@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## v0.6.0 - 2026.02.24
+
+- added
+  - extract attributes attached to VGs
+
 ## v0.5.2 - 2025.11.21
 
 - fixed:
