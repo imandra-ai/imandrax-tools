@@ -155,20 +155,11 @@ build-macos-bin:  ## Build MacOS binary (native)
 .PHONY: build-binaries
 build-binaries: build-macos-bin build-linux-binaries  ## Build all binaries (2 linux binaries, 1 macOS binary)
 
-.PHONY: test-linux-x86_64-wheel
-test-linux-x86_64-wheel: build-py-linux-x86_64  ## Build and test Linux x86_64 wheel in Docker
-	@echo "Testing Linux x86_64 wheel import..."
-	docker run --rm --platform linux/amd64 -v $(PWD):/workspace python:3.12 \
-		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*x86_64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
-
-.PHONY: test-linux-aarch64-wheel
-test-linux-aarch64-wheel: build-py-linux-aarch64  ## Build and test Linux aarch64 wheel in Docker
-	@echo "Testing Linux aarch64 wheel import..."
-	docker run --rm --platform linux/arm64 -v $(PWD):/workspace python:3.12 \
-		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*aarch64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
-
 # Default release tag for binaries
 BINARY_RELEASE_TAG ?= codegen-binaries
+
+.PHONY: upload-linux-bin  ## Upload Linux binaries to GitHub release (uses BINARY_RELEASE_TAG, default: codegen-binaries)
+upload-linux-bin: upload-linux-x86_64-bin upload-linux-aarch64-bin  ## Upload all Linux binaries to GitHub release
 
 # The --clobber flag in the Makefile means:
 # - First upload: Creates art_parse-linux-x86_64, art_parse-linux-aarch64 and
@@ -190,7 +181,7 @@ upload-macos-bin:  ## Upload MacOS binary to GitHub release (uses BINARY_RELEASE
 	gh release upload $(BINARY_RELEASE_TAG) $(BIN_DIR)/art_parse-darwin-arm64 --clobber
 
 .PHONY: upload-binaries
-upload-binaries: upload-linux-x86_64-bin upload-linux-aarch64-bin upload-macos-bin  ## Upload all binaries to GitHub release
+upload-binaries: upload-linux-bin upload-macos-bin  ## Upload all binaries to GitHub release
 
 # Py
 # ====================
@@ -224,6 +215,18 @@ build-py-linux-aarch64:  ## Build Linux aarch64 wheel locally
 	@echo "Retagging wheel for Linux aarch64..."
 	uv tool run wheel tags --platform-tag manylinux_2_17_aarch64 --remove dist/*.whl
 	@echo "Linux aarch64 wheel built: $$(ls dist/*.whl)"
+
+.PHONY: test-linux-x86_64-wheel
+test-linux-x86_64-wheel: build-py-linux-x86_64  ## Build and test Linux x86_64 wheel in Docker
+	@echo "Testing Linux x86_64 wheel import..."
+	docker run --rm --platform linux/amd64 -v $(PWD):/workspace python:3.12 \
+		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*x86_64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
+
+.PHONY: test-linux-aarch64-wheel
+test-linux-aarch64-wheel: build-py-linux-aarch64  ## Build and test Linux aarch64 wheel in Docker
+	@echo "Testing Linux aarch64 wheel import..."
+	docker run --rm --platform linux/arm64 -v $(PWD):/workspace python:3.12 \
+		bash -c "pip install /workspace/dist/imandrax_codegen-*-manylinux*aarch64*.whl && python -c 'from imandrax_codegen import art_parse; print(art_parse.CODEGEN_EXE_PATH)'"
 
 .PHONY: test-py
 test-py:  ## Run tests for Python package
