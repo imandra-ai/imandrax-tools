@@ -1,3 +1,8 @@
+---
+name: all-module-signatures
+description: Signatures of all modules in IML prelude
+---
+
 Now we'll go through the signatures of Prelude (not need to import) and modules.
 
 <prelude>
