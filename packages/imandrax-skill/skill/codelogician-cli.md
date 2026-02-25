@@ -53,3 +53,20 @@ All commands accept a `FILE` argument (path to an IML file, or `-` to read from 
 Refer to `--help` for most up-to-date usage docs.
 
 ## Tips
+
+### Possible `check` results
+The most important command is `codelogician check <file.iml>`.
+- It tries to compile and admit all structures in the file.
+- Possible outcomes:
+  - 1. syntax error
+  - 2. no syntax error: `Eval success` will be printed
+    - 2.1 not proved: subgoals will be printed
+    - 2.2 proved: no other output
+  - 3. `ImandraX internal error`: could be an actual bug in ImandraX but usually it's because of validation error (proof-related)
+
+### Store JSON for later programmatic interaction
+
+It can he helpful to store the JSON output of the command you are running for later programmatic interaction, e.g., to use `jq` to filter or manipulate the output. Reasons for doing so include:
+- Some commands (e.g., `check-decomp` for a function with large state-space) can take a long time to run
+- Some results are convoluted and need to be filtered or manipulated for further analysis
+- Parallizing multiple commands (e.g., `check-vg` and `check-decomp` for different index) can be useful
