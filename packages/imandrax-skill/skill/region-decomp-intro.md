@@ -6,7 +6,7 @@
   - **Invariant (`inv`)**: The simplified symbolic expression representing the function's output when the region's constraints are satisfied.
 - **Disjointness & Coverage**: For a decomposition generated directly by `top` (without `~assuming`), the regions are typically disjoint (an input satisfies the constraints of at most one region), and together they cover the function's entire input domain. However, subsequent manipulation using composition operators (like `<<`, `~|`, etc.) might result in overlapping regions. Furthermore, using the `~assuming` option restricts the analysis, meaning the regions only cover the portion of the input domain where the assumption holds. The decomposition aims to represent the covered domain's behavior in a DNF-like structure based on its input conditions.
 - **Feasibility & Models**: The constraints of each region can be checked for satisfiability. If feasible, a concrete model (an example input satisfying the constraints) can often be extracted.
-
+  - This concrete model can be further transformed into a test case using `codelogician` CLI.
 
 ## Basic Usage
 

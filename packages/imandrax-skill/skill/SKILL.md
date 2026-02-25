@@ -12,7 +12,7 @@ description: Help with IML (Imandra Modeling Language) - formal verification, th
 
 ## Typical workflow when working with IML
 - Write IML code, corresponding to your specification or program to be verified / tested. Admit IML code with ImandraX and correct type errors if any.
-- Based on requirements, resort to corresponding annotations to guide ImandraX
+- Based on requirements, resort to corresponding commands or annotations to invoke ImandraX:
   - Option 1. Verification (prove a goal or find a counter-example)
     - Use `verify <func>` / `instance <func>`, which are dual to each other, with the former attempts to prove the goal and return a counter-example if it fails, and the latter attempts to find a counter-example and return it if it succeeds.
     - For more general theorem proving, especially with tactics, use `theorem <name> <vars> = <body>`, `lemma <name> <vars> = <body>`, and `axiom <name> <vars> = <body>`.
