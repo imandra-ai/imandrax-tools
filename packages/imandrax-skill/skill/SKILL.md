@@ -25,8 +25,6 @@ description: Help with IML (Imandra Modeling Language) - formal verification, th
 
 To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX.
 
-- `codelogician` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
-  - installation status: !`command -v codelogician &>/dev/null && echo "codelogician is installed" || echo "codelogician CLI is not installed. Install using "uv add codelogician" or "pip install codelogician"`
-  - Note: `codelogician-tools` is a more light-weight CLI that is bundle with `codelogician` and should be preferred if available.
+- `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
 - Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
