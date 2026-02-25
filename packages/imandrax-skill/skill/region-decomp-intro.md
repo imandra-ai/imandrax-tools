@@ -1,3 +1,10 @@
+---
+name: region-decomp-intro
+description: Intro to region decomposition, including concept explanations, basic usage, and common errors.
+---
+
+# Intro to Region Decomposition
+
 ## Core Concepts
 
 - **Decomposition Goal**: To break down a function `f` into a set of regions `[ {cs_0, inv_0}, {cs_1, inv_1}, ..., {cs_m, inv_m} ]` such that the function's body is equivalent to `if cs_0 then inv_0 else if cs_1 then inv_1 ... else inv_m` over the relevant input domain.
