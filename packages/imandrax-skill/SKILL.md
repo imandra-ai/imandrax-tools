@@ -19,3 +19,13 @@ description: Help with IML (Imandra Modeling Language) - formal verification, th
   - Option 2. Region decomposition / Enumerative analysis / Test-case generation
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
+
+
+## Interact with ImandraX
+
+To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX.
+
+- `codelogician` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
+  - installation status: !`command -v codelogician &>/dev/null && echo "codelogician is installed" || echo "codelogician CLI is not installed. Install using "uv add codelogician" or "pip install codelogician"`
+  - Note: `codelogician-tools` is a more light-weight CLI that is bundle with `codelogician` and should be preferred if available.
+- Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
