@@ -1,3 +1,13 @@
+---
+name: opaque-functions
+description: Notes on using opaque functions in IML to mock functionality
+tag:
+  - advanced
+  - opqaue
+---
+
+# Opaque Functions
+
 Opaque functions allow you to define function signatures without implementing their behavior in detail. Think of them as mocking funcitonalities that help we pass type checking.
 
 # Definition
