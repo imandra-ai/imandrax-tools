@@ -28,3 +28,39 @@ To type-check, invoke verification, or invoke region decomposition, you pass you
 - `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
 - Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
+
+## For more information
+
+```tree {name: skill-dir-structure}
+imandrax/
+├── advanced/ # Advanced topics and tips
+│   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
+│   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage.
+│   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
+│   ├── proof-tips.md # Practical tips for writing proofs in IML.
+│   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
+│   └── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module
+├── examples/ # Worked examples
+│   └── basic-iml-syntax.md
+├── reference/ # Language and API reference
+│   ├── api/ # Module-level API docs
+│   │   ├── Int.md
+│   │   ├── LChar.md
+│   │   ├── LString.md
+│   │   ├── List.md
+│   │   ├── Map.md
+│   │   ├── Multiset.md
+│   │   ├── Option.md
+│   │   ├── Real.md
+│   │   ├── Result.md
+│   │   ├── Set.md
+│   │   ├── String.md
+│   │   └── top-level.md
+│   ├── all-module-signatures.md # Signatures of all modules in IML prelude
+│   ├── ordinal.md # Reference for ordinals used in termination proofs
+│   └── tactics.md # Complete reference for all proof tactics
+├── codelogician-cli.md # Guide for using the `codelogician-tools` CLI to interact with ImandraX and access additional features.
+├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
+├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
+└── verification-with-verify-and-instance.md # Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
+```
