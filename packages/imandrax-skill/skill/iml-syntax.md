@@ -1,0 +1,66 @@
+---
+name: iml-syntax
+description: IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
+---
+
+# IML Syntax Guide
+
+## Standard Library Differences with OCaml
+
+OCaml standard library modules are either **unavailable** or have **different signatures** in IML:
+
+- **Example**: `List.nth` in OCaml has signature `'a list -> int -> 'a`, while in IML it's `int -> 'a list -> 'a option`.
+  - Parameter order is reversed (index first, then list)
+  - Return type uses `option` since IML is pure and cannot raise exceptions for invalid indices
+
+**Available modules** in IML include: `Int`, `LChar`, `LString`, `List`, `Map`, `Multiset`, `Option`, `Real`, `Result`, `Set`, and `String` — all with IML-specific signatures.
+
+## Numerical Representation and Precision
+
+IML uses arbitrary precision arithmetic with different numerical type interpretations:
+
+```iml
+(* Float-like literals are type `real` (arbitrary precision) *)
+let pi = 3.14159
+(* val pi : real = 314159/100000 *)
+
+(* Real arithmetic uses different operators *)
+let circle_area (d : real) : real =
+  let r = d /. 2.0 in
+  pi *. r *. r
+(* val circle_area : real -> real = <fun> *)
+```
+
+**Key points**:
+- `3.14159` has type `real`, not `float`
+- Real arithmetic: `+.`, `-.`, `*.`, `/.`
+- Integer arithmetic: `+`, `-`, `*`, `/`
+- For equality, both real and integers use `=`. `=.` does not exist.
+
+**Conversion functions:**
+- `Real.of_int : int -> real`
+- `Real.to_int : real -> int`
+
+## Error Handling Approach
+
+IML is a pure language with no exceptions:
+
+- The `failwith` function available in OCaml **cannot be used** in IML
+- Instead, either:
+  - Transform partial functions into total functions
+  - Use monadic error handling with `Result` or `Option` modules
+
+## Type System Constraints
+
+Unlike OCaml, IML restricts function representation in composite types:
+
+- Functions **cannot** be part of algebraic data types, records, or tuples
+- For state transition modeling, define:
+  - A dedicated event type (with parameterized constructors if needed)
+  - A step function that applies events to states
+  
+## String, Logic-mode character, and Logic-mode string
+
+- Logic-mode character `LChar.t` is 8-bit character.
+- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
+  - `{l|...|l}` creates a `LString.t` literal
