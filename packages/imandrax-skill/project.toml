@@ -1,0 +1,8 @@
+[project]
+name = "imandrax-skill"
+version = "0.1.0"
+description = "Agent skill for ImandraX"
+readme = "README.md"
+authors = [
+    { name = "hongyu", email = "hongyu@imandra.ai" }
+]
