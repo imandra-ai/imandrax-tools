@@ -15,6 +15,8 @@
       ".")))
 (def skill-dir (string script-dir "/../skill"))
 (def skill-md (string skill-dir "/SKILL.md"))
+(def tree-block-identifier "skill-dir-structure")
+(def root-name ".")
 
 # ── Directory descriptions ──────────────────────────────────────────
 # Map from relative dir path (under skill/) to its description.
@@ -37,11 +39,13 @@
       :desc-field (* "description:" :s* (<- (to (+ "\n" -1))) :s*)
       :other-field (* (not "---") (thru "\n"))}))
 
+(def- codeblock-marker (string "```tree {name: " tree-block-identifier "}"))
+
 (def codeblock-peg
-  "Split content around the ```tree {name: skill-dir-structure} block.
+  "Split content around the ```tree {name: ...} block.
    Captures: (before, after) — or no captures if block not found."
   (peg/compile
-    ~(* (<- (to "```tree {name: skill-dir-structure}"))
+    ~(* (<- (to ,codeblock-marker))
         # skip opening fence line
         (thru "\n")
         # skip content lines until closing ```
@@ -60,7 +64,7 @@
       (if (= desc "") nil desc))))
 
 (defn collect-md-files
-  "Recursively collect .md files under dir, excluding SKILL.md."
+  "Recursively collect .md files under dir."
   [dir]
   (def results @[])
   (defn walk [d]
@@ -68,8 +72,7 @@
       (def full (string d "/" entry))
       (case (os/stat full :mode)
         :directory (walk full)
-        :file (when (and (string/has-suffix? ".md" entry)
-                         (not= entry "SKILL.md"))
+        :file (when (string/has-suffix? ".md" entry)
                 (array/push results full)))))
   (walk dir)
   results)
@@ -122,7 +125,7 @@
   (each f files
     (def rel (string/slice f (+ 1 (length base-dir))))
     (def parts (string/split "/" rel))
-    (def desc (parse-description f))
+    (def desc (if (= (last parts) "SKILL.md") nil (parse-description f)))
     (var node root)
     (for i 0 (- (length parts) 1)
       (def part (in parts i))
@@ -182,8 +185,8 @@
 (def lines (render-tree tree))
 (def tree-str (string/join lines "\n"))
 
-(def block (string "```tree {name: skill-dir-structure}\n"
-                    "imandrax/\n"
+(def block (string codeblock-marker "\n"
+                    root-name "/\n"
                     tree-str "\n"
                     "```"))
 

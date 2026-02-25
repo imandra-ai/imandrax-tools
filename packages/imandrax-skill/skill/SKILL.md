@@ -29,10 +29,10 @@ To type-check, invoke verification, or invoke region decomposition, you pass you
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
 - Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
 
-## For more information
+## More in-depth references in current directory
 
 ```tree {name: skill-dir-structure}
-imandrax/
+./
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
 │   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage.
@@ -59,6 +59,7 @@ imandrax/
 │   ├── all-module-signatures.md # Signatures of all modules in IML prelude
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Complete reference for all proof tactics
+├── SKILL.md
 ├── codelogician-cli.md # Guide for using the `codelogician-tools` CLI to interact with ImandraX and access additional features.
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.

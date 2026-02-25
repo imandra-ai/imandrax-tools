@@ -10,14 +10,12 @@ All `.md` files under `skill/` recursively, excluding `SKILL.md`.
 
 A tree block appended to (or updated in) `skill/SKILL.md`:
 
-```
 ```tree {name: skill-dir-structure}
 imandrax/
 ├── advanced/ # Advanced topics and tips
 │   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   └── ...
 └── iml-syntax.md # IML syntax guide, ...
-```
 ```
 
 ## Rules
