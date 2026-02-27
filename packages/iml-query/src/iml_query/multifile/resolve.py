@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from iml_query.queries import (
-    IMPORT_NAMED_PATH_EXTRACTION_QUERY_SRC,
     IMPORT_NAMED_PATH_QUERY_SRC,
     IMPORT_PATH_ONLY_QUERY_SRC,
+    ImportCapture,
 )
 from iml_query.tree_sitter_utils import (
     delete_nodes,
@@ -21,168 +22,150 @@ if TYPE_CHECKING:
     from tree_sitter import Node
 
 
-class ModuleNotFoundError(Exception):
+class IMLImportResolutionError(Exception):
+    """Base class for all IML import resolution errors."""
+
+
+class IMLModuleNotFoundError(IMLImportResolutionError):
     """Raised when an imported file does not exist."""
 
 
-class CircularImportError(Exception):
+class CircularImportError(IMLImportResolutionError):
     """Raised when a circular import is detected."""
 
 
-class NotImplementedImportError(Exception):
+class NotImplementedImportError(IMLImportResolutionError):
     """Raised for unsupported import schemes (findlib:, dune:)."""
 
 
 @dataclass
-class ImlImport:
-    module_name: str  # e.g. "Mod_name"
-    path: str  # Path in the import statement, e.g. "path/to/file.iml" or "findlib:foo.bar" or "dune:foo.bar"
-    extraction_name: str | None  # optional 3rd arg
-    import_node: Node  # the full [@@@import ...] node for deletion
+class IMLModule:
+    """Resolved IML module."""
 
-
-@dataclass
-class ResolvedModule:
-    name: str  # module name
     path: Path  # absolute path to .iml file
-    content: str  # file content with imports stripped
-    imports: list[ImlImport]  # parsed imports
+    name: str  # module name
+    src: str  # source code
+    imports: list[ImportCapture]  # list of parsed imports
+
+    @cached_property
+    def content(self) -> str:
+        """Module content with imports stripped."""
+        content, _ = delete_nodes(
+            self.src,
+            nodes=[imp.import_stmt for imp in self.imports],
+        )
+        return content.strip() + '\n'
+
+
+def parse_imports(code: str) -> list[ImportCapture]:
+    """
+    Parse all import statements from IML source code.
+
+    Order is not guaranteed.
+    """
+    queries = {
+        'path_only': IMPORT_PATH_ONLY_QUERY_SRC,
+        'named': IMPORT_NAMED_PATH_QUERY_SRC,
+    }
+    matches = run_queries(queries, code=code)
+    ts_captures: list[dict[str, list[Node]]] = [
+        item for sublist in matches.values() for item in sublist
+    ]
+    return [
+        ImportCapture.from_ts_capture(ts_capture) for ts_capture in ts_captures
+    ]
 
 
 def _module_name_from_path(path: str) -> str:
-    """Derive module name from file path: 'path/to/file.iml' -> 'File'."""
-    stem = Path(path).stem
-    return stem[0].upper() + stem[1:]
+    """Derive module name from file path: `path/to/file.iml` -> `File`."""
+    return Path(path).stem.capitalize()
 
 
-def parse_imports(code: str) -> list[ImlImport]:
-    """Parse all import statements from IML source code."""
-    from iml_query.tree_sitter_utils import get_parser
-
-    parser = get_parser()
-    tree = parser.parse(bytes(code, encoding='utf8'))
-    node = tree.root_node
-
-    captures_map = run_queries(
-        {
-            'named_path': IMPORT_NAMED_PATH_QUERY_SRC,
-            'named_path_extraction': IMPORT_NAMED_PATH_EXTRACTION_QUERY_SRC,
-            'path_only': IMPORT_PATH_ONLY_QUERY_SRC,
-        },
-        node=node,
-    )
-
-    imports: dict[int, ImlImport] = {}  # keyed by start_byte to deduplicate
-
-    # IMPORT_2 first (3-arg form) — so IMPORT_1 won't overwrite with less info
-    for capture in captures_map.get('named_path_extraction', []):
-        node = capture['import'][0]
-        imports[node.start_byte] = ImlImport(
-            module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
-            path=unwrap_bytes(capture['import_path'][0].text).decode(),
-            extraction_name=unwrap_bytes(
-                capture['extraction_name'][0].text
-            ).decode(),
-            import_node=node,
-        )
-
-    # IMPORT_1: [@@@import Mod, "path"] — skip if already matched by IMPORT_2
-    for capture in captures_map.get('named_path', []):
-        node = capture['import'][0]
-        if node.start_byte in imports:
-            continue
-        imports[node.start_byte] = ImlImport(
-            module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
-            path=unwrap_bytes(capture['import_path'][0].text).decode(),
-            extraction_name=None,
-            import_node=node,
-        )
-
-    # IMPORT_3: [@@@import "path"]
-    for capture in captures_map.get('path_only', []):
-        node = capture['import'][0]
-        path = unwrap_bytes(capture['import_path'][0].text).decode()
-        imports[node.start_byte] = ImlImport(
-            module_name=_module_name_from_path(path),
-            path=path,
-            extraction_name=None,
-            import_node=node,
-        )
-
-    # Sort by position in source for deterministic ordering
-    return sorted(imports.values(), key=lambda i: i.import_node.start_byte)
-
-
-def resolve_modules(entry_path: Path) -> list[ResolvedModule]:
+def resolve(entry_path: Path) -> list[IMLModule] | IMLImportResolutionError:
     """
     Resolve all modules starting from an entry file.
 
-    Returns a topologically sorted list of ResolvedModule (leaves first,
+    Returns a Library with topologically sorted modules (leaves first,
     entry module last), suitable for mk_monolith_iml.
 
     Raises:
-        ModuleNotFoundError: if an imported file doesn't exist
+        IMLModuleNotFoundError: if an imported file doesn't exist
         CircularImportError: if a circular import is detected
         NotImplementedImportError: for findlib:/dune: imports
 
     """
     entry_path = entry_path.resolve()
     if not entry_path.exists():
-        raise ModuleNotFoundError(str(entry_path))
+        raise IMLModuleNotFoundError(str(entry_path))
 
-    result: list[ResolvedModule] = []
-    visited: set[Path] = set()
-    in_progress: set[Path] = set()
+    # State: (result, visited, in_progress)
+    State = tuple[tuple[IMLModule, ...], frozenset[Path], frozenset[Path]]
 
-    def _resolve(file_path: Path, module_name: str) -> None:
+    def loop(file_path: Path, state: State) -> State:
         file_path = file_path.resolve()
+        result, visited, in_progress = state
 
         if file_path in visited:
-            return
+            return state
         if file_path in in_progress:
             raise CircularImportError(str(file_path))
 
-        in_progress.add(file_path)
+        in_progress = in_progress | {file_path}
 
-        content = file_path.read_text()
-        imports = parse_imports(content)
+        iml_src = file_path.read_text()
+        imports = parse_imports(iml_src)
+        module_name = _module_name_from_path(file_path)
 
         base_dir = file_path.parent
 
         # Recursively resolve dependencies first (DFS)
         for imp in imports:
-            if imp.path.startswith('findlib:') or imp.path.startswith('dune:'):
-                raise NotImplementedImportError(imp.path)
-
-            dep_path = (base_dir / imp.path).resolve()
-            if not dep_path.exists():
-                raise ModuleNotFoundError(imp.path)
-
-            _resolve(dep_path, imp.module_name)
-
-        # Strip import nodes from content
-        stripped_content, _ = delete_nodes(
-            content, nodes=[imp.import_node for imp in imports]
-        )
-
-        result.append(
-            ResolvedModule(
-                name=module_name,
-                path=file_path,
-                content=stripped_content.strip(),
-                imports=imports,
+            imp_path: str = str(
+                unwrap_bytes(imp.import_path.text), encoding='utf-8'
             )
+            if imp_path.startswith('findlib:') or imp_path.startswith('dune:'):
+                raise NotImplementedImportError(imp_path)
+
+            dep_path = (base_dir / imp_path).resolve()
+            if not dep_path.exists():
+                raise IMLModuleNotFoundError(imp_path)
+
+            result, visited, in_progress = loop(
+                dep_path, (result, visited, in_progress)
+            )
+
+        module = IMLModule(
+            name=module_name,
+            path=file_path,
+            src=iml_src,
+            imports=imports,
         )
 
-        in_progress.discard(file_path)
-        visited.add(file_path)
+        return (
+            result + (module,),
+            visited | {file_path},
+            in_progress - {file_path},
+        )
 
-    entry_name = _module_name_from_path(entry_path.name)
-    _resolve(entry_path, entry_name)
-    return result
+    result, _, _ = loop(entry_path, ((), frozenset(), frozenset()))
+    return list(result)
 
 
-def mk_monolith_iml(modules: list[ResolvedModule]) -> str:
+class Library:
+    """A library is a collection of IML modules. A DAG."""
+
+    def __init__(self, modules: list[IMLModule]):
+        self.modules = modules
+
+    @classmethod
+    def resolve(cls, entry_path: Path) -> Library:
+        resolution_result = resolve(entry_path)
+        if isinstance(resolution_result, Exception):
+            raise resolution_result
+        return cls(modules=resolve(entry_path))
+
+
+def mk_monolith_iml(modules: list[IMLModule]) -> str:
     """
     Generate a monolith IML file from topologically sorted modules.
 
