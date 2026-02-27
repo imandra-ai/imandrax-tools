@@ -1,6 +1,7 @@
 """Tests for multi-file module resolution."""
 
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from inline_snapshot import snapshot
 
@@ -8,6 +9,7 @@ from iml_query.multifile import (
     CircularImportError,
     IMLModuleNotFoundError,
     NotImplementedImportError,
+    gather_modules,
     mk_monolith_iml,
     resolve,
 )
@@ -66,6 +68,19 @@ class TestResolveModules:
 
 
 class TestMkMonolithIml:
+    def test_no_import(self):
+        iml = """
+let x = 1
+"""
+        with NamedTemporaryFile() as f:
+            f.write(iml.encode())
+            f.flush()
+            gathered = gather_modules(Path(f.name))
+        assert gathered == snapshot("""\
+let x = 1
+
+""")
+
     def test_same_level(self):
         modules = resolve(DATA_DIR / 'same_level' / 'main.iml')
         assert not isinstance(modules, Exception)

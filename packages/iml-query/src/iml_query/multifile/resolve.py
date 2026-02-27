@@ -207,7 +207,13 @@ def mk_monolith_iml(modules: list[IMLModule]) -> str:
     for i, mod in enumerate(modules):
         is_entry = i == len(modules) - 1
         if is_entry:
-            parts.append(mod.content)
+            # strip imports
+            src_wo_imports, _ = delete_nodes(
+                iml=mod.src,
+                nodes=[imp.import_stmt for imp in mod.imports],
+            )
+            src_wo_imports = src_wo_imports.strip() + '\n'
+            parts.append(src_wo_imports)
         else:
             indented = '\n'.join(
                 f'  {line}' if line.strip() else ''
