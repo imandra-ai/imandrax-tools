@@ -1,6 +1,8 @@
-"""High-level IML manipulation."""
+"""High-level API for IML manipulation."""
 
 from typing import Any
+
+from tree_sitter import Range
 
 from iml_query.queries import (
     OPAQUE_QUERY_SRC,
@@ -14,9 +16,10 @@ from iml_query.tree_sitter_utils import (
 )
 
 from .base import Nesting, resolve_nesting_definitions
-from .decomp import extract_decomp_reqs, insert_decomp_req
+from .decomp import DecompReqArgs, extract_decomp_reqs, insert_decomp_req
 from .update_top_def import update_top_definition
 from .vg import (
+    VerifyReqArgs,
     extract_instance_reqs,
     extract_verify_reqs,
     insert_instance_req,
@@ -69,3 +72,32 @@ def eval_capture_to_src(capture: EvalCapture) -> str:
     if src.startswith('(') and src.endswith(')'):
         src = src[1:-1].strip()
     return src
+
+
+# Helpers to encapsulate tree-sitter parsing
+# ====================
+
+
+def get_decomp_reqs(iml: str) -> tuple[str, list[DecompReqArgs], list[Range]]:
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    res = extract_decomp_reqs(iml, tree)
+    return res[0], res[2], res[3]
+
+
+def get_verify_reqs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    res = extract_verify_reqs(iml, tree)
+    return res[0], res[2], res[3]
+
+
+def get_instance_reqs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    res = extract_instance_reqs(iml, tree)
+    return res[0], res[2], res[3]
+
+
+def get_vgs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    iml, tree, vgs_1, ranges_1 = extract_verify_reqs(iml, tree)
+    iml, tree, vgs_2, ranges_2 = extract_instance_reqs(iml, tree)
+    return iml, vgs_1 + vgs_2, ranges_1 + ranges_2
