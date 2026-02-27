@@ -1,3 +1,5 @@
+"""High-level IML manipulation."""
+
 from typing import Any
 
 from iml_query.queries import (
