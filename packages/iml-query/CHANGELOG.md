@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Unreleased
+- enhance import statement parsing
+- add multi-file import resolution
+
 ## v0.6.0 - 2026.02.24
 
 - added
