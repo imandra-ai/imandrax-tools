@@ -123,3 +123,21 @@ end
 let result : int = Left.left_val + Right.right_val
 
 """)
+
+    def test_with_vgs(self):
+        modules = resolve(DATA_DIR / 'with_vg' / 'main.iml')
+        assert not isinstance(modules, Exception)
+        result = mk_monolith_iml(modules)
+        assert result == snapshot("""\
+module Base = struct
+  let x = 1
+  let f x = x + 1
+end
+
+let y = Base.f 1
+
+eval y
+
+theorem eval_y = y = 2
+
+""")
