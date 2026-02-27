@@ -141,7 +141,7 @@ class EvalCapture(BaseCapture):
     eval_expr: Node  # the expression after `eval`, excluding item attributes
 
 
-# TODO:
+# Note: Legitimate imports in IML
 # (path import with explicit module name)
 # [@@@import Mod_name, "path/to/file.iml"]
 # (same, with explicit extraction name)
@@ -165,7 +165,7 @@ GENERAL_IMPORT_QUERY_SRC = r"""
 ) @import
 """
 
-IMPORT_1_QUERY_SRC = r"""
+IMPORT_NAMED_PATH_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -185,7 +185,7 @@ IMPORT_1_QUERY_SRC = r"""
 ) @import
 """
 
-IMPORT_2_QUERY_SRC = r"""
+IMPORT_NAMED_PATH_EXTRACTION_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -208,7 +208,7 @@ IMPORT_2_QUERY_SRC = r"""
 ) @import
 """
 
-IMPORT_3_QUERY_SRC = r"""
+IMPORT_PATH_ONLY_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id

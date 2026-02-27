@@ -4,19 +4,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-
-from tree_sitter import Node
+from typing import TYPE_CHECKING
 
 from iml_query.queries import (
-    IMPORT_1_QUERY_SRC,
-    IMPORT_2_QUERY_SRC,
-    IMPORT_3_QUERY_SRC,
+    IMPORT_NAMED_PATH_EXTRACTION_QUERY_SRC,
+    IMPORT_NAMED_PATH_QUERY_SRC,
+    IMPORT_PATH_ONLY_QUERY_SRC,
 )
 from iml_query.tree_sitter_utils import (
     delete_nodes,
     run_queries,
     unwrap_bytes,
 )
+
+if TYPE_CHECKING:
+    from tree_sitter import Node
 
 
 class ModuleNotFoundError(Exception):
@@ -32,19 +34,19 @@ class NotImplementedImportError(Exception):
 
 
 @dataclass
-class ImportInfo:
+class ImlImport:
     module_name: str  # e.g. "Mod_name"
-    path: str  # e.g. "path/to/file.iml" or "findlib:foo.bar"
+    path: str  # Path in the import statement, e.g. "path/to/file.iml" or "findlib:foo.bar" or "dune:foo.bar"
     extraction_name: str | None  # optional 3rd arg
     import_node: Node  # the full [@@@import ...] node for deletion
 
 
 @dataclass
-class ModuleInfo:
+class ResolvedModule:
     name: str  # module name
     path: Path  # absolute path to .iml file
     content: str  # file content with imports stripped
-    imports: list[ImportInfo]  # parsed imports
+    imports: list[ImlImport]  # parsed imports
 
 
 def _module_name_from_path(path: str) -> str:
@@ -53,23 +55,29 @@ def _module_name_from_path(path: str) -> str:
     return stem[0].upper() + stem[1:]
 
 
-def parse_imports(code: str) -> list[ImportInfo]:
+def parse_imports(code: str) -> list[ImlImport]:
     """Parse all import statements from IML source code."""
+    from iml_query.tree_sitter_utils import get_parser
+
+    parser = get_parser()
+    tree = parser.parse(bytes(code, encoding='utf8'))
+    node = tree.root_node
+
     captures_map = run_queries(
         {
-            'import_1': IMPORT_1_QUERY_SRC,
-            'import_2': IMPORT_2_QUERY_SRC,
-            'import_3': IMPORT_3_QUERY_SRC,
+            'named_path': IMPORT_NAMED_PATH_QUERY_SRC,
+            'named_path_extraction': IMPORT_NAMED_PATH_EXTRACTION_QUERY_SRC,
+            'path_only': IMPORT_PATH_ONLY_QUERY_SRC,
         },
-        node=_parse_code(code),
+        node=node,
     )
 
-    imports: dict[int, ImportInfo] = {}  # keyed by start_byte to deduplicate
+    imports: dict[int, ImlImport] = {}  # keyed by start_byte to deduplicate
 
     # IMPORT_2 first (3-arg form) — so IMPORT_1 won't overwrite with less info
-    for capture in captures_map.get('import_2', []):
+    for capture in captures_map.get('named_path_extraction', []):
         node = capture['import'][0]
-        imports[node.start_byte] = ImportInfo(
+        imports[node.start_byte] = ImlImport(
             module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
             path=unwrap_bytes(capture['import_path'][0].text).decode(),
             extraction_name=unwrap_bytes(
@@ -79,11 +87,11 @@ def parse_imports(code: str) -> list[ImportInfo]:
         )
 
     # IMPORT_1: [@@@import Mod, "path"] — skip if already matched by IMPORT_2
-    for capture in captures_map.get('import_1', []):
+    for capture in captures_map.get('named_path', []):
         node = capture['import'][0]
         if node.start_byte in imports:
             continue
-        imports[node.start_byte] = ImportInfo(
+        imports[node.start_byte] = ImlImport(
             module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
             path=unwrap_bytes(capture['import_path'][0].text).decode(),
             extraction_name=None,
@@ -91,10 +99,10 @@ def parse_imports(code: str) -> list[ImportInfo]:
         )
 
     # IMPORT_3: [@@@import "path"]
-    for capture in captures_map.get('import_3', []):
+    for capture in captures_map.get('path_only', []):
         node = capture['import'][0]
         path = unwrap_bytes(capture['import_path'][0].text).decode()
-        imports[node.start_byte] = ImportInfo(
+        imports[node.start_byte] = ImlImport(
             module_name=_module_name_from_path(path),
             path=path,
             extraction_name=None,
@@ -105,20 +113,11 @@ def parse_imports(code: str) -> list[ImportInfo]:
     return sorted(imports.values(), key=lambda i: i.import_node.start_byte)
 
 
-def _parse_code(code: str) -> Node:
-    """Parse IML code and return the root node."""
-    from iml_query.tree_sitter_utils import get_parser
-
-    parser = get_parser()
-    tree = parser.parse(bytes(code, encoding='utf8'))
-    return tree.root_node
-
-
-def resolve_modules(entry_path: Path) -> list[ModuleInfo]:
+def resolve_modules(entry_path: Path) -> list[ResolvedModule]:
     """
     Resolve all modules starting from an entry file.
 
-    Returns a topologically sorted list of ModuleInfo (leaves first,
+    Returns a topologically sorted list of ResolvedModule (leaves first,
     entry module last), suitable for mk_monolith_iml.
 
     Raises:
@@ -131,7 +130,7 @@ def resolve_modules(entry_path: Path) -> list[ModuleInfo]:
     if not entry_path.exists():
         raise ModuleNotFoundError(str(entry_path))
 
-    result: list[ModuleInfo] = []
+    result: list[ResolvedModule] = []
     visited: set[Path] = set()
     in_progress: set[Path] = set()
 
@@ -167,7 +166,7 @@ def resolve_modules(entry_path: Path) -> list[ModuleInfo]:
         )
 
         result.append(
-            ModuleInfo(
+            ResolvedModule(
                 name=module_name,
                 path=file_path,
                 content=stripped_content.strip(),
@@ -183,7 +182,7 @@ def resolve_modules(entry_path: Path) -> list[ModuleInfo]:
     return result
 
 
-def mk_monolith_iml(modules: list[ModuleInfo]) -> str:
+def mk_monolith_iml(modules: list[ResolvedModule]) -> str:
     """
     Generate a monolith IML file from topologically sorted modules.
 

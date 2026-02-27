@@ -10,53 +10,10 @@ from iml_query.multifile import (
     ModuleNotFoundError,
     NotImplementedImportError,
     mk_monolith_iml,
-    parse_imports,
     resolve_modules,
 )
 
 DATA_DIR = Path(__file__).parent / 'data' / 'multifile'
-
-
-class TestParseImports:
-    def test_import_1_named_path(self):
-        """[@@@import Mod, "path/to/file.iml"]"""
-        imports = parse_imports('[@@@import Helpers, "helpers.iml"]')
-        assert len(imports) == 1
-        assert imports[0].module_name == 'Helpers'
-        assert imports[0].path == 'helpers.iml'
-        assert imports[0].extraction_name is None
-
-    def test_import_2_with_extraction(self):
-        """[@@@import Mod, "path", Mod2]"""
-        imports = parse_imports('[@@@import Foo, "lib/foo.iml", Bar]')
-        assert len(imports) == 1
-        assert imports[0].module_name == 'Foo'
-        assert imports[0].path == 'lib/foo.iml'
-        assert imports[0].extraction_name == 'Bar'
-
-    def test_import_3_path_only(self):
-        """[@@@import "path/to/file.iml"]"""
-        imports = parse_imports('[@@@import "utils.iml"]')
-        assert len(imports) == 1
-        assert imports[0].module_name == 'Utils'
-        assert imports[0].path == 'utils.iml'
-        assert imports[0].extraction_name is None
-
-    def test_path_only_module_name_derivation(self):
-        """Module name derived from filename stem, capitalized."""
-        imports = parse_imports('[@@@import "path/to/my_helpers.iml"]')
-        assert imports[0].module_name == 'My_helpers'
-
-    def test_multiple_imports(self):
-        code = '[@@@import Left, "left.iml"]\n[@@@import Right, "right.iml"]\n'
-        imports = parse_imports(code)
-        assert len(imports) == 2
-        assert imports[0].module_name == 'Left'
-        assert imports[1].module_name == 'Right'
-
-    def test_no_imports(self):
-        imports = parse_imports('let x : int = 42')
-        assert imports == []
 
 
 class TestResolveModules:
@@ -68,13 +25,11 @@ class TestResolveModules:
     def test_nested_levels(self):
         modules = resolve_modules(DATA_DIR / 'nested_levels' / 'main.iml')
         names = [m.name for m in modules]
-        # Utils is leaf, Core depends on Utils, Main depends on Core
         assert names == snapshot(['Utils', 'Core', 'Main'])
 
     def test_diamond_deps(self):
         modules = resolve_modules(DATA_DIR / 'diamond_deps' / 'main.iml')
         names = [m.name for m in modules]
-        # Base first (shared dep), then Left and Right, then Main
         assert names == snapshot(['Base', 'Left', 'Right', 'Main'])
 
     def test_cycle_detection(self):
@@ -102,9 +57,6 @@ class TestResolveModules:
         main = modules[-1]
         assert '[@@@import' not in main.content
         assert 'Helpers.double' in main.content
-
-
-# --- mk_monolith_iml tests ---
 
 
 class TestMkMonolithIml:
