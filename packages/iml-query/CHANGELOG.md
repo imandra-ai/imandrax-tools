@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.7.1 - 2026.02.27
+
+- fix: entry file should only strip imports
+
 ## v0.7.0 - 2026.02.27
 
 - enhance import statement parsing
