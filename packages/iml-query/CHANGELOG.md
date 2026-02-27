@@ -3,6 +3,7 @@
 ## Unreleased
 - enhance import statement parsing
 - add multi-file import resolution
+- add top-level APIs for simplified manipulation
 
 ## v0.6.0 - 2026.02.24
 
