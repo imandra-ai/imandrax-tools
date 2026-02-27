@@ -1,0 +1,3 @@
+[@@@import Core, "lib/core.iml"]
+
+let result : int = Core.sum_three 1 2 3

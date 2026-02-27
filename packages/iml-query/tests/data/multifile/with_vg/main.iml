@@ -1,0 +1,7 @@
+[@@@import Base, "base.iml"]
+
+let y = Base.f 1
+
+eval y
+
+theorem eval_y = y = 2

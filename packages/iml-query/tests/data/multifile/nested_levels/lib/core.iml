@@ -1,0 +1,4 @@
+[@@@import Utils, "utils.iml"]
+
+let sum_three (a : int) (b : int) (c : int) : int =
+  Utils.add (Utils.add a b) c

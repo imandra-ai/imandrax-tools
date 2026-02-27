@@ -145,8 +145,8 @@ verify double_non_negative_is_increasing\
     iml2, tree2, verify_reqs, _ranges = extract_verify_reqs(iml, tree)
     assert verify_reqs == snapshot(
         [
-            {'src': 'fun x -> x > 0 ==> double x > x'},
-            {'src': 'double_non_negative_is_increasing'},
+            {'hints': None, 'src': 'fun x -> x > 0 ==> double x > x'},
+            {'hints': None, 'src': 'double_non_negative_is_increasing'},
         ]
     )
 

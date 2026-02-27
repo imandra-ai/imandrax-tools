@@ -1,0 +1,3 @@
+[@@@import B, "b.iml"]
+
+let a_val : int = B.b_val + 1

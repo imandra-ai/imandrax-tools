@@ -55,13 +55,14 @@ verify (
     reqs = [req for req, _range in req_and_ranges]
     assert reqs == snapshot(
         [
-            {'src': 'fun x -> x > 0 ==> double x > x'},
-            {'src': 'double_non_negative_is_increasing'},
+            {'hints': None, 'src': 'fun x -> x > 0 ==> double x > x'},
+            {'hints': None, 'src': 'double_non_negative_is_increasing'},
             {
+                'hints': None,
                 'src': """\
 fun xs ys i ->
     let a, _ = (fulcrum_inner xs ys i) in a >= i\
-"""
+""",
             },
         ]
     )
@@ -91,14 +92,15 @@ instance (
     reqs = [req for req, _range in req_and_ranges]
     assert reqs == snapshot(
         [
-            {'src': 'fun x -> x > 0 && x < 10'},
-            {'src': 'some_predicate'},
+            {'hints': None, 'src': 'fun x -> x > 0 && x < 10'},
+            {'hints': None, 'src': 'some_predicate'},
             {
+                'hints': None,
                 'src': """\
 fun x y ->
     x + y > 0 &&
     x * y < 100\
-"""
+""",
             },
         ]
     )
@@ -186,9 +188,9 @@ instance (fun x y -> x + y > 0 && x - y < 10)
 
     assert instance_reqs == snapshot(
         [
-            {'src': 'fun x -> x > 0'},
-            {'src': 'positive_checker'},
-            {'src': 'fun x y -> x + y > 0 && x - y < 10'},
+            {'hints': None, 'src': 'fun x -> x > 0'},
+            {'hints': None, 'src': 'positive_checker'},
+            {'hints': None, 'src': 'fun x y -> x + y > 0 && x - y < 10'},
         ]
     )
     assert new_iml == snapshot("""\
@@ -274,12 +276,12 @@ instance positive_predicate\
     assert outline == snapshot(
         {
             'verify_req': [
-                {'src': 'fun x -> x > 0 ==> double x > x'},
-                {'src': 'double_non_negative_is_increasing'},
+                {'hints': None, 'src': 'fun x -> x > 0 ==> double x > x'},
+                {'hints': None, 'src': 'double_non_negative_is_increasing'},
             ],
             'instance_req': [
-                {'src': 'fun x -> x > 0'},
-                {'src': 'positive_predicate'},
+                {'hints': None, 'src': 'fun x -> x > 0'},
+                {'hints': None, 'src': 'positive_predicate'},
             ],
             'decompose_req': [
                 {'name': 'simple_branch'},
@@ -416,16 +418,19 @@ verify (fun ys ->
     assert combined_results == snapshot(
         {
             'verify_reqs': [
-                {'src': 'fun xs -> List.length xs >= 0'},
+                {'hints': None, 'src': 'fun xs -> List.length xs >= 0'},
                 {
+                    'hints': None,
                     'src': """\
 fun ys ->
    let i = sum ys in
       i >= 0\
-"""
+""",
                 },
             ],
-            'instance_reqs': [{'src': 'fun x -> x > 0 && x < 100'}],
+            'instance_reqs': [
+                {'hints': None, 'src': 'fun x -> x > 0 && x < 100'}
+            ],
             'decomp_reqs': [
                 {
                     'name': 'conditional_fn',

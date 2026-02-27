@@ -1,0 +1,5 @@
+[@@@import Helpers, "helpers.iml"]
+
+let six : int = Helpers.double 3
+
+let nine : int = Helpers.triple 3

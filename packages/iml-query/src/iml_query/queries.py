@@ -141,10 +141,10 @@ class EvalCapture(BaseCapture):
     eval_expr: Node  # the expression after `eval`, excluding item attributes
 
 
-# TODO:
+# # Note: Legitimate imports in IML
 # (path import with explicit module name)
 # [@@@import Mod_name, "path/to/file.iml"]
-# (same, with explicit extraction name)
+# (same, with explicit extraction name) -> I don't think this works anymore
 # [@@@import Mod_name, "path/to/file.iml", Mod_name2]
 # (path import as module `File`)
 # [@@@import "path/to/file.iml"]
@@ -156,6 +156,7 @@ class EvalCapture(BaseCapture):
 # [@@@import Mod_name, "dune:foo.bar"]
 # (same, with explicit extraction name)
 # [@@@import Mod_name, "dune:foo.bar", Mod_name2]
+# # END #
 
 GENERAL_IMPORT_QUERY_SRC = r"""
 (floating_attribute
@@ -165,7 +166,7 @@ GENERAL_IMPORT_QUERY_SRC = r"""
 ) @import
 """
 
-IMPORT_1_QUERY_SRC = r"""
+IMPORT_NAMED_PATH_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -182,10 +183,10 @@ IMPORT_1_QUERY_SRC = r"""
             )
         )
     )
-) @import
+) @import_stmt
 """
 
-IMPORT_3_QUERY_SRC = r"""
+IMPORT_PATH_ONLY_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
     (attribute_id) @attribute_id
@@ -197,8 +198,16 @@ IMPORT_3_QUERY_SRC = r"""
             )
         )
     )
-) @import
+) @import_stmt
 """
+
+
+@dataclass(slots=True, frozen=True)
+class ImportCapture(BaseCapture):
+    import_stmt: Node
+    import_path: Node
+    import_name: Node | None = None
+
 
 VALUE_DEFINITION_QUERY_SRC = r"""
 (value_definition

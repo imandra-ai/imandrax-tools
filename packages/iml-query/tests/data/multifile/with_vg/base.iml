@@ -1,0 +1,7 @@
+let x = 1
+let f x = x + 1
+
+verify (fun x -> f x > x)
+
+
+verify (fun x -> f x < x)
