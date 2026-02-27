@@ -1,79 +1,81 @@
 """Tests for IML import statement parsing."""
 
-from iml_query.multifile import parse_imports
+from inline_snapshot import snapshot
+from tree_sitter import Node
+
+from iml_query.queries import (
+    IMPORT_NAMED_PATH_QUERY_SRC,
+    IMPORT_PATH_ONLY_QUERY_SRC,
+    ImportCapture,
+)
+from iml_query.tree_sitter_utils import run_queries, unwrap_bytes
 
 
-def test_named_path_import():
-    """[@@@import Mod, "path/to/file.iml"]"""
-    imports = parse_imports('[@@@import Helpers, "helpers.iml"]')
-    assert len(imports) == 1
-    assert imports[0].module_name == 'Helpers'
-    assert imports[0].path == 'helpers.iml'
-    assert imports[0].extraction_name is None
+def parse(code: str) -> list[ImportCapture]:
+    queries = {
+        'path_only': IMPORT_PATH_ONLY_QUERY_SRC,
+        'named': IMPORT_NAMED_PATH_QUERY_SRC,
+    }
+    matches = run_queries(queries, code=code)
+    ts_captures: list[dict[str, list[Node]]] = [
+        item for sublist in matches.values() for item in sublist
+    ]
+    return [
+        ImportCapture.from_ts_capture(ts_capture) for ts_capture in ts_captures
+    ]
 
 
-def test_named_path_with_extraction():
-    """[@@@import Mod, "path", Mod2]"""
-    imports = parse_imports('[@@@import Foo, "lib/foo.iml", Bar]')
-    assert len(imports) == 1
-    assert imports[0].module_name == 'Foo'
-    assert imports[0].path == 'lib/foo.iml'
-    assert imports[0].extraction_name == 'Bar'
+def pp_ts_node(node: Node) -> str:
+    return str(unwrap_bytes(node.text), encoding='utf-8')
 
 
-def test_path_only_import():
-    """[@@@import "path/to/file.iml"]"""
-    imports = parse_imports('[@@@import "utils.iml"]')
-    assert len(imports) == 1
-    assert imports[0].module_name == 'Utils'
-    assert imports[0].path == 'utils.iml'
-    assert imports[0].extraction_name is None
+def pp_import_capture(capture: ImportCapture) -> dict[str, str | None]:
+    return {
+        'import_stmt': pp_ts_node(capture.import_stmt),
+        'import_path': pp_ts_node(capture.import_path),
+        'import_name': pp_ts_node(capture.import_name)
+        if capture.import_name
+        else None,
+    }
 
 
-def test_path_only_module_name_derivation():
-    """Module name derived from filename stem, capitalized."""
-    imports = parse_imports('[@@@import "path/to/my_helpers.iml"]')
-    assert imports[0].module_name == 'My_helpers'
+def test():
+    iml = """
+    [@@@import "utils.iml"]
+    [@@@import "utils2.iml"]
+    [@@@import Helpers, "helpers.iml"]
+    [@@@import Foo, "findlib:foo.bar"]
+    [@@@import Foo, "dune:foo.bar"]
+    """
 
+    res = [pp_import_capture(capture) for capture in parse(iml)]
 
-def test_multiple_imports():
-    code = '[@@@import Left, "left.iml"]\n[@@@import Right, "right.iml"]\n'
-    imports = parse_imports(code)
-    assert len(imports) == 2
-    assert imports[0].module_name == 'Left'
-    assert imports[1].module_name == 'Right'
-
-
-def test_no_imports():
-    imports = parse_imports('let x : int = 42')
-    assert imports == []
-
-
-def test_findlib_path():
-    imports = parse_imports('[@@@import Foo, "findlib:foo.bar"]')
-    assert len(imports) == 1
-    assert imports[0].module_name == 'Foo'
-    assert imports[0].path == 'findlib:foo.bar'
-
-
-def test_dune_path():
-    imports = parse_imports('[@@@import Foo, "dune:foo.bar"]')
-    assert len(imports) == 1
-    assert imports[0].module_name == 'Foo'
-    assert imports[0].path == 'dune:foo.bar'
-
-
-def test_mixed_import_forms():
-    code = """\
-[@@@import Foo, "foo.iml"]
-[@@@import Bar, "bar.iml", Baz]
-[@@@import "qux.iml"]
-"""
-    imports = parse_imports(code)
-    assert len(imports) == 3
-    assert imports[0].module_name == 'Foo'
-    assert imports[0].extraction_name is None
-    assert imports[1].module_name == 'Bar'
-    assert imports[1].extraction_name == 'Baz'
-    assert imports[2].module_name == 'Qux'
-    assert imports[2].extraction_name is None
+    assert res == snapshot(
+        [
+            {
+                'import_stmt': '[@@@import "utils.iml"]',
+                'import_path': 'utils.iml',
+                'import_name': None,
+            },
+            {
+                'import_stmt': '[@@@import "utils2.iml"]',
+                'import_path': 'utils2.iml',
+                'import_name': None,
+            },
+            {
+                'import_stmt': '[@@@import Helpers, "helpers.iml"]',
+                'import_path': 'helpers.iml',
+                'import_name': 'Helpers',
+            },
+            {
+                'import_stmt': '[@@@import Foo, "findlib:foo.bar"]',
+                'import_path': 'findlib:foo.bar',
+                'import_name': 'Foo',
+            },
+            {
+                'import_stmt': '[@@@import Foo, "dune:foo.bar"]',
+                'import_path': 'dune:foo.bar',
+                'import_name': 'Foo',
+            },
+        ]
+    )
