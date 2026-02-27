@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .resolve import (
     CircularImportError,
+    IMLImportResolutionError,
     IMLModule,
     IMLModuleNotFoundError,
     Library,
@@ -18,6 +19,7 @@ __all__ = (
     'IMLModule',
     'IMLModuleNotFoundError',
     'NotImplementedImportError',
+    'IMLImportResolutionError',
     'mk_monolith_iml',
     'parse_imports',
     'resolve',
