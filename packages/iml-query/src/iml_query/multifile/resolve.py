@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from iml_query.queries import (
     IMPORT_NAMED_PATH_QUERY_SRC,
@@ -76,39 +76,41 @@ def parse_imports(code: str) -> list[ImportCapture]:
     ]
 
 
-def _module_name_from_path(path: str) -> str:
+def _module_name_from_path(path: Path) -> str:
     """Derive module name from file path: `path/to/file.iml` -> `File`."""
-    return Path(path).stem.capitalize()
+    return path.stem.capitalize()
 
 
-def resolve(entry_path: Path) -> list[IMLModule] | IMLImportResolutionError:
+type _ResolveState = tuple[
+    tuple[IMLModule, ...], frozenset[Path], frozenset[Path]
+]
+
+
+def resolve(
+    entry_path: Path,
+) -> list[IMLModule] | IMLImportResolutionError:
     """
     Resolve all modules starting from an entry file.
 
-    Returns a Library with topologically sorted modules (leaves first,
+    Returns a topologically sorted list of IMLModule (leaves first,
     entry module last), suitable for mk_monolith_iml.
-
-    Raises:
-        IMLModuleNotFoundError: if an imported file doesn't exist
-        CircularImportError: if a circular import is detected
-        NotImplementedImportError: for findlib:/dune: imports
-
+    On failure, returns the error as a value.
     """
     entry_path = entry_path.resolve()
     if not entry_path.exists():
-        raise IMLModuleNotFoundError(str(entry_path))
+        return IMLModuleNotFoundError(str(entry_path))
 
-    # State: (result, visited, in_progress)
-    State = tuple[tuple[IMLModule, ...], frozenset[Path], frozenset[Path]]
-
-    def loop(file_path: Path, state: State) -> State:
+    def loop(
+        file_path: Path,
+        state: _ResolveState,
+    ) -> _ResolveState | IMLImportResolutionError:
         file_path = file_path.resolve()
         result, visited, in_progress = state
 
         if file_path in visited:
             return state
         if file_path in in_progress:
-            raise CircularImportError(str(file_path))
+            return CircularImportError(str(file_path))
 
         in_progress = in_progress | {file_path}
 
@@ -124,15 +126,16 @@ def resolve(entry_path: Path) -> list[IMLModule] | IMLImportResolutionError:
                 unwrap_bytes(imp.import_path.text), encoding='utf-8'
             )
             if imp_path.startswith('findlib:') or imp_path.startswith('dune:'):
-                raise NotImplementedImportError(imp_path)
+                return NotImplementedImportError(imp_path)
 
             dep_path = (base_dir / imp_path).resolve()
             if not dep_path.exists():
-                raise IMLModuleNotFoundError(imp_path)
+                return IMLModuleNotFoundError(imp_path)
 
-            result, visited, in_progress = loop(
-                dep_path, (result, visited, in_progress)
-            )
+            inner = loop(dep_path, (result, visited, in_progress))
+            if isinstance(inner, IMLImportResolutionError):
+                return inner
+            result, visited, in_progress = inner
 
         module = IMLModule(
             name=module_name,
@@ -147,7 +150,10 @@ def resolve(entry_path: Path) -> list[IMLModule] | IMLImportResolutionError:
             in_progress - {file_path},
         )
 
-    result, _, _ = loop(entry_path, ((), frozenset(), frozenset()))
+    out = loop(entry_path, ((), frozenset(), frozenset()))
+    if isinstance(out, IMLImportResolutionError):
+        return out
+    result, _, _ = out
     return list(result)
 
 
@@ -158,11 +164,12 @@ class Library:
         self.modules = modules
 
     @classmethod
-    def resolve(cls, entry_path: Path) -> Library:
-        resolution_result = resolve(entry_path)
-        if isinstance(resolution_result, Exception):
-            raise resolution_result
-        return cls(modules=resolve(entry_path))
+    def from_entry(cls, entry_path: Path) -> Self:
+        """Create a library from an entry file."""
+        result = resolve(entry_path)
+        if isinstance(result, IMLImportResolutionError):
+            raise result
+        return cls(modules=result)
 
 
 def mk_monolith_iml(modules: list[IMLModule]) -> str:

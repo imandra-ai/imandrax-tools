@@ -2,15 +2,14 @@
 
 from pathlib import Path
 
-import pytest
 from inline_snapshot import snapshot
 
 from iml_query.multifile import (
     CircularImportError,
-    ModuleNotFoundError,
+    IMLModuleNotFoundError,
     NotImplementedImportError,
     mk_monolith_iml,
-    resolve_modules,
+    resolve,
 )
 
 DATA_DIR = Path(__file__).parent / 'data' / 'multifile'
@@ -18,42 +17,49 @@ DATA_DIR = Path(__file__).parent / 'data' / 'multifile'
 
 class TestResolveModules:
     def test_same_level(self):
-        modules = resolve_modules(DATA_DIR / 'same_level' / 'main.iml')
+        modules = resolve(DATA_DIR / 'same_level' / 'main.iml')
+        assert not isinstance(modules, Exception)
         names = [m.name for m in modules]
         assert names == snapshot(['Helpers', 'Main'])
 
     def test_nested_levels(self):
-        modules = resolve_modules(DATA_DIR / 'nested_levels' / 'main.iml')
+        modules = resolve(DATA_DIR / 'nested_levels' / 'main.iml')
+        assert not isinstance(modules, Exception)
         names = [m.name for m in modules]
         assert names == snapshot(['Utils', 'Core', 'Main'])
 
     def test_diamond_deps(self):
-        modules = resolve_modules(DATA_DIR / 'diamond_deps' / 'main.iml')
+        modules = resolve(DATA_DIR / 'diamond_deps' / 'main.iml')
+        assert not isinstance(modules, Exception)
         names = [m.name for m in modules]
         assert names == snapshot(['Base', 'Left', 'Right', 'Main'])
 
     def test_cycle_detection(self):
-        with pytest.raises(CircularImportError):
-            resolve_modules(DATA_DIR / 'cycle' / 'a.iml')
+        result = resolve(DATA_DIR / 'cycle' / 'a.iml')
+        assert isinstance(result, CircularImportError)
 
     def test_missing_import(self):
-        with pytest.raises(ModuleNotFoundError, match='ghost.iml'):
-            resolve_modules(DATA_DIR / 'missing_import' / 'main.iml')
+        result = resolve(DATA_DIR / 'missing_import' / 'main.iml')
+        assert isinstance(result, IMLModuleNotFoundError)
+        assert 'ghost.iml' in str(result)
 
     def test_findlib_import(self, tmp_path: Path):
         iml = tmp_path / 'main.iml'
         iml.write_text('[@@@import Foo, "findlib:foo.bar"]\nlet x = 1\n')
-        with pytest.raises(NotImplementedImportError, match='findlib:'):
-            resolve_modules(iml)
+        result = resolve(iml)
+        assert isinstance(result, NotImplementedImportError)
+        assert 'findlib:' in str(result)
 
     def test_dune_import(self, tmp_path: Path):
         iml = tmp_path / 'main.iml'
         iml.write_text('[@@@import Foo, "dune:foo.bar"]\nlet x = 1\n')
-        with pytest.raises(NotImplementedImportError, match='dune:'):
-            resolve_modules(iml)
+        result = resolve(iml)
+        assert isinstance(result, NotImplementedImportError)
+        assert 'dune:' in str(result)
 
     def test_imports_stripped_from_content(self):
-        modules = resolve_modules(DATA_DIR / 'same_level' / 'main.iml')
+        modules = resolve(DATA_DIR / 'same_level' / 'main.iml')
+        assert not isinstance(modules, Exception)
         main = modules[-1]
         assert '[@@@import' not in main.content
         assert 'Helpers.double' in main.content
@@ -61,7 +67,8 @@ class TestResolveModules:
 
 class TestMkMonolithIml:
     def test_same_level(self):
-        modules = resolve_modules(DATA_DIR / 'same_level' / 'main.iml')
+        modules = resolve(DATA_DIR / 'same_level' / 'main.iml')
+        assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
         assert result == snapshot("""\
 module Helpers = struct
@@ -73,10 +80,12 @@ end
 let six : int = Helpers.double 3
 
 let nine : int = Helpers.triple 3
+
 """)
 
     def test_nested_levels(self):
-        modules = resolve_modules(DATA_DIR / 'nested_levels' / 'main.iml')
+        modules = resolve(DATA_DIR / 'nested_levels' / 'main.iml')
+        assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
         assert result == snapshot("""\
 module Utils = struct
@@ -89,10 +98,12 @@ module Core = struct
 end
 
 let result : int = Core.sum_three 1 2 3
+
 """)
 
     def test_diamond_deps(self):
-        modules = resolve_modules(DATA_DIR / 'diamond_deps' / 'main.iml')
+        modules = resolve(DATA_DIR / 'diamond_deps' / 'main.iml')
+        assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
         assert result == snapshot("""\
 module Base = struct
@@ -110,4 +121,5 @@ module Right = struct
 end
 
 let result : int = Left.left_val + Right.right_val
+
 """)

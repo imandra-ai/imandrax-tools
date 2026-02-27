@@ -3,26 +3,9 @@
 from inline_snapshot import snapshot
 from tree_sitter import Node
 
-from iml_query.queries import (
-    IMPORT_NAMED_PATH_QUERY_SRC,
-    IMPORT_PATH_ONLY_QUERY_SRC,
-    ImportCapture,
-)
-from iml_query.tree_sitter_utils import run_queries, unwrap_bytes
-
-
-def parse(code: str) -> list[ImportCapture]:
-    queries = {
-        'path_only': IMPORT_PATH_ONLY_QUERY_SRC,
-        'named': IMPORT_NAMED_PATH_QUERY_SRC,
-    }
-    matches = run_queries(queries, code=code)
-    ts_captures: list[dict[str, list[Node]]] = [
-        item for sublist in matches.values() for item in sublist
-    ]
-    return [
-        ImportCapture.from_ts_capture(ts_capture) for ts_capture in ts_captures
-    ]
+from iml_query.multifile import parse_imports
+from iml_query.queries import ImportCapture
+from iml_query.tree_sitter_utils import unwrap_bytes
 
 
 def pp_ts_node(node: Node) -> str:
@@ -48,7 +31,7 @@ def test():
     [@@@import Foo, "dune:foo.bar"]
     """
 
-    res = [pp_import_capture(capture) for capture in parse(iml)]
+    res = [pp_import_capture(capture) for capture in parse_imports(iml)]
 
     assert res == snapshot(
         [

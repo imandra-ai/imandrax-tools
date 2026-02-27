@@ -2,22 +2,20 @@
 
 from .resolve import (
     CircularImportError,
-    ImlImport,
-    ModuleNotFoundError,
+    IMLModule,
+    IMLModuleNotFoundError,
     NotImplementedImportError,
-    ResolvedModule,
     mk_monolith_iml,
     parse_imports,
-    resolve_modules,
+    resolve,
 )
 
 __all__ = [
     'CircularImportError',
-    'ImlImport',
-    'ModuleNotFoundError',
+    'IMLModule',
+    'IMLModuleNotFoundError',
     'NotImplementedImportError',
-    'ResolvedModule',
     'mk_monolith_iml',
     'parse_imports',
-    'resolve_modules',
+    'resolve',
 ]
