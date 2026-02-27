@@ -185,6 +185,29 @@ IMPORT_1_QUERY_SRC = r"""
 ) @import
 """
 
+IMPORT_2_QUERY_SRC = r"""
+(floating_attribute
+    "[@@@"
+    (attribute_id) @attribute_id
+    (#eq? @attribute_id "import")
+    (attribute_payload
+        (expression_item
+            (tuple_expression
+                (constructor_path
+                    (constructor_name) @import_name
+                )
+                (string
+                    (string_content) @import_path
+                )
+                (constructor_path
+                    (constructor_name) @extraction_name
+                )
+            )
+        )
+    )
+) @import
+"""
+
 IMPORT_3_QUERY_SRC = r"""
 (floating_attribute
     "[@@@"
