@@ -57,29 +57,26 @@ def run_query(
     Run a Tree-sitter query on the given code or node.
 
     Return:
-        A list of tuples where the first element is the pattern index and
-        the second element is a dictionary that maps capture names to nodes.
+        A list of tuples where
+            - 0: the first element is the pattern index
+            - 1: the second element is a dictionary that maps capture names to nodes.
 
     """
     if code is None == node is None:
         raise ValueError('Exactly one of code or node must be provided')
-
     if code is not None:
         if isinstance(code, str):
             code = bytes(code, 'utf8')
-
         parser = create_parser(ocaml=False)
         tree = parser.parse(code)
-
         node = tree.root_node
-
     node = cast(Node, node)
 
     cursor = QueryCursor(query=query)
     return cursor.matches(node)
 
 
-def merge_queries(queries: dict[str, str]) -> str:
+def _merge_queries(queries: dict[str, str]) -> str:
     """
     Merge multiple queries into one query.
 
@@ -103,10 +100,12 @@ def merge_queries(queries: dict[str, str]) -> str:
     return s
 
 
-def run_queries(
-    queries: dict[str, str],
-    node: Node,
-) -> dict[str, list[dict[str, list[Node]]]]:
+def run_queries[QueryName: str](
+    queries: dict[QueryName, str],
+    *,
+    code: str | bytes | None = None,
+    node: Node | None = None,
+) -> dict[QueryName, list[dict[str, list[Node]]]]:
     """
     Run multiple queries.
 
@@ -116,13 +115,25 @@ def run_queries(
         capture values.
 
     """
+    if code is None == node is None:
+        raise ValueError('Exactly one of code or node must be provided')
+    if code is not None:
+        if isinstance(code, str):
+            code = bytes(code, 'utf8')
+        parser = create_parser(ocaml=False)
+        tree = parser.parse(code)
+        node = tree.root_node
+    node = cast(Node, node)
+
     matches = run_query(
-        mk_query(merge_queries(queries)),
+        mk_query(_merge_queries(queries)),
         node=node,
     )
 
     # query name -> list of captures
-    captures_map: dict[str, list[dict[str, list[Node]]]] = defaultdict(list)
+    captures_map: dict[QueryName, list[dict[str, list[Node]]]] = defaultdict(
+        list
+    )
     query_names = list(queries.keys())
     for patten_idx, capture in matches:
         query_name = query_names[patten_idx]
