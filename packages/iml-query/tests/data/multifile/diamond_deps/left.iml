@@ -1,0 +1,3 @@
+[@@@import Base, "base.iml"]
+
+let left_val : int = Base.one

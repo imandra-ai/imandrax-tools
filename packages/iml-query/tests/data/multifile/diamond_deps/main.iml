@@ -1,0 +1,4 @@
+[@@@import Left, "left.iml"]
+[@@@import Right, "right.iml"]
+
+let result : int = Left.left_val + Right.right_val
