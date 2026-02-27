@@ -7,6 +7,11 @@ from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
+from iml_query.processing import (
+    extract_decomp_reqs,
+    extract_instance_reqs,
+    extract_verify_reqs,
+)
 from iml_query.queries import (
     IMPORT_NAMED_PATH_QUERY_SRC,
     IMPORT_PATH_ONLY_QUERY_SRC,
@@ -14,6 +19,7 @@ from iml_query.queries import (
 )
 from iml_query.tree_sitter_utils import (
     delete_nodes,
+    get_parser,
     run_queries,
     unwrap_bytes,
 )
@@ -49,12 +55,25 @@ class IMLModule:
 
     @cached_property
     def content(self) -> str:
-        """Module content with imports stripped."""
-        content, _ = delete_nodes(
-            self.src,
+        """
+        Module content with imports, VGs, and decomps stripped.
+
+        Assumption: the importing module does not care about VGs or decomps
+            in the imported module.
+        """
+        tree = get_parser().parse(bytes(self.src, 'utf-8'))
+        # strip imports
+        src, tree = delete_nodes(
+            iml=self.src,
+            old_tree=tree,
             nodes=[imp.import_stmt for imp in self.imports],
         )
-        return content.strip() + '\n'
+        # strip decomps and VGs
+        src, tree, _decomps, _ranges = extract_decomp_reqs(src, tree)
+        src, tree, _vgs, _ranges = extract_verify_reqs(src, tree)
+        src, tree, _vgs, _ranges = extract_instance_reqs(src, tree)
+
+        return src.strip() + '\n'
 
 
 def parse_imports(code: str) -> list[ImportCapture]:

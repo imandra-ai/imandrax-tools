@@ -67,7 +67,7 @@ def find_nested_rec(iml: str) -> list[Nesting]:
     queries = {
         'value_def': VALUE_DEFINITION_QUERY_SRC,
     }
-    captures_map = run_queries(queries, tree.root_node)
+    captures_map = run_queries(queries, node=tree.root_node)
     val_captures: list[ValueDefCapture] = [
         ValueDefCapture.from_ts_capture(capture)
         for capture in captures_map.get('value_def', [])
