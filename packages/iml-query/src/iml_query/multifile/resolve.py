@@ -171,6 +171,10 @@ class Library:
             raise result
         return cls(modules=result)
 
+    def to_monolith(self) -> str:
+        """Generate a monolith IML file from the library."""
+        return mk_monolith_iml(self.modules)
+
 
 def mk_monolith_iml(modules: list[IMLModule]) -> str:
     """
