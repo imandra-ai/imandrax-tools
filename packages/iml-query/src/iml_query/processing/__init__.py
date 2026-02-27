@@ -96,8 +96,13 @@ def get_instance_reqs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
     return res[0], res[2], res[3]
 
 
-def get_vgs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
+def get_vgs(
+    iml: str,
+) -> tuple[str, dict[str, tuple[list[VerifyReqArgs], list[Range]]]]:
     tree = get_parser().parse(bytes(iml, encoding='utf8'))
-    iml, tree, vgs_1, ranges_1 = extract_verify_reqs(iml, tree)
-    iml, tree, vgs_2, ranges_2 = extract_instance_reqs(iml, tree)
-    return iml, vgs_1 + vgs_2, ranges_1 + ranges_2
+    iml, tree, v_reqs, v_ranges = extract_verify_reqs(iml, tree)
+    iml, tree, i_reqs, i_ranges = extract_instance_reqs(iml, tree)
+    return iml, {
+        'verify': (v_reqs, v_ranges),
+        'instance': (i_reqs, i_ranges),
+    }
