@@ -1,0 +1,206 @@
+"""Core module resolution logic for multi-file IML projects."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+
+from tree_sitter import Node
+
+from iml_query.queries import (
+    IMPORT_1_QUERY_SRC,
+    IMPORT_2_QUERY_SRC,
+    IMPORT_3_QUERY_SRC,
+)
+from iml_query.tree_sitter_utils import (
+    delete_nodes,
+    run_queries,
+    unwrap_bytes,
+)
+
+
+class ModuleNotFoundError(Exception):
+    """Raised when an imported file does not exist."""
+
+
+class CircularImportError(Exception):
+    """Raised when a circular import is detected."""
+
+
+class NotImplementedImportError(Exception):
+    """Raised for unsupported import schemes (findlib:, dune:)."""
+
+
+@dataclass
+class ImportInfo:
+    module_name: str  # e.g. "Mod_name"
+    path: str  # e.g. "path/to/file.iml" or "findlib:foo.bar"
+    extraction_name: str | None  # optional 3rd arg
+    import_node: Node  # the full [@@@import ...] node for deletion
+
+
+@dataclass
+class ModuleInfo:
+    name: str  # module name
+    path: Path  # absolute path to .iml file
+    content: str  # file content with imports stripped
+    imports: list[ImportInfo]  # parsed imports
+
+
+def _module_name_from_path(path: str) -> str:
+    """Derive module name from file path: 'path/to/file.iml' -> 'File'."""
+    stem = Path(path).stem
+    return stem[0].upper() + stem[1:]
+
+
+def parse_imports(code: str) -> list[ImportInfo]:
+    """Parse all import statements from IML source code."""
+    captures_map = run_queries(
+        {
+            'import_1': IMPORT_1_QUERY_SRC,
+            'import_2': IMPORT_2_QUERY_SRC,
+            'import_3': IMPORT_3_QUERY_SRC,
+        },
+        node=_parse_code(code),
+    )
+
+    imports: dict[int, ImportInfo] = {}  # keyed by start_byte to deduplicate
+
+    # IMPORT_2 first (3-arg form) — so IMPORT_1 won't overwrite with less info
+    for capture in captures_map.get('import_2', []):
+        node = capture['import'][0]
+        imports[node.start_byte] = ImportInfo(
+            module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
+            path=unwrap_bytes(capture['import_path'][0].text).decode(),
+            extraction_name=unwrap_bytes(
+                capture['extraction_name'][0].text
+            ).decode(),
+            import_node=node,
+        )
+
+    # IMPORT_1: [@@@import Mod, "path"] — skip if already matched by IMPORT_2
+    for capture in captures_map.get('import_1', []):
+        node = capture['import'][0]
+        if node.start_byte in imports:
+            continue
+        imports[node.start_byte] = ImportInfo(
+            module_name=unwrap_bytes(capture['import_name'][0].text).decode(),
+            path=unwrap_bytes(capture['import_path'][0].text).decode(),
+            extraction_name=None,
+            import_node=node,
+        )
+
+    # IMPORT_3: [@@@import "path"]
+    for capture in captures_map.get('import_3', []):
+        node = capture['import'][0]
+        path = unwrap_bytes(capture['import_path'][0].text).decode()
+        imports[node.start_byte] = ImportInfo(
+            module_name=_module_name_from_path(path),
+            path=path,
+            extraction_name=None,
+            import_node=node,
+        )
+
+    # Sort by position in source for deterministic ordering
+    return sorted(imports.values(), key=lambda i: i.import_node.start_byte)
+
+
+def _parse_code(code: str) -> Node:
+    """Parse IML code and return the root node."""
+    from iml_query.tree_sitter_utils import get_parser
+
+    parser = get_parser()
+    tree = parser.parse(bytes(code, encoding='utf8'))
+    return tree.root_node
+
+
+def resolve_modules(entry_path: Path) -> list[ModuleInfo]:
+    """
+    Resolve all modules starting from an entry file.
+
+    Returns a topologically sorted list of ModuleInfo (leaves first,
+    entry module last), suitable for mk_monolith_iml.
+
+    Raises:
+        ModuleNotFoundError: if an imported file doesn't exist
+        CircularImportError: if a circular import is detected
+        NotImplementedImportError: for findlib:/dune: imports
+
+    """
+    entry_path = entry_path.resolve()
+    if not entry_path.exists():
+        raise ModuleNotFoundError(str(entry_path))
+
+    result: list[ModuleInfo] = []
+    visited: set[Path] = set()
+    in_progress: set[Path] = set()
+
+    def _resolve(file_path: Path, module_name: str) -> None:
+        file_path = file_path.resolve()
+
+        if file_path in visited:
+            return
+        if file_path in in_progress:
+            raise CircularImportError(str(file_path))
+
+        in_progress.add(file_path)
+
+        content = file_path.read_text()
+        imports = parse_imports(content)
+
+        base_dir = file_path.parent
+
+        # Recursively resolve dependencies first (DFS)
+        for imp in imports:
+            if imp.path.startswith('findlib:') or imp.path.startswith('dune:'):
+                raise NotImplementedImportError(imp.path)
+
+            dep_path = (base_dir / imp.path).resolve()
+            if not dep_path.exists():
+                raise ModuleNotFoundError(imp.path)
+
+            _resolve(dep_path, imp.module_name)
+
+        # Strip import nodes from content
+        stripped_content, _ = delete_nodes(
+            content, nodes=[imp.import_node for imp in imports]
+        )
+
+        result.append(
+            ModuleInfo(
+                name=module_name,
+                path=file_path,
+                content=stripped_content.strip(),
+                imports=imports,
+            )
+        )
+
+        in_progress.discard(file_path)
+        visited.add(file_path)
+
+    entry_name = _module_name_from_path(entry_path.name)
+    _resolve(entry_path, entry_name)
+    return result
+
+
+def mk_monolith_iml(modules: list[ModuleInfo]) -> str:
+    """
+    Generate a monolith IML file from topologically sorted modules.
+
+    Each dependency module is wrapped in `module Name = struct ... end`.
+    The entry module (last in list) is emitted unwrapped.
+    """
+    parts: list[str] = []
+
+    for i, mod in enumerate(modules):
+        is_entry = i == len(modules) - 1
+        if is_entry:
+            parts.append(mod.content)
+        else:
+            indented = '\n'.join(
+                f'  {line}' if line.strip() else ''
+                for line in mod.content.splitlines()
+            )
+            parts.append(f'module {mod.name} = struct\n{indented}\nend')
+
+    return '\n\n'.join(parts) + '\n'
