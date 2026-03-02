@@ -20,20 +20,30 @@ description: Help with IML (Imandra Modeling Language) - formal verification, th
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-
 ## Interact with ImandraX
 
 To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX.
 
 - `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
-  - A tip for explorative development is to use heredoc to pass a IML snippet to `check` for quick testing. For example:
-    ```bash
-    cat <<'IMLEOF' | codelogician-tools check -
-    let f x = x + 1
-    IMLEOF
-    ```
 - Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
+
+## Getting started
+
+To get started up to speed with IML, read the top-level guide on [IML syntax](iml-syntax.md) and the `codelogician-tools` CLI ([codelogician-cli.md](codelogician-cli.md)). That should be enough to equipped you with the knowledge to write IML code and learn-by-doing. 
+
+Check out import syntax for modular development.
+
+Only when encountering tasks related to verification, region-decomp, or tactic-based proofs, refer to corresponding guides.
+
+Tips: 
+- A tip for explorative development is to use heredoc to pass a IML snippet to `check` for quick testing. For example:
+```bash
+cat <<'EOF' | codelogician-tools check -
+let f x = x + 1
+EOF
+```
+
 
 ## More in-depth references in current directory
 
