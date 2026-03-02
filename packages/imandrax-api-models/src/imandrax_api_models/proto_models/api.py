@@ -7,7 +7,7 @@ import json
 from io import BytesIO
 from zipfile import ZipFile
 
-from imandrax_api.lib import Artifact, read_artifact_data
+from imandrax_api.lib import Artifact as XtypesArtifact, read_artifact_data
 from pydantic import Field, field_validator
 
 from ..proto_utils import BaseModel
@@ -36,7 +36,7 @@ class ArtifactZip(BaseModel):
             return base64.b64decode(v)
         return v
 
-    def to_artifact(self) -> Artifact:
+    def to_artifact(self) -> XtypesArtifact:
         """
         Decode the zip bytes into an imandrax_api.lib.Artifact object.
 
