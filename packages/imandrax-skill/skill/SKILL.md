@@ -27,6 +27,12 @@ To type-check, invoke verification, or invoke region decomposition, you pass you
 
 - `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
+  - A tip for explorative development is to use heredoc to pass a IML snippet to `check` for quick testing. For example:
+    ```bash
+    cat <<'IMLEOF' | codelogician-tools check -
+    let f x = x + 1
+    IMLEOF
+    ```
 - Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
 
 ## More in-depth references in current directory
@@ -62,6 +68,7 @@ To type-check, invoke verification, or invoke region decomposition, you pass you
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the `codelogician-tools` CLI to interact with ImandraX and access additional features.
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
+├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
 └── verification-with-verify-and-instance.md # Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
 ```
