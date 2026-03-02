@@ -1,0 +1,59 @@
+(* Tests for lchar_utils *)
+
+[@@@import Lchar_utils, "../lchar_utils.iml"]
+
+let char_A = List.hd {l|A|l}
+let char_a = List.hd {l|a|l}
+let char_0 = List.hd {l|0|l}
+let char_space = List.hd {l| |l}
+
+(* --- char_code --- *)
+
+verify (Lchar_utils.char_code char_A = 65)
+verify (Lchar_utils.char_code char_a = 97)
+verify (Lchar_utils.char_code char_0 = 48)
+verify (Lchar_utils.char_code char_space = 32)
+
+(* --- classification --- *)
+
+verify (Lchar_utils.is_upper char_A)
+verify (not (Lchar_utils.is_upper char_a))
+verify (Lchar_utils.is_lower char_a)
+verify (not (Lchar_utils.is_lower char_A))
+verify (Lchar_utils.is_letter char_A)
+verify (Lchar_utils.is_letter char_a)
+verify (not (Lchar_utils.is_letter char_0))
+verify (Lchar_utils.is_digit char_0)
+verify (not (Lchar_utils.is_digit char_A))
+verify (Lchar_utils.is_alphanum char_A)
+verify (Lchar_utils.is_alphanum char_0)
+verify (not (Lchar_utils.is_alphanum char_space))
+verify (Lchar_utils.is_white char_space)
+verify (Lchar_utils.is_blank char_space)
+verify (not (Lchar_utils.is_control char_A))
+
+(* --- hex --- *)
+
+verify (Lchar_utils.is_hex_digit char_A)
+verify (Lchar_utils.is_hex_digit char_a)
+verify (Lchar_utils.is_hex_digit char_0)
+verify (Lchar_utils.hex_digit_to_int char_A = Some 10)
+verify (Lchar_utils.hex_digit_to_int char_a = Some 10)
+verify (Lchar_utils.hex_digit_to_int char_0 = Some 0)
+
+(* --- to_lower --- *)
+
+verify (Lchar_utils.to_lower char_A = char_a)
+verify (Lchar_utils.to_lower char_a = char_a)
+verify (Lchar_utils.to_lower char_0 = char_0)
+
+(* --- string ops --- *)
+
+let hello = {l|hello|l}
+let hello_upper = {l|HELLO|l}
+let hel = {l|hel|l}
+
+verify (Lchar_utils.caseless_starts_with hel hello_upper)
+verify (not (Lchar_utils.caseless_starts_with hello hel))
+verify (Lchar_utils.match_at hel hello 0)
+verify (not (Lchar_utils.match_at hel hello 1))
