@@ -298,7 +298,7 @@ module M = struct
 
   let x = 0
 
- end
+end
 """,
                     'artifact': {
                         'kind': 'mir.model',
@@ -350,7 +350,7 @@ module M = struct
 
   let x = 0
 
- end
+end
 """,
                     'artifact': {
                         'kind': 'mir.model',
