@@ -25,6 +25,7 @@ PO_RES_PP_BIN_PATH: Final[Path | None] = option_map(
 def pp_goal_state(
     po_res: Path
     | xbinding.api_pb2.ArtifactZip
+    | proto_models.ArtifactZip
     | proto_models.Art
     | xbinding.artmsg_pb2.Art,
 ) -> str:
@@ -61,7 +62,7 @@ def pp_goal_state(
             return out.stdout.decode()
         # Turn into base case
         # --------------------
-        case xbinding.api_pb2.ArtifactZip():
+        case xbinding.api_pb2.ArtifactZip() | proto_models.ArtifactZip():
             with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
                 tmp.write(po_res.art_zip)
                 tmp.flush()
