@@ -9,5 +9,5 @@ Configure skill in your agent
 or
 
 ```bash
-npx skills add imandra-ai/imandrax-tools/imandrax-skill/skill
+npx skills add imandra-ai/imandrax-tools/codelogician-skill/skill
 ```

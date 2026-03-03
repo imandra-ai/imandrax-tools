@@ -1,14 +1,16 @@
 ---
-name: imandrax
-description: Help with IML (Imandra Modeling Language) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc. Use when working with .iml files or Imandra / ImandraX related projects.
+name: codelogician
+description: Use IML (Imandra Modeling Language) / ImandraX to reason about software engineering (programs and specifications) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc.
 ---
 
-# IML (Imandra Modeling Language) Expert
+# CodeLogician
 
-## Terminology
-- IML (Imandra Modeling Language), a formalized Higher-Order subset of OCaml extended with theorem proving tactics and verification annotations. 
-- ImandraX is the reasoning engine that powers IML.
+## Concepts
+- CodeLogician: agent that utilize IML/ImandraX to reason about programs and their properties (specifications).
+- IML (Imandra Modeling Language), a formalized Higher-Order subset of OCaml extended with theorem proving tactics and verification annotations. ImandraX is the reasoning engine that powers IML.
+- Verification: a process of proving a goal (some properties) or finding a counter-example if the goal is not satisfied. The process can be fully automated or interactive (guided with tactics).
 - Region decomposition is a powerful feature of ImandraX for analyzing the state-space of functions. It automatically partitions a function’s input domain into disjoint regions, each characterized by a set of constraints and a corresponding simplified invariant behavior of the function within that region. Test cases can be further generated from these regions.
+- `codelogician` / `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
 
 ## Typical workflow when working with IML
 - Write IML code, corresponding to your specification or program to be verified / tested. Admit IML code with ImandraX and correct type errors if any.
@@ -20,13 +22,10 @@ description: Help with IML (Imandra Modeling Language) - formal verification, th
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-## Interact with ImandraX
-
-To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX.
-
-- `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
+- To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX via `codelogician-tools` CLI. `codelogician-tools` CLI is designed to be used by file-system-based agents with a LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
-- Other interfaces: `imandrax-api` Python pacakge, `imandrax-cli` CLI
+  - Use `check-vg` / `check-decomp` with `--index` option to pass specific VGs or decompositions to check (after `check` emits no errors).
+
 
 ## Getting started
 
@@ -51,6 +50,7 @@ EOF
 ./
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
+│   ├── contingency-corner.md # Documentations that are unlikley to be useful for file-system-based agents.
 │   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
 │   ├── proof-tips.md # Practical tips for writing proofs in IML.
