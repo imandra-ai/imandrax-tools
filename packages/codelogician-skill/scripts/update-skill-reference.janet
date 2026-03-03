@@ -27,7 +27,9 @@
    "examples/region-decomp"                         ""
    "examples/region-decomp/synthesized-real-world-examples" ""
    "reference"                                      "Language and API reference"
-   "reference/api"                                  "Module-level API docs"})
+   "reference/api"                                  "Module-level API docs"
+   "extended-prelude"                               ""
+   })
 
 # ── PEG grammars ────────────────────────────────────────────────────
 

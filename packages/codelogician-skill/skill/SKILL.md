@@ -58,6 +58,8 @@ EOF
 │   └── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module
 ├── examples/ # Worked examples
 │   └── basic-iml-syntax.md
+├── extended-prelude/
+│   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc.
 ├── reference/ # Language and API reference
 │   ├── api/ # Module-level API docs
 │   │   ├── Int.md
