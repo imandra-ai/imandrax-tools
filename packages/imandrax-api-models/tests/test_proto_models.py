@@ -207,6 +207,7 @@ def test_verify_src(c: Client):
     )
 
 
+@pytest.mark.flaky(reruns=2)
 def test_verify_refuted(c: Client):
     _ = c.eval_src(IML_CODE)
     verify_res_msg = c.verify_src(VERIFY_SRC_REFUTED)
@@ -214,25 +215,28 @@ def test_verify_refuted(c: Client):
     assert verify_res.model_dump() == snapshot(
         {
             'unknown': None,
-            'err': {},
+            'err': None,
             'proved': None,
-            'refuted': None,
-            'verified_upto': None,
-            'errors': [
-                {
-                    'msg': {
-                        'msg': 'Scheduling task failed (n_retries=0)',
-                        'locs': [],
-                        'backtrace': """\
-Raised at Base64.decode_sub.dmap in file "src/base64.ml", line 209, characters 23-38
-Called from Base64.decode_sub.dec in file "src/base64.ml", line 245, characters 15-21
+            'refuted': {
+                'model': {
+                    'm_type': ModelType.Counter_example,
+                    'src': """\
+module M = struct
+
+  let x = 0
+
+end
 """,
+                    'artifact': {
+                        'kind': 'mir.model',
+                        'data': IsArtifactData(),
+                        'api_version': 'v19',
+                        'storage': [],
                     },
-                    'kind': '{ Kind.name = "GenericInternalError" }',
-                    'stack': [],
-                    'process': 'imandrax-server',
                 }
-            ],
+            },
+            'verified_upto': None,
+            'errors': [],
             'task': None,
         }
     )
@@ -502,6 +506,7 @@ def test_get_decls(c: Client):
     )
 
 
+@pytest.mark.flaky(reruns=2)
 def test_eval_qcheck_found_cx(c: Client):
     """Quickcheck found a counter-example. TacticEval error."""
     iml = """
@@ -520,7 +525,22 @@ def test_eval_qcheck_found_cx(c: Client):
     assert 'Quickcheck found a counter-example' in eval_res.messages[0]
     assert len(eval_res.errors) == 0
     assert len(eval_res.po_results) == 1
-    assert eval_res.po_results[0].err is not None
+    assert eval_res.po_results[0].instance
+    assert eval_res.po_results[0].instance.model_dump() == snapshot(
+        {
+            'model': {
+                'm_type': ModelType.Counter_example,
+                'src': """\
+module M = struct
+
+  let x = 0
+
+end
+""",
+                'artifact': None,
+            }
+        }
+    )
 
 
 def test_eval_qcheck_ok(c: Client):
