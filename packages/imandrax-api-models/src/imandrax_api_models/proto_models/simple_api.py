@@ -211,12 +211,29 @@ class InstanceNameReq(BaseModel):
     hints: str | None = Field(default=None)
 
 
+class QCheckSrcReq(BaseModel):
+    session: Session | None = Field(default=None)
+    src: str = Field(description='source code')
+    seed: int = Field(description='random seed')
+
+
+class QCheckNameReq(BaseModel):
+    session: Session | None = Field(default=None)
+    name: str = Field(description='name of the predicate to analyze')
+    seed: int = Field(description='random seed')
+
+
 class Proved(BaseModel):
     proof_pp: str | None = Field(default=None)
 
 
 class Verified_upto(BaseModel):
     msg: str | None = Field(default=None)
+
+
+class Qcheck_ok(BaseModel):
+    num_steps: int
+    seed: int
 
 
 class Unsat(BaseModel):
@@ -252,6 +269,7 @@ class PO_Res(BaseModel):
     proof: Proved | None = Field(default=None)
     instance: CounterSat | None = Field(default=None)
     verified_upto: Verified_upto | None = Field(default=None)
+    qcheck_ok: Qcheck_ok | None = Field(default=None)
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
@@ -269,6 +287,7 @@ class PO_Res(BaseModel):
                 self.proof,
                 self.instance,
                 self.verified_upto,
+                self.qcheck_ok,
             ]
             if r is not None
         )
@@ -346,6 +365,22 @@ class VerifyRes(BaseModel):
         return self
 
 
+class QCheckRes(BaseModel):
+    # oneof res
+    err: Empty | None = Field(default=None)
+    counter_example: CounterSat | None = Field(default=None)
+    # /oneof res
+    errors: list[Error] = Field(default_factory=lambda: [])
+    task: Task | None = Field(default=None, description='the ID of the task')
+
+    @model_validator(mode='after')
+    def one_of_res(self) -> Self:
+        sum_of_res = sum(1 for r in [self.err, self.counter_example] if r is not None)
+        if sum_of_res != 1:
+            raise ValueError('Exactly one of err, counter_example must be set')
+        return self
+
+
 class InstanceRes(BaseModel):
     # One of the following will be returned
     unknown: StringMsg | None = Field(default=None)
@@ -418,7 +453,7 @@ InferredTypes = TypeAdapter(list[InferredType])
 
 
 class TypecheckRes(TypecheckResProto):
-    types: list[InferredType] = Field(description='Parsed inferred types')  # type: ignore[assignment]
+    types: list[InferredType] = Field(description='Parsed inferred types')
 
     @field_validator('types', mode='before')
     @classmethod
@@ -431,18 +466,25 @@ class TypecheckRes(TypecheckResProto):
 
 
 class GetDeclsReq(BaseModel):
-    name: list[str]
+    name: list[str] = Field(description='names of the desired declarations')
+    str_: str | None = Field(
+        default=None, alias='str', description='if true, include string representation'
+    )
 
 
 class DeclWithName(BaseModel):
     name: str
-    artifact: Art
-    str_: str | None = Field(default=None, alias='str')
+    artifact: Art = Field(description='artifact with the decl in it')
+    str_: str | None = Field(
+        default=None,
+        alias='str',
+        description='included if `str` was true in `GetDeclsReq`',
+    )
 
 
 class GetDeclsRes(BaseModel):
-    decls: list[DeclWithName]
-    not_found: list[str]
+    decls: list[DeclWithName] = Field(description='decls that were found')
+    not_found: list[str] = Field(description='names that were not found')
 
 
 class OneshotReq(BaseModel):

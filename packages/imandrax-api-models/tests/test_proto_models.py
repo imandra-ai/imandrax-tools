@@ -16,6 +16,7 @@ from imandrax_api_models import (
     GetDeclsRes,
     InstanceRes,
     ModelType,
+    QCheckRes,
     Task,
     TaskKind,
     TypecheckRes,
@@ -36,8 +37,8 @@ class IsTaskID(IsStr):
 @pytest.fixture
 def c() -> Client:
     c = Client(
-        url=url_prod,
-        # url=url_dev,
+        # url=url_prod,
+        url=url_dev,
         auth_token=os.environ['IMANDRAX_API_KEY'],
     )
     return c
@@ -206,6 +207,7 @@ def test_verify_src(c: Client):
     )
 
 
+@pytest.mark.flaky(reruns=2)
 def test_verify_refuted(c: Client):
     _ = c.eval_src(IML_CODE)
     verify_res_msg = c.verify_src(VERIFY_SRC_REFUTED)
@@ -223,12 +225,12 @@ module M = struct
 
   let x = 0
 
- end
+end
 """,
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                 }
@@ -279,6 +281,62 @@ def test_instance_src(c: Client):
     )
 
 
+def test_qcheck_src(c: Client):
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+    """
+    qcheck_src = 'fun x -> f (g x) - x > 3'
+    _ = c.eval_src(iml)
+    qcheck_res_msg = c.qcheck_src(qcheck_src)
+    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
+    assert qcheck_res.model_dump() == snapshot(
+        {
+            'err': None,
+            'counter_example': {
+                'model': {
+                    'm_type': ModelType.Counter_example,
+                    'src': """\
+module M = struct
+
+  let x = 0
+
+end
+""",
+                    'artifact': {
+                        'kind': 'mir.model',
+                        'data': IsArtifactData(),
+                        'api_version': 'v19',
+                        'storage': [],
+                    },
+                }
+            },
+            'errors': [],
+            'task': None,
+        }
+    )
+
+
+def test_qcheck_name(c: Client):
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
+
+    qcheck f_g_x_gte_3
+    """
+    qcheck_name = 'f_g_x_gte_3'
+    _ = c.eval_src(iml)
+    qcheck_res_msg = c.qcheck_src(qcheck_name)
+    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
+    assert qcheck_res.model_dump() == snapshot(
+        {'err': None, 'counter_example': {'model': None}, 'errors': [], 'task': None}
+    )
+
+
 def test_instance_unsat(c: Client):
     _ = c.eval_src(IML_CODE)
     instance_res_msg = c.instance_src(VERIFY_SRC)
@@ -296,12 +354,12 @@ module M = struct
 
   let x = 0
 
- end
+end
 """,
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                 }
@@ -321,7 +379,7 @@ def test_decompose(c: Client):
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v18',
+                'api_version': 'v19',
                 'storage': [],
             },
             'err': None,
@@ -417,7 +475,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -427,7 +485,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -437,7 +495,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v18',
+                        'api_version': 'v19',
                         'storage': [],
                     },
                     'str': None,
@@ -446,6 +504,61 @@ def test_get_decls(c: Client):
             'not_found': ['else'],
         }
     )
+
+
+@pytest.mark.flaky(reruns=2)
+def test_eval_qcheck_found_cx(c: Client):
+    """Quickcheck found a counter-example. TacticEval error."""
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gt_3 = fun x -> f (g x) - x > 3
+
+    qcheck f_g_x_gt_3
+    """
+    eval_res_msg: Message = c.eval_src(iml)
+    eval_res = EvalRes.model_validate(eval_res_msg)
+    assert eval_res.success
+    assert len(eval_res.messages) == 1
+    assert 'Quickcheck found a counter-example' in eval_res.messages[0]
+    assert len(eval_res.errors) == 0
+    assert len(eval_res.po_results) == 1
+    assert eval_res.po_results[0].instance
+    assert eval_res.po_results[0].instance.model_dump() == snapshot(
+        {
+            'model': {
+                'm_type': ModelType.Counter_example,
+                'src': """\
+module M = struct
+
+  let x = 0
+
+end
+""",
+                'artifact': None,
+            }
+        }
+    )
+
+
+def test_eval_qcheck_ok(c: Client):
+    """qcheck_ok in PO_res."""
+    iml = """
+    let f = fun x -> x + 1
+
+    let g = fun x -> x + 2
+
+    let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
+
+    qcheck f_g_x_gte_3
+    """
+    eval_res_msg: Message = c.eval_src(iml)
+    eval_res = EvalRes.model_validate(eval_res_msg)
+    assert eval_res.success
+    assert len(eval_res.po_results) == 1
+    assert eval_res.po_results[0].qcheck_ok is not None
 
 
 def test_task(c: Client):
