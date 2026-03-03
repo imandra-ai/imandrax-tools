@@ -3,7 +3,11 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [18.2.0] - 2026-03-03
+
 - Show result type in VG result context formatting
+- Accept artifact zip pydantic model in pp-goal-state
 
 ## [18.1.0] - 2026-02-09
 
