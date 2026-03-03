@@ -1,0 +1,103 @@
+(* Character classification and case-insensitive string utilities for IML.
+
+   Ported from cmarkit_base.ml (module Ascii), operating on LChar.t
+   (8-bit logic-mode characters) and LString.t (logic-mode strings). *)
+
+(* --- Character code conversion --- *)
+
+let char_code (c : LChar.t) : int =
+  match c with
+  | LChar.Char (b7, b6, b5, b4, b3, b2, b1, b0) ->
+    (if b7 then 128 else 0) +
+    (if b6 then 64 else 0) +
+    (if b5 then 32 else 0) +
+    (if b4 then 16 else 0) +
+    (if b3 then 8 else 0) +
+    (if b2 then 4 else 0) +
+    (if b1 then 2 else 0) +
+    (if b0 then 1 else 0)
+
+(* --- Character classification --- *)
+
+let is_control (c : LChar.t) : bool =
+  let code = char_code c in
+  (code >= 0 && code <= 31) || code = 127
+
+let is_letter (c : LChar.t) : bool =
+  let code = char_code c in
+  (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
+
+let is_upper (c : LChar.t) : bool =
+  let code = char_code c in
+  code >= 65 && code <= 90
+
+let is_lower (c : LChar.t) : bool =
+  let code = char_code c in
+  code >= 97 && code <= 122
+
+let is_digit (c : LChar.t) : bool =
+  let code = char_code c in
+  code >= 48 && code <= 57
+
+let is_hex_digit (c : LChar.t) : bool =
+  let code = char_code c in
+  (code >= 48 && code <= 57) ||
+  (code >= 65 && code <= 70) ||
+  (code >= 97 && code <= 102)
+
+let hex_digit_to_int (c : LChar.t) : int option =
+  let code = char_code c in
+  if code >= 48 && code <= 57 then Some (code - 48)
+  else if code >= 65 && code <= 70 then Some (code - 55)
+  else if code >= 97 && code <= 102 then Some (code - 87)
+  else None
+
+let is_alphanum (c : LChar.t) : bool =
+  is_letter c || is_digit c
+
+let is_white (c : LChar.t) : bool =
+  let code = char_code c in
+  code = 32 || code = 9 || code = 10 ||
+  code = 11 || code = 12 || code = 13
+
+let is_blank (c : LChar.t) : bool =
+  let code = char_code c in
+  code = 32 || code = 9
+
+(* CommonMark ASCII punctuation characters:
+   0x21-0x2F  0x3A-0x40  0x5B-0x60  0x7B-0x7E *)
+let is_punct (c : LChar.t) : bool =
+  let code = char_code c in
+  (code >= 33 && code <= 47) ||
+  (code >= 58 && code <= 64) ||
+  (code >= 91 && code <= 96) ||
+  (code >= 123 && code <= 126)
+
+(* --- Case conversion --- *)
+
+let to_lower (c : LChar.t) : LChar.t =
+  match c with
+  | LChar.Char (b7, b6, _, b4, b3, b2, b1, b0) ->
+    if is_upper c then LChar.Char (b7, b6, true, b4, b3, b2, b1, b0)
+    else c
+
+(* --- String operations --- *)
+
+let rec caseless_prefix (prefix : LString.t) (s : LString.t) : bool =
+  match prefix, s with
+  | [], _ -> true
+  | _ :: _, [] -> false
+  | p :: ps, c :: cs ->
+    to_lower p = to_lower c && caseless_prefix ps cs
+
+let caseless_starts_with (prefix : LString.t) (s : LString.t) : bool =
+  caseless_prefix prefix s
+
+let match_at (sub : LString.t) (s : LString.t) (start : int) : bool =
+  LString.prefix sub (List.drop start s)
+
+let caseless_match (sub : LString.t) (s : LString.t) (start : int) : bool =
+  caseless_prefix sub (List.drop start s)
+
+let lowercase_sub (s : LString.t) (first : int) (len : int) : LString.t =
+  List.map to_lower (LString.sub s first len)
