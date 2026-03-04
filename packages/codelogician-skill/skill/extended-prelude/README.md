@@ -9,4 +9,4 @@ This directory contains additional prelude functions, general purpose utilities.
 
 They are not part of the standard IML prelude which is loaded by default.
 
-The recommended way to use these modules / functions is to copy paste them into your own code.
+The recommended way to use these utility modules / functions is to copy paste the whole directory into your project and then import the modules you need.

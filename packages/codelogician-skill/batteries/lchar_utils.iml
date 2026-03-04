@@ -101,3 +101,353 @@ let caseless_match (sub : LString.t) (s : LString.t) (start : int) : bool =
 
 let lowercase_sub (s : LString.t) (first : int) (len : int) : LString.t =
   List.map to_lower (LString.sub s first len)
+
+
+(* Complete ASCII table: all 128 characters (0-127) *)
+module Ascii_table = struct
+  (* Control characters 0-31 *)
+  let nul = LChar.Char (false, false, false, false, false, false, false, false) (* 0 NUL *)
+  let soh = LChar.Char (false, false, false, false, false, false, false, true)  (* 1 SOH *)
+  let stx = LChar.Char (false, false, false, false, false, false, true,  false) (* 2 STX *)
+  let etx = LChar.Char (false, false, false, false, false, false, true,  true)  (* 3 ETX *)
+  let eot = LChar.Char (false, false, false, false, false, true,  false, false) (* 4 EOT *)
+  let enq = LChar.Char (false, false, false, false, false, true,  false, true)  (* 5 ENQ *)
+  let ack = LChar.Char (false, false, false, false, false, true,  true,  false) (* 6 ACK *)
+  let bel = LChar.Char (false, false, false, false, false, true,  true,  true)  (* 7 BEL *)
+  let bs  = LChar.Char (false, false, false, false, true,  false, false, false) (* 8 BS *)
+  let ht  = LChar.Char (false, false, false, false, true,  false, false, true)  (* 9 HT - horizontal tab *)
+  let lf  = LChar.Char (false, false, false, false, true,  false, true,  false) (* 10 LF - line feed *)
+  let vt  = LChar.Char (false, false, false, false, true,  false, true,  true)  (* 11 VT - vertical tab *)
+  let ff  = LChar.Char (false, false, false, false, true,  true,  false, false) (* 12 FF - form feed *)
+  let cr  = LChar.Char (false, false, false, false, true,  true,  false, true)  (* 13 CR - carriage return *)
+  let so  = LChar.Char (false, false, false, false, true,  true,  true,  false) (* 14 SO *)
+  let si  = LChar.Char (false, false, false, false, true,  true,  true,  true)  (* 15 SI *)
+  let dle = LChar.Char (false, false, false, true,  false, false, false, false) (* 16 DLE *)
+  let dc1 = LChar.Char (false, false, false, true,  false, false, false, true)  (* 17 DC1 *)
+  let dc2 = LChar.Char (false, false, false, true,  false, false, true,  false) (* 18 DC2 *)
+  let dc3 = LChar.Char (false, false, false, true,  false, false, true,  true)  (* 19 DC3 *)
+  let dc4 = LChar.Char (false, false, false, true,  false, true,  false, false) (* 20 DC4 *)
+  let nak = LChar.Char (false, false, false, true,  false, true,  false, true)  (* 21 NAK *)
+  let syn = LChar.Char (false, false, false, true,  false, true,  true,  false) (* 22 SYN *)
+  let etb = LChar.Char (false, false, false, true,  false, true,  true,  true)  (* 23 ETB *)
+  let can = LChar.Char (false, false, false, true,  true,  false, false, false) (* 24 CAN *)
+  let em  = LChar.Char (false, false, false, true,  true,  false, false, true)  (* 25 EM *)
+  let sub = LChar.Char (false, false, false, true,  true,  false, true,  false) (* 26 SUB *)
+  let esc = LChar.Char (false, false, false, true,  true,  false, true,  true)  (* 27 ESC *)
+  let fs  = LChar.Char (false, false, false, true,  true,  true,  false, false) (* 28 FS *)
+  let gs  = LChar.Char (false, false, false, true,  true,  true,  false, true)  (* 29 GS *)
+  let rs  = LChar.Char (false, false, false, true,  true,  true,  true,  false) (* 30 RS *)
+  let us  = LChar.Char (false, false, false, true,  true,  true,  true,  true)  (* 31 US *)
+
+  (* Printable characters 32-47 *)
+  let space       = LChar.Char (false, false, true,  false, false, false, false, false) (* 32 ' ' *)
+  let exclaim     = LChar.Char (false, false, true,  false, false, false, false, true)  (* 33 '!' *)
+  let dquote      = LChar.Char (false, false, true,  false, false, false, true,  false) (* 34 '"' *)
+  let hash        = LChar.Char (false, false, true,  false, false, false, true,  true)  (* 35 '#' *)
+  let dollar      = LChar.Char (false, false, true,  false, false, true,  false, false) (* 36 '$' *)
+  let percent     = LChar.Char (false, false, true,  false, false, true,  false, true)  (* 37 '%' *)
+  let ampersand   = LChar.Char (false, false, true,  false, false, true,  true,  false) (* 38 '&' *)
+  let squote      = LChar.Char (false, false, true,  false, false, true,  true,  true)  (* 39 ''' *)
+  let lparen      = LChar.Char (false, false, true,  false, true,  false, false, false) (* 40 '(' *)
+  let rparen      = LChar.Char (false, false, true,  false, true,  false, false, true)  (* 41 ')' *)
+  let star        = LChar.Char (false, false, true,  false, true,  false, true,  false) (* 42 '*' *)
+  let plus        = LChar.Char (false, false, true,  false, true,  false, true,  true)  (* 43 '+' *)
+  let comma       = LChar.Char (false, false, true,  false, true,  true,  false, false) (* 44 ',' *)
+  let minus       = LChar.Char (false, false, true,  false, true,  true,  false, true)  (* 45 '-' *)
+  let dot         = LChar.Char (false, false, true,  false, true,  true,  true,  false) (* 46 '.' *)
+  let slash       = LChar.Char (false, false, true,  false, true,  true,  true,  true)  (* 47 '/' *)
+
+  (* Digits 48-57 *)
+  let digit_0 = LChar.Char (false, false, true,  true,  false, false, false, false) (* 48 '0' *)
+  let digit_1 = LChar.Char (false, false, true,  true,  false, false, false, true)  (* 49 '1' *)
+  let digit_2 = LChar.Char (false, false, true,  true,  false, false, true,  false) (* 50 '2' *)
+  let digit_3 = LChar.Char (false, false, true,  true,  false, false, true,  true)  (* 51 '3' *)
+  let digit_4 = LChar.Char (false, false, true,  true,  false, true,  false, false) (* 52 '4' *)
+  let digit_5 = LChar.Char (false, false, true,  true,  false, true,  false, true)  (* 53 '5' *)
+  let digit_6 = LChar.Char (false, false, true,  true,  false, true,  true,  false) (* 54 '6' *)
+  let digit_7 = LChar.Char (false, false, true,  true,  false, true,  true,  true)  (* 55 '7' *)
+  let digit_8 = LChar.Char (false, false, true,  true,  true,  false, false, false) (* 56 '8' *)
+  let digit_9 = LChar.Char (false, false, true,  true,  true,  false, false, true)  (* 57 '9' *)
+
+  (* Punctuation 58-64 *)
+  let colon       = LChar.Char (false, false, true,  true,  true,  false, true,  false) (* 58 ':' *)
+  let semicolon   = LChar.Char (false, false, true,  true,  true,  false, true,  true)  (* 59 ';' *)
+  let lt          = LChar.Char (false, false, true,  true,  true,  true,  false, false) (* 60 '<' *)
+  let eq          = LChar.Char (false, false, true,  true,  true,  true,  false, true)  (* 61 '=' *)
+  let gt          = LChar.Char (false, false, true,  true,  true,  true,  true,  false) (* 62 '>' *)
+  let question    = LChar.Char (false, false, true,  true,  true,  true,  true,  true)  (* 63 '?' *)
+  let at          = LChar.Char (false, true,  false, false, false, false, false, false) (* 64 '@' *)
+
+  (* Uppercase letters 65-90 *)
+  let upper_a = LChar.Char (false, true,  false, false, false, false, false, true)  (* 65 'A' *)
+  let upper_b = LChar.Char (false, true,  false, false, false, false, true,  false) (* 66 'B' *)
+  let upper_c = LChar.Char (false, true,  false, false, false, false, true,  true)  (* 67 'C' *)
+  let upper_d = LChar.Char (false, true,  false, false, false, true,  false, false) (* 68 'D' *)
+  let upper_e = LChar.Char (false, true,  false, false, false, true,  false, true)  (* 69 'E' *)
+  let upper_f = LChar.Char (false, true,  false, false, false, true,  true,  false) (* 70 'F' *)
+  let upper_g = LChar.Char (false, true,  false, false, false, true,  true,  true)  (* 71 'G' *)
+  let upper_h = LChar.Char (false, true,  false, false, true,  false, false, false) (* 72 'H' *)
+  let upper_i = LChar.Char (false, true,  false, false, true,  false, false, true)  (* 73 'I' *)
+  let upper_j = LChar.Char (false, true,  false, false, true,  false, true,  false) (* 74 'J' *)
+  let upper_k = LChar.Char (false, true,  false, false, true,  false, true,  true)  (* 75 'K' *)
+  let upper_l = LChar.Char (false, true,  false, false, true,  true,  false, false) (* 76 'L' *)
+  let upper_m = LChar.Char (false, true,  false, false, true,  true,  false, true)  (* 77 'M' *)
+  let upper_n = LChar.Char (false, true,  false, false, true,  true,  true,  false) (* 78 'N' *)
+  let upper_o = LChar.Char (false, true,  false, false, true,  true,  true,  true)  (* 79 'O' *)
+  let upper_p = LChar.Char (false, true,  false, true,  false, false, false, false) (* 80 'P' *)
+  let upper_q = LChar.Char (false, true,  false, true,  false, false, false, true)  (* 81 'Q' *)
+  let upper_r = LChar.Char (false, true,  false, true,  false, false, true,  false) (* 82 'R' *)
+  let upper_s = LChar.Char (false, true,  false, true,  false, false, true,  true)  (* 83 'S' *)
+  let upper_t = LChar.Char (false, true,  false, true,  false, true,  false, false) (* 84 'T' *)
+  let upper_u = LChar.Char (false, true,  false, true,  false, true,  false, true)  (* 85 'U' *)
+  let upper_v = LChar.Char (false, true,  false, true,  false, true,  true,  false) (* 86 'V' *)
+  let upper_w = LChar.Char (false, true,  false, true,  false, true,  true,  true)  (* 87 'W' *)
+  let upper_x = LChar.Char (false, true,  false, true,  true,  false, false, false) (* 88 'X' *)
+  let upper_y = LChar.Char (false, true,  false, true,  true,  false, false, true)  (* 89 'Y' *)
+  let upper_z = LChar.Char (false, true,  false, true,  true,  false, true,  false) (* 90 'Z' *)
+
+  (* Punctuation 91-96 *)
+  let lbracket    = LChar.Char (false, true,  false, true,  true,  false, true,  true)  (* 91 '[' *)
+  let backslash   = LChar.Char (false, true,  false, true,  true,  true,  false, false) (* 92 '\' *)
+  let rbracket    = LChar.Char (false, true,  false, true,  true,  true,  false, true)  (* 93 ']' *)
+  let caret       = LChar.Char (false, true,  false, true,  true,  true,  true,  false) (* 94 '^' *)
+  let underscore  = LChar.Char (false, true,  false, true,  true,  true,  true,  true)  (* 95 '_' *)
+  let backtick    = LChar.Char (false, true,  true,  false, false, false, false, false) (* 96 '`' *)
+
+  (* Lowercase letters 97-122 *)
+  let lower_a = LChar.Char (false, true,  true,  false, false, false, false, true)  (* 97 'a' *)
+  let lower_b = LChar.Char (false, true,  true,  false, false, false, true,  false) (* 98 'b' *)
+  let lower_c = LChar.Char (false, true,  true,  false, false, false, true,  true)  (* 99 'c' *)
+  let lower_d = LChar.Char (false, true,  true,  false, false, true,  false, false) (* 100 'd' *)
+  let lower_e = LChar.Char (false, true,  true,  false, false, true,  false, true)  (* 101 'e' *)
+  let lower_f = LChar.Char (false, true,  true,  false, false, true,  true,  false) (* 102 'f' *)
+  let lower_g = LChar.Char (false, true,  true,  false, false, true,  true,  true)  (* 103 'g' *)
+  let lower_h = LChar.Char (false, true,  true,  false, true,  false, false, false) (* 104 'h' *)
+  let lower_i = LChar.Char (false, true,  true,  false, true,  false, false, true)  (* 105 'i' *)
+  let lower_j = LChar.Char (false, true,  true,  false, true,  false, true,  false) (* 106 'j' *)
+  let lower_k = LChar.Char (false, true,  true,  false, true,  false, true,  true)  (* 107 'k' *)
+  let lower_l = LChar.Char (false, true,  true,  false, true,  true,  false, false) (* 108 'l' *)
+  let lower_m = LChar.Char (false, true,  true,  false, true,  true,  false, true)  (* 109 'm' *)
+  let lower_n = LChar.Char (false, true,  true,  false, true,  true,  true,  false) (* 110 'n' *)
+  let lower_o = LChar.Char (false, true,  true,  false, true,  true,  true,  true)  (* 111 'o' *)
+  let lower_p = LChar.Char (false, true,  true,  true,  false, false, false, false) (* 112 'p' *)
+  let lower_q = LChar.Char (false, true,  true,  true,  false, false, false, true)  (* 113 'q' *)
+  let lower_r = LChar.Char (false, true,  true,  true,  false, false, true,  false) (* 114 'r' *)
+  let lower_s = LChar.Char (false, true,  true,  true,  false, false, true,  true)  (* 115 's' *)
+  let lower_t = LChar.Char (false, true,  true,  true,  false, true,  false, false) (* 116 't' *)
+  let lower_u = LChar.Char (false, true,  true,  true,  false, true,  false, true)  (* 117 'u' *)
+  let lower_v = LChar.Char (false, true,  true,  true,  false, true,  true,  false) (* 118 'v' *)
+  let lower_w = LChar.Char (false, true,  true,  true,  false, true,  true,  true)  (* 119 'w' *)
+  let lower_x = LChar.Char (false, true,  true,  true,  true,  false, false, false) (* 120 'x' *)
+  let lower_y = LChar.Char (false, true,  true,  true,  true,  false, false, true)  (* 121 'y' *)
+  let lower_z = LChar.Char (false, true,  true,  true,  true,  false, true,  false) (* 122 'z' *)
+
+  (* Punctuation 123-126 *)
+  let lbrace = LChar.Char (false, true,  true,  true,  true,  false, true,  true)  (* 123 '{' *)
+  let pipe   = LChar.Char (false, true,  true,  true,  true,  true,  false, false) (* 124 '|' *)
+  let rbrace = LChar.Char (false, true,  true,  true,  true,  true,  false, true)  (* 125 '}' *)
+  let tilde  = LChar.Char (false, true,  true,  true,  true,  true,  true,  false) (* 126 '~' *)
+
+  (* DEL 127 *)
+  let del = LChar.Char (false, true,  true,  true,  true,  true,  true,  true)  (* 127 DEL *)
+
+  (* Alias *)
+  let _0 = digit_0
+  let _1 = digit_1
+  let _2 = digit_2
+  let _3 = digit_3
+  let _4 = digit_4
+  let _5 = digit_5
+  let _6 = digit_6
+  let _7 = digit_7
+  let _8 = digit_8
+  let _9 = digit_9
+  let d0 = digit_0
+  let d1 = digit_1
+  let d2 = digit_2
+  let d3 = digit_3
+  let d4 = digit_4
+  let d5 = digit_5
+  let d6 = digit_6
+  let d7 = digit_7
+  let d8 = digit_8
+  let d9 = digit_9
+  let zero = digit_0
+  let one = digit_1
+  let two = digit_2
+  let three = digit_3
+  let four = digit_4
+  let five = digit_5
+  let six = digit_6
+  let seven = digit_7
+  let eight = digit_8
+  let nine = digit_9
+
+  let a = lower_a
+  let b = lower_b
+  let c = lower_c
+  let d = lower_d
+  let e = lower_e
+  let f = lower_f
+  let g = lower_g
+  let h = lower_h
+  let i = lower_i
+  let j = lower_j
+  let k = lower_k
+  let l = lower_l
+  let m = lower_m
+  let n = lower_n
+  let o = lower_o
+  let p = lower_p
+  let q = lower_q
+  let r = lower_r
+  let s = lower_s
+  let t = lower_t
+  let u = lower_u
+  let v = lower_v
+  let w = lower_w
+  let x = lower_x
+  let y = lower_y
+  let z = lower_z
+end
+
+let lchar_of_string_opt (s : string) : LChar.t option =
+  match s with
+  (* Control characters 0-31 *)
+  | "\000" -> Some Ascii_table.nul
+  | "\001" -> Some Ascii_table.soh
+  | "\002" -> Some Ascii_table.stx
+  | "\003" -> Some Ascii_table.etx
+  | "\004" -> Some Ascii_table.eot
+  | "\005" -> Some Ascii_table.enq
+  | "\006" -> Some Ascii_table.ack
+  | "\007" -> Some Ascii_table.bel
+  | "\008" -> Some Ascii_table.bs
+  | "\t"   -> Some Ascii_table.ht
+  | "\n"   -> Some Ascii_table.lf
+  | "\011" -> Some Ascii_table.vt
+  | "\012" -> Some Ascii_table.ff
+  | "\r"   -> Some Ascii_table.cr
+  | "\014" -> Some Ascii_table.so
+  | "\015" -> Some Ascii_table.si
+  | "\016" -> Some Ascii_table.dle
+  | "\017" -> Some Ascii_table.dc1
+  | "\018" -> Some Ascii_table.dc2
+  | "\019" -> Some Ascii_table.dc3
+  | "\020" -> Some Ascii_table.dc4
+  | "\021" -> Some Ascii_table.nak
+  | "\022" -> Some Ascii_table.syn
+  | "\023" -> Some Ascii_table.etb
+  | "\024" -> Some Ascii_table.can
+  | "\025" -> Some Ascii_table.em
+  | "\026" -> Some Ascii_table.sub
+  | "\027" -> Some Ascii_table.esc
+  | "\028" -> Some Ascii_table.fs
+  | "\029" -> Some Ascii_table.gs
+  | "\030" -> Some Ascii_table.rs
+  | "\031" -> Some Ascii_table.us
+  (* Printable characters 32-47 *)
+  | " "  -> Some Ascii_table.space
+  | "!"  -> Some Ascii_table.exclaim
+  | "\"" -> Some Ascii_table.dquote
+  | "#"  -> Some Ascii_table.hash
+  | "$"  -> Some Ascii_table.dollar
+  | "%"  -> Some Ascii_table.percent
+  | "&"  -> Some Ascii_table.ampersand
+  | "'"  -> Some Ascii_table.squote
+  | "("  -> Some Ascii_table.lparen
+  | ")"  -> Some Ascii_table.rparen
+  | "*"  -> Some Ascii_table.star
+  | "+"  -> Some Ascii_table.plus
+  | ","  -> Some Ascii_table.comma
+  | "-"  -> Some Ascii_table.minus
+  | "."  -> Some Ascii_table.dot
+  | "/"  -> Some Ascii_table.slash
+  (* Digits 48-57 *)
+  | "0"  -> Some Ascii_table.digit_0
+  | "1"  -> Some Ascii_table.digit_1
+  | "2"  -> Some Ascii_table.digit_2
+  | "3"  -> Some Ascii_table.digit_3
+  | "4"  -> Some Ascii_table.digit_4
+  | "5"  -> Some Ascii_table.digit_5
+  | "6"  -> Some Ascii_table.digit_6
+  | "7"  -> Some Ascii_table.digit_7
+  | "8"  -> Some Ascii_table.digit_8
+  | "9"  -> Some Ascii_table.digit_9
+  (* Punctuation 58-64 *)
+  | ":"  -> Some Ascii_table.colon
+  | ";"  -> Some Ascii_table.semicolon
+  | "<"  -> Some Ascii_table.lt
+  | "="  -> Some Ascii_table.eq
+  | ">"  -> Some Ascii_table.gt
+  | "?"  -> Some Ascii_table.question
+  | "@"  -> Some Ascii_table.at
+  (* Uppercase letters 65-90 *)
+  | "A"  -> Some Ascii_table.upper_a
+  | "B"  -> Some Ascii_table.upper_b
+  | "C"  -> Some Ascii_table.upper_c
+  | "D"  -> Some Ascii_table.upper_d
+  | "E"  -> Some Ascii_table.upper_e
+  | "F"  -> Some Ascii_table.upper_f
+  | "G"  -> Some Ascii_table.upper_g
+  | "H"  -> Some Ascii_table.upper_h
+  | "I"  -> Some Ascii_table.upper_i
+  | "J"  -> Some Ascii_table.upper_j
+  | "K"  -> Some Ascii_table.upper_k
+  | "L"  -> Some Ascii_table.upper_l
+  | "M"  -> Some Ascii_table.upper_m
+  | "N"  -> Some Ascii_table.upper_n
+  | "O"  -> Some Ascii_table.upper_o
+  | "P"  -> Some Ascii_table.upper_p
+  | "Q"  -> Some Ascii_table.upper_q
+  | "R"  -> Some Ascii_table.upper_r
+  | "S"  -> Some Ascii_table.upper_s
+  | "T"  -> Some Ascii_table.upper_t
+  | "U"  -> Some Ascii_table.upper_u
+  | "V"  -> Some Ascii_table.upper_v
+  | "W"  -> Some Ascii_table.upper_w
+  | "X"  -> Some Ascii_table.upper_x
+  | "Y"  -> Some Ascii_table.upper_y
+  | "Z"  -> Some Ascii_table.upper_z
+  (* Punctuation 91-96 *)
+  | "["  -> Some Ascii_table.lbracket
+  | "\\" -> Some Ascii_table.backslash
+  | "]"  -> Some Ascii_table.rbracket
+  | "^"  -> Some Ascii_table.caret
+  | "_"  -> Some Ascii_table.underscore
+  | "`"  -> Some Ascii_table.backtick
+  (* Lowercase letters 97-122 *)
+  | "a"  -> Some Ascii_table.lower_a
+  | "b"  -> Some Ascii_table.lower_b
+  | "c"  -> Some Ascii_table.lower_c
+  | "d"  -> Some Ascii_table.lower_d
+  | "e"  -> Some Ascii_table.lower_e
+  | "f"  -> Some Ascii_table.lower_f
+  | "g"  -> Some Ascii_table.lower_g
+  | "h"  -> Some Ascii_table.lower_h
+  | "i"  -> Some Ascii_table.lower_i
+  | "j"  -> Some Ascii_table.lower_j
+  | "k"  -> Some Ascii_table.lower_k
+  | "l"  -> Some Ascii_table.lower_l
+  | "m"  -> Some Ascii_table.lower_m
+  | "n"  -> Some Ascii_table.lower_n
+  | "o"  -> Some Ascii_table.lower_o
+  | "p"  -> Some Ascii_table.lower_p
+  | "q"  -> Some Ascii_table.lower_q
+  | "r"  -> Some Ascii_table.lower_r
+  | "s"  -> Some Ascii_table.lower_s
+  | "t"  -> Some Ascii_table.lower_t
+  | "u"  -> Some Ascii_table.lower_u
+  | "v"  -> Some Ascii_table.lower_v
+  | "w"  -> Some Ascii_table.lower_w
+  | "x"  -> Some Ascii_table.lower_x
+  | "y"  -> Some Ascii_table.lower_y
+  | "z"  -> Some Ascii_table.lower_z
+  (* Punctuation 123-126 *)
+  | "{"  -> Some Ascii_table.lbrace
+  | "|"  -> Some Ascii_table.pipe
+  | "}"  -> Some Ascii_table.rbrace
+  | "~"  -> Some Ascii_table.tilde
+  (* DEL 127 *)
+  | "\127" -> Some Ascii_table.del
+  | _    -> None
