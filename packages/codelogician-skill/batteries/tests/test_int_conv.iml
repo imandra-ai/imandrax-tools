@@ -10,22 +10,22 @@ let lstr_42 = {l|42|l}
 let lstr_neg1 = {l|-1|l}
 let lstr_100 = {l|100|l}
 
-verify (Int_conv.string_of_int 0 = lstr_0)
-verify (Int_conv.string_of_int 42 = lstr_42)
-verify (Int_conv.string_of_int (-1) = lstr_neg1)
-verify (Int_conv.string_of_int 100 = lstr_100)
+verify (Int_conv.string_of_int 0 = lstr_0)  [@@by ground_eval ()]
+verify (Int_conv.string_of_int 42 = lstr_42)  [@@by ground_eval ()]
+verify (Int_conv.string_of_int (-1) = lstr_neg1)  [@@by ground_eval ()]
+verify (Int_conv.string_of_int 100 = lstr_100)  [@@by ground_eval ()]
 
 (* --- int_of_string --- *)
 
-verify (Int_conv.int_of_string lstr_42 = Some 42)
-verify (Int_conv.int_of_string lstr_neg1 = Some (-1))
-verify (Int_conv.int_of_string lstr_0 = Some 0)
-verify (Int_conv.int_of_string [] = (None : int option))
-verify (Int_conv.int_of_string {l|hello|l} = (None : int option))
+verify (Int_conv.int_of_string lstr_42 = Some 42)  [@@by ground_eval ()]
+verify (Int_conv.int_of_string lstr_neg1 = Some (-1))  [@@by ground_eval ()]
+verify (Int_conv.int_of_string lstr_0 = Some 0)  [@@by ground_eval ()] 
+verify (Int_conv.int_of_string [] = (None : int option))  [@@by ground_eval ()]
+verify (Int_conv.int_of_string {l|hello|l} = (None : int option))  [@@by ground_eval ()]
 
 (* --- char_of_code roundtrip --- *)
 
 let char_A = List.hd {l|A|l}
 
-verify (Lchar_utils.char_code (Int_conv.char_of_code 65) = 65)
-verify (Int_conv.char_of_code (Lchar_utils.char_code char_A) = char_A)
+verify (Lchar_utils.char_code (Int_conv.char_of_code 65) = 65)  [@@by ground_eval ()]
+verify (Int_conv.char_of_code (Lchar_utils.char_code char_A) = char_A)  [@@by ground_eval ()]
