@@ -1,6 +1,6 @@
 ---
 name: extended-prelude
-description: Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc.
+description: Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Copy paste the whole directory into your project and then import the modules you need.
 ---
 
 # Extended prelude

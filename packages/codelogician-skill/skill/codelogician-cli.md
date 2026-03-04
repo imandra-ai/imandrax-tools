@@ -1,18 +1,18 @@
 ---
 name: codelogician-cli
-description: Guide for using the `codelogician-tools` CLI to interact with ImandraX and access additional features.
+description: Guide for using the `codelogician-lite` CLI to interact with ImandraX and access additional features.
 ---
 
-# `codelogician-tools` CLI
+# `codelogician-lite` CLI
 
 ## Installation
 
-- `codelogician-tools` can be installed by `uv tool install codelogician` or `pip install codelogician`.
-- Installing `codelogician` will make both `codelogician` and `codelogician-tools` available.
-  - `codelogician-tools` is recommended for file-system-based agent (Claude Code, Codex, Gemini CLI, etc.).
+- `codelogician-lite` can be installed by `uv tool install codelogician` or `pip install codelogician`.
+- Installing `codelogician` will make both `codelogician` and `codelogician-lite` available.
+  - `codelogician-lite` is recommended for file-system-based agent (Claude Code, Codex, Gemini CLI, etc.).
 
 ```
-codelogician-tools --help
+codelogician-lite --help
 # codelogician --help
 ```
 
@@ -56,7 +56,7 @@ Refer to `--help` for most up-to-date usage docs.
 ## Tips
 
 ### Possible `check` results
-The most important command is `codelogician-tools check <file.iml>`.
+The most important command is `codelogician-lite check <file.iml>`.
 - It tries to compile and admit all structures in the file.
 - Possible outcomes:
   - 1. syntax error

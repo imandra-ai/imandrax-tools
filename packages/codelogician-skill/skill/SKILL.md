@@ -10,7 +10,7 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
 - IML (Imandra Modeling Language), a formalized Higher-Order subset of OCaml extended with theorem proving tactics and verification annotations. ImandraX is the reasoning engine that powers IML.
 - Verification: a process of proving a goal (some properties) or finding a counter-example if the goal is not satisfied. The process can be fully automated or interactive (guided with tactics).
 - Region decomposition is a powerful feature of ImandraX for analyzing the state-space of functions. It automatically partitions a function’s input domain into disjoint regions, each characterized by a set of constraints and a corresponding simplified invariant behavior of the function within that region. Test cases can be further generated from these regions.
-- `codelogician` / `codelogician-tools` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
+- `codelogician` / `codelogician-lite` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
 
 ## Typical workflow when working with IML
 - Write IML code, corresponding to your specification or program to be verified / tested. Admit IML code with ImandraX and correct type errors if any.
@@ -22,14 +22,14 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-- To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX via `codelogician-tools` CLI. `codelogician-tools` CLI is designed to be used by file-system-based agents with a LLM-friendly interface.
+- To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX via `codelogician-lite` CLI. `codelogician-lite` CLI is designed to be used by file-system-based agents with a LLM-friendly interface.
   - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
   - Use `check-vg` / `check-decomp` with `--index` option to pass specific VGs or decompositions to check (after `check` emits no errors).
 
 
 ## Getting started
 
-To get started up to speed with IML, read the top-level guide on [IML syntax](iml-syntax.md) and the `codelogician-tools` CLI ([codelogician-cli.md](codelogician-cli.md)). That should be enough to equipped you with the knowledge to write IML code and learn-by-doing. 
+To get started up to speed with IML, read the top-level guide on [IML syntax](iml-syntax.md) and the `codelogician-lite` CLI ([codelogician-cli.md](codelogician-cli.md)). That should be enough to equipped you with the knowledge to write IML code and learn-by-doing. 
 
 Check out import syntax for modular development.
 
@@ -38,7 +38,7 @@ Only when encountering tasks related to verification, region-decomp, or tactic-b
 Tips: 
 - A tip for explorative development is to use heredoc to pass a IML snippet to `check` for quick testing. For example:
 ```bash
-cat <<'EOF' | codelogician-tools check -
+cat <<'EOF' | codelogician-lite check -
 let f x = x + 1
 EOF
 ```
@@ -59,7 +59,7 @@ EOF
 ├── examples/ # Worked examples
 │   └── basic-iml-syntax.md
 ├── extended-prelude/
-│   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc.
+│   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Copy paste the whole directory into your project and then import the modules you need.
 ├── reference/ # Language and API reference
 │   ├── api/ # Module-level API docs
 │   │   ├── Int.md
@@ -78,7 +78,7 @@ EOF
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Complete reference for all proof tactics
 ├── SKILL.md
-├── codelogician-cli.md # Guide for using the `codelogician-tools` CLI to interact with ImandraX and access additional features.
+├── codelogician-cli.md # Guide for using the `codelogician-lite` CLI to interact with ImandraX and access additional features.
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
