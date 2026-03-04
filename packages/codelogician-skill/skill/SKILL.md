@@ -1,6 +1,7 @@
 ---
 name: codelogician
-description: Use IML (Imandra Modeling Language) / ImandraX to reason about software engineering (programs and specifications) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc.
+description: Use IML (Imandra Modeling Language) / ImandraX to reason about software engineering (programs and specifications) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc. Read me whenever you see
+mentioning of IML / Imandra / CodeLogician.
 ---
 
 # CodeLogician
