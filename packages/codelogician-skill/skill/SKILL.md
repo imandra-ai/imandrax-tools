@@ -1,7 +1,7 @@
 ---
 name: codelogician
-description: Use IML (Imandra Modeling Language) / ImandraX to reason about software engineering (programs and specifications) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc. Read me whenever you see
-mentioning of IML / Imandra / CodeLogician.
+description: >
+ Use IML (Imandra Modeling Language) / ImandraX to reason about software engineering (programs and specifications) - formal verification, theorem proving, counter-example generation, region decomposition / test-case generation, etc. Read me whenever you see mentioning of IML / Imandra / CodeLogician.
 ---
 
 # CodeLogician
@@ -83,5 +83,6 @@ EOF
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
+├── unit-testing.md # Writing unit tests in IML using verify with ground_eval and expand. Very useful for incrementally building up IML projects.
 └── verification-with-verify-and-instance.md # Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
 ```

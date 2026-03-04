@@ -1,6 +1,6 @@
 ---
 name: unit-testing
-description: Writing unit tests in IML using verify with ground_eval and expand
+description: Writing unit tests in IML using verify with ground_eval and expand. Very useful for incrementally building up IML projects.
 ---
 
 # Unit Testing in IML
