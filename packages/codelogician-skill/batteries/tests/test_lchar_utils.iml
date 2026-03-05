@@ -57,3 +57,62 @@ verify (Lchar_utils.caseless_starts_with hel hello_upper)  [@@by ground_eval ()]
 verify (not (Lchar_utils.caseless_starts_with hello hel))  [@@by ground_eval ()]
 verify (Lchar_utils.match_at hel hello 0)  [@@by ground_eval ()]
 verify (not (Lchar_utils.match_at hel hello 1))  [@@by ground_eval ()]
+
+(* --- higher bytes (128-255) --- *)
+
+(* char_code for high bytes *)
+verify (Lchar_utils.char_code Lchar_utils.Char_table.x80 = 128)  [@@by ground_eval ()]
+verify (Lchar_utils.char_code Lchar_utils.Char_table.xff = 255)  [@@by ground_eval ()]
+verify (Lchar_utils.char_code Lchar_utils.Char_table.xc0 = 192)  [@@by ground_eval ()]
+verify (Lchar_utils.char_code Lchar_utils.Char_table.xa0 = 160)  [@@by ground_eval ()]
+
+(* High bytes are not ASCII letters, digits, or punctuation *)
+verify (not (Lchar_utils.is_letter Lchar_utils.Char_table.x80))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_digit Lchar_utils.Char_table.xff))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_upper Lchar_utils.Char_table.xc0))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_lower Lchar_utils.Char_table.xa0))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_alphanum Lchar_utils.Char_table.x80))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_punct Lchar_utils.Char_table.xff))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_white Lchar_utils.Char_table.xa0))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_blank Lchar_utils.Char_table.xa0))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_control Lchar_utils.Char_table.x80))  [@@by ground_eval ()]
+verify (not (Lchar_utils.is_hex_digit Lchar_utils.Char_table.xff))  [@@by ground_eval ()]
+
+(* to_lower is identity for high bytes (not uppercase ASCII) *)
+verify (Lchar_utils.to_lower Lchar_utils.Char_table.x80 = Lchar_utils.Char_table.x80)  [@@by ground_eval ()]
+verify (Lchar_utils.to_lower Lchar_utils.Char_table.xff = Lchar_utils.Char_table.xff)  [@@by ground_eval ()]
+
+(* --- roundtrip: LString/LChar ↔ string --- *)
+
+(* Single char roundtrip via lchar_of_string_opt / string_of_lchar *)
+verify (Lchar_utils.string_of_lchar char_A = "A")  [@@by ground_eval ()]
+verify (Lchar_utils.string_of_lchar char_a = "a")  [@@by ground_eval ()]
+verify (Lchar_utils.string_of_lchar char_0 = "0")  [@@by ground_eval ()]
+verify (Lchar_utils.string_of_lchar char_space = " ")  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt "A" = Some char_A)  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt "a" = Some char_a)  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt "0" = Some char_0)  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt " " = Some char_space)  [@@by ground_eval ()]
+
+
+verify (Lchar_utils.string_of_lstring {l|hello|l} = "hello")  [@@by ground_eval ()]
+
+(* Roundtrip: string_of_lchar (get (lchar_of_string_opt s)) = s *)
+let roundtrip_A = Lchar_utils.string_of_lchar char_A = "A"
+  && Lchar_utils.lchar_of_string_opt "A" = Some char_A
+verify roundtrip_A  [@@by expand "roundtrip_A" @> ground_eval ()]
+
+let roundtrip_tilde =
+  let c = Lchar_utils.Char_table.tilde in
+  Lchar_utils.string_of_lchar c = "~"
+  && Lchar_utils.lchar_of_string_opt "~" = Some c
+verify roundtrip_tilde  [@@by expand "roundtrip_tilde" @> ground_eval ()]
+
+(* High byte roundtrip *)
+verify (Lchar_utils.string_of_lchar Lchar_utils.Char_table.x80 = "\x80")  [@@by ground_eval ()]
+verify (Lchar_utils.string_of_lchar Lchar_utils.Char_table.xff = "\xFF")  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt "\x80" = Some Lchar_utils.Char_table.x80)  [@@by ground_eval ()]
+verify (Lchar_utils.lchar_of_string_opt "\xFF" = Some Lchar_utils.Char_table.xff)  [@@by ground_eval ()]
+
+(* LString ↔ Char_table: {l|...|l} literal matches expected LChar list *)
+verify ({l|hello|l} = [Lchar_utils.Char_table.h; Lchar_utils.Char_table.e; Lchar_utils.Char_table.l; Lchar_utils.Char_table.l; Lchar_utils.Char_table.o])  [@@by ground_eval ()]
