@@ -11,6 +11,13 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
-.PHONY: update-skill-reference
-update-skill-reference:  ## Update SKILL.md with the latest directory structure
+BATTERIES_SRC := $(shell find batteries -type f)
+SKILL_MD_DEPS := $(filter-out skill/SKILL.md, $(wildcard skill/*.md))
+
+skill/extended-prelude: $(BATTERIES_SRC)  ## Copy batteries to extended-prelude
+	rsync -a --delete --exclude='tests/' --exclude='README.md' batteries/ $@/
+
+skill/SKILL.md: $(SKILL_MD_DEPS) skill/extended-prelude  ## Update SKILL.md with the latest directory structure
 	janet scripts/update-skill-reference.janet
+
+skill: skill/SKILL.md  ## Update skill/
