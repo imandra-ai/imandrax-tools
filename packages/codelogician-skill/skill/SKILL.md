@@ -43,6 +43,7 @@ cat <<'EOF' | codelogician-lite check -
 let f x = x + 1
 EOF
 ```
+  - Note: stdin `check` doesn't support import syntax
 
 
 ## More in-depth references in current directory
