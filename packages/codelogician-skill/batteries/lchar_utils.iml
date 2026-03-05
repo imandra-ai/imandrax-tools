@@ -104,7 +104,7 @@ let lowercase_sub (s : LString.t) (first : int) (len : int) : LString.t =
 
 
 (* Complete ASCII table: all 128 characters (0-127) *)
-module Ascii_table = struct
+module Char_table = struct
   (* Control characters 0-31 *)
   let nul = LChar.Char (false, false, false, false, false, false, false, false) (* 0 NUL *)
   let soh = LChar.Char (false, false, false, false, false, false, false, true)  (* 1 SOH *)
@@ -251,6 +251,136 @@ module Ascii_table = struct
   (* DEL 127 *)
   let del = LChar.Char (false, true,  true,  true,  true,  true,  true,  true)  (* 127 DEL *)
 
+  (* High bytes 128-255 *)
+  let x80 = LChar.Char (true,  false, false, false, false, false, false, false) (* 128 0x80 *)
+  let x81 = LChar.Char (true,  false, false, false, false, false, false, true)  (* 129 0x81 *)
+  let x82 = LChar.Char (true,  false, false, false, false, false, true,  false) (* 130 0x82 *)
+  let x83 = LChar.Char (true,  false, false, false, false, false, true,  true)  (* 131 0x83 *)
+  let x84 = LChar.Char (true,  false, false, false, false, true,  false, false) (* 132 0x84 *)
+  let x85 = LChar.Char (true,  false, false, false, false, true,  false, true)  (* 133 0x85 *)
+  let x86 = LChar.Char (true,  false, false, false, false, true,  true,  false) (* 134 0x86 *)
+  let x87 = LChar.Char (true,  false, false, false, false, true,  true,  true)  (* 135 0x87 *)
+  let x88 = LChar.Char (true,  false, false, false, true,  false, false, false) (* 136 0x88 *)
+  let x89 = LChar.Char (true,  false, false, false, true,  false, false, true)  (* 137 0x89 *)
+  let x8a = LChar.Char (true,  false, false, false, true,  false, true,  false) (* 138 0x8A *)
+  let x8b = LChar.Char (true,  false, false, false, true,  false, true,  true)  (* 139 0x8B *)
+  let x8c = LChar.Char (true,  false, false, false, true,  true,  false, false) (* 140 0x8C *)
+  let x8d = LChar.Char (true,  false, false, false, true,  true,  false, true)  (* 141 0x8D *)
+  let x8e = LChar.Char (true,  false, false, false, true,  true,  true,  false) (* 142 0x8E *)
+  let x8f = LChar.Char (true,  false, false, false, true,  true,  true,  true)  (* 143 0x8F *)
+  let x90 = LChar.Char (true,  false, false, true,  false, false, false, false) (* 144 0x90 *)
+  let x91 = LChar.Char (true,  false, false, true,  false, false, false, true)  (* 145 0x91 *)
+  let x92 = LChar.Char (true,  false, false, true,  false, false, true,  false) (* 146 0x92 *)
+  let x93 = LChar.Char (true,  false, false, true,  false, false, true,  true)  (* 147 0x93 *)
+  let x94 = LChar.Char (true,  false, false, true,  false, true,  false, false) (* 148 0x94 *)
+  let x95 = LChar.Char (true,  false, false, true,  false, true,  false, true)  (* 149 0x95 *)
+  let x96 = LChar.Char (true,  false, false, true,  false, true,  true,  false) (* 150 0x96 *)
+  let x97 = LChar.Char (true,  false, false, true,  false, true,  true,  true)  (* 151 0x97 *)
+  let x98 = LChar.Char (true,  false, false, true,  true,  false, false, false) (* 152 0x98 *)
+  let x99 = LChar.Char (true,  false, false, true,  true,  false, false, true)  (* 153 0x99 *)
+  let x9a = LChar.Char (true,  false, false, true,  true,  false, true,  false) (* 154 0x9A *)
+  let x9b = LChar.Char (true,  false, false, true,  true,  false, true,  true)  (* 155 0x9B *)
+  let x9c = LChar.Char (true,  false, false, true,  true,  true,  false, false) (* 156 0x9C *)
+  let x9d = LChar.Char (true,  false, false, true,  true,  true,  false, true)  (* 157 0x9D *)
+  let x9e = LChar.Char (true,  false, false, true,  true,  true,  true,  false) (* 158 0x9E *)
+  let x9f = LChar.Char (true,  false, false, true,  true,  true,  true,  true)  (* 159 0x9F *)
+  let xa0 = LChar.Char (true,  false, true,  false, false, false, false, false) (* 160 0xA0 *)
+  let xa1 = LChar.Char (true,  false, true,  false, false, false, false, true)  (* 161 0xA1 *)
+  let xa2 = LChar.Char (true,  false, true,  false, false, false, true,  false) (* 162 0xA2 *)
+  let xa3 = LChar.Char (true,  false, true,  false, false, false, true,  true)  (* 163 0xA3 *)
+  let xa4 = LChar.Char (true,  false, true,  false, false, true,  false, false) (* 164 0xA4 *)
+  let xa5 = LChar.Char (true,  false, true,  false, false, true,  false, true)  (* 165 0xA5 *)
+  let xa6 = LChar.Char (true,  false, true,  false, false, true,  true,  false) (* 166 0xA6 *)
+  let xa7 = LChar.Char (true,  false, true,  false, false, true,  true,  true)  (* 167 0xA7 *)
+  let xa8 = LChar.Char (true,  false, true,  false, true,  false, false, false) (* 168 0xA8 *)
+  let xa9 = LChar.Char (true,  false, true,  false, true,  false, false, true)  (* 169 0xA9 *)
+  let xaa = LChar.Char (true,  false, true,  false, true,  false, true,  false) (* 170 0xAA *)
+  let xab = LChar.Char (true,  false, true,  false, true,  false, true,  true)  (* 171 0xAB *)
+  let xac = LChar.Char (true,  false, true,  false, true,  true,  false, false) (* 172 0xAC *)
+  let xad = LChar.Char (true,  false, true,  false, true,  true,  false, true)  (* 173 0xAD *)
+  let xae = LChar.Char (true,  false, true,  false, true,  true,  true,  false) (* 174 0xAE *)
+  let xaf = LChar.Char (true,  false, true,  false, true,  true,  true,  true)  (* 175 0xAF *)
+  let xb0 = LChar.Char (true,  false, true,  true,  false, false, false, false) (* 176 0xB0 *)
+  let xb1 = LChar.Char (true,  false, true,  true,  false, false, false, true)  (* 177 0xB1 *)
+  let xb2 = LChar.Char (true,  false, true,  true,  false, false, true,  false) (* 178 0xB2 *)
+  let xb3 = LChar.Char (true,  false, true,  true,  false, false, true,  true)  (* 179 0xB3 *)
+  let xb4 = LChar.Char (true,  false, true,  true,  false, true,  false, false) (* 180 0xB4 *)
+  let xb5 = LChar.Char (true,  false, true,  true,  false, true,  false, true)  (* 181 0xB5 *)
+  let xb6 = LChar.Char (true,  false, true,  true,  false, true,  true,  false) (* 182 0xB6 *)
+  let xb7 = LChar.Char (true,  false, true,  true,  false, true,  true,  true)  (* 183 0xB7 *)
+  let xb8 = LChar.Char (true,  false, true,  true,  true,  false, false, false) (* 184 0xB8 *)
+  let xb9 = LChar.Char (true,  false, true,  true,  true,  false, false, true)  (* 185 0xB9 *)
+  let xba = LChar.Char (true,  false, true,  true,  true,  false, true,  false) (* 186 0xBA *)
+  let xbb = LChar.Char (true,  false, true,  true,  true,  false, true,  true)  (* 187 0xBB *)
+  let xbc = LChar.Char (true,  false, true,  true,  true,  true,  false, false) (* 188 0xBC *)
+  let xbd = LChar.Char (true,  false, true,  true,  true,  true,  false, true)  (* 189 0xBD *)
+  let xbe = LChar.Char (true,  false, true,  true,  true,  true,  true,  false) (* 190 0xBE *)
+  let xbf = LChar.Char (true,  false, true,  true,  true,  true,  true,  true)  (* 191 0xBF *)
+  let xc0 = LChar.Char (true,  true,  false, false, false, false, false, false) (* 192 0xC0 *)
+  let xc1 = LChar.Char (true,  true,  false, false, false, false, false, true)  (* 193 0xC1 *)
+  let xc2 = LChar.Char (true,  true,  false, false, false, false, true,  false) (* 194 0xC2 *)
+  let xc3 = LChar.Char (true,  true,  false, false, false, false, true,  true)  (* 195 0xC3 *)
+  let xc4 = LChar.Char (true,  true,  false, false, false, true,  false, false) (* 196 0xC4 *)
+  let xc5 = LChar.Char (true,  true,  false, false, false, true,  false, true)  (* 197 0xC5 *)
+  let xc6 = LChar.Char (true,  true,  false, false, false, true,  true,  false) (* 198 0xC6 *)
+  let xc7 = LChar.Char (true,  true,  false, false, false, true,  true,  true)  (* 199 0xC7 *)
+  let xc8 = LChar.Char (true,  true,  false, false, true,  false, false, false) (* 200 0xC8 *)
+  let xc9 = LChar.Char (true,  true,  false, false, true,  false, false, true)  (* 201 0xC9 *)
+  let xca = LChar.Char (true,  true,  false, false, true,  false, true,  false) (* 202 0xCA *)
+  let xcb = LChar.Char (true,  true,  false, false, true,  false, true,  true)  (* 203 0xCB *)
+  let xcc = LChar.Char (true,  true,  false, false, true,  true,  false, false) (* 204 0xCC *)
+  let xcd = LChar.Char (true,  true,  false, false, true,  true,  false, true)  (* 205 0xCD *)
+  let xce = LChar.Char (true,  true,  false, false, true,  true,  true,  false) (* 206 0xCE *)
+  let xcf = LChar.Char (true,  true,  false, false, true,  true,  true,  true)  (* 207 0xCF *)
+  let xd0 = LChar.Char (true,  true,  false, true,  false, false, false, false) (* 208 0xD0 *)
+  let xd1 = LChar.Char (true,  true,  false, true,  false, false, false, true)  (* 209 0xD1 *)
+  let xd2 = LChar.Char (true,  true,  false, true,  false, false, true,  false) (* 210 0xD2 *)
+  let xd3 = LChar.Char (true,  true,  false, true,  false, false, true,  true)  (* 211 0xD3 *)
+  let xd4 = LChar.Char (true,  true,  false, true,  false, true,  false, false) (* 212 0xD4 *)
+  let xd5 = LChar.Char (true,  true,  false, true,  false, true,  false, true)  (* 213 0xD5 *)
+  let xd6 = LChar.Char (true,  true,  false, true,  false, true,  true,  false) (* 214 0xD6 *)
+  let xd7 = LChar.Char (true,  true,  false, true,  false, true,  true,  true)  (* 215 0xD7 *)
+  let xd8 = LChar.Char (true,  true,  false, true,  true,  false, false, false) (* 216 0xD8 *)
+  let xd9 = LChar.Char (true,  true,  false, true,  true,  false, false, true)  (* 217 0xD9 *)
+  let xda = LChar.Char (true,  true,  false, true,  true,  false, true,  false) (* 218 0xDA *)
+  let xdb = LChar.Char (true,  true,  false, true,  true,  false, true,  true)  (* 219 0xDB *)
+  let xdc = LChar.Char (true,  true,  false, true,  true,  true,  false, false) (* 220 0xDC *)
+  let xdd = LChar.Char (true,  true,  false, true,  true,  true,  false, true)  (* 221 0xDD *)
+  let xde = LChar.Char (true,  true,  false, true,  true,  true,  true,  false) (* 222 0xDE *)
+  let xdf = LChar.Char (true,  true,  false, true,  true,  true,  true,  true)  (* 223 0xDF *)
+  let xe0 = LChar.Char (true,  true,  true,  false, false, false, false, false) (* 224 0xE0 *)
+  let xe1 = LChar.Char (true,  true,  true,  false, false, false, false, true)  (* 225 0xE1 *)
+  let xe2 = LChar.Char (true,  true,  true,  false, false, false, true,  false) (* 226 0xE2 *)
+  let xe3 = LChar.Char (true,  true,  true,  false, false, false, true,  true)  (* 227 0xE3 *)
+  let xe4 = LChar.Char (true,  true,  true,  false, false, true,  false, false) (* 228 0xE4 *)
+  let xe5 = LChar.Char (true,  true,  true,  false, false, true,  false, true)  (* 229 0xE5 *)
+  let xe6 = LChar.Char (true,  true,  true,  false, false, true,  true,  false) (* 230 0xE6 *)
+  let xe7 = LChar.Char (true,  true,  true,  false, false, true,  true,  true)  (* 231 0xE7 *)
+  let xe8 = LChar.Char (true,  true,  true,  false, true,  false, false, false) (* 232 0xE8 *)
+  let xe9 = LChar.Char (true,  true,  true,  false, true,  false, false, true)  (* 233 0xE9 *)
+  let xea = LChar.Char (true,  true,  true,  false, true,  false, true,  false) (* 234 0xEA *)
+  let xeb = LChar.Char (true,  true,  true,  false, true,  false, true,  true)  (* 235 0xEB *)
+  let xec = LChar.Char (true,  true,  true,  false, true,  true,  false, false) (* 236 0xEC *)
+  let xed = LChar.Char (true,  true,  true,  false, true,  true,  false, true)  (* 237 0xED *)
+  let xee = LChar.Char (true,  true,  true,  false, true,  true,  true,  false) (* 238 0xEE *)
+  let xef = LChar.Char (true,  true,  true,  false, true,  true,  true,  true)  (* 239 0xEF *)
+  let xf0 = LChar.Char (true,  true,  true,  true,  false, false, false, false) (* 240 0xF0 *)
+  let xf1 = LChar.Char (true,  true,  true,  true,  false, false, false, true)  (* 241 0xF1 *)
+  let xf2 = LChar.Char (true,  true,  true,  true,  false, false, true,  false) (* 242 0xF2 *)
+  let xf3 = LChar.Char (true,  true,  true,  true,  false, false, true,  true)  (* 243 0xF3 *)
+  let xf4 = LChar.Char (true,  true,  true,  true,  false, true,  false, false) (* 244 0xF4 *)
+  let xf5 = LChar.Char (true,  true,  true,  true,  false, true,  false, true)  (* 245 0xF5 *)
+  let xf6 = LChar.Char (true,  true,  true,  true,  false, true,  true,  false) (* 246 0xF6 *)
+  let xf7 = LChar.Char (true,  true,  true,  true,  false, true,  true,  true)  (* 247 0xF7 *)
+  let xf8 = LChar.Char (true,  true,  true,  true,  true,  false, false, false) (* 248 0xF8 *)
+  let xf9 = LChar.Char (true,  true,  true,  true,  true,  false, false, true)  (* 249 0xF9 *)
+  let xfa = LChar.Char (true,  true,  true,  true,  true,  false, true,  false) (* 250 0xFA *)
+  let xfb = LChar.Char (true,  true,  true,  true,  true,  false, true,  true)  (* 251 0xFB *)
+  let xfc = LChar.Char (true,  true,  true,  true,  true,  true,  false, false) (* 252 0xFC *)
+  let xfd = LChar.Char (true,  true,  true,  true,  true,  true,  false, true)  (* 253 0xFD *)
+  let xfe = LChar.Char (true,  true,  true,  true,  true,  true,  true,  false) (* 254 0xFE *)
+  let xff = LChar.Char (true,  true,  true,  true,  true,  true,  true,  true)  (* 255 0xFF *)
+
   (* Alias *)
   let _0 = digit_0
   let _1 = digit_1
@@ -314,140 +444,545 @@ end
 let lchar_of_string_opt (s : string) : LChar.t option =
   match s with
   (* Control characters 0-31 *)
-  | "\000" -> Some Ascii_table.nul
-  | "\001" -> Some Ascii_table.soh
-  | "\002" -> Some Ascii_table.stx
-  | "\003" -> Some Ascii_table.etx
-  | "\004" -> Some Ascii_table.eot
-  | "\005" -> Some Ascii_table.enq
-  | "\006" -> Some Ascii_table.ack
-  | "\007" -> Some Ascii_table.bel
-  | "\008" -> Some Ascii_table.bs
-  | "\t"   -> Some Ascii_table.ht
-  | "\n"   -> Some Ascii_table.lf
-  | "\011" -> Some Ascii_table.vt
-  | "\012" -> Some Ascii_table.ff
-  | "\r"   -> Some Ascii_table.cr
-  | "\014" -> Some Ascii_table.so
-  | "\015" -> Some Ascii_table.si
-  | "\016" -> Some Ascii_table.dle
-  | "\017" -> Some Ascii_table.dc1
-  | "\018" -> Some Ascii_table.dc2
-  | "\019" -> Some Ascii_table.dc3
-  | "\020" -> Some Ascii_table.dc4
-  | "\021" -> Some Ascii_table.nak
-  | "\022" -> Some Ascii_table.syn
-  | "\023" -> Some Ascii_table.etb
-  | "\024" -> Some Ascii_table.can
-  | "\025" -> Some Ascii_table.em
-  | "\026" -> Some Ascii_table.sub
-  | "\027" -> Some Ascii_table.esc
-  | "\028" -> Some Ascii_table.fs
-  | "\029" -> Some Ascii_table.gs
-  | "\030" -> Some Ascii_table.rs
-  | "\031" -> Some Ascii_table.us
+  | "\000" -> Some Char_table.nul
+  | "\001" -> Some Char_table.soh
+  | "\002" -> Some Char_table.stx
+  | "\003" -> Some Char_table.etx
+  | "\004" -> Some Char_table.eot
+  | "\005" -> Some Char_table.enq
+  | "\006" -> Some Char_table.ack
+  | "\007" -> Some Char_table.bel
+  | "\008" -> Some Char_table.bs
+  | "\t"   -> Some Char_table.ht
+  | "\n"   -> Some Char_table.lf
+  | "\011" -> Some Char_table.vt
+  | "\012" -> Some Char_table.ff
+  | "\r"   -> Some Char_table.cr
+  | "\014" -> Some Char_table.so
+  | "\015" -> Some Char_table.si
+  | "\016" -> Some Char_table.dle
+  | "\017" -> Some Char_table.dc1
+  | "\018" -> Some Char_table.dc2
+  | "\019" -> Some Char_table.dc3
+  | "\020" -> Some Char_table.dc4
+  | "\021" -> Some Char_table.nak
+  | "\022" -> Some Char_table.syn
+  | "\023" -> Some Char_table.etb
+  | "\024" -> Some Char_table.can
+  | "\025" -> Some Char_table.em
+  | "\026" -> Some Char_table.sub
+  | "\027" -> Some Char_table.esc
+  | "\028" -> Some Char_table.fs
+  | "\029" -> Some Char_table.gs
+  | "\030" -> Some Char_table.rs
+  | "\031" -> Some Char_table.us
   (* Printable characters 32-47 *)
-  | " "  -> Some Ascii_table.space
-  | "!"  -> Some Ascii_table.exclaim
-  | "\"" -> Some Ascii_table.dquote
-  | "#"  -> Some Ascii_table.hash
-  | "$"  -> Some Ascii_table.dollar
-  | "%"  -> Some Ascii_table.percent
-  | "&"  -> Some Ascii_table.ampersand
-  | "'"  -> Some Ascii_table.squote
-  | "("  -> Some Ascii_table.lparen
-  | ")"  -> Some Ascii_table.rparen
-  | "*"  -> Some Ascii_table.star
-  | "+"  -> Some Ascii_table.plus
-  | ","  -> Some Ascii_table.comma
-  | "-"  -> Some Ascii_table.minus
-  | "."  -> Some Ascii_table.dot
-  | "/"  -> Some Ascii_table.slash
+  | " "  -> Some Char_table.space
+  | "!"  -> Some Char_table.exclaim
+  | "\"" -> Some Char_table.dquote
+  | "#"  -> Some Char_table.hash
+  | "$"  -> Some Char_table.dollar
+  | "%"  -> Some Char_table.percent
+  | "&"  -> Some Char_table.ampersand
+  | "'"  -> Some Char_table.squote
+  | "("  -> Some Char_table.lparen
+  | ")"  -> Some Char_table.rparen
+  | "*"  -> Some Char_table.star
+  | "+"  -> Some Char_table.plus
+  | ","  -> Some Char_table.comma
+  | "-"  -> Some Char_table.minus
+  | "."  -> Some Char_table.dot
+  | "/"  -> Some Char_table.slash
   (* Digits 48-57 *)
-  | "0"  -> Some Ascii_table.digit_0
-  | "1"  -> Some Ascii_table.digit_1
-  | "2"  -> Some Ascii_table.digit_2
-  | "3"  -> Some Ascii_table.digit_3
-  | "4"  -> Some Ascii_table.digit_4
-  | "5"  -> Some Ascii_table.digit_5
-  | "6"  -> Some Ascii_table.digit_6
-  | "7"  -> Some Ascii_table.digit_7
-  | "8"  -> Some Ascii_table.digit_8
-  | "9"  -> Some Ascii_table.digit_9
+  | "0"  -> Some Char_table.digit_0
+  | "1"  -> Some Char_table.digit_1
+  | "2"  -> Some Char_table.digit_2
+  | "3"  -> Some Char_table.digit_3
+  | "4"  -> Some Char_table.digit_4
+  | "5"  -> Some Char_table.digit_5
+  | "6"  -> Some Char_table.digit_6
+  | "7"  -> Some Char_table.digit_7
+  | "8"  -> Some Char_table.digit_8
+  | "9"  -> Some Char_table.digit_9
   (* Punctuation 58-64 *)
-  | ":"  -> Some Ascii_table.colon
-  | ";"  -> Some Ascii_table.semicolon
-  | "<"  -> Some Ascii_table.lt
-  | "="  -> Some Ascii_table.eq
-  | ">"  -> Some Ascii_table.gt
-  | "?"  -> Some Ascii_table.question
-  | "@"  -> Some Ascii_table.at
+  | ":"  -> Some Char_table.colon
+  | ";"  -> Some Char_table.semicolon
+  | "<"  -> Some Char_table.lt
+  | "="  -> Some Char_table.eq
+  | ">"  -> Some Char_table.gt
+  | "?"  -> Some Char_table.question
+  | "@"  -> Some Char_table.at
   (* Uppercase letters 65-90 *)
-  | "A"  -> Some Ascii_table.upper_a
-  | "B"  -> Some Ascii_table.upper_b
-  | "C"  -> Some Ascii_table.upper_c
-  | "D"  -> Some Ascii_table.upper_d
-  | "E"  -> Some Ascii_table.upper_e
-  | "F"  -> Some Ascii_table.upper_f
-  | "G"  -> Some Ascii_table.upper_g
-  | "H"  -> Some Ascii_table.upper_h
-  | "I"  -> Some Ascii_table.upper_i
-  | "J"  -> Some Ascii_table.upper_j
-  | "K"  -> Some Ascii_table.upper_k
-  | "L"  -> Some Ascii_table.upper_l
-  | "M"  -> Some Ascii_table.upper_m
-  | "N"  -> Some Ascii_table.upper_n
-  | "O"  -> Some Ascii_table.upper_o
-  | "P"  -> Some Ascii_table.upper_p
-  | "Q"  -> Some Ascii_table.upper_q
-  | "R"  -> Some Ascii_table.upper_r
-  | "S"  -> Some Ascii_table.upper_s
-  | "T"  -> Some Ascii_table.upper_t
-  | "U"  -> Some Ascii_table.upper_u
-  | "V"  -> Some Ascii_table.upper_v
-  | "W"  -> Some Ascii_table.upper_w
-  | "X"  -> Some Ascii_table.upper_x
-  | "Y"  -> Some Ascii_table.upper_y
-  | "Z"  -> Some Ascii_table.upper_z
+  | "A"  -> Some Char_table.upper_a
+  | "B"  -> Some Char_table.upper_b
+  | "C"  -> Some Char_table.upper_c
+  | "D"  -> Some Char_table.upper_d
+  | "E"  -> Some Char_table.upper_e
+  | "F"  -> Some Char_table.upper_f
+  | "G"  -> Some Char_table.upper_g
+  | "H"  -> Some Char_table.upper_h
+  | "I"  -> Some Char_table.upper_i
+  | "J"  -> Some Char_table.upper_j
+  | "K"  -> Some Char_table.upper_k
+  | "L"  -> Some Char_table.upper_l
+  | "M"  -> Some Char_table.upper_m
+  | "N"  -> Some Char_table.upper_n
+  | "O"  -> Some Char_table.upper_o
+  | "P"  -> Some Char_table.upper_p
+  | "Q"  -> Some Char_table.upper_q
+  | "R"  -> Some Char_table.upper_r
+  | "S"  -> Some Char_table.upper_s
+  | "T"  -> Some Char_table.upper_t
+  | "U"  -> Some Char_table.upper_u
+  | "V"  -> Some Char_table.upper_v
+  | "W"  -> Some Char_table.upper_w
+  | "X"  -> Some Char_table.upper_x
+  | "Y"  -> Some Char_table.upper_y
+  | "Z"  -> Some Char_table.upper_z
   (* Punctuation 91-96 *)
-  | "["  -> Some Ascii_table.lbracket
-  | "\\" -> Some Ascii_table.backslash
-  | "]"  -> Some Ascii_table.rbracket
-  | "^"  -> Some Ascii_table.caret
-  | "_"  -> Some Ascii_table.underscore
-  | "`"  -> Some Ascii_table.backtick
+  | "["  -> Some Char_table.lbracket
+  | "\\" -> Some Char_table.backslash
+  | "]"  -> Some Char_table.rbracket
+  | "^"  -> Some Char_table.caret
+  | "_"  -> Some Char_table.underscore
+  | "`"  -> Some Char_table.backtick
   (* Lowercase letters 97-122 *)
-  | "a"  -> Some Ascii_table.lower_a
-  | "b"  -> Some Ascii_table.lower_b
-  | "c"  -> Some Ascii_table.lower_c
-  | "d"  -> Some Ascii_table.lower_d
-  | "e"  -> Some Ascii_table.lower_e
-  | "f"  -> Some Ascii_table.lower_f
-  | "g"  -> Some Ascii_table.lower_g
-  | "h"  -> Some Ascii_table.lower_h
-  | "i"  -> Some Ascii_table.lower_i
-  | "j"  -> Some Ascii_table.lower_j
-  | "k"  -> Some Ascii_table.lower_k
-  | "l"  -> Some Ascii_table.lower_l
-  | "m"  -> Some Ascii_table.lower_m
-  | "n"  -> Some Ascii_table.lower_n
-  | "o"  -> Some Ascii_table.lower_o
-  | "p"  -> Some Ascii_table.lower_p
-  | "q"  -> Some Ascii_table.lower_q
-  | "r"  -> Some Ascii_table.lower_r
-  | "s"  -> Some Ascii_table.lower_s
-  | "t"  -> Some Ascii_table.lower_t
-  | "u"  -> Some Ascii_table.lower_u
-  | "v"  -> Some Ascii_table.lower_v
-  | "w"  -> Some Ascii_table.lower_w
-  | "x"  -> Some Ascii_table.lower_x
-  | "y"  -> Some Ascii_table.lower_y
-  | "z"  -> Some Ascii_table.lower_z
+  | "a"  -> Some Char_table.lower_a
+  | "b"  -> Some Char_table.lower_b
+  | "c"  -> Some Char_table.lower_c
+  | "d"  -> Some Char_table.lower_d
+  | "e"  -> Some Char_table.lower_e
+  | "f"  -> Some Char_table.lower_f
+  | "g"  -> Some Char_table.lower_g
+  | "h"  -> Some Char_table.lower_h
+  | "i"  -> Some Char_table.lower_i
+  | "j"  -> Some Char_table.lower_j
+  | "k"  -> Some Char_table.lower_k
+  | "l"  -> Some Char_table.lower_l
+  | "m"  -> Some Char_table.lower_m
+  | "n"  -> Some Char_table.lower_n
+  | "o"  -> Some Char_table.lower_o
+  | "p"  -> Some Char_table.lower_p
+  | "q"  -> Some Char_table.lower_q
+  | "r"  -> Some Char_table.lower_r
+  | "s"  -> Some Char_table.lower_s
+  | "t"  -> Some Char_table.lower_t
+  | "u"  -> Some Char_table.lower_u
+  | "v"  -> Some Char_table.lower_v
+  | "w"  -> Some Char_table.lower_w
+  | "x"  -> Some Char_table.lower_x
+  | "y"  -> Some Char_table.lower_y
+  | "z"  -> Some Char_table.lower_z
   (* Punctuation 123-126 *)
-  | "{"  -> Some Ascii_table.lbrace
-  | "|"  -> Some Ascii_table.pipe
-  | "}"  -> Some Ascii_table.rbrace
-  | "~"  -> Some Ascii_table.tilde
+  | "{"  -> Some Char_table.lbrace
+  | "|"  -> Some Char_table.pipe
+  | "}"  -> Some Char_table.rbrace
+  | "~"  -> Some Char_table.tilde
   (* DEL 127 *)
-  | "\127" -> Some Ascii_table.del
+  | "\127" -> Some Char_table.del
+  (* High bytes 128-255 *)
+  | "\x80" -> Some Char_table.x80
+  | "\x81" -> Some Char_table.x81
+  | "\x82" -> Some Char_table.x82
+  | "\x83" -> Some Char_table.x83
+  | "\x84" -> Some Char_table.x84
+  | "\x85" -> Some Char_table.x85
+  | "\x86" -> Some Char_table.x86
+  | "\x87" -> Some Char_table.x87
+  | "\x88" -> Some Char_table.x88
+  | "\x89" -> Some Char_table.x89
+  | "\x8A" -> Some Char_table.x8a
+  | "\x8B" -> Some Char_table.x8b
+  | "\x8C" -> Some Char_table.x8c
+  | "\x8D" -> Some Char_table.x8d
+  | "\x8E" -> Some Char_table.x8e
+  | "\x8F" -> Some Char_table.x8f
+  | "\x90" -> Some Char_table.x90
+  | "\x91" -> Some Char_table.x91
+  | "\x92" -> Some Char_table.x92
+  | "\x93" -> Some Char_table.x93
+  | "\x94" -> Some Char_table.x94
+  | "\x95" -> Some Char_table.x95
+  | "\x96" -> Some Char_table.x96
+  | "\x97" -> Some Char_table.x97
+  | "\x98" -> Some Char_table.x98
+  | "\x99" -> Some Char_table.x99
+  | "\x9A" -> Some Char_table.x9a
+  | "\x9B" -> Some Char_table.x9b
+  | "\x9C" -> Some Char_table.x9c
+  | "\x9D" -> Some Char_table.x9d
+  | "\x9E" -> Some Char_table.x9e
+  | "\x9F" -> Some Char_table.x9f
+  | "\xA0" -> Some Char_table.xa0
+  | "\xA1" -> Some Char_table.xa1
+  | "\xA2" -> Some Char_table.xa2
+  | "\xA3" -> Some Char_table.xa3
+  | "\xA4" -> Some Char_table.xa4
+  | "\xA5" -> Some Char_table.xa5
+  | "\xA6" -> Some Char_table.xa6
+  | "\xA7" -> Some Char_table.xa7
+  | "\xA8" -> Some Char_table.xa8
+  | "\xA9" -> Some Char_table.xa9
+  | "\xAA" -> Some Char_table.xaa
+  | "\xAB" -> Some Char_table.xab
+  | "\xAC" -> Some Char_table.xac
+  | "\xAD" -> Some Char_table.xad
+  | "\xAE" -> Some Char_table.xae
+  | "\xAF" -> Some Char_table.xaf
+  | "\xB0" -> Some Char_table.xb0
+  | "\xB1" -> Some Char_table.xb1
+  | "\xB2" -> Some Char_table.xb2
+  | "\xB3" -> Some Char_table.xb3
+  | "\xB4" -> Some Char_table.xb4
+  | "\xB5" -> Some Char_table.xb5
+  | "\xB6" -> Some Char_table.xb6
+  | "\xB7" -> Some Char_table.xb7
+  | "\xB8" -> Some Char_table.xb8
+  | "\xB9" -> Some Char_table.xb9
+  | "\xBA" -> Some Char_table.xba
+  | "\xBB" -> Some Char_table.xbb
+  | "\xBC" -> Some Char_table.xbc
+  | "\xBD" -> Some Char_table.xbd
+  | "\xBE" -> Some Char_table.xbe
+  | "\xBF" -> Some Char_table.xbf
+  | "\xC0" -> Some Char_table.xc0
+  | "\xC1" -> Some Char_table.xc1
+  | "\xC2" -> Some Char_table.xc2
+  | "\xC3" -> Some Char_table.xc3
+  | "\xC4" -> Some Char_table.xc4
+  | "\xC5" -> Some Char_table.xc5
+  | "\xC6" -> Some Char_table.xc6
+  | "\xC7" -> Some Char_table.xc7
+  | "\xC8" -> Some Char_table.xc8
+  | "\xC9" -> Some Char_table.xc9
+  | "\xCA" -> Some Char_table.xca
+  | "\xCB" -> Some Char_table.xcb
+  | "\xCC" -> Some Char_table.xcc
+  | "\xCD" -> Some Char_table.xcd
+  | "\xCE" -> Some Char_table.xce
+  | "\xCF" -> Some Char_table.xcf
+  | "\xD0" -> Some Char_table.xd0
+  | "\xD1" -> Some Char_table.xd1
+  | "\xD2" -> Some Char_table.xd2
+  | "\xD3" -> Some Char_table.xd3
+  | "\xD4" -> Some Char_table.xd4
+  | "\xD5" -> Some Char_table.xd5
+  | "\xD6" -> Some Char_table.xd6
+  | "\xD7" -> Some Char_table.xd7
+  | "\xD8" -> Some Char_table.xd8
+  | "\xD9" -> Some Char_table.xd9
+  | "\xDA" -> Some Char_table.xda
+  | "\xDB" -> Some Char_table.xdb
+  | "\xDC" -> Some Char_table.xdc
+  | "\xDD" -> Some Char_table.xdd
+  | "\xDE" -> Some Char_table.xde
+  | "\xDF" -> Some Char_table.xdf
+  | "\xE0" -> Some Char_table.xe0
+  | "\xE1" -> Some Char_table.xe1
+  | "\xE2" -> Some Char_table.xe2
+  | "\xE3" -> Some Char_table.xe3
+  | "\xE4" -> Some Char_table.xe4
+  | "\xE5" -> Some Char_table.xe5
+  | "\xE6" -> Some Char_table.xe6
+  | "\xE7" -> Some Char_table.xe7
+  | "\xE8" -> Some Char_table.xe8
+  | "\xE9" -> Some Char_table.xe9
+  | "\xEA" -> Some Char_table.xea
+  | "\xEB" -> Some Char_table.xeb
+  | "\xEC" -> Some Char_table.xec
+  | "\xED" -> Some Char_table.xed
+  | "\xEE" -> Some Char_table.xee
+  | "\xEF" -> Some Char_table.xef
+  | "\xF0" -> Some Char_table.xf0
+  | "\xF1" -> Some Char_table.xf1
+  | "\xF2" -> Some Char_table.xf2
+  | "\xF3" -> Some Char_table.xf3
+  | "\xF4" -> Some Char_table.xf4
+  | "\xF5" -> Some Char_table.xf5
+  | "\xF6" -> Some Char_table.xf6
+  | "\xF7" -> Some Char_table.xf7
+  | "\xF8" -> Some Char_table.xf8
+  | "\xF9" -> Some Char_table.xf9
+  | "\xFA" -> Some Char_table.xfa
+  | "\xFB" -> Some Char_table.xfb
+  | "\xFC" -> Some Char_table.xfc
+  | "\xFD" -> Some Char_table.xfd
+  | "\xFE" -> Some Char_table.xfe
+  | "\xFF" -> Some Char_table.xff
   | _    -> None
+
+(* Reverse mapping: LChar.t → single-character native string *)
+let string_of_lchar (c : LChar.t) : string =
+  match c with
+  (* Control characters 0-31 *)
+  | LChar.Char (false, false, false, false, false, false, false, false) -> "\000"
+  | LChar.Char (false, false, false, false, false, false, false, true)  -> "\001"
+  | LChar.Char (false, false, false, false, false, false, true,  false) -> "\002"
+  | LChar.Char (false, false, false, false, false, false, true,  true)  -> "\003"
+  | LChar.Char (false, false, false, false, false, true,  false, false) -> "\004"
+  | LChar.Char (false, false, false, false, false, true,  false, true)  -> "\005"
+  | LChar.Char (false, false, false, false, false, true,  true,  false) -> "\006"
+  | LChar.Char (false, false, false, false, false, true,  true,  true)  -> "\007"
+  | LChar.Char (false, false, false, false, true,  false, false, false) -> "\008"
+  | LChar.Char (false, false, false, false, true,  false, false, true)  -> "\t"
+  | LChar.Char (false, false, false, false, true,  false, true,  false) -> "\n"
+  | LChar.Char (false, false, false, false, true,  false, true,  true)  -> "\011"
+  | LChar.Char (false, false, false, false, true,  true,  false, false) -> "\012"
+  | LChar.Char (false, false, false, false, true,  true,  false, true)  -> "\r"
+  | LChar.Char (false, false, false, false, true,  true,  true,  false) -> "\014"
+  | LChar.Char (false, false, false, false, true,  true,  true,  true)  -> "\015"
+  | LChar.Char (false, false, false, true,  false, false, false, false) -> "\016"
+  | LChar.Char (false, false, false, true,  false, false, false, true)  -> "\017"
+  | LChar.Char (false, false, false, true,  false, false, true,  false) -> "\018"
+  | LChar.Char (false, false, false, true,  false, false, true,  true)  -> "\019"
+  | LChar.Char (false, false, false, true,  false, true,  false, false) -> "\020"
+  | LChar.Char (false, false, false, true,  false, true,  false, true)  -> "\021"
+  | LChar.Char (false, false, false, true,  false, true,  true,  false) -> "\022"
+  | LChar.Char (false, false, false, true,  false, true,  true,  true)  -> "\023"
+  | LChar.Char (false, false, false, true,  true,  false, false, false) -> "\024"
+  | LChar.Char (false, false, false, true,  true,  false, false, true)  -> "\025"
+  | LChar.Char (false, false, false, true,  true,  false, true,  false) -> "\026"
+  | LChar.Char (false, false, false, true,  true,  false, true,  true)  -> "\027"
+  | LChar.Char (false, false, false, true,  true,  true,  false, false) -> "\028"
+  | LChar.Char (false, false, false, true,  true,  true,  false, true)  -> "\029"
+  | LChar.Char (false, false, false, true,  true,  true,  true,  false) -> "\030"
+  | LChar.Char (false, false, false, true,  true,  true,  true,  true)  -> "\031"
+  (* Printable characters 32-47 *)
+  | LChar.Char (false, false, true,  false, false, false, false, false) -> " "
+  | LChar.Char (false, false, true,  false, false, false, false, true)  -> "!"
+  | LChar.Char (false, false, true,  false, false, false, true,  false) -> "\""
+  | LChar.Char (false, false, true,  false, false, false, true,  true)  -> "#"
+  | LChar.Char (false, false, true,  false, false, true,  false, false) -> "$"
+  | LChar.Char (false, false, true,  false, false, true,  false, true)  -> "%"
+  | LChar.Char (false, false, true,  false, false, true,  true,  false) -> "&"
+  | LChar.Char (false, false, true,  false, false, true,  true,  true)  -> "'"
+  | LChar.Char (false, false, true,  false, true,  false, false, false) -> "("
+  | LChar.Char (false, false, true,  false, true,  false, false, true)  -> ")"
+  | LChar.Char (false, false, true,  false, true,  false, true,  false) -> "*"
+  | LChar.Char (false, false, true,  false, true,  false, true,  true)  -> "+"
+  | LChar.Char (false, false, true,  false, true,  true,  false, false) -> ","
+  | LChar.Char (false, false, true,  false, true,  true,  false, true)  -> "-"
+  | LChar.Char (false, false, true,  false, true,  true,  true,  false) -> "."
+  | LChar.Char (false, false, true,  false, true,  true,  true,  true)  -> "/"
+  (* Digits 48-57 *)
+  | LChar.Char (false, false, true,  true,  false, false, false, false) -> "0"
+  | LChar.Char (false, false, true,  true,  false, false, false, true)  -> "1"
+  | LChar.Char (false, false, true,  true,  false, false, true,  false) -> "2"
+  | LChar.Char (false, false, true,  true,  false, false, true,  true)  -> "3"
+  | LChar.Char (false, false, true,  true,  false, true,  false, false) -> "4"
+  | LChar.Char (false, false, true,  true,  false, true,  false, true)  -> "5"
+  | LChar.Char (false, false, true,  true,  false, true,  true,  false) -> "6"
+  | LChar.Char (false, false, true,  true,  false, true,  true,  true)  -> "7"
+  | LChar.Char (false, false, true,  true,  true,  false, false, false) -> "8"
+  | LChar.Char (false, false, true,  true,  true,  false, false, true)  -> "9"
+  (* Punctuation 58-64 *)
+  | LChar.Char (false, false, true,  true,  true,  false, true,  false) -> ":"
+  | LChar.Char (false, false, true,  true,  true,  false, true,  true)  -> ";"
+  | LChar.Char (false, false, true,  true,  true,  true,  false, false) -> "<"
+  | LChar.Char (false, false, true,  true,  true,  true,  false, true)  -> "="
+  | LChar.Char (false, false, true,  true,  true,  true,  true,  false) -> ">"
+  | LChar.Char (false, false, true,  true,  true,  true,  true,  true)  -> "?"
+  | LChar.Char (false, true,  false, false, false, false, false, false) -> "@"
+  (* Uppercase letters 65-90 *)
+  | LChar.Char (false, true,  false, false, false, false, false, true)  -> "A"
+  | LChar.Char (false, true,  false, false, false, false, true,  false) -> "B"
+  | LChar.Char (false, true,  false, false, false, false, true,  true)  -> "C"
+  | LChar.Char (false, true,  false, false, false, true,  false, false) -> "D"
+  | LChar.Char (false, true,  false, false, false, true,  false, true)  -> "E"
+  | LChar.Char (false, true,  false, false, false, true,  true,  false) -> "F"
+  | LChar.Char (false, true,  false, false, false, true,  true,  true)  -> "G"
+  | LChar.Char (false, true,  false, false, true,  false, false, false) -> "H"
+  | LChar.Char (false, true,  false, false, true,  false, false, true)  -> "I"
+  | LChar.Char (false, true,  false, false, true,  false, true,  false) -> "J"
+  | LChar.Char (false, true,  false, false, true,  false, true,  true)  -> "K"
+  | LChar.Char (false, true,  false, false, true,  true,  false, false) -> "L"
+  | LChar.Char (false, true,  false, false, true,  true,  false, true)  -> "M"
+  | LChar.Char (false, true,  false, false, true,  true,  true,  false) -> "N"
+  | LChar.Char (false, true,  false, false, true,  true,  true,  true)  -> "O"
+  | LChar.Char (false, true,  false, true,  false, false, false, false) -> "P"
+  | LChar.Char (false, true,  false, true,  false, false, false, true)  -> "Q"
+  | LChar.Char (false, true,  false, true,  false, false, true,  false) -> "R"
+  | LChar.Char (false, true,  false, true,  false, false, true,  true)  -> "S"
+  | LChar.Char (false, true,  false, true,  false, true,  false, false) -> "T"
+  | LChar.Char (false, true,  false, true,  false, true,  false, true)  -> "U"
+  | LChar.Char (false, true,  false, true,  false, true,  true,  false) -> "V"
+  | LChar.Char (false, true,  false, true,  false, true,  true,  true)  -> "W"
+  | LChar.Char (false, true,  false, true,  true,  false, false, false) -> "X"
+  | LChar.Char (false, true,  false, true,  true,  false, false, true)  -> "Y"
+  | LChar.Char (false, true,  false, true,  true,  false, true,  false) -> "Z"
+  (* Punctuation 91-96 *)
+  | LChar.Char (false, true,  false, true,  true,  false, true,  true)  -> "["
+  | LChar.Char (false, true,  false, true,  true,  true,  false, false) -> "\\"
+  | LChar.Char (false, true,  false, true,  true,  true,  false, true)  -> "]"
+  | LChar.Char (false, true,  false, true,  true,  true,  true,  false) -> "^"
+  | LChar.Char (false, true,  false, true,  true,  true,  true,  true)  -> "_"
+  | LChar.Char (false, true,  true,  false, false, false, false, false) -> "`"
+  (* Lowercase letters 97-122 *)
+  | LChar.Char (false, true,  true,  false, false, false, false, true)  -> "a"
+  | LChar.Char (false, true,  true,  false, false, false, true,  false) -> "b"
+  | LChar.Char (false, true,  true,  false, false, false, true,  true)  -> "c"
+  | LChar.Char (false, true,  true,  false, false, true,  false, false) -> "d"
+  | LChar.Char (false, true,  true,  false, false, true,  false, true)  -> "e"
+  | LChar.Char (false, true,  true,  false, false, true,  true,  false) -> "f"
+  | LChar.Char (false, true,  true,  false, false, true,  true,  true)  -> "g"
+  | LChar.Char (false, true,  true,  false, true,  false, false, false) -> "h"
+  | LChar.Char (false, true,  true,  false, true,  false, false, true)  -> "i"
+  | LChar.Char (false, true,  true,  false, true,  false, true,  false) -> "j"
+  | LChar.Char (false, true,  true,  false, true,  false, true,  true)  -> "k"
+  | LChar.Char (false, true,  true,  false, true,  true,  false, false) -> "l"
+  | LChar.Char (false, true,  true,  false, true,  true,  false, true)  -> "m"
+  | LChar.Char (false, true,  true,  false, true,  true,  true,  false) -> "n"
+  | LChar.Char (false, true,  true,  false, true,  true,  true,  true)  -> "o"
+  | LChar.Char (false, true,  true,  true,  false, false, false, false) -> "p"
+  | LChar.Char (false, true,  true,  true,  false, false, false, true)  -> "q"
+  | LChar.Char (false, true,  true,  true,  false, false, true,  false) -> "r"
+  | LChar.Char (false, true,  true,  true,  false, false, true,  true)  -> "s"
+  | LChar.Char (false, true,  true,  true,  false, true,  false, false) -> "t"
+  | LChar.Char (false, true,  true,  true,  false, true,  false, true)  -> "u"
+  | LChar.Char (false, true,  true,  true,  false, true,  true,  false) -> "v"
+  | LChar.Char (false, true,  true,  true,  false, true,  true,  true)  -> "w"
+  | LChar.Char (false, true,  true,  true,  true,  false, false, false) -> "x"
+  | LChar.Char (false, true,  true,  true,  true,  false, false, true)  -> "y"
+  | LChar.Char (false, true,  true,  true,  true,  false, true,  false) -> "z"
+  (* Punctuation 123-126 *)
+  | LChar.Char (false, true,  true,  true,  true,  false, true,  true)  -> "{"
+  | LChar.Char (false, true,  true,  true,  true,  true,  false, false) -> "|"
+  | LChar.Char (false, true,  true,  true,  true,  true,  false, true)  -> "}"
+  | LChar.Char (false, true,  true,  true,  true,  true,  true,  false) -> "~"
+  (* DEL 127 *)
+  | LChar.Char (false, true,  true,  true,  true,  true,  true,  true)  -> "\127"
+  (* High bytes 128-255: individual UTF-8 bytes *)
+  | LChar.Char (true,  false, false, false, false, false, false, false) -> "\x80"
+  | LChar.Char (true,  false, false, false, false, false, false, true)  -> "\x81"
+  | LChar.Char (true,  false, false, false, false, false, true,  false) -> "\x82"
+  | LChar.Char (true,  false, false, false, false, false, true,  true)  -> "\x83"
+  | LChar.Char (true,  false, false, false, false, true,  false, false) -> "\x84"
+  | LChar.Char (true,  false, false, false, false, true,  false, true)  -> "\x85"
+  | LChar.Char (true,  false, false, false, false, true,  true,  false) -> "\x86"
+  | LChar.Char (true,  false, false, false, false, true,  true,  true)  -> "\x87"
+  | LChar.Char (true,  false, false, false, true,  false, false, false) -> "\x88"
+  | LChar.Char (true,  false, false, false, true,  false, false, true)  -> "\x89"
+  | LChar.Char (true,  false, false, false, true,  false, true,  false) -> "\x8A"
+  | LChar.Char (true,  false, false, false, true,  false, true,  true)  -> "\x8B"
+  | LChar.Char (true,  false, false, false, true,  true,  false, false) -> "\x8C"
+  | LChar.Char (true,  false, false, false, true,  true,  false, true)  -> "\x8D"
+  | LChar.Char (true,  false, false, false, true,  true,  true,  false) -> "\x8E"
+  | LChar.Char (true,  false, false, false, true,  true,  true,  true)  -> "\x8F"
+  | LChar.Char (true,  false, false, true,  false, false, false, false) -> "\x90"
+  | LChar.Char (true,  false, false, true,  false, false, false, true)  -> "\x91"
+  | LChar.Char (true,  false, false, true,  false, false, true,  false) -> "\x92"
+  | LChar.Char (true,  false, false, true,  false, false, true,  true)  -> "\x93"
+  | LChar.Char (true,  false, false, true,  false, true,  false, false) -> "\x94"
+  | LChar.Char (true,  false, false, true,  false, true,  false, true)  -> "\x95"
+  | LChar.Char (true,  false, false, true,  false, true,  true,  false) -> "\x96"
+  | LChar.Char (true,  false, false, true,  false, true,  true,  true)  -> "\x97"
+  | LChar.Char (true,  false, false, true,  true,  false, false, false) -> "\x98"
+  | LChar.Char (true,  false, false, true,  true,  false, false, true)  -> "\x99"
+  | LChar.Char (true,  false, false, true,  true,  false, true,  false) -> "\x9A"
+  | LChar.Char (true,  false, false, true,  true,  false, true,  true)  -> "\x9B"
+  | LChar.Char (true,  false, false, true,  true,  true,  false, false) -> "\x9C"
+  | LChar.Char (true,  false, false, true,  true,  true,  false, true)  -> "\x9D"
+  | LChar.Char (true,  false, false, true,  true,  true,  true,  false) -> "\x9E"
+  | LChar.Char (true,  false, false, true,  true,  true,  true,  true)  -> "\x9F"
+  | LChar.Char (true,  false, true,  false, false, false, false, false) -> "\xA0"
+  | LChar.Char (true,  false, true,  false, false, false, false, true)  -> "\xA1"
+  | LChar.Char (true,  false, true,  false, false, false, true,  false) -> "\xA2"
+  | LChar.Char (true,  false, true,  false, false, false, true,  true)  -> "\xA3"
+  | LChar.Char (true,  false, true,  false, false, true,  false, false) -> "\xA4"
+  | LChar.Char (true,  false, true,  false, false, true,  false, true)  -> "\xA5"
+  | LChar.Char (true,  false, true,  false, false, true,  true,  false) -> "\xA6"
+  | LChar.Char (true,  false, true,  false, false, true,  true,  true)  -> "\xA7"
+  | LChar.Char (true,  false, true,  false, true,  false, false, false) -> "\xA8"
+  | LChar.Char (true,  false, true,  false, true,  false, false, true)  -> "\xA9"
+  | LChar.Char (true,  false, true,  false, true,  false, true,  false) -> "\xAA"
+  | LChar.Char (true,  false, true,  false, true,  false, true,  true)  -> "\xAB"
+  | LChar.Char (true,  false, true,  false, true,  true,  false, false) -> "\xAC"
+  | LChar.Char (true,  false, true,  false, true,  true,  false, true)  -> "\xAD"
+  | LChar.Char (true,  false, true,  false, true,  true,  true,  false) -> "\xAE"
+  | LChar.Char (true,  false, true,  false, true,  true,  true,  true)  -> "\xAF"
+  | LChar.Char (true,  false, true,  true,  false, false, false, false) -> "\xB0"
+  | LChar.Char (true,  false, true,  true,  false, false, false, true)  -> "\xB1"
+  | LChar.Char (true,  false, true,  true,  false, false, true,  false) -> "\xB2"
+  | LChar.Char (true,  false, true,  true,  false, false, true,  true)  -> "\xB3"
+  | LChar.Char (true,  false, true,  true,  false, true,  false, false) -> "\xB4"
+  | LChar.Char (true,  false, true,  true,  false, true,  false, true)  -> "\xB5"
+  | LChar.Char (true,  false, true,  true,  false, true,  true,  false) -> "\xB6"
+  | LChar.Char (true,  false, true,  true,  false, true,  true,  true)  -> "\xB7"
+  | LChar.Char (true,  false, true,  true,  true,  false, false, false) -> "\xB8"
+  | LChar.Char (true,  false, true,  true,  true,  false, false, true)  -> "\xB9"
+  | LChar.Char (true,  false, true,  true,  true,  false, true,  false) -> "\xBA"
+  | LChar.Char (true,  false, true,  true,  true,  false, true,  true)  -> "\xBB"
+  | LChar.Char (true,  false, true,  true,  true,  true,  false, false) -> "\xBC"
+  | LChar.Char (true,  false, true,  true,  true,  true,  false, true)  -> "\xBD"
+  | LChar.Char (true,  false, true,  true,  true,  true,  true,  false) -> "\xBE"
+  | LChar.Char (true,  false, true,  true,  true,  true,  true,  true)  -> "\xBF"
+  | LChar.Char (true,  true,  false, false, false, false, false, false) -> "\xC0"
+  | LChar.Char (true,  true,  false, false, false, false, false, true)  -> "\xC1"
+  | LChar.Char (true,  true,  false, false, false, false, true,  false) -> "\xC2"
+  | LChar.Char (true,  true,  false, false, false, false, true,  true)  -> "\xC3"
+  | LChar.Char (true,  true,  false, false, false, true,  false, false) -> "\xC4"
+  | LChar.Char (true,  true,  false, false, false, true,  false, true)  -> "\xC5"
+  | LChar.Char (true,  true,  false, false, false, true,  true,  false) -> "\xC6"
+  | LChar.Char (true,  true,  false, false, false, true,  true,  true)  -> "\xC7"
+  | LChar.Char (true,  true,  false, false, true,  false, false, false) -> "\xC8"
+  | LChar.Char (true,  true,  false, false, true,  false, false, true)  -> "\xC9"
+  | LChar.Char (true,  true,  false, false, true,  false, true,  false) -> "\xCA"
+  | LChar.Char (true,  true,  false, false, true,  false, true,  true)  -> "\xCB"
+  | LChar.Char (true,  true,  false, false, true,  true,  false, false) -> "\xCC"
+  | LChar.Char (true,  true,  false, false, true,  true,  false, true)  -> "\xCD"
+  | LChar.Char (true,  true,  false, false, true,  true,  true,  false) -> "\xCE"
+  | LChar.Char (true,  true,  false, false, true,  true,  true,  true)  -> "\xCF"
+  | LChar.Char (true,  true,  false, true,  false, false, false, false) -> "\xD0"
+  | LChar.Char (true,  true,  false, true,  false, false, false, true)  -> "\xD1"
+  | LChar.Char (true,  true,  false, true,  false, false, true,  false) -> "\xD2"
+  | LChar.Char (true,  true,  false, true,  false, false, true,  true)  -> "\xD3"
+  | LChar.Char (true,  true,  false, true,  false, true,  false, false) -> "\xD4"
+  | LChar.Char (true,  true,  false, true,  false, true,  false, true)  -> "\xD5"
+  | LChar.Char (true,  true,  false, true,  false, true,  true,  false) -> "\xD6"
+  | LChar.Char (true,  true,  false, true,  false, true,  true,  true)  -> "\xD7"
+  | LChar.Char (true,  true,  false, true,  true,  false, false, false) -> "\xD8"
+  | LChar.Char (true,  true,  false, true,  true,  false, false, true)  -> "\xD9"
+  | LChar.Char (true,  true,  false, true,  true,  false, true,  false) -> "\xDA"
+  | LChar.Char (true,  true,  false, true,  true,  false, true,  true)  -> "\xDB"
+  | LChar.Char (true,  true,  false, true,  true,  true,  false, false) -> "\xDC"
+  | LChar.Char (true,  true,  false, true,  true,  true,  false, true)  -> "\xDD"
+  | LChar.Char (true,  true,  false, true,  true,  true,  true,  false) -> "\xDE"
+  | LChar.Char (true,  true,  false, true,  true,  true,  true,  true)  -> "\xDF"
+  | LChar.Char (true,  true,  true,  false, false, false, false, false) -> "\xE0"
+  | LChar.Char (true,  true,  true,  false, false, false, false, true)  -> "\xE1"
+  | LChar.Char (true,  true,  true,  false, false, false, true,  false) -> "\xE2"
+  | LChar.Char (true,  true,  true,  false, false, false, true,  true)  -> "\xE3"
+  | LChar.Char (true,  true,  true,  false, false, true,  false, false) -> "\xE4"
+  | LChar.Char (true,  true,  true,  false, false, true,  false, true)  -> "\xE5"
+  | LChar.Char (true,  true,  true,  false, false, true,  true,  false) -> "\xE6"
+  | LChar.Char (true,  true,  true,  false, false, true,  true,  true)  -> "\xE7"
+  | LChar.Char (true,  true,  true,  false, true,  false, false, false) -> "\xE8"
+  | LChar.Char (true,  true,  true,  false, true,  false, false, true)  -> "\xE9"
+  | LChar.Char (true,  true,  true,  false, true,  false, true,  false) -> "\xEA"
+  | LChar.Char (true,  true,  true,  false, true,  false, true,  true)  -> "\xEB"
+  | LChar.Char (true,  true,  true,  false, true,  true,  false, false) -> "\xEC"
+  | LChar.Char (true,  true,  true,  false, true,  true,  false, true)  -> "\xED"
+  | LChar.Char (true,  true,  true,  false, true,  true,  true,  false) -> "\xEE"
+  | LChar.Char (true,  true,  true,  false, true,  true,  true,  true)  -> "\xEF"
+  | LChar.Char (true,  true,  true,  true,  false, false, false, false) -> "\xF0"
+  | LChar.Char (true,  true,  true,  true,  false, false, false, true)  -> "\xF1"
+  | LChar.Char (true,  true,  true,  true,  false, false, true,  false) -> "\xF2"
+  | LChar.Char (true,  true,  true,  true,  false, false, true,  true)  -> "\xF3"
+  | LChar.Char (true,  true,  true,  true,  false, true,  false, false) -> "\xF4"
+  | LChar.Char (true,  true,  true,  true,  false, true,  false, true)  -> "\xF5"
+  | LChar.Char (true,  true,  true,  true,  false, true,  true,  false) -> "\xF6"
+  | LChar.Char (true,  true,  true,  true,  false, true,  true,  true)  -> "\xF7"
+  | LChar.Char (true,  true,  true,  true,  true,  false, false, false) -> "\xF8"
+  | LChar.Char (true,  true,  true,  true,  true,  false, false, true)  -> "\xF9"
+  | LChar.Char (true,  true,  true,  true,  true,  false, true,  false) -> "\xFA"
+  | LChar.Char (true,  true,  true,  true,  true,  false, true,  true)  -> "\xFB"
+  | LChar.Char (true,  true,  true,  true,  true,  true,  false, false) -> "\xFC"
+  | LChar.Char (true,  true,  true,  true,  true,  true,  false, true)  -> "\xFD"
+  | LChar.Char (true,  true,  true,  true,  true,  true,  true,  false) -> "\xFE"
+  | LChar.Char (true,  true,  true,  true,  true,  true,  true,  true)  -> "\xFF"
+
+(* Convert an LString.t to a native string by concatenating single-char strings *)
+let rec string_of_lstring (s : LString.t) : string =
+  match s with
+  | [] -> ""
+  | c :: rest -> String.append (string_of_lchar c) (string_of_lstring rest)
