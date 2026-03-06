@@ -100,7 +100,9 @@ def gen_test_command(
     if isinstance(target_lang, Exception):
         raise target_lang
 
-    result = gen_test_cases(iml, function, lang=target_lang)
+    type_def, test_def = gen_test_cases(iml, function, lang=target_lang)
+    result = type_def + '\n\n' + test_def
+
     write_output(output, result)
 
 

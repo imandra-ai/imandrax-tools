@@ -3,11 +3,21 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from imandrax_codegen.gen_tests import gen_test_cases
+from imandrax_codegen.gen_tests import Lang, gen_test_cases
 from inline_snapshot import snapshot
 
 curr_dir = Path(__file__).parent
 DATA_DIR = curr_dir.parent / 'data' / 'art' / 'fun_decomp'
+
+
+def _gen_test_cases(
+    iml: str,
+    decomp_name: str,
+    lang: Lang,
+    other_decomp_kwargs: dict[str, Any] | None = None,
+) -> str:
+    type_def, test_def = gen_test_cases(iml, decomp_name, lang, other_decomp_kwargs)
+    return type_def + '\n\n' + test_def
 
 
 @dataclass
@@ -36,7 +46,7 @@ def read_test_input(file_path: Path):
 def test_composite_record():
     file_path = DATA_DIR / 'composite_record.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -95,7 +105,7 @@ def test_3():
 def test_nested_conditions():
     file_path = DATA_DIR / 'nested_conditions.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -161,7 +171,7 @@ def test_4():
 def test_list_operations():
     file_path = DATA_DIR / 'list_operations.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -213,7 +223,7 @@ def test_3():
 def test_complex_variant_record():
     file_path = DATA_DIR / 'complex_variant_record.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -286,7 +296,7 @@ def test_3():
 def test_composite_tuple():
     file_path = DATA_DIR / 'composite_tuple.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -338,7 +348,7 @@ def test_3():
 def test_with_basis():
     file_path = DATA_DIR / 'with_basis.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -376,7 +386,7 @@ def test_2():
 def test_primitive_real():
     file_path = DATA_DIR / 'primitive_real.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -402,7 +412,7 @@ def test_1():
 def test_multiple_parameters():
     file_path = DATA_DIR / 'multiple_parameters.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -500,7 +510,7 @@ def test_6():
 def test_variant_simple():
     file_path = DATA_DIR / 'variant_simple.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -572,7 +582,7 @@ def test_3():
 def test_option_type():
     file_path = DATA_DIR / 'option_type.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -637,7 +647,7 @@ def test_3():
 def test_basic():
     file_path = DATA_DIR / 'basic.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -675,7 +685,7 @@ def test_2():
 def test_primitive_bool():
     file_path = DATA_DIR / 'primitive_bool.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -741,7 +751,7 @@ def test_4():
 def test_with_guards():
     file_path = DATA_DIR / 'with_guards.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -824,7 +834,7 @@ def test_5():
 def test_variant_with_data():
     file_path = DATA_DIR / 'variant_with_data.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -878,7 +888,7 @@ def test_2():
 def test_primitive_int():
     file_path = DATA_DIR / 'primitive_int.yaml'
     input_data = read_test_input(file_path)
-    code = gen_test_cases(
+    code = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
@@ -931,7 +941,7 @@ if __name__ == '__main__':
 def test_{file_name}():
     file_path = DATA_DIR / '{file_name}.yaml'
     input_data = read_test_input(file_path)
-    stmts = gen_test_cases(
+    stmts = _gen_test_cases(
         iml=input_data.iml,
         decomp_name=input_data.function_name,
         other_decomp_kwargs=input_data.other_decomp_kwargs,
