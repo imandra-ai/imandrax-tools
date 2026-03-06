@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from imandrax_api import url_dev, url_prod  # noqa: F401
+from imandrax_api import url_dev, url_prod
 from imandrax_api_models import DecomposeRes, EvalRes  # noqa: F401, RUF100
 from imandrax_api_models.client import ImandraXClient
 from imandrax_codegen.unparse import unparse
@@ -74,6 +74,7 @@ def gen_test_cases(
     lang: Lang,
     other_decomp_kwargs: dict[str, Any] | None = None,
     imandrax_api_key: str | None = None,
+    imandrax_env: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
@@ -83,9 +84,12 @@ def gen_test_cases(
 
     other_decomp_kwargs = other_decomp_kwargs or {}
 
+    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
+    url = url_dev if env == 'dev' else url_prod
+
     c = ImandraXClient(
         auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
-        url=url_prod,
+        url=url,
     )
 
     # Eval IML
