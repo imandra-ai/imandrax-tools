@@ -73,6 +73,7 @@ def gen_test_cases(
     decomp_name: str,
     lang: Lang,
     other_decomp_kwargs: dict[str, Any] | None = None,
+    imandrax_api_key: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
@@ -83,8 +84,7 @@ def gen_test_cases(
     other_decomp_kwargs = other_decomp_kwargs or {}
 
     c = ImandraXClient(
-        auth_token=os.environ['IMANDRAX_API_KEY'],
-        # url=url_dev,
+        auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
         url=url_prod,
     )
 
@@ -123,5 +123,7 @@ def gen_test_cases(
             type_def_stmts = [stmt for stmts in type_defs_stmts for stmt in stmts]
             test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
             type_def_code = unparse(type_def_stmts) if type_def_stmts else ''
-            test_def_code = unparse(test_def_stmts, include_future_import=not type_def_stmts)
+            test_def_code = unparse(
+                test_def_stmts, include_future_import=not type_def_stmts
+            )
             return (type_def_code, test_def_code)
