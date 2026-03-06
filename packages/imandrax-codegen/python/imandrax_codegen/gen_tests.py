@@ -122,6 +122,6 @@ def gen_test_cases(
             ]
             type_def_stmts = [stmt for stmts in type_defs_stmts for stmt in stmts]
             test_def_stmts = ast_of_art(decomp_art, mode='fun-decomp')
-            type_def_code = unparse(type_def_stmts)
-            test_def_code = unparse(test_def_stmts)
+            type_def_code = unparse(type_def_stmts) if type_def_stmts else ''
+            test_def_code = unparse(test_def_stmts, include_future_import=not type_def_stmts)
             return (type_def_code, test_def_code)

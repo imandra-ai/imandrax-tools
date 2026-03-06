@@ -124,6 +124,7 @@ def to_stdlib(node: Any) -> Any:
 def unparse(
     nodes: list[custom_ast.stmt],
     alias_real_to_float: bool = False,
+    include_future_import: bool = True,
     # TODO: add a config field?
     # - [x] whether to alias `real` to `float` or not
     #   - [ ] alternatively: use Decimal instead of float
@@ -178,7 +179,7 @@ def unparse(
     alias_real: list[stdlib_ast.stmt] = mk_ast('real = float')
 
     body = [
-        future_annotations_import,
+        *([] if not include_future_import else [future_annotations_import]),
         dataclass_import,
         typing_import,
         *option_lib_import,
@@ -194,7 +195,7 @@ def unparse(
     # it means that the option_lib definition is needed
     if 'from imandrax_option_lib' in code:
         body = [
-            future_annotations_import,
+            *([] if not include_future_import else [future_annotations_import]),
             dataclass_import,
             typing_import,
             *option_lib_definition,
@@ -204,3 +205,8 @@ def unparse(
         code = gen_code(body)
 
     return format_code(code)
+
+
+def join_code_parts(code_parts: list[str]) -> str:
+    non_empty_parts = [part.strip() for part in code_parts if part.strip()]
+    return '\n\n\n'.join(non_empty_parts) + '\n'

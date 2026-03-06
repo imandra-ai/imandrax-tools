@@ -4,6 +4,7 @@ from typing import Any
 
 import yaml
 from imandrax_codegen.gen_tests import Lang, gen_test_cases
+from imandrax_codegen.unparse import join_code_parts
 from inline_snapshot import snapshot
 
 curr_dir = Path(__file__).parent
@@ -17,7 +18,7 @@ def _gen_test_cases(
     other_decomp_kwargs: dict[str, Any] | None = None,
 ) -> str:
     type_def, test_def = gen_test_cases(iml, decomp_name, lang, other_decomp_kwargs)
-    return type_def + '\n\n' + test_def
+    return join_code_parts([type_def, test_def])
 
 
 @dataclass

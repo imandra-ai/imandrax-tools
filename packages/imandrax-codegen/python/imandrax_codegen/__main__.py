@@ -7,6 +7,7 @@ from typing import Annotated
 import typer
 from imandrax_codegen.art_parse import code_of_art
 from imandrax_codegen.gen_tests import Lang, gen_test_cases
+from imandrax_codegen.unparse import join_code_parts
 
 app = typer.Typer()
 
@@ -101,7 +102,7 @@ def gen_test_command(
         raise target_lang
 
     type_def, test_def = gen_test_cases(iml, function, lang=target_lang)
-    result = type_def + '\n\n' + test_def
+    result = join_code_parts([type_def, test_def])
 
     write_output(output, result)
 
