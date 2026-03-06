@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [18.4.0] - 2026-03-06
+
+- Return type definition and test declaration separately
+
 ## [18.3.0] - 2026-02-24
 
 - Add linux+aarch64 support
