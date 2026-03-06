@@ -55,6 +55,7 @@ This avoids closures entirely—it's plain structural recursion that ImandraX ca
 ## When This Matters
 
 The issue specifically affects:
+
 - **Polymorphic functions** with type variables like `'a`
 - **Closures/lambdas** passed to higher-order functions
 - **Proof contexts** (the code may compile but proofs fail)
@@ -80,10 +81,10 @@ let rec powerset (xs : int list) : int list list =
 
 ## Common Patterns
 
-| Instead of | Use |
-|------------|-----|
-| `List.map (fun x -> x + 1) xs` | `let rec add_one xs = match xs with [] -> [] \| x::t -> (x+1)::add_one t` |
-| `List.map (fun s -> x :: s) xss` | `let rec map_cons x xss = ...` (as above) |
+| Instead of                        | Use                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `List.map (fun x -> x + 1) xs`    | `let rec add_one xs = match xs with [] -> [] \| x::t -> (x+1)::add_one t`                                   |
+| `List.map (fun s -> x :: s) xss`  | `let rec map_cons x xss = ...` (as above)                                                                   |
 | `List.filter (fun x -> x > 0) xs` | `let rec filter_pos xs = match xs with [] -> [] \| x::t -> if x > 0 then x::filter_pos t else filter_pos t` |
 
 This is a known limitation of ImandraX's handling of polymorphic closures in the proof engine.
