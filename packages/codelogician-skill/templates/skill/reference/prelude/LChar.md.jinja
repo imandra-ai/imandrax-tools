@@ -1,0 +1,11 @@
+# Module `LChar`
+
+{% set entries = prelude | selectattr("module", "equalto", "LChar") | list -%}
+{{ entries | length }} entries
+{% for entry in entries %}
+
+`{{ entry.name }}`
+{%- for key, val in entry.items() if key not in ["module", "name", "type", "pattern"] and val %}
+- {{ key | capitalize }}: {% if key == "signature" %}`{{ val }}`{% else %}{{ val }}{% endif %}
+{%- endfor %}
+{% endfor %}
