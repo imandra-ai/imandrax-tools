@@ -1,5 +1,5 @@
 short_iml_101:
-  content: >
+  content: |
     IML (Imandra Modeling Language)
     - syntax: a formalized Higher-Order subset of OCaml extended with theorem proving tactics and verification annotations
     - features: counter-example generation, automated induction, conditional rewriting, bounded and unbounded verification, theorem
@@ -10,17 +10,17 @@ short_iml_101:
     uage #formal verification
 iml_caveats:
   content:
-    - >
+    - |
       Prefer pattern matching over using auxiliary functions if possible because it makes recursive steps explicit and visible, and
       directly reflects data's inductive structure. In comparison, auxiliary functions like `List.nth`, `List.length` add a layer of a
       bstraction that obscures the underlying recursive structure, making formal verification more complex.
-    - >
+    - |
       Nested recursive functions complicate the proof process. Try to extract the nested function into a top-level function if possi
       ble.
-    - >
+    - |
       Higher-order function: When passing lambdas (anonymous functions) to higher-order functions like `List.filter`, `List.map`, `L
       ist.fold_left`, etc., annotating the lambda parameters with their concrete types will help Imandra use reduce higher-order defin
       itions to first-order form for easier reasoning.
-    - >
+    - |
       Record types' field name: Don't define record types with the same field names in the same name space (module) unless you are w
       illing to disambiguate them with annotations.

@@ -1,5 +1,5 @@
 all_module_signatures:
-   content: >
+   content: |
     <prelude>
     Prelude (readily available, no need to quantify with module name)
       val || : bool -> bool -> bool
