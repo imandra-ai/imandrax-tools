@@ -1,7 +1,7 @@
 #! /usr/bin/env uv run
 # /// script
 # requires-python = ">=3.13"
-# dependencies = []
+# dependencies = ["pyyaml"]
 # ///
 # pyright: basic
 """Extract tactics documentation from prelude.iml.
@@ -58,16 +58,15 @@ Convert OCamldoc syntax to markdown:
 Output
 ------
 - Print summary to stdout
-- Save to tactics.json with structure:
-  {
-    "tactics": [...],
-    "notations": {...}
-  }
+- Save to tactics.yaml with structure:
+  tactics: [...]
+  notations: {...}
 """
 
-import json
 import re
 from pathlib import Path
+
+import yaml
 
 
 def ocamldoc_to_markdown(doc: str) -> str:
@@ -361,6 +360,23 @@ def extract_tactics(content: str) -> list[dict]:
     return tactics
 
 
+def str_representer(dumper: yaml.Dumper, data: str):
+    """
+    If the string contains newlines, represent it as a literal block.
+
+    Note: PyYAML refuses to use literal block style for strings with trailing
+    whitespace on any line, so we strip trailing whitespace to enable literal blocks.
+    """
+    if "\n" in data:
+        # Strip trailing whitespace from each line to allow literal block style
+        data = "\n".join(line.rstrip() for line in data.split("\n"))
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+yaml.add_representer(str, str_representer)
+
+
 def main(output_path: Path, prelude_path: Path | None = None):
     if prelude_path is None:
         prelude_path = Path(__file__).parent / "prelude.iml"
@@ -402,12 +418,12 @@ def main(output_path: Path, prelude_path: Path | None = None):
     #         print(f"  [%{notation['name']}]: {', '.join(notation['patterns'])}")
     #     print("-" * 80)
 
-    # Save as JSON
+    # Save as YAML
     output = {
         "tactics": tactics,
         "notations": notations,
     }
-    output_path.write_text(json.dumps(output, indent=2))
+    output_path.write_text(yaml.dump(output, default_flow_style=False, sort_keys=False))
     # print(f"\nSaved to {output_path}")
 
 
@@ -418,8 +434,8 @@ if __name__ == "__main__":
         description="Extract tactics documentation from prelude.iml"
     )
     parser.add_argument("prelude", nargs="?", type=Path, help="Path to prelude.iml")
-    parser.add_argument("-o", "--output", type=Path, help="Output JSON path")
+    parser.add_argument("-o", "--output", type=Path, help="Output YAML path")
     args = parser.parse_args()
 
-    output_path = args.output or Path(__file__).parent / "tactics.json"
+    output_path = args.output or Path(__file__).parent / "tactics.yaml"
     main(output_path, prelude_path=args.prelude)

@@ -1,11 +1,12 @@
-; 1. Extract tactics from prelude.iml -> tactics.json
+; 1. Extract tactics from prelude.iml -> tactics.yaml
 (rule
- (targets tactics.json)
- (deps
-  extraction_tactic_docs_from_iml_prelude/__main__.py
-  extraction_tactic_docs_from_iml_prelude/prelude.iml)
+  (mode (promote (until-clean)))
+  (targets tactics.yaml)
+  (deps
+    extraction_tactic_docs_from_iml_prelude/__main__.py
+    extraction_tactic_docs_from_iml_prelude/prelude.iml)
  (action
-  (run uv run python
+  (run uv run --script
    extraction_tactic_docs_from_iml_prelude/__main__.py
    extraction_tactic_docs_from_iml_prelude/prelude.iml
    -o %{targets})))
@@ -24,8 +25,8 @@
 (rule
  (mode (promote (until-clean)))
  (targets context.yaml)
- (deps constants.yaml tactics.json)
+ (deps constants.yaml tactics.yaml)
  (action
   (with-stdout-to
    %{targets}
-   (bash "yq eval '. * {\"tactics\": load(\"tactics.json\")}' constants.yaml"))))
+   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' constants.yaml tactics.yaml"))))
