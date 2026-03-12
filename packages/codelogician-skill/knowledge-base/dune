@@ -4,7 +4,8 @@
  (targets context.yaml)
  (deps
   constants/constants.yaml
-  extraction_tactic_docs_from_iml_prelude/tactics.yaml)
+  extraction_tactic_docs_from_iml_prelude/tactics.yaml
+  iml_api_reference/iml_api_reference.yaml)
  (action
   (with-stdout-to
    %{targets}
