@@ -1,18 +1,28 @@
-; Generate skill/ from templates/skill, extended-prelude, and knowledge-base/context.yaml
+; Build the skill/ directory from sources:
 ;
-; Rules:
-;  - *.jinja: render with `jinja -d context.yaml`, strip .jinja extension
-;  - SKILL.md: copy template then run janet to insert directory tree
-;  - everything else: copy as-is
-;  - extended-prelude/*.iml copy to skill/extended-prelude/
+;   templates/skill/   — main content (*.md, *.iml, *.md.jinja)
+;   extended-prelude/  — additional IML prelude files
+;   knowledge-base/    — context.yaml for jinja rendering
+;
+; All rules use `(alias skill)` and `(promote (until-clean))` so that
+; `dune build @skill` regenerates skill/ in the source tree.
+;
+; Source layout → skill/ mapping:
+;   templates/skill/**/*.md          → skill/**/*.md        (copy)
+;   templates/skill/**/*.iml         → skill/**/*.iml       (copy)
+;   templates/skill/**/*.md.jinja    → skill/**/*.md        (render via jinja)
+;   templates/skill/SKILL.md1        → skill/SKILL.md       (copy + janet post-processing)
+;   extended-prelude/*.iml           → skill/extended-prelude/*.iml (copy)
 
+; 1. Copy extended-prelude .iml files into skill/extended-prelude/
 (subdir skill/extended-prelude
   (copy_files
     (alias skill)
     (mode (promote (until-clean)))
     (files ../../extended-prelude/*.iml)))
 
-; Copy all .md and .iml files (preserving directory structure)
+; 2. Copy .md and .iml files from templates/skill/ preserving directory structure.
+;    Excludes SKILL.md1 which is handled separately below.
 (rule
  (alias skill)
  (mode (promote (until-clean)))
@@ -26,7 +36,8 @@
       cp \"$f\" \"../../skill/$f\"; \
     done")))
 
-; Render *.jinja templates → skill/ (strip .jinja extension)
+; 3. Render .jinja templates with context.yaml, stripping the .jinja extension.
+;    e.g. templates/skill/reference/tactics.md.jinja → skill/reference/tactics.md
 (rule
  (alias skill)
  (mode (promote (until-clean)))
@@ -41,7 +52,10 @@
       jinja -d ../../knowledge-base/context.yaml -o \"$dest\" \"$f\"; \
     done")))
 
-; Generate SKILL.md with directory tree
+; 4. Generate SKILL.md: copy the template then run janet to insert a directory
+;    tree listing all skill/ content files with their frontmatter descriptions.
+;    The janet script scans templates/skill/ (not skill/) for referential
+;    transparency — it derives final filenames by stripping .jinja extensions.
 (subdir skill
  (rule
   (alias skill)
