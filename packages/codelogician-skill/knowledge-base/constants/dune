@@ -4,7 +4,6 @@
  (mode (promote (until-clean)))
  (deps
   main.yaml
-  all_module_signatures.yaml
   quickstart_examples.yaml)
  (action
   (with-stdout-to
