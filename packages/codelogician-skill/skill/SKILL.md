@@ -46,11 +46,11 @@ EOF
   - Note: stdin `check` doesn't support import syntax
 
 
-## More in-depth references in current directory
+## More in-depth references in skill directory
 
 Along with `SKILL.md` (this file), we have the following materials:
 
-```tree {name: skill-dir-structure}
+```tree
 ./
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
@@ -81,6 +81,7 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── all-prelude-module-signatures.md # Signatures of all modules in IML prelude
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Complete reference for all proof tactics
+├── SKILL.md
 ├── codelogician-cli.md # Guide for using the `codelogician-lite` CLI to interact with ImandraX and access additional features.
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.

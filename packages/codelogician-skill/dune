@@ -52,10 +52,9 @@
       jinja -d ../../knowledge-base/context.yaml -o \"$dest\" \"$f\"; \
     done")))
 
-; 4. Generate SKILL.md: copy the template then run janet to insert a directory
-;    tree listing all skill/ content files with their frontmatter descriptions.
-;    The janet script scans templates/skill/ (not skill/) for referential
-;    transparency — it derives final filenames by stripping .jinja extensions.
+; 4. Generate SKILL.md:
+;    echo SKILL.pt1
+;    echo tree structure of skill/ directory using skill-dir-tree.janet
 (subdir skill
  (rule
   (alias skill)
@@ -64,11 +63,20 @@
    (glob_files_rec ../templates/skill/**.md)
    (glob_files_rec ../templates/skill/**.iml)
    (glob_files_rec ../templates/skill/**.jinja)
-   (:skill-in ../templates/skill/SKILL.md1)
-   ../scripts/update-skill-reference.janet)
+   (:skill-pt1 ../templates/skill/SKILL.pt1.md1)
+   ../scripts/skill-dir-tree.janet)
   (target SKILL.md)
   (action
-   (bash "\
-     cp %{skill-in} %{target} && \
-     chmod u+w %{target} && \
-     janet ../scripts/update-skill-reference.janet ../templates/skill %{target}"))))
+    (with-stdout-to SKILL.md
+      (progn
+        (cat %{skill-pt1})
+        (echo "\n\n")
+        (echo "## More in-depth references in skill directory\n")
+        (echo "\n")
+        (echo "Along with `SKILL.md` (this file), we have the following materials:\n\n")
+        (bash "janet ../scripts/skill-dir-tree.janet ../templates/skill")
+      )
+    )
+  )
+ )
+)

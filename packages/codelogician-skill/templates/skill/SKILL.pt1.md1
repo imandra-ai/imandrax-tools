@@ -44,12 +44,3 @@ let f x = x + 1
 EOF
 ```
   - Note: stdin `check` doesn't support import syntax
-
-
-## More in-depth references in current directory
-
-Along with `SKILL.md` (this file), we have the following materials:
-
-```tree {name: skill-dir-structure}
-{placeholder}
-```
