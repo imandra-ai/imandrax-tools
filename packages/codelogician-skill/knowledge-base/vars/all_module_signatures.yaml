@@ -1,0 +1,340 @@
+all_module_signatures:
+   content: >
+    <prelude>
+    Prelude (readily available, no need to quantify with module name)
+      val || : bool -> bool -> bool
+      val && : bool -> bool -> bool
+      val = : 'a -> 'a -> bool
+      val <> : 'a -> 'a -> bool
+      val not : bool -> bool
+      val ==> : bool -> bool -> bool
+      val <== : bool -> bool -> bool
+      val <==> : bool -> bool -> bool
+      val + : int -> int -> int
+      val const : 'a -> 'b -> 'a
+      val >= : int -> int -> bool
+      val mk_nat : int -> int
+      val < : int -> int -> bool
+      val <= : int -> int -> bool
+      val > : int -> int -> bool
+      val min : int -> int -> int
+      val max : int -> int -> int
+      val <. : real -> real -> bool
+      val <=. : real -> real -> bool
+      val >. : real -> real -> bool
+      val >=. : real -> real -> bool
+      val min_r : real -> real -> real
+      val max_r : real -> real -> real
+      val ~- : int -> int
+      val abs : int -> int
+      val - : int -> int -> int
+      val ~+ : int -> int
+      val * : int -> int -> int
+      val / : int -> int -> int
+      val mod : int -> int -> int
+      val compare : int -> int -> int  (*  Total order, if x = y then 0 else if x < y then -1 else 1  *)
+
+    type list =
+      | []
+      | ( :: ) of 'a * 'a list
+
+    type result =
+      | Ok of 'a
+      | Error of 'b
+    (*  Result type, representing either a successul result [Ok x] or an error
+        [Error x].  *)
+    </prelude>
+
+    <module_Set>
+    Module: `Set`
+    ```iml
+    module type Set = sig
+      type Set.t = ('a, bool) Map.t
+      val empty : ('a, bool) Map.t
+      val full : ('a, bool) Map.t
+      val is_empty : 'a Set.t -> bool
+      val is_valid : 'a Set.t -> bool
+      val mem : 'a -> 'a Set.t -> bool
+      val subset : 'a Set.t -> 'a Set.t -> bool
+      val add : 'a -> 'a Set.t -> 'a Set.t
+      val remove : 'a -> 'a Set.t -> 'a Set.t
+      val inter : 'a Set.t -> 'a Set.t -> 'a Set.t
+      val union : 'a Set.t -> 'a Set.t -> 'a Set.t
+      val complement : 'a Set.t -> 'a Set.t
+      val diff : 'a Set.t -> 'a Set.t -> 'a Set.t
+      val of_list : 'a list -> ('a, bool) Map.t
+      val (++) : 'a Set.t -> 'a Set.t -> 'a Set.t
+      val (--) : 'a Set.t -> 'a Set.t -> 'a Set.t
+    end
+    ```
+    </module_Set>
+
+    <module_Result>
+    Module: `Result`
+    ```iml
+    module type Result = sig
+      type ('a, 'b) t = ('a, 'b) result
+      val return : 'a -> ('a, 'b) result
+      val fail : 'a -> ('b, 'a) result
+      val map : ('b -> 'c) -> ('b, 'a) result -> ('c, 'a) result
+      val map_err : ('a -> 'c) -> ('b, 'a) result -> ('b, 'c) result
+      val get_or : default:'a -> ('a, 'b) result -> 'a
+      val map_or : default:'a -> ('c -> 'a) -> ('c, 'b) result -> 'a
+      val (>|=) : ('b, 'a) result -> ('b -> 'c) -> ('c, 'a) result
+      val flat_map : ('b -> ('c, 'a) result) -> ('b, 'a) result -> ('c, 'a) result
+      val (>>=) : ('b, 'a) result -> ('b -> ('c, 'a) result) -> ('c, 'a) result
+      val fold : ('b -> 'c) -> ('a -> 'c) -> ('b, 'a) result -> 'c
+      val is_ok : ('a, 'b) result -> bool
+      val is_error : ('a, 'b) result -> bool
+      val monoid_product : ('a, 'b) result -> ('c, 'b) result -> ('a * 'c, 'b) result
+      val let+ : ('c, 'a) result
+      val and+ : (('a * 'c), 'b) result
+      val let* : ('c, 'a) result
+      val and* : (('a * 'c), 'b) result
+    end
+    ```
+    </module_Result>
+
+    <module_Real>
+    Module: `Real`
+    ```iml
+    module type Real = sig
+      type t = real
+      val of_int : int -> real
+      val _to_int_round_down : real -> int
+      val to_int : real -> int
+      val (+) : real -> real -> real
+      val (-) : real -> real -> real
+      val (~-) : real -> real
+      val (*) : real -> real -> real
+      val (/) : real -> real -> real
+      val (<) : real -> real -> bool
+      val (<=) : real -> real -> bool
+      val (>) : real -> real -> bool
+      val (>=) : real -> real -> bool
+      val abs : real -> real
+      val min : real -> real -> real
+      val max : real -> real -> real
+      val of_float : float -> real
+      val pow : real -> int -> real
+    end
+    ```
+    </module_Real>
+
+    <module_Option>
+    Module: `Option`
+    ```iml
+    module type Option = sig
+      type 'a t = 'a option
+      val map : ('a -> 'b) -> 'a option -> 'b option
+      val map_or : default:'a -> ('b -> 'a) -> 'b option -> 'a
+      val is_some : 'a option -> bool
+      val is_none : 'a option -> bool
+      val return : 'a -> 'a option
+      val (>|=) : 'a option -> ('a -> 'b) -> 'b option
+      val flat_map : ('a -> 'b option) -> 'a option -> 'b option
+      val (>>=) : 'a option -> ('a -> 'b option) -> 'b option
+      val or_ : 'a option -> 'a option -> 'a option
+      val (<+>) : 'a option -> 'a option -> 'a option
+      val exists : ('a -> bool) -> 'a option -> bool
+      val for_all : ('a -> bool) -> 'a option -> bool
+      val get_or : default:'a -> 'a option -> 'a
+      val fold : ('a -> 'b -> 'a) -> 'a -> 'b option -> 'a
+      val (<$>) : ('a -> 'b) -> 'a option -> 'b option
+      val monoid_product : 'a option -> 'b option -> ('a * 'b) option
+      val let+ : 'a option -> ('a -> 'b) -> 'b option
+      val and+ : 'a option -> 'b option -> ('a * 'b) option
+      val let* : 'a option -> ('a -> 'b option) -> 'b option
+      val and* : 'a option -> 'b option -> ('a * 'b) option
+    end
+    ```
+    </module_Option>
+
+    <module_Int>
+    Module: `Int`
+    ```iml
+    module type Int = sig
+      type t = int
+      val (+) : int -> int -> int
+      val (-) : int -> int -> int
+      val (~-) : int -> int
+      val (*) : int -> int -> int
+      val (/) : int -> int -> int
+      val (mod) : int -> int -> int
+      val (<) : int -> int -> bool
+      val (<=) : int -> int -> bool
+      val (>) : int -> int -> bool
+      val (>=) : int -> int -> bool
+      val min : int -> int -> int
+      val max : int -> int -> int
+      val abs : int -> int
+      val to_string : int -> string
+      val compare : int -> int -> int
+      val equal : 'a -> 'a -> bool
+      val pow : int -> int -> int
+      val mod_zero_prod : int -> int -> int -> bool
+      val mod_sub_id : int -> int -> bool
+    end
+    ```
+    </module_Int>
+
+    <module_List>
+    Module: `List`
+    ```iml
+    module type List = sig
+      type 'a t = 'a list
+      val empty : 'a list
+      val is_empty : 'a list -> bool
+      val cons : 'a -> 'a list -> 'a list
+      val return : 'a -> 'a list
+      val hd : 'a list -> 'a
+      val tl : 'a list -> 'a list
+      val head_opt : 'a list -> 'a option
+      val append : 'a list -> 'a list -> 'a list
+      val append_to_nil : 'a list -> bool
+      val append_single : 'a -> 'a list -> 'a list -> bool
+      val rev : 'a list -> 'a list
+      val length : 'a list -> int
+      val len_nonnegative : 'a list -> bool
+      val len_zero_is_empty : 'a list -> bool
+      val len_append : 'a list -> 'a list -> bool
+      val split : ('a * 'b) list -> 'a list * 'b list
+      val map : ('a -> 'b) -> 'a list -> 'b list
+      val map2 : ('c -> 'a -> 'b) -> 'c list -> 'a list -> ('b list, string) result
+      val for_all : ('a -> bool) -> 'a list -> bool
+      val exists : ('a -> bool) -> 'a list -> bool
+      val fold_left : ('b -> 'a -> 'b) -> 'b -> 'a list -> 'b
+      val fold_right : ('b -> 'a -> 'a) -> 'b list -> 'a -> 'a
+      val mapi : (int -> 'b -> 'a) -> 'b list -> 'a list
+      val filter : ('a -> bool) -> 'a list -> 'a list
+      val filter_map : ('a -> 'b option) -> 'a list -> 'b list
+      val flat_map : ('b -> 'a list) -> 'b list -> 'a list
+      val find : ('a -> bool) -> 'a list -> 'a option
+      val mem : 'a -> 'a list -> bool
+      val mem_assoc : 'a -> ('a * 'b) list -> bool
+      val nth : int -> 'a list -> 'a option
+      val assoc : 'a -> ('a * 'b) list -> 'b option
+      val bounded_recons : int -> 'a list -> 'a list
+      val take : int -> 'a list -> 'a list
+      val drop : int -> 'a list -> 'a list
+      val range : int -> int -> int list
+      val (--) : int -> int -> int list
+      val insert_sorted : leq:('a -> 'a -> bool) -> 'a -> 'a list -> 'a list
+      val sort : leq:('a -> 'a -> bool) -> 'a list -> 'a list
+      val is_sorted : leq:('a -> 'a -> bool) -> 'a list -> bool
+      val monoid_product : 'a list -> 'b list -> ('a * 'b) list
+      val (>|=) : 'a list -> ('a -> 'b) -> 'b list
+      val (>>=) : 'b list -> ('b -> 'a list) -> 'a list
+      val let+ : 'b list -> ('b -> 'a) -> 'a list
+      val and+ : 'a list -> 'b list -> ('a * 'b) list
+      val let* : 'b list -> ('b -> 'a list) -> 'a list
+      val and* : 'a list -> 'b list -> ('a * 'b) list
+    end
+    ```
+    </module_List>
+
+    <module_Map>
+    Module: `Map`
+    ```iml
+    module type Map = sig
+      type Map.t = {{| l : ('a * 'b) list; | default : 'b}}
+      val const : 'b -> ('a, 'b) Map.t
+      val add' : ('a, 'b) Map.t -> 'a -> 'b -> ('a, 'b) Map.t
+      val add : 'a -> 'b -> ('a, 'b) Map.t -> ('a, 'b) Map.t
+      val get_default : ('a, 'b) Map.t -> 'b
+      val get' : ('a, 'b) Map.t -> 'a -> 'b
+      val get : 'a -> ('a, 'b) Map.t -> 'b
+      val of_list : 'b -> ('a * 'b) list -> ('a, 'b) Map.t
+    end
+    ```
+    </module_Map>
+
+    <module_Multiset>
+    Module: `Multiset`
+    ```iml
+    module type Multiset = sig
+      type Multiset.t = ('a, int) Map.t
+      val empty : ('a, int) Map.t
+      val add : 'a -> ('a, int) Map.t -> ('a, int) Map.t
+      val find : 'a -> ('a, int) Map.t -> int
+      val mem : 'a -> ('a, int) Map.t -> bool
+      val remove : 'a -> ('a, int) Map.t -> ('a, int) Map.t
+      val of_list : 'a list -> ('a, int) Map.t
+    end
+    ```
+    </module_Multiset>
+
+    <module_LChar>
+    In IML, we mainly use `LChar` and `LString`, (logic-mode character and logic-modestring). To create a logic-mode string (LString.t), you can use the syntax sugar`{{l|hello|l}}`.
+
+    ```iml repl
+    > let y = {{l|hello|l}};;
+    val y: LChar.t list
+    ```
+    </module_LChar>
+
+    <module_LChar>
+    Module: `LChar`
+    ```iml
+    module type LChar = sig
+      type LChar.t =
+    LChar.Char of bool * bool * bool * bool * bool * bool * bool * bool
+      val zero : LChar.t
+      val is_printable : LChar.t -> bool
+    end
+    ```
+    </module_LChar>
+
+    <module_LString>
+    Module: `LString`
+    ```iml
+    module type LString = sig
+      type t = LChar.t list
+      val empty : LChar.t list
+      val of_list : 'a -> 'a
+      val length : LChar.t list -> int
+      val len_pos : LChar.t list -> bool
+      val len_zero_inversion : LChar.t list -> bool
+      val append : LChar.t list -> LChar.t list -> LChar.t list
+      val (^^) : LChar.t list -> LChar.t list -> LChar.t list
+      val for_all : (LChar.t -> bool) -> LChar.t list -> bool
+      val exists : (LChar.t -> bool) -> LChar.t list -> bool
+      val concat : LChar.t list -> LChar.t list list -> LChar.t list
+      val is_printable : LChar.t list -> bool
+      val sub : LChar.t list -> int -> int -> LChar.t list
+      val prefix : LChar.t list -> LChar.t list -> bool
+      val suffix : LChar.t list -> LChar.t list -> bool
+      val contains : LChar.t list -> LChar.t list -> bool
+      val take : int -> LString.t -> LString.t
+      val drop : int -> LString.t -> LString.t
+    end
+    ```
+    </module_LString>
+
+    <module_String>
+    Module: `String`
+    ```iml
+    module type String = sig
+    (* Note:
+    - These strings correspond to OCaml native strings, and do not have a particular unicode encoding.
+    - Rather, they should be seen as sequences of bytes, and it is also this way that Imandra considers them.
+    *)
+      type String.t = string
+      val empty : string
+      val length : String.t -> int
+      val append : String.t -> String.t -> String.t
+      val concat : string -> String.t list -> string
+      val prefix : String.t -> String.t -> bool
+      val suffix : String.t -> String.t -> bool
+      val contains : String.t -> String.t -> bool
+      val unsafe_sub : String.t -> int -> int -> String.t
+      val sub : string -> int -> int -> String.t option
+      val of_int : int -> string
+      val unsafe_to_nat : String.t -> int
+      val to_nat : string -> int option
+      val is_nat : string -> bool
+      val is_int : string -> bool
+      val unsafe_to_int : string -> int
+      val to_int : string -> int option
+    end
+    ```
