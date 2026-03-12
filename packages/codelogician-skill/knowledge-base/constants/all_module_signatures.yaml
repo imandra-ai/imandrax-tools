@@ -338,3 +338,4 @@ all_module_signatures:
       val to_int : string -> int option
     end
     ```
+    </module_String>
