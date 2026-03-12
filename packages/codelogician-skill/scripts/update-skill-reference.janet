@@ -1,17 +1,20 @@
 #!/usr/bin/env janet
 
-# Generate a tree view of skill/ markdown files with descriptions from frontmatter,
+# Generate a tree view of markdown files with descriptions from frontmatter,
 # and insert/update it in SKILL.md inside a ```tree {name: skill-dir-structure} code block.
+#
+# Usage: janet update-skill-reference.janet <template-dir> <output-skill-md>
+# e.g.:  janet update-skill-reference.janet templates/skill skill/SKILL.md
+#
+# Scans <template-dir> for .md and .md.jinja files. Jinja files are shown
+# with the .jinja extension stripped (their output name).
 
-# Resolve skill-dir: use first CLI arg if given, else relative to script location.
-(def skill-dir
-  (let [args (dyn *args*)]
-    (if (and args (> (length args) 1))
-      (in args 1)
-      (let [script-path (if (and args (> (length args) 0)) (in args 0) (dyn *executable*))
-            last-slash (last (string/find-all "/" script-path))]
-        (string (if last-slash (string/slice script-path 0 last-slash) ".") "/../skill")))))
-(def skill-md (string skill-dir "/SKILL.md"))
+(def args (dyn *args*))
+(unless (and args (>= (length args) 3))
+  (eprintf "Usage: %s <template-dir> <output-skill-md>" (or (and args (in args 0)) "update-skill-reference.janet"))
+  (os/exit 1))
+(def skill-dir (in args 1))
+(def skill-md (in args 2))
 (def tree-block-identifier "skill-dir-structure")
 (def root-name ".")
 
@@ -63,7 +66,7 @@
       (if (= desc "") nil desc))))
 
 (defn collect-md-files
-  "Recursively collect .md files under dir."
+  "Recursively collect .md and .md.jinja files under dir."
   [dir]
   (def results @[])
   (defn walk [d]
@@ -71,7 +74,8 @@
       (def full (string d "/" entry))
       (case (os/stat full :mode)
         :directory (walk full)
-        :file (when (string/has-suffix? ".md" entry)
+        :file (when (or (string/has-suffix? ".md" entry)
+                        (string/has-suffix? ".md.jinja" entry))
                 (array/push results full)))))
   (walk dir)
   results)
@@ -123,6 +127,9 @@
   (def root @{:children (table) :files @[]})
   (each f files
     (def rel (string/slice f (+ 1 (length base-dir))))
+    (def rel (if (string/has-suffix? ".jinja" rel)
+               (string/slice rel 0 (- (length rel) 6))
+               rel))
     (def parts (string/split "/" rel))
     (def desc (if (= (last parts) "SKILL.md") nil (parse-description f)))
     (var node root)
@@ -199,4 +206,4 @@
 
 (spit skill-md new-content)
 (print "Updated " skill-md)
-(print block)
+# (print block)

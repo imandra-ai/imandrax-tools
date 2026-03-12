@@ -4,39 +4,57 @@
 ;  - *.jinja: render with `jinja -d context.yaml`, strip .jinja extension
 ;  - SKILL.md: copy template then run janet to insert directory tree
 ;  - everything else: copy as-is
+;  - extended-prelude/*.iml copy to skill/extended-prelude/
 
+(subdir skill/extended-prelude
+  (copy_files
+    (alias skill)
+    (mode (promote (until-clean)))
+    (files ../../extended-prelude/*.iml)))
+
+; Copy all .md and .iml files (preserving directory structure)
 (rule
  (alias skill)
  (mode (promote (until-clean)))
- (targets (dir skill))
  (deps
-  (glob_files_rec templates/skill/**)
-  (glob_files extended-prelude/*.iml)
-  knowledge-base/context.yaml
-  scripts/update-skill-reference.janet)
+  (glob_files_rec templates/skill/**.md)
+  (glob_files_rec templates/skill/**.iml))
  (action
   (bash "\
-set -eu
-mkdir -p skill
+    cd templates/skill && find . -type f \\( -name '*.md' -o -name '*.iml' \\) ! -name 'SKILL.md1' | while read -r f; do \
+      mkdir -p \"../../skill/$(dirname \"$f\")\" && \
+      cp \"$f\" \"../../skill/$f\"; \
+    done")))
 
-# Copy all non-jinja files
-cd templates/skill && find . -type f ! -name '*.jinja' | while read -r f; do
-  mkdir -p \"../../skill/$(dirname \"$f\")\"
-  cp \"$f\" \"../../skill/$f\"
-done && cd ../..
+; Render *.jinja templates → skill/ (strip .jinja extension)
+(rule
+ (alias skill)
+ (mode (promote (until-clean)))
+ (deps
+  (glob_files_rec templates/skill/**.jinja)
+  knowledge-base/context.yaml)
+ (action
+  (bash "\
+    cd templates/skill && find . -name '*.jinja' | while read -r f; do \
+      dest=\"../../skill/${f%.jinja}\"; \
+      mkdir -p \"$(dirname \"$dest\")\" && \
+      jinja -d ../../knowledge-base/context.yaml -o \"$dest\" \"$f\"; \
+    done")))
 
-# Render jinja templates (strip .jinja extension)
-cd templates/skill && find . -name '*.jinja' | while read -r f; do
-  dest=\"../../skill/${f%.jinja}\"
-  mkdir -p \"$(dirname \"$dest\")\"
-  jinja -d ../../knowledge-base/context.yaml -o \"$dest\" \"$f\"
-done && cd ../..
-
-# Copy extended-prelude .iml files
-mkdir -p skill/extended-prelude
-cp extended-prelude/*.iml skill/extended-prelude/
-
-# Generate SKILL.md directory tree via janet
-chmod u+w skill/SKILL.md
-janet scripts/update-skill-reference.janet skill
-")))
+; Generate SKILL.md with directory tree
+(subdir skill
+ (rule
+  (alias skill)
+  (mode (promote (until-clean)))
+  (deps
+   (glob_files_rec ../templates/skill/**.md)
+   (glob_files_rec ../templates/skill/**.iml)
+   (glob_files_rec ../templates/skill/**.jinja)
+   (:skill-in ../templates/skill/SKILL.md1)
+   ../scripts/update-skill-reference.janet)
+  (target SKILL.md)
+  (action
+   (bash "\
+     cp %{skill-in} %{target} && \
+     chmod u+w %{target} && \
+     janet ../scripts/update-skill-reference.janet ../templates/skill %{target}"))))
