@@ -1,0 +1,42 @@
+; Generate skill/ from templates/skill, extended-prelude, and knowledge-base/context.yaml
+;
+; Rules:
+;  - *.jinja: render with `jinja -d context.yaml`, strip .jinja extension
+;  - SKILL.md: copy template then run janet to insert directory tree
+;  - everything else: copy as-is
+
+(rule
+ (alias skill)
+ (mode (promote (until-clean)))
+ (targets (dir skill))
+ (deps
+  (glob_files_rec templates/skill/**)
+  (glob_files extended-prelude/*.iml)
+  knowledge-base/context.yaml
+  scripts/update-skill-reference.janet)
+ (action
+  (bash "\
+set -eu
+mkdir -p skill
+
+# Copy all non-jinja files
+cd templates/skill && find . -type f ! -name '*.jinja' | while read -r f; do
+  mkdir -p \"../../skill/$(dirname \"$f\")\"
+  cp \"$f\" \"../../skill/$f\"
+done && cd ../..
+
+# Render jinja templates (strip .jinja extension)
+cd templates/skill && find . -name '*.jinja' | while read -r f; do
+  dest=\"../../skill/${f%.jinja}\"
+  mkdir -p \"$(dirname \"$dest\")\"
+  jinja -d ../../knowledge-base/context.yaml -o \"$dest\" \"$f\"
+done && cd ../..
+
+# Copy extended-prelude .iml files
+mkdir -p skill/extended-prelude
+cp extended-prelude/*.iml skill/extended-prelude/
+
+# Generate SKILL.md directory tree via janet
+chmod u+w skill/SKILL.md
+janet scripts/update-skill-reference.janet skill
+")))

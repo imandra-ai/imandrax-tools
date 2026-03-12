@@ -4,6 +4,10 @@
 
 (generate_opam_files false)
 
+(using directory-targets 0.1)
+
+
+
 (source
  (github username/reponame))
 

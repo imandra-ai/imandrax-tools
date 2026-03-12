@@ -3,17 +3,14 @@
 # Generate a tree view of skill/ markdown files with descriptions from frontmatter,
 # and insert/update it in SKILL.md inside a ```tree {name: skill-dir-structure} code block.
 
-# Resolve skill-dir relative to the script's own location, not cwd.
-(def script-dir
-  (let [exe (dyn *executable*)
-        args (dyn *args*)
-        script-path (if (and args (> (length args) 0)) (in args 0) exe)
-        # find last /
-        last-slash (last (string/find-all "/" script-path))]
-    (if last-slash
-      (string/slice script-path 0 last-slash)
-      ".")))
-(def skill-dir (string script-dir "/../skill"))
+# Resolve skill-dir: use first CLI arg if given, else relative to script location.
+(def skill-dir
+  (let [args (dyn *args*)]
+    (if (and args (> (length args) 1))
+      (in args 1)
+      (let [script-path (if (and args (> (length args) 0)) (in args 0) (dyn *executable*))
+            last-slash (last (string/find-all "/" script-path))]
+        (string (if last-slash (string/slice script-path 0 last-slash) ".") "/../skill")))))
 (def skill-md (string skill-dir "/SKILL.md"))
 (def tree-block-identifier "skill-dir-structure")
 (def root-name ".")
@@ -27,7 +24,7 @@
    "examples/region-decomp"                         ""
    "examples/region-decomp/synthesized-real-world-examples" ""
    "reference"                                      "Language and API reference"
-   "reference/api"                                  "Module-level API docs"
+   "reference/prelude"                              "Module-level API docs"
    "extended-prelude"                               ""
    })
 

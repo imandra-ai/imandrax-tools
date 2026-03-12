@@ -13,6 +13,8 @@ npx skills add imandra-ai/imandrax-tools/packages/codelogician-skill/skill
 ```
 
 # Knowledge base
-- templates/skill, extended-prelude --> skill/
+- templates/skill, extended-prelude, context.yaml --> skill/
   - if *.jinja, pass to jinja CLI with `--data context.yaml`, outputs to a new file with file extension .jinja stripped
-  - SKILL.md has specil rule using the janet script
+  - extended-prelude/*.iml -> copy to skill/extended-prelude/
+  - SKILL.md has a special rule using the janet script
+  - for other markdown files, just copy them over

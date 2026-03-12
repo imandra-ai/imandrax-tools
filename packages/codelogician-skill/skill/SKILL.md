@@ -63,7 +63,7 @@ EOF
 ├── extended-prelude/
 │   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Copy paste the whole directory into your project and then import the modules you need.
 ├── reference/ # Language and API reference
-│   ├── api/ # Module-level API docs
+│   ├── prelude/ # Module-level API docs
 │   │   ├── Int.md
 │   │   ├── LChar.md
 │   │   ├── LString.md
@@ -76,7 +76,7 @@ EOF
 │   │   ├── Set.md
 │   │   ├── String.md
 │   │   └── top-level.md
-│   ├── all-module-signatures.md # Signatures of all modules in IML prelude
+│   ├── all-prelude-module-signatures.md # Signatures of all modules in IML prelude
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Complete reference for all proof tactics
 ├── SKILL.md
