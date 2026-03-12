@@ -1,32 +1,11 @@
-; 1. Extract tactics from prelude.iml -> tactics.yaml
-(rule
-  (mode (promote (until-clean)))
-  (targets tactics.yaml)
-  (deps
-    extraction_tactic_docs_from_iml_prelude/__main__.py
-    extraction_tactic_docs_from_iml_prelude/prelude.iml)
- (action
-  (run uv run --script
-   extraction_tactic_docs_from_iml_prelude/__main__.py
-   extraction_tactic_docs_from_iml_prelude/prelude.iml
-   -o %{targets})))
-
-; 2. Merge constants/*.yaml -> constants.yaml
-(rule
- (targets constants.yaml)
- (deps
-  (glob_files constants/*.yaml))
- (action
-  (with-stdout-to
-   %{targets}
-   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' constants/*.yaml"))))
-
-; 3. Combine constants + tactics -> context.yaml, promoted to source tree
+; Combine all sub-artifacts -> context.yaml, promoted to source tree
 (rule
  (mode (promote (until-clean)))
  (targets context.yaml)
- (deps constants.yaml tactics.yaml)
+ (deps
+  constants/constants.yaml
+  extraction_tactic_docs_from_iml_prelude/tactics.yaml)
  (action
   (with-stdout-to
    %{targets}
-   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' constants.yaml tactics.yaml"))))
+   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' %{deps}"))))

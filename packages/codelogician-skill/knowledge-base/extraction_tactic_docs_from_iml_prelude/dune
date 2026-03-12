@@ -1,0 +1,7 @@
+; Extract tactics from prelude.iml -> tactics.yaml, promoted to source tree
+(rule
+ (mode (promote (until-clean)))
+ (targets tactics.yaml)
+ (deps __main__.py prelude.iml)
+ (action
+  (run uv run --script __main__.py prelude.iml -o %{targets})))

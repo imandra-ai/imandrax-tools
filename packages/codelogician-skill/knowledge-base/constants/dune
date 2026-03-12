@@ -1,0 +1,12 @@
+; Merge all source *.yaml -> constants.yaml
+(rule
+ (targets constants.yaml)
+ (mode (promote (until-clean)))
+ (deps
+  main.yaml
+  all_module_signatures.yaml
+  quickstart_examples.yaml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' %{deps}"))))
