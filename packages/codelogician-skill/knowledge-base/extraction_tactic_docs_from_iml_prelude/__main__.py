@@ -361,8 +361,9 @@ def extract_tactics(content: str) -> list[dict]:
     return tactics
 
 
-def main(output_path: Path):
-    prelude_path = Path(__file__).parent / "prelude.iml"
+def main(output_path: Path, prelude_path: Path | None = None):
+    if prelude_path is None:
+        prelude_path = Path(__file__).parent / "prelude.iml"
     content = prelude_path.read_text()
 
     # Count expected tactics and extract them
@@ -411,10 +412,14 @@ def main(output_path: Path):
 
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    if len(sys.argv) > 1:
-        output_path = Path(sys.argv[1])
-    else:
-        output_path = Path(__file__).parent / "tactics.json"
-    main(output_path)
+    parser = argparse.ArgumentParser(
+        description="Extract tactics documentation from prelude.iml"
+    )
+    parser.add_argument("prelude", nargs="?", type=Path, help="Path to prelude.iml")
+    parser.add_argument("-o", "--output", type=Path, help="Output JSON path")
+    args = parser.parse_args()
+
+    output_path = args.output or Path(__file__).parent / "tactics.json"
+    main(output_path, prelude_path=args.prelude)
