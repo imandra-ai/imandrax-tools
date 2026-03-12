@@ -1,6 +1,4 @@
-# batteries
-
-Extended-stdlib
+# Extended-prelude
 
 - Utility functions
 - Lemmas and theorems
