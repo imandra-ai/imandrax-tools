@@ -1,0 +1,12 @@
+---
+name: tactic-reference
+description: Complete reference for all proof tactics
+---
+{%- for tactic in tactics %}
+
+{{ loop.index }}. `{{ tactic.name }}`
+- Signature: {{ tactic.signature }}
+{%- if tactic.documentation_md %}
+- Doc: {{ tactic.documentation_md }}
+{%- endif %}
+{%- endfor %}
