@@ -41,4 +41,4 @@ yaml.add_representer(str, str_representer)
 
 if __name__ == "__main__":
     items_dict = [i.model_dump(mode="json") for i in agg()]
-    print(yaml.dump(items_dict))
+    print(yaml.dump(items_dict, sort_keys=False))
