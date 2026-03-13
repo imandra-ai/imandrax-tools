@@ -66,7 +66,7 @@ class ItemTemplate(BaseModel):
     # Error
     kind: ErrorKind = Field(description="error kind")
     msg_str: str = Field(description="error message header from ImandraX API")
-    tags: list[ErrorTag] = Field(description="error tags", default_factory=list)
+    tags: list[ErrorTag] = Field(description="error tags", default_factory=lambda _: [])
     # Context
     repro_iml: str = Field(
         description="minimum code to reproduce the error",
