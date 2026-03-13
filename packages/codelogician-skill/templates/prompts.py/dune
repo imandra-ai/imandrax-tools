@@ -4,8 +4,10 @@
     (:templ prompts.py.jinja)
     (:context ../../knowledge-base/context.yaml))
   (target prompts.py)
-  (action (
-      run jinja -d %{context} -o %{target} %{templ}
+  (action
+    (progn
+      (run jinja -d %{context} -o %{target} %{templ})
+      (run uvx ty check %{target})
     )
   )
 )
