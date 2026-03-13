@@ -1,0 +1,169 @@
+- name: monadic_binding_pattern_match
+  id: 019a069f-342d-7552-81b7-2ea9275da9b7
+  created_at: '2025-10-21T11:54:48.237787+00:00'
+  kind: TypeErr
+  msg_str: |-
+    Unknown identifier "let*".
+  tags: []
+  repro_iml: |
+    type order_type = Market | Limit
+
+    type order = {
+      order_type : order_type;
+      order_price : real;
+    }
+
+    type order_book = {
+      buy_orders : order list;
+    }
+
+    let next_buy (ob : order_book) : order option =
+      List.nth 0 ob.buy_orders
+
+    let ob : order_book = {
+      buy_orders = [{order_type = Market; order_price = 100.0}];
+    }
+
+    let b_bid =
+      let* next = next_buy ob in
+      if next.order_type <> Market then
+        Some next.order_price
+      else
+        None
+  err_msg:
+    msg: Unknown identifier "let*".
+    locs:
+    - file: <none>
+      start:
+        line: 20
+        col: 3
+      stop:
+        line: 20
+        col: 6
+    backtrace: null
+  is_po_err: false
+  solution: |
+    type order_type = Market | Limit
+
+    type order = {
+      order_type : order_type;
+      order_price : real;
+    }
+
+    type order_book = {
+      buy_orders : order list;
+    }
+
+    let next_buy (ob : order_book) : order option =
+      List.nth 0 ob.buy_orders
+
+    let ob : order_book = {
+      buy_orders = [{order_type = Market; order_price = 100.0}];
+    }
+
+    let b_bid =
+      match next_buy ob with
+      | Some next ->
+        if next.order_type <> Market then
+          Some next.order_price
+        else
+          None
+      | None -> None
+  explanation: |
+    The `let*` binding operator is not available globally in IML. It must be brought into
+    scope by opening the appropriate module (Option, Result, etc.).
+  solution_description: |
+    Replace monadic binding with explicit pattern matching.
+- name: real_comparison_operators
+  id: 019a069f-39b7-7be1-91f6-ec2ad7c3b7ba
+  created_at: '2025-10-21T11:54:49.655241+00:00'
+  kind: TypeErr
+  msg_str: |-
+    Application failed: expected argument of type `int`
+    but got (price : real)
+  tags: []
+  repro_iml: |
+    let price : real = 10.5
+    let threshold : real = 5.0
+    let max_price : real = 100.0
+
+    let result =
+      if price < threshold then
+        Some price
+      else if price > max_price then
+        Some max_price
+      else
+        None
+  err_msg:
+    msg: 'Application failed: expected argument of type `int`
+
+      but got (price : real)'
+    locs:
+    - file: <none>
+      start:
+        line: 6
+        col: 6
+      stop:
+        line: 6
+        col: 22
+    backtrace: null
+  is_po_err: false
+  solution: |
+    let price : real = 10.5
+    let threshold : real = 5.0
+    let max_price : real = 100.0
+
+    let result =
+      if Real.(<) price threshold then
+        Some price
+      else if Real.(>) price max_price then
+        Some max_price
+      else
+        None
+  explanation: |
+    IML's standard comparison operators (<, >, <=, >=) are typed for integers by default.
+    Using them on real numbers causes a type error. The Real module provides separate
+    comparison operators for real numbers.
+  solution_description: |
+    Use Real module comparison operators: Real.(<), Real.(>), Real.(<=), Real.(>=).
+- name: termination_measure_annotation
+  id: 019a069f-3ecb-7183-a8cc-588240d67b97
+  created_at: '2025-10-21T11:54:50.955957+00:00'
+  kind: TacticEvalErr
+  msg_str: |-
+    Tactic failed: Goal is counter-satisfiable.
+  tags: []
+  repro_iml: |
+    let rec left_pad c n xs =
+      if List.length xs >= n then
+        xs
+      else
+        left_pad c n (c :: xs)
+  err_msg:
+    msg: 'Tactic failed: Goal is counter-satisfiable.'
+    locs: []
+    backtrace: 'Raised at Stdlib__Hashtbl.MakeSeeded.find in file "hashtbl.ml", line
+      391, characters 17-32
+
+      Called from Imandrax_api__HashtblCache.Make.cached in file "vendor/imandrax-api/src/core/HashtblCache.ml",
+      line 11, characters 10-22
+
+      '
+  is_po_err: true
+  solution: |
+    let left_pad_measure n xs =
+      Ordinal.of_int (n - List.length xs)
+
+    let rec left_pad c n xs =
+      if List.length xs >= n then
+        xs
+      else
+        left_pad c n (c :: xs)
+    [@@measure left_pad_measure n xs]
+  explanation: |
+    IML cannot automatically prove termination when the recursion pattern is non-standard
+    (e.g., recursion on list length rather than list structure). An explicit measure
+    annotation is required to show what decreases with each recursive call.
+  solution_description: |
+    Add [@@measure ...] annotation with a function returning Ordinal.t that provably
+    decreases on each recursive call.
