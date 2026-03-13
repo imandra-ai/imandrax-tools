@@ -10,6 +10,19 @@ iml_caveats: str = """\
 {%- endfor -%}
 """
 
+quickstart_examples: dict[str, str | list[str]] = {
+    "overview": """\
+{{ quickstart_examples.content.overview -}}
+    """,
+    "examples": [
+{%- for eg in quickstart_examples.content.examples %}
+        """\
+{{ eg -}}
+""",
+{%- endfor -%}
+    ]
+}
+
 all_module_signautres: str = """\
 {% set toplevel = prelude | selectattr("module", "equalto", "") | list -%}
 {% set modules = [] -%}
@@ -38,5 +51,5 @@ module type {{ mod }} = sig
 end
 ```
 </module_{{ mod }}>
-{% endfor %}
+{% endfor -%}
 """
