@@ -1,0 +1,13 @@
+# Top-Level
+
+{% set entries = prelude | selectattr("module", "equalto", "") | list -%}
+{{ entries | length }} entries
+
+The following entries are directly available in IML without qualification.
+{% for entry in entries %}
+
+`{{ entry.name }}`
+{%- for key, val in entry.items() if key not in ["module", "name", "type", "pattern"] and val %}
+- {{ key | capitalize }}: {% if key == "signature" %}`{{ val }}`{% else %}{{ val }}{% endif %}
+{%- endfor %}
+{% endfor %}

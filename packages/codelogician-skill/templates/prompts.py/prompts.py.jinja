@@ -1,0 +1,55 @@
+"""Prompts generated from knowledge base."""
+
+short_iml_101: str = """\
+{{ short_iml_101.content -}}
+"""
+
+iml_caveats: str = """\
+{% for caveat in iml_caveats.content -%}
+- {{ caveat -}}
+{%- endfor -%}
+"""
+
+quickstart_examples: dict[str, str | list[str]] = {
+    "overview": """\
+{{ quickstart_examples.content.overview -}}
+    """,
+    "examples": [
+{%- for eg in quickstart_examples.content.examples %}
+        """\
+{{ eg -}}
+""",
+{%- endfor -%}
+    ]
+}
+
+all_module_signatures: str = """\
+{% set toplevel = prelude | selectattr("module", "equalto", "") | list -%}
+{% set modules = [] -%}
+{% for entry in prelude if entry.module != "" -%}
+  {% if entry.module not in modules -%}
+    {% if modules.append(entry.module) %}{% endif -%}
+  {% endif -%}
+{% endfor -%}
+
+<top-level>
+top-level (readily available, no need to quantify with module name)
+{% for entry in toplevel %}
+  {{ entry.signature }}{% if entry.doc %}  (*  {{ entry.doc }}  *){% endif %}
+{% endfor %}
+</top-level>
+
+{% for mod in modules %}
+{% set mod_entries = prelude | selectattr("module", "equalto", mod) | list -%}
+<module_{{ mod }}>
+Module: `{{ mod }}`
+```iml
+module type {{ mod }} = sig
+{%- for entry in mod_entries %}
+  {{ entry.signature }}
+{%- endfor %}
+end
+```
+</module_{{ mod }}>
+{% endfor -%}
+"""
