@@ -58,9 +58,20 @@ Unlike OCaml, IML restricts function representation in composite types:
 - For state transition modeling, define:
   - A dedicated event type (with parameterized constructors if needed)
   - A step function that applies events to states
-  
+
 ## String, Logic-mode character, and Logic-mode string
 
 - Logic-mode character `LChar.t` is 8-bit character.
 - Logic-mode string `LString.t` is a type alias for `LChar.t list`.
   - `{l|...|l}` creates a `LString.t` literal
+
+## Examples
+
+{{ quickstart_examples.content.overview }}
+{% for eg in quickstart_examples.content.examples -%}
+### Example {{ loop.index }}
+```iml
+{{ eg -}}
+```
+
+{% endfor %}
