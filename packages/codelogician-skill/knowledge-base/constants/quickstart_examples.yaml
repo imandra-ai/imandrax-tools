@@ -4,7 +4,7 @@ quickstart_examples:
       Each example demonstrates key concepts in IML through:
       1. Explanatory comments before functions that highlight important concepts
       2. REPL evaluation results showing type signatures and values. Comments marked with
-      (* val ... *) show the REPL's response, helping you understand type inference and
+      `(* val ... *)` show the REPL's response, helping you understand type inference and
       evaluation.
       These comments are only for educational purposes. They teach you about the thinking
       process of writing IML code but they might not desired to exist when writing IML code.
