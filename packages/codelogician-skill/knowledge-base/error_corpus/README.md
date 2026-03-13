@@ -2,14 +2,14 @@
 - Data is stored as `data.yaml` files in the `data` directory.
 
 ## Specification
-- Each item follows `src/error_corpus//schema.py::Item` schema.
+- Each item follows `src/error_corpus/schema.py::Item` schema.
 - Each dir in data/ generate a `data.yaml` that is a list of items.
 - Each dir in data/*/ generate a `item.yaml` that is a item.
 
 ## Scripts
 - `join_data_yaml.py` aggregates all the data into a single object.
 - `gen_template.py` provides a way to generate a YAML item from a directory of files.
-- `unzip_yaml.py` generates a directory of files from a YAML item.
+- `expand_data_yaml_to_dir.py` generates a directory of files from a YAML item.
 
 ## Adding new data
 For adding new data, the general procedure is:
@@ -20,3 +20,9 @@ For adding new data, the general procedure is:
     - `solution_([1-9]+).iml` for the alternative solutions
     - other fields are optional in a `item.yaml` file. normally we have "explanation" and "solution_description".
     - the subdir name will be used as the `name` field in the YAML item
+
+## TODO
+- A Make recipe that checks `repro.iml` reproduce the error.
+- A Make recipe that checks `solution(_[1-9]+)?.iml` admits without errors.
+- A Make recipe that checks all `data.yaml` follows the expected schema.
+- DuckDB integration.
