@@ -1,0 +1,11 @@
+"""Prompts generated from knowledge base."""
+
+short_iml_101: str = """\
+{{ short_iml_101.content -}}
+"""
+
+iml_caveats: str = """\
+{% for caveat in iml_caveats.content -%}
+- {{ caveat -}}
+{%- endfor -%}
+"""
