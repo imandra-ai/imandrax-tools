@@ -9,3 +9,34 @@ iml_caveats: str = """\
 - {{ caveat -}}
 {%- endfor -%}
 """
+
+all_module_signautres: str = """\
+{% set toplevel = prelude | selectattr("module", "equalto", "") | list -%}
+{% set modules = [] -%}
+{% for entry in prelude if entry.module != "" -%}
+  {% if entry.module not in modules -%}
+    {% if modules.append(entry.module) %}{% endif -%}
+  {% endif -%}
+{% endfor -%}
+
+<top-level>
+top-level (readily available, no need to quantify with module name)
+{% for entry in toplevel %}
+  {{ entry.signature }}{% if entry.doc %}  (*  {{ entry.doc }}  *){% endif %}
+{% endfor %}
+</top-level>
+
+{% for mod in modules %}
+{% set mod_entries = prelude | selectattr("module", "equalto", mod) | list -%}
+<module_{{ mod }}>
+Module: `{{ mod }}`
+```iml
+module type {{ mod }} = sig
+{%- for entry in mod_entries %}
+  {{ entry.signature }}
+{%- endfor %}
+end
+```
+</module_{{ mod }}>
+{% endfor %}
+"""
