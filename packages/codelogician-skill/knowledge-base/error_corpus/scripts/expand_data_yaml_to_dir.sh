@@ -1,7 +1,6 @@
 #!/bin/bash
 
 ################################################################################
-# Script: unzip_yaml.sh
 # Description: Reads a YAML file containing a list of items and creates a
 #              directory for each item using its 'name' field. Inside each
 #              directory, creates file for repro_iml, solution, and
