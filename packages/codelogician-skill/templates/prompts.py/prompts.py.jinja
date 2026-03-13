@@ -23,7 +23,7 @@ quickstart_examples: dict[str, str | list[str]] = {
     ]
 }
 
-all_module_signautres: str = """\
+all_module_signatures: str = """\
 {% set toplevel = prelude | selectattr("module", "equalto", "") | list -%}
 {% set modules = [] -%}
 {% for entry in prelude if entry.module != "" -%}
