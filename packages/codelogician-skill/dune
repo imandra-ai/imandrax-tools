@@ -1,12 +1,8 @@
-; Build the skill/ directory from sources:
-;
-;   templates/skill/   — main content (*.md, *.iml, *.md.jinja)
-;   extended-prelude/  — additional IML prelude files
-;   knowledge-base/    — context.yaml for jinja rendering
+; Build the skill/:
+; ====================
 ;
 ; All rules use `(alias skill)` and `(promote (until-clean))` so that
 ; `dune build @skill` regenerates skill/ in the source tree.
-;
 ;
 ; Source layout → skill/ mapping:
 ;   templates/skill/**/*.md          → skill/**/*.md        (copy)
