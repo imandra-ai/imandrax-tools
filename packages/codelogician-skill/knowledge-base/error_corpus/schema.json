@@ -115,6 +115,125 @@
       "title": "ErrorTag",
       "type": "string"
     },
+    "Item": {
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "id": {
+          "description": "uuidv7",
+          "title": "Id",
+          "type": "string"
+        },
+        "created_at": {
+          "description": "created at",
+          "title": "Created At",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ErrorKind",
+          "description": "error kind"
+        },
+        "msg_str": {
+          "description": "error message header from ImandraX API",
+          "title": "Msg Str",
+          "type": "string"
+        },
+        "tags": {
+          "description": "error tags",
+          "items": {
+            "$ref": "#/$defs/ErrorTag"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "repro_iml": {
+          "description": "minimum code to reproduce the error",
+          "title": "Repro Iml",
+          "type": "string"
+        },
+        "err_msg": {
+          "$ref": "#/$defs/ErrorMessage",
+          "description": "error message from ImandraX API, including header, location, and trace"
+        },
+        "is_po_err": {
+          "description": "whether the error is a proof-obligation error",
+          "title": "Is Po Err",
+          "type": "boolean"
+        },
+        "explanation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "explanation of the error",
+          "title": "Explanation"
+        },
+        "solution": {
+          "description": "solution",
+          "title": "Solution",
+          "type": "string"
+        },
+        "solution_description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Solution Description"
+        },
+        "prevention": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "prevention hints",
+          "title": "Prevention"
+        },
+        "additional_info": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "additional info",
+          "title": "Additional Info",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "msg_str",
+        "tags",
+        "repro_iml",
+        "err_msg",
+        "is_po_err",
+        "solution",
+        "solution_description"
+      ],
+      "title": "Item",
+      "type": "object"
+    },
     "Location": {
       "properties": {
         "file": {
@@ -174,121 +293,8 @@
       "type": "object"
     }
   },
-  "properties": {
-    "name": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "title": "Name"
-    },
-    "id": {
-      "description": "uuidv7",
-      "title": "Id",
-      "type": "string"
-    },
-    "created_at": {
-      "description": "created at",
-      "title": "Created At",
-      "type": "string"
-    },
-    "kind": {
-      "$ref": "#/$defs/ErrorKind",
-      "description": "error kind"
-    },
-    "msg_str": {
-      "description": "error message header from ImandraX API",
-      "title": "Msg Str",
-      "type": "string"
-    },
-    "tags": {
-      "description": "error tags",
-      "items": {
-        "$ref": "#/$defs/ErrorTag"
-      },
-      "title": "Tags",
-      "type": "array"
-    },
-    "repro_iml": {
-      "description": "minimum code to reproduce the error",
-      "title": "Repro Iml",
-      "type": "string"
-    },
-    "err_msg": {
-      "$ref": "#/$defs/ErrorMessage",
-      "description": "error message from ImandraX API, including header, location, and trace"
-    },
-    "is_po_err": {
-      "description": "whether the error is a proof-obligation error",
-      "title": "Is Po Err",
-      "type": "boolean"
-    },
-    "explanation": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "explanation of the error",
-      "title": "Explanation"
-    },
-    "solution": {
-      "description": "solution",
-      "title": "Solution",
-      "type": "string"
-    },
-    "solution_description": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "title": "Solution Description"
-    },
-    "prevention": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "prevention hints",
-      "title": "Prevention"
-    },
-    "additional_info": {
-      "additionalProperties": {
-        "type": "string"
-      },
-      "description": "additional info",
-      "title": "Additional Info",
-      "type": "object"
-    }
+  "items": {
+    "$ref": "#/$defs/Item"
   },
-  "required": [
-    "kind",
-    "msg_str",
-    "tags",
-    "repro_iml",
-    "err_msg",
-    "is_po_err",
-    "solution",
-    "solution_description"
-  ],
-  "title": "Item",
-  "type": "object"
+  "type": "array"
 }

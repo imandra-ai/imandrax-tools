@@ -16,8 +16,14 @@
     pyproject.toml
     uv.lock
     README.md
-    scripts/join_data_yaml.py)
+    scripts/join_data_yaml.py
+    (:schema schema.json))
   (action
     (with-stdout-to %{target}
-      (run uv run scripts/join_data_yaml.py)))
+      (progn
+        (echo "# yaml-language-server: $schema=./%{schema}\n")
+        (run uv run scripts/join_data_yaml.py)
+      )
+    )
+  )
 )
