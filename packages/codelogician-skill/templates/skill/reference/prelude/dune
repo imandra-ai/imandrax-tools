@@ -1,0 +1,10 @@
+(rule
+  (alias skill)
+  (deps ../../../../knowledge-base/reference_prelude/prelude.yaml)
+  (target prelude.json)
+  (action
+    (with-stdout-to %{target}
+      (run yq ".prelude" %{deps} -o json)
+    )
+  )
+)

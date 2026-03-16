@@ -46,6 +46,16 @@
   )
 )
 
+(subdir skill/reference/prelude
+  (rule
+    (alias skill)
+    (mode (promote (until-clean)))
+    (action
+      (copy ../../../templates/skill/reference/prelude/prelude.json prelude.json)
+    )
+  )
+)
+
 ; Jinja rendering
 ; --------------------
 ; Render .jinja templates with context.yaml, stripping the .jinja extension.
@@ -101,7 +111,6 @@
 
 ; SKILL.md
 ; --------------------
-
 
 ; Generate SKILL.md:
 ; echo SKILL.pt1
