@@ -100,7 +100,9 @@ class ItemTemplate(BaseModel):
 def __main() -> None:
     import json
 
-    print(json.dumps(Item.model_json_schema(), indent=2))
+    from pydantic import TypeAdapter
+
+    print(json.dumps(TypeAdapter(list[Item]).json_schema(), indent=2))
 
 
 if __name__ == "__main__":
