@@ -45,10 +45,9 @@ EOF
 ```
   - Note: stdin `check` doesn't support import syntax
 
-
 ## More in-depth references in skill directory
 
-Along with `SKILL.md` (this file), we have the following materials:
+Along with `SKILL.md` (this file), we have the following markdown materials:
 
 ```tree
 ./
@@ -91,3 +90,5 @@ Along with `SKILL.md` (this file), we have the following materials:
 ├── unit-testing.md # Writing unit tests in IML using verify with ground_eval and expand. Very useful for incrementally building up IML projects.
 └── verification-with-verify-and-instance.md # Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
 ```
+
+Note: there are some *.iml examples and *.json files as well that are not shown in the tree. Find them yourself if needed.

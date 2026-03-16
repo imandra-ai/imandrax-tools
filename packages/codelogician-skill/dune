@@ -121,11 +121,9 @@
     (with-stdout-to SKILL.md
       (progn
         (cat %{skill-pt1})
-        (echo "\n\n")
-        (echo "## More in-depth references in skill directory\n")
         (echo "\n")
-        (echo "Along with `SKILL.md` (this file), we have the following materials:\n\n")
         (bash "janet ../scripts/skill-dir-tree.janet ../templates/skill")
+        (echo "\nNote: there are some *.iml examples and *.json files as well that are not shown in the tree. Find them yourself if needed.")
       )
     )
   )

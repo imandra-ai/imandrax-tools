@@ -44,3 +44,7 @@ let f x = x + 1
 EOF
 ```
   - Note: stdin `check` doesn't support import syntax
+
+## More in-depth references in skill directory
+
+Along with `SKILL.md` (this file), we have the following markdown materials:
