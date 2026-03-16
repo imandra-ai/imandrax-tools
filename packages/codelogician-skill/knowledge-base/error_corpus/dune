@@ -1,5 +1,14 @@
 (rule
   (mode (promote (until-clean)))
+  (target schema.json)
+  (deps src/error_corpus/schema.py)
+  (action
+    (with-stdout-to %{target}
+      (run uv run %{deps})))
+)
+
+(rule
+  (mode (promote (until-clean)))
   (target error_corpus.yaml)
   (deps
     (source_tree data)

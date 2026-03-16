@@ -21,3 +21,8 @@ build-backend = "uv_build"
 
 [tool.ty]
 environment.python = ".venv"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]

@@ -1,3 +1,4 @@
+# %%
 from datetime import UTC, datetime
 from enum import Enum
 
@@ -93,3 +94,14 @@ class ItemTemplate(BaseModel):
     # )
 
     model_config = ConfigDict(extra="allow")
+
+
+# %%
+def __main() -> None:
+    import json
+
+    print(json.dumps(Item.model_json_schema(), indent=2))
+
+
+if __name__ == "__main__":
+    __main()
