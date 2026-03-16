@@ -9,21 +9,29 @@
 
 (rule
   (mode (promote (until-clean)))
+  (target error_corpus.json)
+  (deps
+    (source_tree data)
+    (:schema schema.json))
+  (action
+    (with-stdout-to %{target}
+      (bash "yq ea -o=json '[.]' data/*/data.yaml | yq -o=json '{\"$schema\": \"./%{schema}\", \"items\": flatten}'")))
+)
+
+(rule
+  (mode (promote (until-clean)))
   (target error_corpus.yaml)
   (deps
     (source_tree data)
     (source_tree src)
+    (source_tree .venv)  ; no needed. but it makes build faster
     pyproject.toml
     uv.lock
     README.md
-    scripts/join_data_yaml.py
-    (:schema schema.json))
+    scripts/join_data_yaml.py)
   (action
     (with-stdout-to %{target}
-      (progn
-        (echo "# yaml-language-server: $schema=./%{schema}\n")
-        (run uv run scripts/join_data_yaml.py)
-      )
+      (run uv run scripts/join_data_yaml.py)
     )
   )
 )

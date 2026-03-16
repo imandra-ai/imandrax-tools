@@ -293,8 +293,23 @@
       "type": "object"
     }
   },
-  "items": {
-    "$ref": "#/$defs/Item"
+  "properties": {
+    "$schema": {
+      "title": "$Schema",
+      "type": "string"
+    },
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Item"
+      },
+      "title": "Items",
+      "type": "array"
+    }
   },
-  "type": "array"
+  "required": [
+    "$schema",
+    "items"
+  ],
+  "title": "ErrorCorpus",
+  "type": "object"
 }

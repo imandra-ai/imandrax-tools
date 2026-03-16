@@ -100,9 +100,11 @@ class ItemTemplate(BaseModel):
 def __main() -> None:
     import json
 
-    from pydantic import TypeAdapter
+    class ErrorCorpus(BaseModel):
+        schema_: str = Field(alias="$schema")
+        items: list[Item]
 
-    print(json.dumps(TypeAdapter(list[Item]).json_schema(), indent=2))
+    print(json.dumps(ErrorCorpus.model_json_schema(), indent=2))
 
 
 if __name__ == "__main__":
