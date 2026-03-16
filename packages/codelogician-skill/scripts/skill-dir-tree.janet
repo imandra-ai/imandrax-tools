@@ -24,6 +24,7 @@
    "examples/region-decomp/synthesized-real-world-examples" ""
    "reference"                                      "Language and API reference"
    "reference/prelude"                              "Module-level API docs"
+   "error-fix-data"                                 "Data for common error and fix"
    "extended-prelude"                               ""
    })
 
@@ -100,7 +101,7 @@
       (array/push msgs (string "  Missing from dir-descriptions: " (string/join (sorted missing) ", "))))
     (when (> (length redundant) 0)
       (array/push msgs (string "  Redundant in dir-descriptions:  " (string/join (sorted redundant) ", "))))
-    (eprintf "Error: dir-descriptions does not match actual directory structure.\n%s" (string/join msgs "\n"))
+    (eprintf "Skill dir tree building Error: dir-descriptions does not match actual directory structure.\n%s" (string/join msgs "\n"))
     (os/exit 1)))
 
 (defn build-tree

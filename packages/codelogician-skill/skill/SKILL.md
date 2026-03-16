@@ -60,6 +60,8 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
 │   └── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module
+├── error-fix-data/ # Data for common error and fix
+│   └── README.md # IML error and fixes database. Provides `error_corpus.json`, a collection of common IML errors and their fixes. Search it using jq or grep to find relevant errors and their fixes.
 ├── examples/ # Worked examples
 │   └── basic-iml-syntax.md
 ├── extended-prelude/

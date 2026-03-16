@@ -555,16 +555,16 @@ notations:
         Note that `[%simp ...]` is an alias for `[%simplify ...]`.
 
         Note the syntax `[%simplify_only ...]` and its alias `[%simp_only ...]` which are like `[%simp ...]` with `~strict:true`.
-    - name: simplify_only
+    - name: simp_only
       patterns:
-      - '[%simplify_only ...]'
+      - '[%simp_only ...]'
       description: Note the syntax `[%simplify_only ...]` and its alias `[%simp_only
         ...]` which are like `[%simp ...]` with `~strict:true`.
       description_md: Note the syntax `[%simplify_only ...]` and its alias `[%simp_only
         ...]` which are like `[%simp ...]` with `~strict:true`.
-    - name: simp_only
+    - name: simplify_only
       patterns:
-      - '[%simp_only ...]'
+      - '[%simplify_only ...]'
       description: Note the syntax `[%simplify_only ...]` and its alias `[%simp_only
         ...]` which are like `[%simp ...]` with `~strict:true`.
       description_md: Note the syntax `[%simplify_only ...]` and its alias `[%simp_only
