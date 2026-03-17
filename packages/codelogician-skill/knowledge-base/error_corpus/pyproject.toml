@@ -1,0 +1,28 @@
+[project]
+name = "error-corpus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hongyu", email = "hongyu@imandra.ai" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "imandrax-api-models>=18.2.0",
+    "pydantic>=2.12.5",
+    "pyyaml>=6.0.3",
+    "typer>=0.24.1",
+    "uuid-utils>=0.14.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.ty]
+environment.python = ".venv"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]

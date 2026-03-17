@@ -1,21 +1,17 @@
 #!/usr/bin/env janet
 
 # Generate a tree view of markdown files with descriptions from frontmatter,
-# and insert/update it in SKILL.md inside a ```tree {name: skill-dir-structure} code block.
 #
-# Usage: janet update-skill-reference.janet <template-dir> <output-skill-md>
-# e.g.:  janet update-skill-reference.janet templates/skill skill/SKILL.md
+# Usage: janet skill-dir-tree.janet <template-dir>
 #
 # Scans <template-dir> for .md and .md.jinja files. Jinja files are shown
 # with the .jinja extension stripped (their output name).
 
 (def args (dyn *args*))
-(unless (and args (>= (length args) 3))
-  (eprintf "Usage: %s <template-dir> <output-skill-md>" (or (and args (in args 0)) "update-skill-reference.janet"))
+(unless (and args (= (length args) 2))
+  (eprintf "Usage: %s <template-dir> <output-skill-md>" (or (and args (in args 0)) "skill-dir-tree.janet"))
   (os/exit 1))
 (def skill-dir (in args 1))
-(def skill-md (in args 2))
-(def tree-block-identifier "skill-dir-structure")
 (def root-name ".")
 
 # ── Directory descriptions ──────────────────────────────────────────
@@ -28,6 +24,7 @@
    "examples/region-decomp/synthesized-real-world-examples" ""
    "reference"                                      "Language and API reference"
    "reference/prelude"                              "Module-level API docs"
+   "error-fix-data"                                 "Data for common error and fix"
    "extended-prelude"                               ""
    })
 
@@ -40,20 +37,6 @@
       :field (+ :desc-field :other-field)
       :desc-field (* "description:" :s* (<- (to (+ "\n" -1))) :s*)
       :other-field (* (not "---") (thru "\n"))}))
-
-(def- codeblock-marker (string "```tree {name: " tree-block-identifier "}"))
-
-(def codeblock-peg
-  "Split content around the ```tree {name: ...} block.
-   Captures: (before, after) — or no captures if block not found."
-  (peg/compile
-    ~(* (<- (to ,codeblock-marker))
-        # skip opening fence line
-        (thru "\n")
-        # skip content lines until closing ```
-        (any (* (not "```") (thru "\n")))
-        "```"
-        (<- (any 1)))))
 
 # ── helpers ─────────────────────────────────────────────────────────
 
@@ -118,12 +101,16 @@
       (array/push msgs (string "  Missing from dir-descriptions: " (string/join (sorted missing) ", "))))
     (when (> (length redundant) 0)
       (array/push msgs (string "  Redundant in dir-descriptions:  " (string/join (sorted redundant) ", "))))
-    (eprintf "Error: dir-descriptions does not match actual directory structure.\n%s" (string/join msgs "\n"))
+    (eprintf "Skill dir tree building Error: dir-descriptions does not match actual directory structure.\n%s" (string/join msgs "\n"))
     (os/exit 1)))
 
 (defn build-tree
   "Build a nested tree structure from file paths with their metadata."
   [files base-dir]
+  (def skill-md (string base-dir "/SKILL.md"))
+  (def files (if (find |(= $ skill-md) files)
+               files
+               [skill-md ;files]))
   (def root @{:children (table) :files @[]})
   (each f files
     (def rel (string/slice f (+ 1 (length base-dir))))
@@ -185,25 +172,14 @@
 # ── main ────────────────────────────────────────────────────────────
 
 (validate-dir-descriptions)
-
 (def files (collect-md-files skill-dir))
 (def tree (build-tree files skill-dir))
 (def lines (render-tree tree))
 (def tree-str (string/join lines "\n"))
 
-(def block (string codeblock-marker "\n"
+(def block (string  "```tree" "\n"
                     root-name "/\n"
                     tree-str "\n"
                     "```"))
 
-# Read SKILL.md and insert/replace the block
-(def content (slurp skill-md))
-
-(def new-content
-  (if-let [caps (peg/match codeblock-peg content)]
-    (string (in caps 0) block (in caps 1))
-    (string (string/trim content) "\n\n" block "\n")))
-
-(spit skill-md new-content)
-(print "Updated " skill-md)
-# (print block)
+(print block)

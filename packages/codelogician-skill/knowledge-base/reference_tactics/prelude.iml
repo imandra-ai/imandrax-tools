@@ -1,0 +1,2589 @@
+module Program_prelude_ = struct
+  module Int = struct
+    type t = int
+
+    include Stdlib
+
+    let of_int i = i
+  end
+
+  (* hack: we do this so we can write [type 'a list = 'a Caml_list.t = …] below. *)
+  module List = struct
+    type 'a t = 'a list =
+      | []
+      | ( :: ) of 'a * 'a t
+  end
+
+  module String = struct
+    include String
+
+    let prefix pre s = CCString.prefix ~pre s
+
+    let suffix a b = CCString.suffix ~suf:a b
+
+    let contains a sub = CCString.mem ~sub a
+
+    (* reflect the semantics of Z3's str.to.int *)
+    let unsafe_to_nat s =
+      try
+        let n = Z.of_string s in
+        if Z.lt n Z.zero then
+          Z.minus_one
+        else
+          n
+      with _ -> Z.minus_one
+  end
+
+  let[@inline] implies x y = (not x) || y
+end
+[@@program]
+
+(** {2 Bare minimum needed for ordinals and validation} *)
+
+type int = Z.t [@@builtin.logic_core "mk_s_int"]
+(** Builtin integer type, using arbitrary precision integers.
+
+    This type is an alias to {!Z.t} (using
+    {{:https://github.com/ocaml/Zarith} Zarith}).
+
+    {b NOTE}: here Imandra diverges from normal OCaml, where integers width is
+    bounded by native machine integers. "Normal" OCaml integers have type
+    {!Caml.Int.t} and can be entered using the 'i' suffix: [0i] *)
+
+type nonrec bool = bool [@@builtin.logic_core "mk_s_bool"]
+(** Builtin boolean type. *)
+
+(* NOTE: [&&] and [||] need to be [no_extract] to preserve their short-circuiting behavior
+   in extracted code *)
+let ( || ) : bool -> bool -> bool = Stdlib.( || )
+[@@builtin.logic_core "mk_or"] [@@no_extract]
+
+let ( && ) : bool -> bool -> bool = Stdlib.( && )
+[@@builtin.logic_core "mk_and"] [@@no_extract]
+
+type nonrec unit = unit = () [@@builtin.special "ty.unit"] [@@noalias]
+
+(** Equality. Must be applied to non-function types. *)
+let ( = ) : 'a -> 'a -> bool = Stdlib.( = ) [@@builtin.logic_core "mk_eq"]
+
+let ( <> ) : 'a -> 'a -> bool = Stdlib.( <> ) [@@builtin.logic_core "mk_neq"]
+
+let not : bool -> bool = Stdlib.(not) [@@builtin.logic_core "mk_not"]
+
+let implies : bool -> bool -> bool = Program_prelude_.implies
+[@@builtin.logic_core "mk_implies"]
+
+let explies x y = implies y x [@@macro]
+
+let iff : bool -> bool -> bool = Stdlib.( = ) [@@builtin.logic_core "mk_iff"]
+
+(* we need this to define count functions *)
+let ( + ) : int -> int -> int = Z.( + ) [@@builtin.logic_core "mk_i_add"]
+
+(** [const x y] returns [x]. In other words, [const x] is the constant function
+    that always returns [x]. *)
+let const x _ = x [@@builtin.special "fn.const"] [@@macro]
+
+let ( >= ) : int -> int -> bool = Stdlib.( >= ) [@@builtin.logic_core "mk_i_ge"]
+
+let mk_nat (x : int) : int =
+  if x >= 0 then
+    x
+  else
+    0
+[@@macro] [@@builtin.special "fn.mk_nat"]
+
+(* ### now we can define [count] functions properly #### *)
+
+type nonrec 'a option = 'a option =
+  | None
+  | Some of 'a
+[@@builtin.special "ty.option"] [@@noalias]
+
+type 'a list = 'a Program_prelude_.List.t =
+  | []
+  | ( :: ) of 'a * 'a list
+[@@builtin.special "ty.list"] [@@noalias]
+
+type nonrec float = float [@@builtin.logic_core "mk_s_float"]
+
+type nonrec real = Q.t [@@builtin.logic_core "mk_s_real"]
+
+(* Type of (byte)strings. Need to have it here so as to be
+   able to type [Z.of_string "42"] *)
+type nonrec string = string [@@builtin.logic_core "mk_s_str"]
+
+let ( < ) : int -> int -> bool = ( < ) [@@builtin.logic_core "mk_i_lt"]
+
+let ( <= ) : int -> int -> bool = ( <= ) [@@builtin.logic_core "mk_i_le"]
+
+let ( > ) : int -> int -> bool = ( > ) [@@builtin.logic_core "mk_i_gt"]
+
+let min : int -> int -> int = min [@@builtin.logic_core "mk_i_min"]
+
+let max : int -> int -> int = max [@@builtin.logic_core "mk_i_max"]
+
+let ( <. ) : real -> real -> bool = Q.lt [@@builtin.logic_core "mk_r_lt"]
+
+let ( <=. ) : real -> real -> bool = Q.leq [@@builtin.logic_core "mk_r_le"]
+
+let ( >. ) : real -> real -> bool = Q.gt [@@builtin.logic_core "mk_r_gt"]
+
+let ( >=. ) : real -> real -> bool = Q.geq [@@builtin.logic_core "mk_r_ge"]
+
+let min_r : real -> real -> real = Q.min [@@builtin.logic_core "mk_r_min"]
+
+let max_r : real -> real -> real = Q.max [@@builtin.logic_core "mk_r_max"]
+
+let ( ~- ) : int -> int = Z.( ~- ) [@@builtin.logic_core "mk_i_usub"]
+
+let abs (x : int) : int =
+  if x >= 0 then
+    x
+  else
+    ~-x
+[@@macro]
+
+let ( - ) : int -> int -> int = Z.( - ) [@@builtin.logic_core "mk_i_sub"]
+
+let ( ~+ ) (x : int) : int = x [@@macro]
+
+let ( * ) : int -> int -> int = Z.( * ) [@@builtin.logic_core "mk_i_mul"]
+
+(** Euclidian division on integers, see
+    {{:http://smtlib.cs.uiowa.edu/theories-Ints.shtml}
+     http://smtlib.cs.uiowa.edu/theories-Ints.shtml} *)
+let ( / ) : int -> int -> int = Z.ediv [@@builtin.logic_core "mk_i_div"]
+
+(** Euclidian remainder on integers *)
+let ( mod ) : int -> int -> int = Z.erem [@@builtin.logic_core "mk_mod"]
+
+(** Total order *)
+let compare (x : int) (y : int) : int =
+  if x = y then
+    0
+  else if x < y then
+    -1
+  else
+    1
+
+(** Result type, representing either a successul result [Ok x] or an error
+    [Error x]. *)
+type ('a, 'b) result = ('a, 'b) Stdlib.result =
+  | Ok of 'a
+  | Error of 'b
+[@@noalias] [@@builtin.special "ty.result"]
+
+type identifier [@@builtin.special "ty.identifier"] [@@no_extract]
+
+(** Tactics.
+
+    We define tactics early, so we can use them to prove POs arising from the
+    rest of the prelude. *)
+module Tactic = struct
+  type tac_loc [@@builtin.tac "ty.tac.tac_loc"]
+  (** Position in the tactic tree *)
+
+  type goal [@@builtin.tac "ty.tac.goal"]
+
+  type proof [@@builtin.tac "ty.tac.proof"]
+
+  type model [@@builtin.tac "ty.tac.model"]
+
+  type 'a term [@@builtin.tac "ty.tac.term"]
+
+  (** [quote_term (1 + 2)] is a quotation that will not evaluate to anything but
+      the term "1 + 2". It can then be provided as-is to a tactic. *)
+  let quote_term : 'a -> 'a term = fun x -> x
+  [@@builtin.tac "fn.tac.quote_term"]
+
+  type 'a res = ('a, string * model option * goal list * tac_loc option) result
+
+  type 'a m = goal -> 'a res [@@builtin.special "ty.tac.m"]
+  (** The main tactic monad. *)
+
+  type t = (goal list * proof) option m [@@builtin.special "ty.tac"]
+  (** The type of tactics. A tactic takes a goal and either:
+      - returns [Error _] to signal failure
+      - returns [Ok None] to signal that it did nothing (goal stays the same)
+      - returns [Ok (Some (subgoals, proof))] with new subgoals and the proof
+        that these (boxed) imply the input goal (boxed). *)
+
+  (** Succeed with a value. *)
+  let return x : _ m = fun _goal -> Ok x [@@macro]
+
+  (** Return a failure result. Useful in custom tactics. *)
+  let fail_res ?(subgoals = []) (str : string) : _ res =
+    Error (str, None, subgoals, None)
+  [@@macro]
+
+  (** Tactic that always just fails. *)
+  let fail str : _ m = fun _goal -> fail_res str [@@macro]
+
+  (** Access the current goal. *)
+  let goal : goal m = fun g -> Ok g [@@macro]
+
+  (** Given a proof [p] of [box A1, …, box An |- box B] and [hyps], proofs of
+      [|- box A_i] respectively, return a proof of [|- box B] *)
+  let combine_proofs : proof list -> proof -> proof = ()
+  [@@builtin.tac "fn.tac.combine_proofs"]
+
+  (** Monadic map. *)
+  let ( let+ ) (x : _ m) (f : _ -> _) : _ m =
+   fun goal ->
+    match x goal with
+    | Ok x' -> Ok (f x')
+    | Error err -> Error err
+  [@@macro] [@@no_validate]
+
+  (** Monadic bind. *)
+  let ( let* ) (x : _ m) (f : _ -> _ m) : _ m =
+   fun goal ->
+    match x goal with
+    | Ok x' -> f goal x'
+    | Error err -> Error err
+  [@@macro] [@@no_validate]
+
+  (** [t @> t'] expects [t] to produce exactly one sub-goal, and uses [t'] to
+      prove this subgoal. *)
+  let ( @> ) : t -> t -> t =
+   fun t1 t2 goal ->
+    match t1 goal with
+    | Ok None -> t2 goal
+    | Ok (Some ([], p)) ->
+      (* first tactic directly succeeded *)
+      Ok (Some ([], p))
+    | Ok (Some ([ goal1 ], p1)) ->
+      (match t2 goal1 with
+      | Ok (Some ([], p2)) -> Ok (Some ([], combine_proofs [ p2 ] p1))
+      | Ok (Some (subgoals, _)) ->
+        Error
+          ("@>: second tactic produced unsolved subgoals.", None, subgoals, None)
+      | Ok None ->
+        Error
+          ( "@>: expected second tactic to solve the goal.",
+            None,
+            [ goal1 ],
+            None )
+      | Error err -> Error err)
+    | Ok (Some (_goals, _)) ->
+      Error
+        ( "@>: expected first tactic to return exactly one goal.",
+          None,
+          _goals,
+          None )
+    | Error err -> Error err
+  [@@no_validate]
+
+  (** [t @>| [t1; t2; …; tn]] expects [t] to return exactly [n] sub-goals, and
+      uses [t_i] to solve the [i]-th goal. *)
+  let ( @>| ) : t -> t list -> t =
+   fun t1 ts goal ->
+    match t1 goal with
+    | Ok None ->
+      Error ("@>|: first tactic did not make progress.", None, [ goal ], None)
+    | Ok (Some (all_goals, p1)) ->
+      let rec apply (proofs : proof list) (ts : t list) (goals : goal list) =
+        match ts, goals with
+        | t1 :: tl_ts, g1 :: tl_goals ->
+          (match t1 g1 with
+          | Ok (Some ([], p1)) -> apply (p1 :: proofs) tl_ts tl_goals
+          | Ok (Some (_goals, _)) ->
+            Error
+              ( "@>|: sub-tactic returned non-empty list of goals.",
+                None,
+                _goals,
+                None )
+          | Ok None ->
+            Error ("@>|: sub-tactic did not make progress.", None, [ g1 ], None)
+          | Error err -> Error err)
+        | [], [] ->
+          (* now combine the proofs *)
+          let pr = combine_proofs proofs p1 in
+          Ok (Some ([], pr))
+        | [], _ | _, [] ->
+          Error
+            ( "@>|: number of goals and tactics do not match.",
+              None,
+              all_goals,
+              None )
+      in
+      apply [] ts all_goals
+    | Error err -> Error err
+  [@@no_validate]
+
+  (** [t1 @>>| t2] applies t1 and then applies t2 to all t1-generated subgoals.
+  *)
+  let ( @>>| ) : t -> t -> t =
+   fun t1 t2 goal ->
+    match t1 goal with
+    | Ok None ->
+      Error ("@>|: first tactic did not make progress.", None, [ goal ], None)
+    | Ok (Some (all_goals, p1)) ->
+      let rec apply (proofs : proof list) (goals : goal list) =
+        match goals with
+        | g1 :: tl_goals ->
+          (match t2 g1 with
+          | Ok (Some ([], p1)) -> apply (p1 :: proofs) tl_goals
+          | Ok (Some (_goals, _)) ->
+            Error
+              ( "@>>|: sub-tactic returned non-empty list of goals.",
+                None,
+                _goals,
+                None )
+          | Ok None ->
+            Error ("@>>|: sub-tactic did not make progress.", None, [ g1 ], None)
+          | Error err -> Error err)
+        | [] ->
+          (* now combine the proofs *)
+          let pr = combine_proofs proofs p1 in
+          Ok (Some ([], pr))
+      in
+      apply [] all_goals
+    | Error err -> Error err
+  [@@no_validate]
+
+  (** [t1 <|> t2] is the `or tactical` which applies t1 and uses its result if
+      it succeeds, and otherwise applies t2 if t1 had failed. *)
+  let ( <|> ) : t -> t -> t =
+   fun t1 t2 goal ->
+    match t1 goal with
+    | Error _ -> t2 goal
+    | Ok x -> Ok x
+
+  (** [skip] is a no-op from a reasoning perspective (goal will be unchanged).
+      This can be useful when needing to put a place-holder tactic in, e.g., a
+      list of tactics for subgoals when using [@>|], e.g.,
+      [... @|> [...; skip; ...]].
+
+      See the variant [skip_msg] which is like [skip] but also prints a message.
+
+      Note the notation [[%skip "skip message"]] can be used, with [[%skip]]
+      emitting no message. *)
+  let skip : t = () [@@builtin.tac "fn.tac.skip"]
+
+  (** [skip_msg "msg"] is like [skip] (a reasoning no-op) but also prints the
+      string "msg". This can be useful for tactic debugging.
+
+      Note the notation [[%skip "skip message"]] can be used, with [[%skip]]
+      emitting no message. *)
+  let skip_msg : string -> t = () [@@builtin.tac "fn.tac.skip_msg"]
+
+  (** [try_ t] is the `try tactical` which returns the result of applying t if t
+      succeeds, and otherwise does nothing (using [skip]) *)
+  let try_ t = t <|> skip
+
+  let ground_eval : ?max_cache:int -> unit -> t = ()
+  [@@builtin.tac "fn.tac.eval"]
+
+  (** A very fast, incomplete SMT solver for simple QF_UFDT/LIA/LRA goals. *)
+  let qs : t = () [@@builtin.tac "fn.tac.qs"]
+
+  let cc : t = () [@@builtin.tac "fn.tac.cc"]
+
+  (** Quick and simple simplifier. This always returns 1 goal. *)
+  let simp : t = () [@@builtin.tac "fn.tac.simp"]
+
+  (** Quick and simple simplifier on hypotheses and conclusion. This always
+      returns 1 goal. *)
+  let simp_all : t = () [@@builtin.tac "fn.tac.simp_all"]
+
+  (** Contextual simplifcation *)
+  let ctx_simplify : t = () [@@builtin.tac "fn.tac.ctx_simplify"]
+
+  (** Moral equivalent of Z3's Expr.simplify applied to each hypothesis and
+      conclusion in the goal. *)
+  let expr_simplify : t = () [@@builtin.tac "fn.tac.expr_simplify"]
+
+  let esimp = expr_simplify
+
+  (** Takes [G ?- a || b], returns [G ?- a] *)
+  let or_left : t = () [@@builtin.tac "fn.tac.or_left"]
+
+  (** Takes [G ?- a || b], returns [G ?- b] *)
+  let or_right : t = () [@@builtin.tac "fn.tac.or_right"]
+
+  (** Takes [G ?- a && b], returns [G ?- a] and [G ?- b] *)
+  let split_and : t = () [@@builtin.tac "fn.tac.split_and"]
+
+  (** Takes [G, t ?- t, …], succeeds with no further goal. Otherwise fails. *)
+  let exact : t = () [@@builtin.tac "fn.tac.exact"]
+
+  (** Succeeds if a goal is trivially true due to having [false] in the
+      hypotheses, [true] in the conclusion, or the exact same term in the
+      hypotheses and conclusion (subsuming the [exact] tactic). *)
+  let trivial : t = () [@@builtin.tac "fn.tac.trivial"]
+
+  (** [intros] takes a goal [H |- (A && B) ==> C] and returns the new goal
+      [H, A, B |- C]. *)
+  let intros : t = () [@@builtin.tac "fn.tac.intros"]
+
+  (** [unintros [1;3;4]] takes a goal [H0; H1; …; H7 |- C] and turns it into
+      [H0; H2; H5; H6; H7 |- (H1 && H3 && H4) ==> C]. In that sense it's the
+      inverse of [intros]. *)
+  let unintros : int list -> t = () [@@builtin.tac "fn.tac.unintros"]
+
+  (** [swap i] takes a goal [H0; ...; Hk |- C0; ...; Ck] and `swaps` a literal
+      (either a hypothesis or a conclusion term) over the sequent line (|-),
+      negating it in the process.
+
+      If [i>=0], then hypothesis [i] ([Hi]) is negated and made a conclusion. If
+      [i<0], then conclusion [abs(i+1)] (C(abs(i+1))) is negated and made a
+      hypothesis. *)
+  let swap : int -> t = () [@@builtin.tac "fn.tac.swap"]
+
+  (** [drop i] drops a hypothesis or conclusion, using the same literal
+      addressing scheme as `swap`. *)
+  let drop : int -> t = () [@@builtin.tac "fn.tac.drop"]
+
+  (** [expand "foo"] expands the first occurrence of `foo`.
+      [expand ~index:3 "foo"] expands the index 3 (i.e., fourth) occurrence of
+      `foo`. [expand ~all:true "foo"] expands all current instances of `foo`.
+      Instances introduced through this expansion process will not be
+      recursively expanded.
+
+      Note the notation [[%expand "foo"]] can also be used, with either function
+      names or terms which will be automatically quoted (see `expand_term`). *)
+  let expand : ?index:int -> ?all:bool -> string -> t = ()
+  [@@builtin.tac "fn.tac.expand"]
+
+  (** [expand_term (quote_term (foo x))] expands the first occurrence of `foo
+      x`. [expand_term ~index:3 (quote_term (foo x))] expands the index 3 (i.e.,
+      fourth) occurrence of `foo x`.
+      [expand_term ~all:true (quote_term (foo x))] expands all current instances
+      of `foo`. Instances introduced through this expansion process will not be
+      recursively expanded.
+
+      Note the notation [[%expand (foo x)]] handles term quoting automatically.
+  *)
+  let expand_term : ?index:int -> ?all:bool -> 'a term -> t = ()
+  [@@builtin.tac "fn.tac.expand_term"]
+
+  (** [replace (quote_term x)] uses an equality hypothesis `x=t` to replace `x`
+      by `t`. *)
+  let replace : 'a term -> t = () [@@builtin.tac "fn.tac.replace"]
+
+  (** [normalize (quote_term t)] normalizes a given term under hypotheses of the
+      current goal, replacing the term with its normalized version if it appears
+      in the goal, and adding the hypotheses `t = normalized_t` if the target
+      term does not appear already in the goal.
+
+      Normalization applies all active rewrite rules, forward chaining rules,
+      expands all enabled non-recursive function definitions and includes the
+      speculative expansion and simplification of recursive functions in order
+      to take advantage of inductive hypotheses, in the same manner as the
+      waterfall simplifier.
+
+      The `rules` and `strict` parameters behave the same as with the `simplify`
+      tactic, restricting which rewrite rules and function definitions may be
+      applied and/or expanded. The `basis` parameter acts as a restriction on
+      which function definitions can be expanded (basis members are not
+      expanded, unless they are explicitly given via `rules` with `strict:true`.
+
+      Note the notation [[%normalize t]] which normalizes term `t` with default
+      arguments given to [normalize]. *)
+  let normalize :
+      ?rules:identifier list ->
+      ?strict:bool ->
+      ?basis:identifier list ->
+      ?inline:bool ->
+      'a term ->
+      t =
+    ()
+  [@@builtin.tac "fn.tac.normalize"]
+
+  (** [generalize (quote_term t) gen_name] generalizes term `t` by replacing it
+      with a fresh Skolem of the appropriate type throughout the goal. There are
+      some restrictions on the name `gen_name` used for the new general term: no
+      terms can already appear in the goal with the same name, and the term
+      should follow the basic syntactic rules of IML/OCaml identifiers (begin
+      with a lowercase alphabetical character or `_`, etc.). *)
+  let generalize : 'a term -> string -> t = ()
+  [@@builtin.tac "fn.tac.generalize"]
+
+  (** [cases [(quote_term t1);...;(quote_term tk)]] case-splits on the given
+      cases, returning k+1 subgoals consisting of one for each case (with the
+      case added as a hypothesis), and one additional subgoal for the 'negative'
+      case in which all t1,...,tk are false. The terms must be boolean-valued.
+
+      Note the notation [[%cases t1, t2, ..., tk]] will handle term quoting
+      automatically. *)
+  let cases : bool term list -> t = () [@@builtin.tac "fn.tac.cases"]
+
+  (** [subgoal (quote_term t)] assumes a term and adds the correctness of this
+      assumption as a subgoal. This effectively applies the `cut` rule of
+      sequent calculus to produce two subgoals: one in which the term has been
+      assumed, and another in which the term must be proved under the current
+      goal context. The term must be boolean-valued.
+
+      Note the notation [[%subgoal t]] will handle term quoting automatically.
+  *)
+  let subgoal : bool term -> t = () [@@builtin.tac "fn.tac.subgoal"]
+
+  (** Lift if-then-else expressions to the top-level and split accordingly into
+      subgoals. This does a limited amount of feasibility checking to eliminate
+      obviously true subgoals (infeasible `if` branches under the current
+      context) while lifting. *)
+  let lift_ifs : t = () [@@builtin.tac "fn.tac.lift_ifs"]
+
+  (** Tauto is a propositional tautology checker. Tauto fails if the goal is not
+      proved. Tauto is actually a fail-if-not-proved version of
+      [lift_ifs @>>| exact], as [lift_ifs] followed by [exact] is a complete
+      tautology checker using if-normalization. *)
+  let tauto : t =
+   fun goal ->
+    match (lift_ifs @>>| exact) goal with
+    | Ok (Some ([], p)) as x -> x
+    | Error err -> Error err
+    | _ -> Error ("tauto: goal not proved", None, [ goal ], None)
+
+  (** Disjunctive flattening. *)
+  let flatten : t = () [@@builtin.tac "fn.tac.flatten"]
+
+  (** A small and simple SMT solver for QF_UF goals. *)
+  let smolsmt : t = () [@@builtin.tac "fn.tac.smolsmt"]
+
+  (** [unroll ~smt:"z3" 42] does 42 rounds of unrolling with SMT solver named
+      "z3". Pass [?smt:None] to use the best available SMT solver. *)
+  let unroll :
+      ?smt:string -> ?query_timeout:int -> ?no_asm_query_timeout:int -> int -> t
+      =
+    ()
+  [@@builtin.tac "fn.tac.unroll"]
+
+  (** A decision procedure for linear (real and integer) arithmetic.*)
+  let arith : t = () [@@builtin.tac "fn.tac.arith"]
+
+  (** An SMT solver with non-linear arithmetic enabled. Pass [None] to use the
+      best available SMT solver. *)
+  let nonlin : ?smt:string -> unit -> t = () [@@builtin.tac "fn.tac.nonlin"]
+
+  (** Auto tactic, Imandra's flagship automated inductive waterfall proof
+      procedure, taking into account all known active (rw,fc,elim,gen) rules,
+      incorporating conditional rewriting with back-chaining, speculative
+      expansion of recursive functions and symbolic execution, forward-chaining
+      for simplification contexts, subgoaling, congruence closure, tautology
+      detection, destructor elimination, generalization and automated induction.
+  *)
+  let auto : t = () [@@builtin.tac "fn.tac.auto"]
+
+  (** Induction tactic: Synthesize an induction scheme for the goal and apply
+      it. This does not invoke the induction waterfall (as in `auto`). *)
+  let induction : ?id:identifier -> ?vars:string list -> unit -> t = ()
+  [@@builtin.tac "fn.tac.induction"]
+
+  (** Full simplifier (the waterfall simplifier). Pass [?smt:None] to use the
+      best available SMT solver. The parameter `rules` is an optional list of
+      IDs of rewrite rules. If given, only these rewrite rules will be used
+      during simplification. The parameter `~strict` when `true` and given in
+      conjunction with `rules` further restricts the simplifier to only use
+      definitional rules (function definitions, both recursive and
+      non-recursive) and rewrite rules which are explicitly present in the
+      `rules` list. The parameter `~backchain_limit` controls the recursive
+      depth of back-chaining on hypotheses that is allowed during the relieving
+      of rewrite rule guards (hypotheses).
+
+      Note the syntax `[%simplify foo, bar, baz]` which expands to `simplify
+      ~rules:[[%id foo]; [%id bar]; [%id baz]] ()`.
+
+      Note that `[%simp ...]` is an alias for `[%simplify ...]`.
+
+      Note the syntax `[%simplify_only ...]` and its alias `[%simp_only ...]`
+      which are like `[%simp ...]` with `~strict:true`. *)
+  let simplify :
+      ?smt:string ->
+      ?backchain_limit:int ->
+      ?rules:identifier list ->
+      ?strict:bool ->
+      ?basis:identifier list ->
+      unit ->
+      t =
+    ()
+  [@@builtin.tac "fn.tac.simplify"]
+
+  (** Induction using the waterfall. Use like this:
+      [induct ~smt:"z3" ~on_vars:["x"; "y"] ()] for structural induction, or
+      [induct ~on_fun:[%id f] ()] for function induction with function [f]*)
+  let induct :
+      ?smt:string ->
+      ?on_fun:identifier ->
+      ?on_vars:string list ->
+      ?otf:bool ->
+      ?max_induct:int ->
+      ?do_not:string list ->
+      unit ->
+      t =
+    ()
+  [@@builtin.tac "fn.tac.induct"]
+
+  (** Use an existing theorem to add an additional hypothesis to the current
+      goal. For example [use (quote_term (add_is_commutative x y))] takes a goal
+      [A ?- B] and returns a goal [(x+y)=(y+x), A ?- B].
+
+      Note the notation [[%use foo x y z]] handles term quoting automatically.
+  *)
+  let use : bool term -> t = () [@@builtin.tac "fn.tac.use"]
+
+  (** A tactic that enumerates all values of finite-type variables. *)
+  let enumerate : string list -> t = () [@@builtin.tac "fn.tac.enumerate"]
+
+  (** [repeat tac] applies [tac] to a goal, to obtain new subgoals. It then
+      recurse on each of these subgoals, until it reaches subgoals where [tac]
+      return [None] (does nothing).
+
+      The [depth] parameter is used to prevent infinite recursions. If it is
+      non-positive then this just applies [tac]. The default value is [20]. *)
+  let rec repeat ?(depth = 20) (tac : t) : t =
+   fun goal ->
+    match tac goal with
+    | Error err -> Error err
+    | Ok None -> Ok None
+    | Ok (Some res) when depth <= 0 -> Ok (Some res)
+    | Ok (Some (subgoals, p0)) ->
+      let rec rev_append l1 l2 =
+        match l1 with
+        | [] -> l2
+        | x :: tl1 -> rev_append tl1 (x :: l2)
+      in
+
+      (* recursively flatten *)
+      let rec map_subgoals acc_goals acc_proof = function
+        | [] -> Ok (acc_goals, acc_proof)
+        | g1 :: tl_subgoals ->
+          (match repeat ~depth:(depth - 1) tac g1 with
+          | Error err -> Error err
+          | Ok None -> map_subgoals (g1 :: acc_goals) acc_proof tl_subgoals
+          | Ok (Some (subgoals', p1)) ->
+            map_subgoals
+              (rev_append subgoals' acc_goals)
+              (p1 :: acc_proof) tl_subgoals)
+      in
+
+      (match map_subgoals [] [] subgoals with
+      | Error err -> Error err
+      | Ok (goals, proofs) ->
+        let proof =
+          match proofs with
+          | [] -> p0
+          | _ -> combine_proofs proofs p0
+        in
+        Ok (Some (goals, proof)))
+  [@@no_validate]
+
+  (** Primitive to solve subgoals in parallel *)
+  let par_solve : (t term * goal) list -> proof list res = ()
+  [@@builtin.tac "fn.tac.parsolve"]
+
+  (** [par split tac] uses [split] to split the current goal into a list of
+      subgoals; then it applies [tac] to each subgoal in parallel. *)
+  let par : t -> t term -> t =
+   fun tsplit tac goal ->
+    match tsplit goal with
+    | Error err -> Error err
+    | Ok None ->
+      Error
+        ( "par: `split` tactic did not produce any subgoals",
+          None,
+          [ goal ],
+          None )
+    | Ok (Some (all_goals, p1)) ->
+      let rec make_subtasks = function
+        | [] -> []
+        | g :: other_goals -> (tac, g) :: make_subtasks other_goals
+      in
+      let subtasks = make_subtasks all_goals in
+      (match par_solve subtasks with
+      | Error err -> Error err
+      | Ok subproofs ->
+        let pr = combine_proofs subproofs p1 in
+        Ok (Some ([], pr)))
+  [@@no_validate]
+end
+[@@no_extract]
+
+(** {2 Ordinals} *)
+
+(** We need to define ordinals before any recursive function is defined, because
+    ordinals are used for termination proofs. *)
+module
+  Ordinal
+  (* FIXME: handle signature
+   : sig
+     type t =
+       | Int of int
+       | Cons of t * int * t
+     val pp : Format.formatter -> t -> unit
+     val of_int : int -> t
+     val (~$) : int -> t
+     val (<<) : t -> t -> bool
+     val plus : t -> t -> t
+     val simple_plus : t -> t -> t
+     val (+) : t -> t -> t
+     val of_list : t list -> t
+     val pair : t -> t -> t
+     val triple : t -> t -> t -> t
+     val quad : t -> t -> t -> t -> t
+     val shift : t -> by:t -> t
+     val is_valid : t -> bool
+     val is_valid_rec : t -> bool
+     val zero : t
+     val one : t
+     val omega : t
+     val omega_omega : t
+   end *) =
+struct
+  (** Ordinals, up to ε₀, in Cantor Normal Form *)
+  type t =
+    | Int of int
+    | Cons of t * int * t
+        (** [cons a x tl] is [x·(ω^a) + tl], where [tl < ω·a], [a≠0], [x≠0] *)
+  [@@builtin.special "ty.ordinal"] [@@no_validate]
+
+  let pp out (x : t) : unit =
+    let pp_coeff out x =
+      if Z.equal Z.one x then
+        ()
+      else
+        Format.fprintf out "%a@<1>·" Z.pp_print x
+    in
+    let rec pp out = function
+      | Int x -> Z.pp_print out x
+      | Cons (a, x, tl) ->
+        Format.fprintf out "%a@<1>ω%a%a" pp_coeff x pp_power a pp_tail tl
+    and pp_tail out = function
+      | Int n when Z.equal Z.zero n -> ()
+      | x -> Format.fprintf out "@ + %a" pp x
+    and pp_power out = function
+      | Int n when Z.equal Z.one n -> ()
+      | x -> Format.fprintf out "^%a" pp_inner x
+    and pp_inner out x =
+      match x with
+      | Int _ -> pp out x
+      | Cons _ -> Format.fprintf out "(@[%a@])" pp x
+    in
+    Format.fprintf out "@[%a@]" pp x
+  [@@program]
+
+  let of_int_unsafe (x : int) : t = Int x
+  [@@builtin.special "ordinal.of_int"] [@@no_validate] [@@macro]
+
+  let zero = Int 0 [@@macro]
+
+  let one = Int 1 [@@macro]
+
+  let two = Int 2 [@@macro]
+
+  (* user facing construct *)
+  let of_int (x : int) : t = of_int_unsafe (mk_nat x) [@@macro]
+
+  (** special axiom: the original well founded relation we use for proving all
+      the other functions terminating. *)
+  let rec ( << ) (x : t) (y : t) : bool =
+    match x, y with
+    | Int x, Int y -> x < y
+    | Int _, Cons _ -> true
+    | Cons _, Int _ -> false
+    | Cons (a1, x1, tl1), Cons (a2, x2, tl2) ->
+      a1 << a2 || (a1 = a2 && (x1 < x2 || (x1 = x2 && tl1 << tl2)))
+  [@@builtin.special "ordinal.cmp"] [@@no_validate] [@@adm x, y]
+
+  (** Addition of ordinals. Not commutative. *)
+  let rec plus (x : t) (y : t) : t =
+    match x, y with
+    | Int x, Int y -> Int (x + y)
+    | Int _, Cons _ -> y (* absorb *)
+    | Cons (a, x, tl), Int _ -> Cons (a, x, plus tl y)
+    | Cons (a1, x1, tl1), Cons (a2, x2, tl2) ->
+      if a1 << a2 then
+        y
+      (* absorb *)
+      else if a1 = a2 then
+        (* same exponent of ω, combine coefficients. [tl1] is absorbed
+           because it's infinitely smaller than [y] *)
+        Cons (a1, x1 + x2, tl2)
+      else
+        (* a1>a2, so we keep the leading coeff [x1·ω^a1] *)
+        Cons (a1, x1, plus tl1 y)
+  [@@builtin.special "ordinal.plus"] [@@no_validate] [@@adm x, y]
+
+  let rec shift (x : t) (n : t) : t =
+    if n = Int 0 || x = Int 0 then
+      x
+    else (
+      match x with
+      | Int x -> Cons (n, x, zero) (* [x] becomes [x·ω^n] *)
+      | Cons (a, x, tl) ->
+        (* [x·ω^a + tl] becomes [x·(ω^(a+n)) + tl*ω^n].
+           we must add [n] on the right,
+           or else [ω^ω] will not be shifted at all *)
+        Cons (plus a n, x, shift tl n)
+    )
+  [@@builtin.special "ordinal.shift"] [@@no_validate] [@@adm x]
+
+  let pair (x : t) (y : t) : t =
+    match x with
+    | Int x -> Cons (one, x + 1, y)
+    | Cons (a, x, _tl) -> Cons (plus a one, x, y)
+
+  let triple x y z = pair x (pair y z)
+
+  let quad x y z w = pair x (triple y z w)
+
+  let simple_plus (x : t) (y : t) : t =
+    match x, y with
+    | Int a, Int b -> Int (a + b)
+    | _ -> Int 0
+
+  let rec of_list_rec (acc : t) (l : t list) : t =
+    match l with
+    | [] -> acc
+    | x :: tail -> of_list_rec (plus (shift acc one) x) tail
+  [@@adm l] [@@no_validate]
+
+  let of_list (l : t list) : t =
+    match l with
+    | [] -> zero
+    | [ x ] -> x
+    | [ x; y ] -> plus (shift one x) y
+    | [ x; y; z ] -> plus (shift two x) (plus (shift one y) z)
+    | x :: y :: z :: tl ->
+      of_list_rec (plus (shift two x) (plus (shift one y) z)) tl
+  [@@builtin.special "ordinal.of_list"]
+
+  (** Is this a valid ordinal? *)
+  let rec is_valid_rec (x : t) : bool =
+    match x with
+    | Int x -> x >= 0
+    | Cons (a, x, tl) ->
+      is_valid_rec a && a <> zero && x > 0 && is_valid_rec tl
+      &&
+      (* also check that [lead_exponent(tl) < a] *)
+      (match tl with
+      | Cons (b, _, _) -> b << a
+      | Int _ -> true)
+  [@@no_validate] [@@adm x]
+
+  (** Is this a valid ordinal? *)
+  let is_valid (x : t) : bool =
+    match x with
+    | Int x -> x >= 0
+    | o -> is_valid_rec o
+  [@@builtin.special "ordinal.is_valid"]
+
+  let ( + ) = plus [@@macro] [@@no_validate]
+
+  let ( ~$ ) = of_int [@@macro] [@@no_validate]
+
+  let omega = of_list [ one; zero ]
+
+  let omega_omega = shift omega omega
+end
+
+(* A few properties that should hold:
+   verify Ordinal.(fun a b c -> is_valid a && is_valid b && is_valid c && b << c ==> a+b << a+c);;
+   verify Ordinal.(fun x y z -> is_valid x && is_valid y && is_valid z ==> (x+y)+z = x+(y+z));;
+*)
+
+(** {2 Natural numbers} *)
+module Peano_nat = struct
+  type t =
+    | Z
+    | S of t
+  [@@builtin.special "ty.peano.nat"]
+
+  let zero = Z [@@builtin.special "fn.peano.zero"] [@@macro]
+
+  let succ x = S x [@@builtin.special "fn.peano.succ"] [@@macro]
+
+  (** Turn this integer into a natural number. Negative integers map to zero. *)
+  let rec of_int i : t =
+    if i <= 0 then
+      Z
+    else
+      S (of_int (i - 1))
+  [@@builtin.special "fn.peano.of_int"]
+
+  (** Turn this natural number into a native integer. *)
+  let rec to_int x : int =
+    match x with
+    | Z -> 0
+    | S y -> 1 + to_int y
+
+  (** Peano addition *)
+  let rec plus x y =
+    match x with
+    | Z -> y
+    | S x' -> S (plus x' y)
+  [@@builtin.special "fn.peano.plus"]
+
+  (** Comparison *)
+  let rec leq x y =
+    match x, y with
+    | Z, _ -> true
+    | _, Z -> false
+    | S x', S y' -> leq x' y'
+  [@@builtin.special "fn.peano.leq"]
+
+  let ( = ) : t -> t -> bool = ( = ) [@@macro]
+
+  let ( <= ) : t -> t -> bool = leq [@@macro]
+
+  let ( + ) : t -> t -> t = plus [@@macro]
+end
+
+(** {2 Other builtin types} *)
+
+module Result = struct
+  type ('a, 'b) t = ('a, 'b) result
+
+  let return x = Ok x [@@macro]
+
+  let fail s = Error s [@@macro]
+
+  let map f e =
+    match e with
+    | Ok x -> Ok (f x)
+    | Error s -> Error s
+  [@@macro]
+
+  let map_err f e =
+    match e with
+    | Ok x -> Ok x
+    | Error y -> Error (f y)
+  [@@macro]
+
+  let get_or ~default e =
+    match e with
+    | Ok x -> x
+    | Error _ -> default
+  [@@macro]
+
+  let map_or ~default f e =
+    match e with
+    | Ok x -> f x
+    | Error _ -> default
+  [@@macro]
+
+  let ( >|= ) e f = map f e [@@macro]
+
+  let flat_map f e =
+    match e with
+    | Ok x -> f x
+    | Error s -> Error s
+  [@@macro]
+
+  let ( >>= ) e f = flat_map f e [@@macro]
+
+  let fold ok error x =
+    match x with
+    | Ok x -> ok x
+    | Error s -> error s
+  [@@macro]
+
+  let is_ok = function
+    | Ok _ -> true
+    | Error _ -> false
+  [@@macro]
+
+  let is_error = function
+    | Ok _ -> false
+    | Error _ -> true
+  [@@macro]
+
+  let monoid_product a b =
+    match a, b with
+    | Ok x, Ok y -> Ok (x, y)
+    | Error e, _ -> Error e
+    | _, Error e -> Error e
+  [@@macro]
+
+  let ( let+ ) = ( >|= ) [@@macro]
+
+  let ( and+ ) = monoid_product [@@macro]
+
+  let ( let* ) = ( >>= ) [@@macro]
+
+  let ( and* ) = monoid_product [@@macro]
+end
+
+module Decomp = struct
+  type t [@@builtin.decomp "ty.decomp"]
+
+  type ret = (t, string) result
+
+  type m = identifier -> ret [@@builtin.special "ty.decomp.m"]
+
+  type refiner = t -> ret
+
+  type lift_bool =
+    | Default
+    | Nested_equalities
+    | Equalities
+    | All
+
+  let top :
+      ?assuming:identifier ->
+      ?basis:identifier list ->
+      ?rule_specs:identifier list ->
+      ?prune:bool ->
+      ?ctx_simp:bool ->
+      ?lift_bool:lift_bool ->
+      unit ->
+      m =
+    ()
+  [@@builtin.decomp "fn.decomp.top"]
+
+  type style =
+    | Additive
+    | Multiplicative
+
+  let enumerate_ : t -> refiner = () [@@builtin.decomp "fn.decomp.enumerate"]
+
+  let enumerate_all_ : style -> t list -> refiner = ()
+  [@@builtin.decomp "fn.decomp.enumerate_all"]
+
+  let prune : refiner = () [@@builtin.decomp "fn.decomp.prune"]
+
+  let merge_ : t -> refiner = () [@@builtin.decomp "fn.decomp.merge"]
+
+  let compound_merge_ : t -> refiner = ()
+  [@@builtin.decomp "fn.decomp.compound_merge"]
+
+  let combine : refiner = () [@@builtin.decomp "fn.decomp.combine"]
+
+  open Result
+
+  let enumerate_all ~style des d0 =
+    let rec lift = function
+      | [] -> Ok []
+      | Ok x :: xs ->
+        let* l = lift xs in
+        Ok (x :: l)
+      | Error e :: _ -> Error e
+    in
+    let* l = lift des in
+    enumerate_all_ style l d0
+  [@@no_validate]
+
+  let ( |>> ) (m : m) (f : refiner) : m =
+   fun id ->
+    let* d = m id in
+    f d
+  [@@macro]
+
+  let enumerate d0 d1 =
+    let* d0 = d0 in
+    enumerate_ d0 d1
+  [@@macro]
+
+  let ( ~| ) (m : m) : m = m |>> combine [@@macro]
+
+  let ( << ) (m : m) (d1 : ret) : m =
+    m |>> fun d0 ->
+    let* d1 = d1 in
+    merge_ d0 d1
+  [@@macro]
+
+  let ( <|< ) (m : m) (d1 : ret) : m =
+    m |>> fun d0 ->
+    let* d1 = d1 in
+    compound_merge_ d0 d1
+  [@@macro]
+end
+[@@no_extract]
+
+(** A familiar type for Haskellers *)
+type ('a, 'b) either =
+  | Left of 'a
+  | Right of 'b
+
+(* functional operators *)
+
+(** Pipeline operator.
+
+    [x |> f] is the same as [f x], but it composes nicely: [ x |> f |> g |> h]
+    can be more readable than [h(g(f x))]. *)
+let ( |> ) x f = f x [@@builtin.special "fn.revapply"] [@@macro]
+
+(** Right-associative application operator.
+
+    [f @@ x] is the same as [f x], but it binds to the right: [f @@ g @@ h @@ x]
+    is the same as [f (g (h x))] but with fewer parentheses. *)
+let ( @@ ) f x = f x [@@builtin.special "fn.atapply"] [@@macro]
+
+(** Identity function. [id x = x] always holds. *)
+let id x = x [@@builtin.special "fn.id"] [@@macro]
+
+(** Mathematical composition operator.
+
+    [f %> g] is [fun x -> g (f x)] *)
+let ( %> ) f g x = g (f x) [@@macro]
+
+(* builtins *)
+
+let ( == ) = Stdlib.( == ) [@@program]
+
+let ( != ) = Stdlib.( != ) [@@program]
+
+let ( +. ) : real -> real -> real = Q.( + ) [@@builtin.logic_core "mk_r_add"]
+
+let ( -. ) : real -> real -> real = Q.( - ) [@@builtin.logic_core "mk_r_sub"]
+
+let ( ~-. ) : real -> real = Q.neg [@@builtin.logic_core "mk_r_usub"]
+
+let ( *. ) : real -> real -> real = Q.( * ) [@@builtin.logic_core "mk_r_mul"]
+
+let ( /. ) : real -> real -> real = Q.( / ) [@@builtin.logic_core "mk_r_div"]
+
+(** {2 List module}
+
+    This module contains many safe functions for manipulating lists. *)
+module List = struct
+  type 'a t = 'a list
+
+  let empty = [] [@@macro]
+
+  (** Test whether a list is empty *)
+  let is_empty = function
+    | [] -> true
+    | _ :: _ -> false
+
+  (** [cons x l] prepends [x] to the beginning of [l], returning a new list *)
+  let cons x y = x :: y [@@macro]
+
+  (** Singleton list *)
+  let return x = [ x ] [@@macro]
+
+  (** Partial function to access the head of the list. This function will fail
+      when applied to the empty list. {b NOTE} it is recommended to rely on
+      pattern matching instead *)
+  let hd : 'a list -> 'a = List.hd [@@builtin.logic_core "mk_list_hd"]
+
+  (** Partial function to access the tail of the list. This function will fail
+      when applied to the empty list {b NOTE} it is recommended to rely on
+      pattern matching instead *)
+  let tl : 'a list -> 'a list = List.tl [@@builtin.logic_core "mk_list_tl"]
+
+  let head_opt l =
+    match l with
+    | [] -> None
+    | x :: _ -> Some x
+
+  (** List append / concatenation. [append l1 l2] returns a list composed of all
+      elements of [l1], followed by all elements of [l2] *)
+  let rec append l1 l2 =
+    match l1 with
+    | [] -> l2
+    | x :: l1' -> x :: append l1' l2
+  [@@adm l1]
+
+  let[@imandra_theorem] append_to_nil x = append x [] = x
+  [@@by induct ~on_vars:[ "x" ] ()] [@@rw]
+
+  let[@imandra_theorem] append_single x y z =
+    append (append y [ x ]) z = append y (x :: z)
+  [@@by induct ~on_vars:[ "y" ] ()] [@@rw]
+
+  (** Reverse a list *)
+  let rec rev l =
+    match l with
+    | [] -> []
+    | x :: l' -> append (rev l') [ x ]
+  [@@adm l]
+
+  (** Compute the length of a list. Linear time. *)
+  let rec length l =
+    match l with
+    | [] -> 0
+    | _ :: l2 -> 1 + length l2
+  [@@adm l]
+
+  (** Length of a list is non-negative. This useful theorem is installed as a
+      forward-chaining rule. *)
+  let[@imandra_theorem] len_nonnegative l = (length l [@trigger]) >= 0
+  [@@fc] [@@by induct ~on_vars:[ "l" ] ()]
+
+  (** A list has length zero iff it is empty. This is a useful rewrite rule for
+      obtaining empty lists. *)
+  let[@imandra_theorem] len_zero_is_empty x = length x = 0 = (x = [])
+  [@@rewrite] [@@by induct ~on_vars:[ "x" ] ()]
+
+  (** The length of [(x @ y)] is the sum of the lengths of [x] and [y] *)
+  let[@imandra_theorem] len_append x y =
+    length (append x y) = length x + length y
+  [@@by auto] [@@rw]
+
+  (** Split a list of pairs into a pair of lists *)
+  let rec split l =
+    match l with
+    | [] -> [], []
+    | (x, y) :: tail ->
+      let tail1, tail2 = split tail in
+      x :: tail1, y :: tail2
+  [@@adm l]
+
+  (** Map a function over a list.
+
+      - [map f [] = []]
+      - [map f [x] = [f x]]
+      - [map f (x :: tail) = f x :: map f tail] *)
+  let rec map f l =
+    match l with
+    | [] -> []
+    | x :: l2 -> f x :: map f l2
+  [@@adm l]
+
+  let rec map2 f l1 l2 =
+    let open Result in
+    match l1, l2 with
+    | [], [] -> Ok []
+    | x :: l1, y :: l2 -> map2 f l1 l2 >|= cons (f x y)
+    | _, _ -> Error "map2: Lengths of l1 and l2 don't match"
+  [@@adm l1, l2]
+
+  (* NOTE: this is commented because we don't handle [is_ok …] as a
+       pattern. Once expanded it becomes [not (is_a[error] …)] which is
+       not a valid FO pattern currently.
+
+     let[@imandra_theorem] map2_same_len f l1 l2 =
+       length l1 = length l2 ==>
+       Result.is_ok ((map2 f l1 l2) [@trigger])
+     [@@by induct None ["l1"; "l2"]] [@@fc]
+  *)
+
+  (** [for_all f l] tests whether all elements of [l] satisfy the predicate [f]
+  *)
+  let rec for_all (f : 'a -> bool) (l : 'a list) =
+    match l with
+    | [] -> true
+    | x :: l2 -> f x && for_all f l2
+  [@@adm l]
+
+  (** [exists f l] tests whether there is an element of [l] that satisfies the
+      predicate [f] *)
+  let rec exists (f : 'a -> bool) (l : 'a list) =
+    match l with
+    | [] -> false
+    | x :: l2 -> f x || exists f l2
+  [@@adm l]
+
+  (** Fold-left, with an accumulator that makes induction more challenging *)
+  let rec fold_left f acc = function
+    | [] -> acc
+    | x :: tail -> fold_left f (f acc x) tail
+
+  (** Fold-right, without accumulator. This is generally more friendly for
+      induction than [fold_left]. *)
+  let rec fold_right f l acc =
+    match l with
+    | [] -> acc
+    | x :: tail ->
+      let acc = fold_right f tail acc in
+      f x acc
+
+  let mapi f l =
+    let rec loop i l =
+      match l with
+      | [] -> []
+      | x :: l2 ->
+        let y = f i x in
+        y :: loop (i + 1) l2
+    in
+    loop 0 l
+
+  (** [filter f l] keeps only the elements of [l] that satisfy [f]. *)
+  let rec filter f = function
+    | [] -> []
+    | x :: tail ->
+      let tail = filter f tail in
+      if f x then
+        x :: tail
+      else
+        tail
+
+  let rec filter_map f = function
+    | [] -> []
+    | x :: tail ->
+      let tail = filter_map f tail in
+      (match f x with
+      | None -> tail
+      | Some y -> y :: tail)
+
+  let rec flat_map f = function
+    | [] -> []
+    | x :: tail -> append (f x) (flat_map f tail)
+
+  (** [find f l] returns [Some x] if [x] is the first element of [l] such that
+      [f x] is true. Otherwise it returns [None] *)
+  let rec find f l =
+    match l with
+    | [] -> None
+    | x :: tl ->
+      if f x then
+        Some x
+      else
+        find f tl
+
+  (** [mem x l] returns [true] iff [x] is an element of [l] *)
+  let rec mem x = function
+    | [] -> false
+    | y :: tail -> x = y || mem x tail
+  [@@builtin.special "list.mem"]
+
+  let rec mem_assoc x = function
+    | [] -> false
+    | (k, _) :: tail -> x = k || mem_assoc x tail
+
+  let rec nth n = function
+    | [] -> None
+    | y :: tail ->
+      if n = 0 then
+        Some y
+      else
+        nth (n - 1) tail
+  [@@adm 1n]
+
+  let rec assoc x = function
+    | [] -> None
+    | (k, v) :: tail ->
+      if x = k then
+        Some v
+      else
+        assoc x tail
+
+  (** Like [take n l], but measured subset is [n] instead of [l]. *)
+  let rec bounded_recons n l =
+    if n <= 0 then
+      []
+    else (
+      match l with
+      | [] -> []
+      | hd :: tl -> hd :: bounded_recons (n - 1) tl
+    )
+  [@@adm n]
+
+  (** [take n l] returns a list composed of the first (at most) [n] elements of
+      [l]. If [length l <= n] then it returns [l] *)
+  let rec take n = function
+    | [] -> []
+    | _ when n <= 0 -> []
+    | x :: tl -> x :: take (n - 1) tl
+  [@@adm 1n]
+
+  (** [drop n l] returns [l] where the first (at most) [n] elements have been
+      removed. If [length l <= n] then it returns [[]] *)
+  let rec drop n = function
+    | [] -> []
+    | l when n <= 0 -> l
+    | _ :: tl -> drop (n - 1) tl
+  [@@adm 0n]
+
+  (** Integer range. [i -- j] is the list [[i; i+1; i+2; …; j-1]]. Returns the
+      empty list if [i >= j]. *)
+  let rec range i j =
+    if i >= j then
+      []
+    else
+      i :: range (i + 1) j
+  [@@measure Ordinal.of_int (j - i)]
+
+  let ( -- ) = range [@@macro]
+
+  (** Insert [x] in [l], keeping [l] sorted. *)
+  let rec insert_sorted ~leq x l =
+    match l with
+    | [] -> [ x ]
+    | y :: _ when leq x y -> x :: l
+    | y :: tail -> y :: insert_sorted ~leq x tail
+  [@@adm l]
+
+  (** Basic sorting function *)
+  let sort ~leq l : _ list =
+    fold_right (fun x acc -> insert_sorted ~leq x acc) l []
+
+  (** Check whether a list is sorted, using the [leq] less-than-or-equal
+      predicate *)
+  let rec is_sorted ~leq = function
+    | [] | [ _ ] -> true
+    | x :: (y :: _ as tail) -> leq x y && is_sorted ~leq tail
+
+  let monoid_product l1 l2 = flat_map (fun x -> map (fun y -> x, y) l2) l1
+
+  let ( >|= ) o f = map f o [@@macro]
+
+  let ( >>= ) o f = flat_map f o [@@macro]
+
+  let ( let+ ) = ( >|= ) [@@macro]
+
+  let ( and+ ) = monoid_product [@@macro]
+
+  let ( let* ) = ( >>= ) [@@macro]
+
+  let ( and* ) = monoid_product [@@macro]
+end
+
+(** Infix alias to {!List.append} *)
+let ( @ ) = List.append [@@macro]
+
+(** Alias to {!List.(--)} *)
+let ( -- ) = List.( -- ) [@@macro]
+
+module Int = struct
+  type t = int
+
+  let ( + ) = ( + ) [@@macro]
+
+  let ( - ) = ( - ) [@@macro]
+
+  let ( ~- ) = ( ~- ) [@@macro]
+
+  let ( * ) = ( * ) [@@macro]
+
+  let ( / ) = ( / ) [@@macro]
+
+  let ( mod ) = ( mod ) [@@macro]
+
+  let ( < ) = ( < ) [@@macro]
+
+  let ( <= ) = ( <= ) [@@macro]
+
+  let ( > ) = ( > ) [@@macro]
+
+  let ( >= ) = ( >= ) [@@macro]
+
+  let min = min [@@macro]
+
+  let max = max [@@macro]
+
+  let abs = abs [@@macro]
+
+  (** Conversion to a string. Only works for nonnegative numbers *)
+  let to_string : t -> string = Z.to_string
+  [@@builtin.logic_core "mk_int_to_str"]
+
+  let compare (x : t) (y : t) =
+    if x = y then
+      0
+    else if x < y then
+      -1
+    else
+      1
+  [@@macro]
+
+  (* FIXME: support this conversion at term/resolve_term level
+     let of_caml_int = Z.of_int [@@macro]
+  *)
+
+  let equal = ( = ) [@@macro]
+
+  let pp = Z.pp_print [@@program]
+
+  let of_caml_int = Z.of_int [@@program]
+
+  (* used like [for x=i to j do f x done] *)
+  let rec for_ i j f : unit =
+    if i <= j then (
+      f i;
+      for_ (i + 1) j f
+    )
+  [@@program]
+
+  let pow_ x n =
+    (* exponentiation by repeated squaring *)
+    let rec aux base exp acc =
+      if exp = 0 then
+        acc
+      else (
+        let acc' =
+          if exp mod 2 = 1 then
+            acc * base
+          else
+            acc
+        in
+        aux (base * base) (exp / 2) acc'
+      )
+    in
+    aux x n 1
+  [@@program]
+
+  let pow : t -> t -> t = pow_ [@@builtin.logic_core "mk_i_power"]
+
+  (* used like [for x=i downto j do f x done] *)
+  let rec for_down_to i j f : unit =
+    if i >= j then (
+      f i;
+      for_down_to (i - 1) j f
+    )
+  [@@program]
+
+  (* Euclidean mod *)
+
+  module Euclidean_mod = struct
+    let rec rem_pos (a : int) (b : int) : int =
+      if b <= 0 then
+        0
+      else if a < 0 then
+        rem_pos (a + b) b
+      else if a >= b then
+        rem_pos (a - b) b
+      else
+        a
+    [@@measure Ordinal.of_int (abs a)] [@@by auto]
+
+    let emod (a : int) (m : int) : int =
+      if m = 0 then
+        0
+      else
+        rem_pos a (abs m)
+  end
+
+  (* Definitional axiom linking our built-in mod to the Euclidean_mod.emod. *)
+
+  let[@imandra_axiom] mod_eq_emod x y =
+    y <> 0 ==> x mod y = Euclidean_mod.emod x y
+end
+
+module Bool = struct
+  type t = bool
+end
+
+(** {2 Arrays}
+
+    Program mode only *)
+module Array = struct
+  include Stdlib.Array
+  (** A program-mode imperative array, that can be mutated *)
+
+  let get a i = Stdlib.Array.get a (Z.to_int i)
+
+  let set a i v = Stdlib.Array.set a (Z.to_int i) v
+
+  let make i x = Stdlib.Array.make (Z.to_int i) x
+
+  let init i f = Stdlib.Array.init (Z.to_int i) (fun i -> f (Z.of_int i))
+
+  let sub a i len = Stdlib.Array.sub a (Z.to_int i) (Z.to_int len)
+
+  let length a = Z.of_int (Stdlib.Array.length a)
+
+  let mapi f a = Stdlib.Array.mapi (fun i x -> f (Z.of_int i) x) a
+
+  let iteri f a = Stdlib.Array.iteri (fun i x -> f (Z.of_int i) x) a
+
+  let fill a i len x = Stdlib.Array.fill a (Z.to_int i) (Z.to_int len) x
+
+  let blit a i b j len =
+    Stdlib.Array.blit a (Z.to_int i) b (Z.to_int j) (Z.to_int len)
+end
+[@@program]
+
+(** {2 Option module}
+
+    The option type [type 'a option = None | Some of 'a] is useful for
+    representing partial functions and optional values. *)
+module Option = struct
+  type 'a t = 'a option
+
+  (** Map over the option.
+
+      - [map f None = None]
+      - [map f (Some x) = Some (f x)] *)
+  let map f = function
+    | None -> None
+    | Some x -> Some (f x)
+
+  let map_or ~default f = function
+    | None -> default
+    | Some x -> f x
+
+  (** Returns [true] iff the argument is of the form [Some x] *)
+  let is_some = function
+    | None -> false
+    | Some _ -> true
+  [@@macro]
+
+  (** Returns [true] iff the argument is [None] *)
+  let is_none = function
+    | None -> true
+    | Some _ -> false
+  [@@macro]
+
+  (** Wrap a value into an option. [return x = Some x] *)
+  let return x = Some x [@@macro]
+
+  (** Infix alias to {!map} *)
+  let ( >|= ) x f = map f x [@@macro]
+
+  (** Monadic operator, useful for chaining multiple optional computations *)
+  let flat_map f o =
+    match o with
+    | None -> None
+    | Some x -> f x
+
+  (** Infix monadic operator, useful for chaining multiple optional computations
+      together. It holds that [(return x >>= f) = f x] *)
+  let ( >>= ) o f = flat_map f o [@@macro]
+
+  (** Choice of a value
+
+      - [or_ None x = x]
+      - [or_ (Some y) x = Some y] *)
+  let or_ a b =
+    match a with
+    | None -> b
+    | Some _ -> a
+  [@@macro]
+
+  let ( <+> ) a b = or_ a b [@@macro]
+
+  let exists p = function
+    | None -> false
+    | Some x -> p x
+
+  let for_all p = function
+    | None -> true
+    | Some x -> p x
+
+  let get_or ~default x =
+    match x with
+    | None -> default
+    | Some y -> y
+
+  let fold f acc o =
+    match o with
+    | None -> acc
+    | Some x -> f acc x
+
+  (** [f <$> x = map f x] *)
+  let ( <$> ) = map [@@macro]
+
+  let monoid_product a b =
+    match a, b with
+    | Some x, Some y -> Some (x, y)
+    | _ -> None
+
+  let ( let+ ) = ( >|= ) [@@macro]
+
+  let ( and+ ) = monoid_product [@@macro]
+
+  let ( let* ) = ( >>= ) [@@macro]
+
+  let ( and* ) = monoid_product [@@macro]
+end
+
+(* TODO: make verification silent, then uncomment this
+   verify (fun f x -> Option.(f x = (return x >>= f))) ;;
+*)
+
+module
+  Real
+  (* TODO: signature
+      : sig
+     type t = real
+     val of_int : int -> t
+     (**/**)
+     val _to_int_round_down : t -> int
+     (**/**)
+     val to_int : t -> int
+     val ( + ) : t -> t -> t
+     val ( - ) : t -> t -> t
+     val ( ~- ) : t -> t
+     val ( * ) : t -> t -> t
+     val ( / ) : t -> t -> t
+     val ( < ) : t -> t -> bool
+     val ( <= ) : t -> t -> bool
+     val ( > ) : t -> t -> bool
+     val ( >= ) : t -> t -> bool
+     val abs : t -> t
+     val min : t -> t -> t
+     val max : t -> t -> t
+     val mk_of_float : float -> t
+     val mk_of_q : t -> t
+     val mk_of_string : string -> t
+     val to_float : t -> float
+     val of_float : float -> t
+     val compare : t -> t -> Caml.Int.t
+     val pp : Format.formatter -> t -> unit
+     val to_string : t -> string
+     val to_string_approx : t -> string
+   end *) =
+struct
+  type t = real
+
+  let of_int : int -> t = Q.of_bigint [@@builtin.logic_core "mk_r_of_i"]
+
+  let _to_int_round_down : t -> int = Q.to_bigint
+  [@@builtin.logic_core "mk_i_of_r"]
+
+  let to_int (r : t) : int =
+    (* we can't use the literal 0.0 as it's rewritten to `Real.mk_of_` *)
+    if r >=. of_int 0 then
+      _to_int_round_down r
+    else
+      ~-(_to_int_round_down ~-.r)
+
+  let ( + ) = ( +. ) [@@macro]
+
+  let ( - ) = ( -. ) [@@macro]
+
+  let ( ~- ) = ( ~-. ) [@@macro]
+
+  let ( * ) = ( *. ) [@@macro]
+
+  let ( / ) = ( /. ) [@@macro]
+
+  let ( < ) = ( <. ) [@@macro]
+
+  let ( <= ) = ( <=. ) [@@macro]
+
+  let ( > ) = ( >. ) [@@macro]
+
+  let ( >= ) = ( >=. ) [@@macro]
+
+  let abs r =
+    if r >= of_int 0 then
+      r
+    else
+      ~-r
+
+  let min = min_r [@@macro]
+
+  let max = max_r [@@macro]
+
+  (* special builders *)
+  let mk_of_float = Q.of_float [@@program]
+
+  let mk_of_q (x : Q.t) = x [@@program]
+
+  let mk_of_string (x : string) = Q.of_string x [@@program]
+
+  (* approximative conversion to floats *)
+  let to_float = Q.to_float [@@program]
+
+  let of_float : float -> real = Q.of_float [@@builtin.logic_core "mk_r_of_f"]
+
+  let compare (x : t) (y : t) =
+    if x = y then
+      0i
+    else if x < y then
+      -1i
+    else
+      1i
+  [@@program]
+
+  let pp = Q.pp_print [@@program]
+
+  let to_string = Q.to_string [@@program]
+
+  let to_string_approx x = string_of_float @@ Q.to_float x [@@program]
+
+  let pow_ a b =
+    let p, q = Q.num a, Q.den a in
+    if Int.(b >= 0) then (
+      let p_b = Int.pow p b in
+      let q_b = Int.pow q b in
+      Q.make p_b q_b
+    ) else (
+      let b = Int.(~-b) in
+      let p_b = Int.pow p b in
+      let q_b = Int.pow q b in
+      Q.make q_b p_b
+    )
+  [@@program]
+
+  let pow : t -> Int.t -> t = pow_ [@@builtin.logic_core "mk_r_power"]
+
+  (* TODO: type t = Q of Q.t | E of Expr.t *)
+
+  (* TODO use Imandra.Real module *)
+end
+
+module
+  Map
+  (* TODO: signatures
+      : sig
+     type (+'a, 'b) t
+     val const : 'b -> (_, 'b) t
+     val add : 'a -> 'b -> ('a,'b) t -> ('a,'b) t [@@macro]
+     val add' : ('a,'b) t -> 'a -> 'b -> ('a,'b) t
+     val get : 'a -> ('a, 'b) t -> 'b
+     val get' : ('a, 'b) t -> 'a -> 'b
+     val get_default : (_, 'b) t -> 'b
+     val of_list : default:'b -> ('a * 'b) list -> ('a,'b) t
+
+     val filter_map :
+       default:('b -> 'c) ->
+       f:('a -> 'b -> 'c option) ->
+       ('a,'b) t ->
+       ('a,'c) t
+     [@@program]
+
+     val for_all :
+       default:('b -> bool) ->
+       f:('a -> 'b -> bool) ->
+       ('a,'b) t -> bool
+     [@@program]
+
+     val merge :
+       default:('b -> 'c -> 'd) ->
+       f_both:('a -> 'b -> 'c -> 'd option) ->
+       f1:('a -> 'b -> 'd option) ->
+       f2:('a -> 'c -> 'd option) ->
+       ('a, 'b) t -> ('a, 'c) t -> ('a, 'd) t
+     [@@program]
+
+     val extract : ('a,'b) t -> ('a * 'b) list * 'b [@@program]
+     val pp : 'a printer -> 'b printer -> ('a,'b) t printer [@@program]
+   end *) =
+struct
+  (* list sorted by key *)
+  type (+'a, 'b) t = {
+    l: ('a * 'b) list; (* sorted by key *)
+    default: 'b;
+  }
+  [@@builtin.logic_core "mk_s_array"]
+
+  let const_ x = { default = x; l = [] } [@@program]
+
+  let const : 'b -> ('a, 'b) t = const_ [@@builtin.logic_core "mk_array_const"]
+
+  let add_rec m k v : _ t =
+    let rec aux l =
+      match l with
+      | [] ->
+        if v = m.default then
+          []
+        else
+          [ k, v ]
+      | (k', v') :: tail ->
+        (match Stdlib.compare k k' with
+        | 0i ->
+          if v = m.default then
+            tail
+          (* remove *)
+          else
+            (k, v) :: tail (* erase *)
+        | n when Program_prelude_.Int.(n < 0i) ->
+          if v = m.default then
+            l
+          else
+            (k, v) :: l
+        | _ -> (k', v') :: aux tail)
+    in
+    { m with l = aux m.l }
+  [@@program]
+
+  (** [add' m k v] adds the binding [k -> v] to [m] *)
+  let add' : ('a, 'b) t -> 'a -> 'b -> ('a, 'b) t = add_rec
+  [@@builtin.logic_core "mk_array_store"]
+
+  (** Same as {!add'} but with arguments swapped *)
+  let add k v m = add' m k v [@@macro]
+
+  let get_default_ m = m.default [@@program]
+
+  let get_default : (_, 'b) t -> 'b = get_default_
+  [@@builtin.logic_core "mk_array_default"]
+
+  let get_rec m k =
+    let rec aux l =
+      match l with
+      | [] -> m.default
+      | (k', v) :: tail ->
+        if k = k' then
+          v
+        else
+          aux tail
+    in
+    aux m.l
+  [@@program]
+
+  let get' : ('a, 'b) t -> 'a -> 'b = get_rec
+  [@@builtin.logic_core "mk_array_select"]
+
+  let get (k : 'a) (m : ('a, 'b) t) : 'b = get' m k [@@macro]
+
+  let rec of_list (default : 'b) (l : ('a * 'b) list) : ('a, 'b) t =
+    match l with
+    | [] -> const default
+    | (k, v) :: tail -> add k v (of_list default tail)
+  [@@adm l] [@@builtin.special "map.of_list"]
+
+  let filter_map ~default ~f m : _ t =
+    let rec aux = function
+      | [] -> []
+      | (x, v) :: tl ->
+        let tl = aux tl in
+        (match f x v with
+        | None -> tl
+        | Some v' -> (x, v') :: tl)
+    in
+    { default = default m.default; l = aux m.l }
+  [@@program]
+
+  let for_all ~default ~f m : bool =
+    default m.default && List.for_all (fun (x, v) -> f x v) m.l
+  [@@program]
+
+  let merge ~default ~f_both ~f1 ~f2 (s1 : ('a, 'b) t) (s2 : ('a, 'c) t) :
+      ('a, 'd) t =
+    let open Stdlib in
+    let rec aux l1 l2 =
+      match l1, l2 with
+      | [], [] -> []
+      | [], _ ->
+        List.filter_map (fun (k, v) -> Option.map (fun v -> k, v) @@ f2 k v) l2
+      | _, [] ->
+        List.filter_map (fun (k, v) -> Option.map (fun v -> k, v) @@ f1 k v) l1
+      | (x1, v1) :: tl1, (x2, v2) :: tl2 ->
+        if x1 = x2 then (
+          let tl = aux tl1 tl2 in
+          match f_both x1 v1 v2 with
+          | None -> tl
+          | Some v -> (x1, v) :: tl
+        ) else if x1 < x2 then (
+          let tl = aux tl1 l2 in
+          match f1 x1 v1 with
+          | None -> tl
+          | Some v -> (x1, v) :: tl
+        ) else (
+          let tl = aux l1 tl2 in
+          match f2 x2 v2 with
+          | None -> tl
+          | Some v -> (x2, v) :: tl
+        )
+    in
+    { default = default s1.default s2.default; l = aux s1.l s2.l }
+  [@@program]
+
+  let extract (m : ('a, 'b) t) : ('a * 'b) list * 'b = m.l, m.default
+  [@@program]
+
+  (* printer *)
+  let pp pp_k pp_v out (m : (_, _) t) : unit =
+    match m.l with
+    | [] -> Format.fprintf out "(@[Map.const %a@])" pp_v m.default
+    | _ ->
+      let pp_sep out () = Format.fprintf out ";@ " in
+      let pp_pair out (k, v) =
+        Format.fprintf out "(@[%a,@ %a@])" pp_k k pp_v v
+      in
+      Format.fprintf out "(@[Map.of_list@ ~default:%a@ [@[%a@]]@])" pp_v
+        m.default
+        (Format.pp_print_list ~pp_sep pp_pair)
+        m.l
+  [@@program]
+end
+
+(** {2 Multiset}
+
+    A multiset is a collection of elements that don't have any particular order,
+    but can occur several times (unlike a regular set). *)
+module
+  Multiset
+  (* TODO: signatures
+   : sig
+     type +'a t = ('a, int) Map.t
+
+     val empty : 'a t
+     val add : 'a -> 'a t -> 'a t
+     val remove : 'a -> 'a t -> 'a t
+     val mem : 'a -> 'a t -> bool
+     val find : 'a -> 'a t -> int
+     val of_list : 'a list -> 'a t
+   end *) =
+struct
+  type +'a t = ('a, int) Map.t
+
+  let empty = Map.const 0 [@@macro]
+
+  let add (x : 'a) (m : 'a t) : 'a t = Map.add x (Map.get x m + 1) m
+
+  let find = Map.get [@@macro]
+
+  let mem x m : bool = find x m > 0
+
+  let remove (x : 'a) (m : 'a t) : 'a t =
+    let n = max 0 (Map.get x m - 1) in
+    Map.add x n m
+
+  let rec of_list = function
+    | [] -> empty
+    | x :: tail -> add x @@ of_list tail
+end
+
+(** {2 Sets} *)
+
+module
+  Set
+  (* TODO: signatures
+      : sig
+     type +'a t = ('a, bool) Map.t
+
+     val empty : 'a t
+
+     val is_valid : _ t -> bool (* logic-mode only *)
+
+     val is_empty : _ t -> bool
+
+     val mem : 'a -> 'a t -> bool
+
+     val add : 'a -> 'a t -> 'a t
+
+     val remove : 'a -> 'a t -> 'a t
+
+     val subset : 'a t -> 'a t -> bool
+
+     val union : 'a t -> 'a t -> 'a t
+
+     val complement : 'a t -> 'a t
+
+     val inter : 'a t -> 'a t -> 'a t
+
+     val diff : 'a t -> 'a t -> 'a t
+
+     val (++) : 'a t -> 'a t -> 'a t
+     val (--) : 'a t -> 'a t -> 'a t
+
+     val of_list : 'a list -> 'a t
+
+     val to_list : 'a t -> 'a list (* program *)
+
+     val pp : 'a printer -> 'a t printer (* program *)
+   end *) =
+struct
+  type +'a t = ('a, bool) Map.t
+
+  let empty : 'a t = Map.const false [@@macro]
+
+  let full : 'a t = Map.const true [@@macro]
+
+  let is_empty s : bool = s = empty
+
+  let is_valid (_s : _ t) = true [@@macro]
+
+  let mem : 'a -> 'a t -> bool = Map.get [@@builtin.logic_core "mk_set_member"]
+
+  (** Checks if [s1] is a subset of [s2] *)
+  let subset_ s1 s2 =
+    Map.for_all s1
+      ~default:(fun v1 -> v1 ==> Map.get_default s2)
+      ~f:(fun x v1 -> v1 ==> mem x s2)
+  [@@program]
+
+  let subset : 'a t -> 'a t -> bool = subset_
+  [@@builtin.logic_core "mk_set_subset"]
+
+  let add_ x s = Map.add x true s [@@program]
+
+  let add : 'a -> 'a t -> 'a t = add_ [@@builtin.logic_core "mk_set_add"]
+
+  let remove_ x s = Map.add x false s [@@program]
+
+  let remove : 'a -> 'a t -> 'a t = remove_ [@@builtin.logic_core "mk_set_del"]
+
+  let inter_ (s1 : 'a t) (s2 : 'a t) : 'a t =
+    Map.merge s1 s2 ~default:( && )
+      ~f1:(fun _ x -> Some (x && s2.default))
+      ~f2:(fun _ x -> Some (x && s1.default))
+      ~f_both:(fun _ s1 s2 -> Some (s1 && s2))
+  [@@program]
+
+  let inter : 'a t -> 'a t -> 'a t = inter_
+  [@@builtin.logic_core "mk_set_inter"]
+
+  let union_ (s1 : 'a t) (s2 : 'a t) : 'a t =
+    Map.merge ~default:( || )
+      ~f1:(fun _ x -> Some (x || s2.default))
+      ~f2:(fun _ x -> Some (x || s1.default))
+      ~f_both:(fun _ s1 s2 -> Some (s1 || s2))
+      s1 s2
+  [@@program]
+
+  let union : 'a t -> 'a t -> 'a t = union_
+  [@@builtin.logic_core "mk_set_union"]
+
+  let complement_ (s : 'a t) : 'a t =
+    Map.filter_map s ~default:not ~f:(fun _ v -> Some (not v))
+  [@@program]
+
+  let complement : 'a t -> 'a t = complement_
+  [@@builtin.logic_core "mk_set_complement"]
+
+  (* difference *)
+  let diff_ (s1 : 'a t) (s2 : 'a t) : 'a t =
+    Map.merge
+      ~default:(fun v1 v2 -> v1 && not v2)
+      ~f1:(fun _ x -> Some (x && not s2.default))
+      ~f2:(fun _ x -> Some (s1.default && not x))
+      ~f_both:(fun _ s1 s2 -> Some (s1 && not s2))
+      s1 s2
+  [@@program]
+
+  let diff : 'a t -> 'a t -> 'a t = diff_
+  [@@builtin.logic_core "mk_set_difference"]
+
+  let rec of_list = function
+    | [] -> empty
+    | x :: tl -> add x (of_list tl)
+  [@@adm 0n] [@@builtin.special "set.of_list"]
+
+  let to_list (s : 'a t) : 'a list =
+    let l, _ = Map.extract s in
+    List.filter_map
+      (fun (x, b) ->
+        if b then
+          Some x
+        else
+          None)
+      l
+  [@@program]
+
+  let ( ++ ) = union [@@macro]
+
+  let ( -- ) = diff [@@macro]
+
+  let pp pp_x out (x : 'a t) : unit =
+    match to_list x with
+    | [] -> Format.pp_print_string out "Set.empty"
+    | l ->
+      Format.fprintf out "(@[Set.of_list@ [@[%a@]]@])"
+        (Format.pp_print_list
+           ~pp_sep:(fun out () -> Format.fprintf out ";@ ")
+           pp_x)
+        l
+  [@@program]
+end
+
+(** {2 Byte strings}
+
+    These strings correspond to OCaml native strings, and do not have a
+    particular unicode encoding.
+
+    Rather, they should be seen as sequences of bytes, and it is also this way
+    that Imandra considers them. *)
+module
+  String
+  (* TODO: signatures
+      : sig
+     type t = string
+
+     val empty : t
+     val length : t -> int
+     val make : Caml.Int.t -> char -> t (* program mode *)
+     val append : t -> t -> t
+     val get : t -> Caml.Int.t -> char (* program mode *)
+     val concat : t -> t list -> t
+     val prefix : t -> t -> bool
+     val suffix : t -> t -> bool
+     val contains : t -> sub:t -> bool
+     val unsafe_sub : t -> int -> int -> t
+     val sub : t -> int -> int -> t option
+     val of_int : int -> t
+     val to_int : t -> int option
+     val is_int : t -> bool
+     val is_nat : t -> bool
+     val to_nat : t -> int option
+
+     (**/**)
+     val unsafe_to_nat : t -> int
+     val unsafe_to_int : t -> int
+     (**/**)
+   end *) =
+struct
+  type t = string
+
+  let empty = ""
+
+  let length_ (s : t) : int = Z.of_int (Stdlib.String.length s) [@@program]
+
+  (** Length of the string, i.e. its number of bytes *)
+  let length : t -> int = length_ [@@builtin.logic_core "mk_str_length"]
+
+  (** [make i c] makes a string containing [i] times the char [c] *)
+  let make (i : Program_prelude_.Int.t) c : t = String.make i c [@@program]
+
+  (** String concatenation *)
+  let append : t -> t -> t = Stdlib.( ^ ) [@@builtin.logic_core "mk_str_append"]
+
+  let get = Stdlib.String.get [@@program]
+
+  (** [concat sep l] concatenates strings in [l] with [sep] inserted between
+      each element.
+
+      - [concat sep [] = ""]
+      - [concat sep [x] = x]
+      - [concat sep [x;y] = x ^ sep ^ y]
+      - [concat sep (x :: tail) = x ^ sep ^ concat sep tail] *)
+  let rec concat sep (l : t list) : t =
+    match l with
+    | [] -> ""
+    | [ x ] -> x
+    | x :: tail -> append x (append sep (concat sep tail))
+  [@@adm l]
+
+  (** [prefix a b] returns [true] iff [a] is a prefix of [b] (or if [a=b] *)
+  let prefix : t -> t -> bool = Program_prelude_.String.prefix
+  [@@builtin.logic_core "mk_str_prefix"]
+
+  (** [suffix a b] returns [true] iff [a] is a suffix of [b] (or if [a=b] *)
+  let suffix : t -> t -> bool = Program_prelude_.String.suffix
+  [@@builtin.logic_core "mk_str_suffix"]
+
+  let contains : t -> t -> bool = Program_prelude_.String.contains
+  [@@builtin.logic_core "mk_str_contains"]
+
+  let unsafe_sub_ (a : t) (i : int) (len : int) : t =
+    Stdlib.String.sub a (Z.to_int i) (Z.to_int len)
+  [@@program]
+
+  let unsafe_sub : t -> int -> int -> t = unsafe_sub_
+  [@@builtin.logic_core "mk_str_sub"]
+
+  (** Substring. [sub s i len] returns the string [s[i], s[i+1],…,s[i+len-1]].
+  *)
+  let sub (a : t) (i : int) (len : int) : t option =
+    if i >= 0 && len >= 0 && i + len <= length a then
+      Some (unsafe_sub a i len)
+    else
+      None
+
+  (** String representation of an integer *)
+  let of_int (i : int) : t =
+    if i >= 0 then
+      Int.to_string i
+    else
+      append "-" (Int.to_string ~-i)
+
+  (* unsafe, returns -1 on any string that is not a natural number *)
+  let unsafe_to_nat : t -> int = Program_prelude_.String.unsafe_to_nat
+  [@@builtin.logic_core "mk_unsafe_str_to_nat"]
+
+  (** Parse a string into a nonnegative number, or return [None] *)
+  let to_nat (s : t) : int option =
+    let x = unsafe_to_nat s in
+    if x >= 0 then
+      Some x
+    else
+      None
+
+  let is_nat (s : t) : bool = s <> "" && unsafe_to_nat s >= 0 [@@macro]
+
+  let is_int (s : t) : bool =
+    is_nat s || (prefix "-" s && is_nat (unsafe_sub s 1 (length s - 1)))
+  [@@macro]
+
+  let unsafe_to_int (s : t) : int =
+    let x = unsafe_to_nat s in
+    if x >= 0 then
+      x
+    else
+      ~-(unsafe_to_nat (unsafe_sub s 1 (length s - 1)))
+
+  let to_int (s : t) : int option =
+    if is_int s then
+      Some (unsafe_to_int s)
+    else
+      None
+end
+
+(** Alias to {!String.append} *)
+let ( ^ ) = String.append [@@macro]
+
+(** Next integer *)
+let succ x = x + 1 [@@macro]
+
+(** Previous integer *)
+let pred x = x - 1 [@@macro]
+
+let fst (x, _) = x [@@macro]
+
+let snd (_, y) = y [@@macro]
+
+module Float = struct
+  type t = float
+
+  module Round (* TODO: signatures
+     : sig
+       type t
+     end *) = struct
+    type t =
+      | Nearest_ties_to_even  (** default *)
+      | Nearest_ties_to_away
+      | Towards_positive
+      | Towards_negative
+      | Towards_zero
+    [@@builtin.logic_core "mk_s_float_rounding"]
+
+    (* XXX: ugly hack to make sure `t` is in the back translation sort table *)
+    let[@imandra_verify] _ = fun (x : t) -> x = x
+
+    (* FIXME
+       let rne : t = Nearest_ties_to_even [@@builtin.logic_core "mk_f_rne"]
+        let default = rne [@@macro] (** default behavior in OCaml *)
+    *)
+  end
+
+  let of_int = Z.to_float [@@program]
+
+  let of_string = Stdlib.float_of_string [@@program]
+
+  let ( ~- ) : t -> t = Stdlib.( ~-. ) [@@builtin.logic_core "mk_f_neg"]
+
+  let ( + ) : t -> t -> t = Stdlib.( +. ) [@@builtin.logic_core "mk_f_add"]
+
+  let ( - ) : t -> t -> t = Stdlib.( -. ) [@@builtin.logic_core "mk_f_sub"]
+
+  let ( * ) : t -> t -> t = Stdlib.( *. ) [@@builtin.logic_core "mk_f_mul"]
+
+  let ( / ) : t -> t -> t = Stdlib.( /. ) [@@builtin.logic_core "mk_f_div"]
+
+  let nan : t = Stdlib.nan [@@builtin.logic_core "mk_f_nan"]
+
+  let infinity : t = Stdlib.infinity [@@builtin.logic_core "mk_f_infinity"]
+
+  let ( < ) : t -> t -> bool = Stdlib.( < ) [@@builtin.logic_core "mk_f_lt"]
+
+  let ( <= ) : t -> t -> bool = Stdlib.( <= ) [@@builtin.logic_core "mk_f_le"]
+
+  let ( > ) : t -> t -> bool = Stdlib.( > ) [@@builtin.logic_core "mk_f_gt"]
+
+  let ( >= ) : t -> t -> bool = Stdlib.( >= ) [@@builtin.logic_core "mk_f_ge"]
+
+  let ( = ) : t -> t -> bool = Stdlib.( = ) [@@builtin.logic_core "mk_f_eq"]
+
+  let ( <> ) : t -> t -> bool = Stdlib.( <> ) [@@builtin.logic_core "mk_f_neq"]
+
+  let neg : t -> t = ( ~- ) [@@macro]
+
+  let abs : t -> t = Stdlib.abs_float [@@builtin.logic_core "mk_f_abs"]
+
+  let is_zero x = Stdlib.( = ) x 0.p [@@program]
+
+  let is_nan (x : t) : bool =
+    Stdlib.( = ) (Stdlib.classify_float x) Stdlib.FP_nan
+  [@@program]
+
+  let is_infinite (x : t) : bool =
+    Stdlib.( = ) (Stdlib.classify_float x) Stdlib.FP_infinite
+  [@@program]
+
+  let is_normal (x : t) : bool =
+    Stdlib.( = ) (Stdlib.classify_float x) Stdlib.FP_normal
+  [@@program]
+
+  let is_subnormal (x : t) : bool =
+    Stdlib.( = ) (Stdlib.classify_float x) Stdlib.FP_subnormal
+  [@@program]
+
+  let is_positive (x : t) : bool = x > 0.p [@@program]
+
+  let is_negative (x : t) : bool = x < 0.p [@@program]
+
+  let is_zero : t -> bool = is_zero [@@builtin.logic_core "mk_f_is_zero"]
+
+  let is_nan : t -> bool = is_nan [@@builtin.logic_core "mk_f_is_nan"]
+
+  let is_infinite : t -> bool = is_infinite
+  [@@builtin.logic_core "mk_f_is_infinite"]
+
+  let is_normal : t -> bool = is_normal [@@builtin.logic_core "mk_f_is_normal"]
+
+  let is_subnormal : t -> bool = is_subnormal
+  [@@builtin.logic_core "mk_f_is_subnormal"]
+
+  let is_positive : t -> bool = is_positive
+  [@@builtin.logic_core "mk_f_is_positive"]
+
+  let is_negative : t -> bool = is_negative
+  [@@builtin.logic_core "mk_f_is_negative"]
+
+  let min (x : t) (y : t) : t =
+    if is_nan x then
+      y
+    else if is_nan y then
+      x
+    else
+      Stdlib.min x y
+  [@@program]
+
+  let max (x : t) (y : t) : t =
+    if is_nan x then
+      y
+    else if is_nan y then
+      x
+    else
+      Stdlib.max x y
+  [@@program]
+
+  let min : t -> t -> t = min [@@builtin.logic_core "mk_f_min"]
+
+  let max : t -> t -> t = max [@@builtin.logic_core "mk_f_max"]
+
+  let rem : t -> t -> t = Stdlib.mod_float [@@builtin.logic_core "mk_f_rem"]
+
+  let sqrt : t -> t = Stdlib.sqrt [@@builtin.logic_core "mk_f_sqrt"]
+end
+
+(** {1 Logic mode char}
+
+    An 8-bit char. *)
+module LChar = struct
+  type t = Char of bool * bool * bool * bool * bool * bool * bool * bool
+
+  let zero : t = Char (false, false, false, false, false, false, false, false)
+
+  let to_int (c : t) : Program_prelude_.Int.t =
+    let open Program_prelude_.Int in
+    let (Char (a7, a6, a5, a4, a3, a2, a1, a0)) = c in
+    let ( ! ) x =
+      if x then
+        1i
+      else
+        0i
+    in
+    (!a7 lsl 7i) + (!a6 lsl 6i) + (!a5 lsl 5i) + (!a4 lsl 4i) + (!a3 lsl 3i)
+    + (!a2 lsl 2i) + (!a1 lsl 1i) + (!a0 lsl 0i)
+  [@@program]
+
+  let of_int (i : Program_prelude_.Int.t) : t =
+    assert (Program_prelude_.Int.(i >= 0i && i < 256i));
+    let ( ! ) x = x <> 0i in
+    let a7 = !(i land (1i lsl 7i)) in
+    let a6 = !(i land (1i lsl 6i)) in
+    let a5 = !(i land (1i lsl 5i)) in
+    let a4 = !(i land (1i lsl 4i)) in
+    let a3 = !(i land (1i lsl 3i)) in
+    let a2 = !(i land (1i lsl 2i)) in
+    let a1 = !(i land (1i lsl 1i)) in
+    let a0 = !(i land (1i lsl 0i)) in
+    Char (a7, a6, a5, a4, a3, a2, a1, a0)
+  [@@program]
+
+  let of_char (c : char) : t = of_int (Stdlib.Char.code c) [@@program]
+
+  let to_char (c : t) : char = Stdlib.Char.chr (to_int c) [@@program]
+
+  let pp out c = Format.fprintf out "%C" (to_char c) [@@program]
+
+  let explode (s : string) : t list =
+    let l = ref [] in
+    Stdlib.String.iter (fun c -> l := of_char c :: !l) s;
+    List.rev !l
+  [@@program]
+
+  let is_printable (c : t) : bool =
+    (* to_int (c) > 32 && to_int (c) < 128 *)
+    match c with
+    | Char (false, false, true, false, false, false, false, false) -> false
+    | Char (_, true, _, _, _, _, _, _) | Char (_, _, true, _, _, _, _, _) ->
+      true
+    | _ -> false
+end
+
+(** {2 Logic-mode strings}
+
+    Strings purely in Imandra. *)
+
+module LString = struct
+  type t = LChar.t list
+
+  let empty : t = []
+
+  let of_list l = l
+
+  let to_string (s : t) = CCList.map LChar.to_char s |> CCString.of_list
+  [@@program]
+
+  let of_string = LChar.explode [@@program]
+
+  (* str.len *)
+  let[@unroll 32] rec length (s : t) =
+    match s with
+    | [] -> 0
+    | _ :: tl -> 1 + length tl
+  [@@adm s]
+
+  let pp out l =
+    if List.for_all LChar.is_printable l then
+      Format.fprintf out "{l|@[<hov>%s@]|l}"
+        (CCList.map LChar.to_char l |> CCString.of_list)
+    else
+      CCFormat.Dump.list LChar.pp out l
+  [@@program]
+
+  let[@imandra_theorem] len_pos (s : t) = (length s [@trigger]) >= 0
+  [@@fc] [@@by induct ~on_vars:[ "s" ] ()]
+
+  let[@imandra_theorem] len_zero_inversion (s : t) =
+    (length s [@trigger]) = 0 ==> s = []
+  [@@fc] [@@by induct ~on_vars:[ "s" ] ()]
+
+  (* str.append *)
+  let rec append (s1 : t) (s2 : t) : t =
+    match s1 with
+    | [] -> s2
+    | c :: s1' -> c :: append s1' s2
+
+  let ( ^^ ) = append
+
+  let[@unroll 32] rec for_all f (s : t) =
+    match s with
+    | [] -> true
+    | x :: tl -> f x && for_all f tl
+  [@@adm s]
+
+  let[@unroll 32] rec exists f (s : t) =
+    match s with
+    | [] -> false
+    | x :: tl -> f x || exists f tl
+  [@@adm s]
+
+  let rec concat sep = function
+    | [] -> []
+    | [ s ] -> s
+    | s1 :: tl -> append s1 (append sep (concat sep tl))
+
+  let is_printable (s : t) : bool = for_all LChar.is_printable s
+
+  (* "unsafe" sub (returns [empty] if out of range) *)
+  let rec sub (s : t) (i : int) (len : int) : t =
+    match s with
+    | [] -> []
+    | c1 :: s' ->
+      if len <= 0 then
+        []
+      else if i <= 0 then
+        c1 :: sub s' 0 (len - 1)
+      else
+        sub s' (i - 1) len
+
+  let rec prefix (s1 : t) (s2 : t) : bool =
+    match s1 with
+    | [] -> true
+    | c1 :: s1' ->
+      (match s2 with
+      | [] -> false
+      | c2 :: s2' -> c1 = c2 && prefix s1' s2')
+
+  let rec suffix (s1 : t) (s2 : t) : bool =
+    s1 = s2
+    ||
+    match s2 with
+    | [] -> false
+    | _ :: s2' -> suffix s1 s2'
+
+  (** [contains s1 s2] is [true] if [s2] is a substring of [s1] *)
+  let rec contains (s1 : t) (s2 : t) : bool =
+    match s2 with
+    | [] -> true
+    | c2 :: s2' ->
+      (match s1 with
+      | [] -> false
+      | c1 :: s1' -> (c1 = c2 && contains s1' s2') || contains s1' s2)
+  [@@adm s1]
+
+  let take : int -> t -> t = List.take
+
+  let drop : int -> t -> t = List.drop
+end
