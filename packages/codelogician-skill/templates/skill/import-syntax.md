@@ -6,13 +6,17 @@ description: Import syntax in IML. For multi-file (multi-module) projects. Also 
 # Import Syntax
 
 ## Syntax
-Path Imports with Implicit Module Names:
+1. Path Imports with Implicit Module Names:
 
 ```iml
 [@@@import "path/to/file.iml"]
 ```
 
-Path Imports with Explicit Module Names:
+This syntax makes definitions from the imported file available with quantified name, e.g., `File.<def_name>`.
+
+- `open File` can be used to bring definitions from the imported file into the current scope without quantification after the import statement.
+
+2. Path Imports with Explicit Module Names:
 
 ```iml
 [@@@import Mod_name, "path/to/file.iml"]
