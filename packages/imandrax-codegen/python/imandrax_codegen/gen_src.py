@@ -132,8 +132,12 @@ def gen_source_code(
             ]
             type_def_stmts = [stmt for stmts in type_defs_stmts for stmt in stmts]
             body_stmts = ast_of_art(art, mode=mode)
-            type_def_src = unparse(type_def_stmts) if type_def_stmts else ''
-            src_body = unparse(body_stmts, include_future_import=not type_def_stmts)
+            type_def_src = (
+                unparse(type_def_stmts, include_future_import=True)
+                if type_def_stmts
+                else ''
+            )
+            src_body = unparse(body_stmts, include_future_import=False)
             return (type_def_src, src_body)
 
 
