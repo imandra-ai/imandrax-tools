@@ -437,7 +437,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "18.4.2"
+version = "18.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
