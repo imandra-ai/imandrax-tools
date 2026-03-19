@@ -1,6 +1,6 @@
 """Test cases for extract_type_decl_names function."""
 
-from imandrax_codegen.gen_tests import (
+from imandrax_codegen.gen_src import (
     _extract_type_decl_names,  # pyright: ignore[reportPrivateUsage]
 )
 
