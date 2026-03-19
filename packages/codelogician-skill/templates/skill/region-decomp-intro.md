@@ -80,7 +80,7 @@ Common Error: the correct syntax for multiple identifiers is `[[%id f1]; [%id f2
 
 - **`~rule_specs`**: Specifies identifiers of rule specs to be used for rewriting or forward-chaining within the decomposition process.
 
-## Common Errors
+## Common Errors and Anti-Patterns
 
 **Mismatched ~assuming signature:**
 ```iml
@@ -94,3 +94,10 @@ let valid x y = x > 0 && y > 0
 let func x y = x + y
 [@@decomp top ~assuming:[%id valid] ()]
 ```
+
+**Exponentially large number of regions**: 
+Sometimes the algorithmic complexity of a decomposed function can lead to an exponential number of regions, especially if the function has many branches or nested conditions. 
+- Double-check what is the desired target of region decomposition. If the goal is only a subset of the function's behavior, consider using `~basis` or `~assuming` to restrict the analysis.
+  - Quick fix 1: Use `~basis` to avoid expanding certain functions.
+  - Quick fix 2: Use `~assuming` to restrict the analysis to a smaller input domain.
+- Sometimes the type definition of a function is too loose / general, resulting in overly broad regions. For example, using `string` or `int` instead of variant types to represent a finite set of values is considered an anti-pattern.
