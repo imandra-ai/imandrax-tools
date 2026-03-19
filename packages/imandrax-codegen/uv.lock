@@ -437,7 +437,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "18.4.2"
+version = "18.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
@@ -462,8 +462,8 @@ dev = [
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.18.0.1" },
-    { name = "imandrax-api-models", specifier = ">=18.0.0" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.18.0.1,<0.19" },
+    { name = "imandrax-api-models", specifier = ">=18.0.0,<19" },
     { name = "iml-query", specifier = ">=0.3.4" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },

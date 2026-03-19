@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from imandrax_codegen.gen_tests import Lang, gen_test_cases
+from imandrax_codegen.gen_src import Lang, gen_test_cases
 from imandrax_codegen.unparse import join_code_parts
 from inline_snapshot import snapshot
 
@@ -113,9 +113,6 @@ def test_nested_conditions():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -179,9 +176,6 @@ def test_list_operations():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -304,9 +298,6 @@ def test_composite_tuple():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -356,9 +347,6 @@ def test_with_basis():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -394,9 +382,6 @@ def test_primitive_real():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -420,9 +405,6 @@ def test_multiple_parameters():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -590,8 +572,6 @@ def test_option_type():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Generic, TypeAlias, TypeVar
 
@@ -655,9 +635,6 @@ def test_basic():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -693,9 +670,6 @@ def test_primitive_bool():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -759,9 +733,6 @@ def test_with_guards():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
@@ -896,9 +867,6 @@ def test_primitive_int():
         lang='python',
     )
     assert code == snapshot('''\
-from __future__ import annotations
-
-
 def test_1():
     """test_1
 
