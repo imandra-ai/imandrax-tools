@@ -905,6 +905,55 @@ def test_3():
 ''')
 
 
+def test_infeasible_region_in_trivial_forall():
+    file_path = DATA_DIR / 'infeasible_region_in_trivial_forall.yaml'
+    input_data = read_test_input(file_path)
+    code = _gen_test_cases(
+        iml=input_data.iml,
+        decomp_name=input_data.function_name,
+        other_decomp_kwargs=input_data.other_decomp_kwargs,
+        lang='python',
+    )
+    assert code == snapshot('''\
+from dataclasses import dataclass
+from typing import Generic, TypeAlias, TypeVar
+
+T = TypeVar('T')
+
+
+@dataclass
+class Some(Generic[T]):
+    value: T
+
+
+option: TypeAlias = Some[T] | None
+
+
+def test_1():
+    """test_1
+
+    - invariant: None
+    - constraints:
+        - not (List.for_all always_true xs)
+    """
+    raise Exception(
+        'Infeasible region: { reason = "max number of steps (100) reached" }'
+    )
+
+
+def test_2():
+    """test_2
+
+    - invariant: Some xs
+    - constraints:
+        - List.for_all always_true xs
+    """
+    result: option[list[int]] = check(xs=[])
+    expected: option[list[int]] = Some([])
+    assert result == expected
+''')
+
+
 if __name__ == '__main__':
     TEMPLATE: str = """\
 def test_{file_name}():
