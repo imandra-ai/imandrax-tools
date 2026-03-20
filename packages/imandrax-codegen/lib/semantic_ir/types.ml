@@ -147,14 +147,27 @@ end
 (* Test declaration
 ==================== *)
 
+(** Behavior for infeasible region placeholder tests *)
+type infeasible_region_behavior =
+  | Raise (** Raise an exception *)
+  | Pass (** No-op / pass *)
+[@@deriving show, eq, yojson, sexp]
+
 (** One test *)
 type test_decl =
-  { name : string
-  ; f_name : string
-  ; f_args : (string * type_expr * value) list
-  ; f_output : type_expr * value
-  ; docstr : string
-  }
+  | Feasible of
+      { name : string
+      ; f_name : string
+      ; f_args : (string * type_expr * value) list
+      ; f_output : type_expr * value
+      ; docstr : string
+      }
+  | Infeasible of
+      { name : string
+      ; f_name : string
+      ; docstr : string
+      ; reason : string
+      }
 [@@deriving show, eq, yojson, sexp]
 
 (** Test suite *)
