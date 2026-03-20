@@ -1,0 +1,3 @@
+[@@@import Easb, "base.iml"]
+
+let y = Easb.x + 1

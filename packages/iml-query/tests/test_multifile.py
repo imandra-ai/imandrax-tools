@@ -160,3 +160,16 @@ eval y
 theorem eval_y = y = 2
 
 """)
+
+    def test_import_as(self):
+        modules = resolve(DATA_DIR / 'import_as' / 'main.iml')
+        assert not isinstance(modules, Exception)
+        result = mk_monolith_iml(modules)
+        assert result == snapshot("""\
+module Easb = struct
+  let x = 1
+end
+
+let y = Easb.x + 1
+
+""")
