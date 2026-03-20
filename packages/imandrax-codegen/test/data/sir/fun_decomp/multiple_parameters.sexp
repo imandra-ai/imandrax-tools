@@ -1,4 +1,4 @@
-(((name test_1) (f_name calculate)
+((Feasible (name test_1) (f_name calculate)
   (f_args
    ((b (TBase int) (VConst (CInt 1))) (c (TBase int) (VConst (CInt 2)))
     (a (TBase int) (VConst (CInt 0)))))
@@ -12,7 +12,7 @@
    \n    - not (a = b)\
    \n    - not (b = c)\
    \n"))
- ((name test_2) (f_name calculate)
+ (Feasible (name test_2) (f_name calculate)
   (f_args
    ((a (TBase int) (VConst (CInt 0))) (c (TBase int) (VConst (CInt 1)))
     (b (TBase int) (VConst (CInt 1)))))
@@ -26,7 +26,7 @@
    \n    - a <= b\
    \n    - not (a = b)\
    \n"))
- ((name test_3) (f_name calculate)
+ (Feasible (name test_3) (f_name calculate)
   (f_args
    ((b (TBase int) (VConst (CInt 0))) (a (TBase int) (VConst (CInt 0)))
     (c (TBase int) (VConst (CInt 0)))))
@@ -39,7 +39,7 @@
    \n    - a = b\
    \n    - a <= b\
    \n"))
- ((name test_4) (f_name calculate)
+ (Feasible (name test_4) (f_name calculate)
   (f_args
    ((b (TBase int) (VConst (CInt 0))) (a (TBase int) (VConst (CInt 1)))
     (c (TBase int) (VConst (CInt 1)))))
@@ -54,7 +54,7 @@
    \n    - not (a = b)\
    \n    - not (b = c)\
    \n"))
- ((name test_5) (f_name calculate)
+ (Feasible (name test_5) (f_name calculate)
   (f_args
    ((a (TBase int) (VConst (CInt 0))) (c (TBase int) (VConst (CInt -1)))
     (b (TBase int) (VConst (CInt -1)))))
@@ -69,7 +69,7 @@
    \n    - b <= c\
    \n    - not (a = b)\
    \n"))
- ((name test_6) (f_name calculate)
+ (Feasible (name test_6) (f_name calculate)
   (f_args
    ((a (TBase int) (VConst (CInt 1))) (c (TBase int) (VConst (CInt -1)))
     (b (TBase int) (VConst (CInt 0)))))

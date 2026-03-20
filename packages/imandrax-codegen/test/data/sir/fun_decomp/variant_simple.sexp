@@ -1,4 +1,4 @@
-(((name test_1) (f_name color_value)
+((Feasible (name test_1) (f_name color_value)
   (f_args ((c (TBase color) (VConstruct (constructor Red) (args ())))))
   (f_output ((TBase int) (VConst (CInt 1))))
   (docstr
@@ -9,7 +9,7 @@
    \n    - not (c = Blue)\
    \n    - not (c = Green)\
    \n"))
- ((name test_2) (f_name color_value)
+ (Feasible (name test_2) (f_name color_value)
   (f_args ((c (TBase color) (VConstruct (constructor Green) (args ())))))
   (f_output ((TBase int) (VConst (CInt 2))))
   (docstr
@@ -20,7 +20,7 @@
    \n    - c = Green\
    \n    - not (c = Blue)\
    \n"))
- ((name test_3) (f_name color_value)
+ (Feasible (name test_3) (f_name color_value)
   (f_args ((c (TBase color) (VConstruct (constructor Blue) (args ())))))
   (f_output ((TBase int) (VConst (CInt 3))))
   (docstr  "test_3\

@@ -1,4 +1,4 @@
-(((name test_1) (f_name option_value)
+((Feasible (name test_1) (f_name option_value)
   (f_args
    ((opt (TApp option ((TBase int)))
      (VConstruct (constructor Some) (args ((VConst (CInt 0))))))))
@@ -11,7 +11,7 @@
    \n    - not Is_a(None, opt)\
    \n    - Option.get opt <= 0\
    \n"))
- ((name test_2) (f_name option_value)
+ (Feasible (name test_2) (f_name option_value)
   (f_args
    ((opt (TApp option ((TBase int)))
      (VConstruct (constructor Some) (args ((VConst (CInt 1))))))))
@@ -24,7 +24,7 @@
    \n    - not Is_a(None, opt)\
    \n    - Option.get opt >= 1\
    \n"))
- ((name test_3) (f_name option_value)
+ (Feasible (name test_3) (f_name option_value)
   (f_args ((opt (TApp option ((TBase int))) (VConst CUnit))))
   (f_output ((TBase int) (VConst (CInt 0))))
   (docstr

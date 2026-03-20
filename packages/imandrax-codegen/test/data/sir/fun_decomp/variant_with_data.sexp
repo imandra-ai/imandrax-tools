@@ -1,4 +1,4 @@
-(((name test_1) (f_name area)
+((Feasible (name test_1) (f_name area)
   (f_args
    ((s (TBase shape)
      (VConstruct (constructor Rectangle)
@@ -11,7 +11,7 @@
    \n- constraints:\
    \n    - not Is_a(Circle, s)\
    \n"))
- ((name test_2) (f_name area)
+ (Feasible (name test_2) (f_name area)
   (f_args
    ((s (TBase shape)
      (VConstruct (constructor Circle) (args ((VConst (CInt 0))))))))

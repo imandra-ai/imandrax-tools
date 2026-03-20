@@ -1,4 +1,4 @@
-(((name test_1) (f_name distance_category)
+((Feasible (name test_1) (f_name distance_category)
   (f_args
    ((p (TBase point)
      (VRecord (type_name point)
@@ -12,7 +12,7 @@
    \n    - not (p.x + p.y = 0)\
    \n    - p.x + p.y >= 1\
    \n"))
- ((name test_2) (f_name distance_category)
+ (Feasible (name test_2) (f_name distance_category)
   (f_args
    ((p (TBase point)
      (VRecord (type_name point)
@@ -25,7 +25,7 @@
    \n- constraints:\
    \n    - p.x + p.y = 0\
    \n"))
- ((name test_3) (f_name distance_category)
+ (Feasible (name test_3) (f_name distance_category)
   (f_args
    ((p (TBase point)
      (VRecord (type_name point)

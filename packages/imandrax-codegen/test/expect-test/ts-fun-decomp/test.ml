@@ -21,7 +21,7 @@ let read_sir (name : string) : Sir.test_suite =
 
 let run_test : string -> unit = fun name ->
     let sir = read_sir name in
-    let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
+    let code, _ = Typescript_adapter.Emit.emit_test_suite_dict ~infeasible_behavior:Raise sir in
     print_endline code;
 ;;
 
