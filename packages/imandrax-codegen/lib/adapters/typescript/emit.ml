@@ -272,7 +272,6 @@ let emit_value_assignment (va : Sir.Value_assignment.t) : string * Extra_imports
 
 (** Emit a test suite as TypeScript test data object *)
 let emit_test_suite_dict
-    ~(infeasible_behavior : Sir.infeasible_region_behavior)
     (tests : Sir.test_suite)
     : string * Extra_imports.t =
   let results =
@@ -281,17 +280,10 @@ let emit_test_suite_dict
            match test with
            | Sir.Infeasible { name; reason; _ } ->
                let entry =
-                 match infeasible_behavior with
-                 | Sir.Raise ->
-                     sprintf
-                       "  %s: {\n    infeasible: %s\n  }"
-                       (quote name)
-                       (quote reason)
-                 | Sir.Pass ->
-                     sprintf
-                       "  %s: {\n    infeasible: %s\n  }"
-                       (quote name)
-                       (quote reason)
+                 sprintf
+                   "  %s: {\n    infeasible: %s\n  }"
+                   (quote name)
+                   (quote (ts_escape_string reason))
                in
                (entry, Extra_imports.empty)
            | Sir.Feasible { name; f_args; f_output; _ } ->

@@ -44,12 +44,12 @@ let to_python_ast ~infeasible_behavior test_format = function
     | Ok stmts -> stmts
     | Error msg -> failwith msg
 
-let to_typescript ~infeasible_behavior = function
+let to_typescript = function
   | `Model m ->
     let code, imports = Typescript_adapter.Lib.parse_model m in
     Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
   | `FunDecomp fd ->
-    let code, imports = Typescript_adapter.Lib.parse_fun_decomp ~infeasible_behavior fd in
+    let code, imports = Typescript_adapter.Lib.parse_fun_decomp fd in
     Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
   | `Decl d ->
     match Typescript_adapter.Lib.parse_decl d with
@@ -139,7 +139,9 @@ let () =
     | Python ->
       parsed |> to_python_ast ~infeasible_behavior test_format |> python_ast_to_json |> write_json output
     | TypeScript ->
-      parsed |> to_typescript ~infeasible_behavior |> write_string output
+      if infeasible_behavior <> Semantic_ir.Raise then
+        Printf.eprintf "Warning: --on-infeasible is ignored for TypeScript (infeasible regions are always marked as data)\n";
+      parsed |> to_typescript |> write_string output
   with
   | Failure msg -> Printf.eprintf "Error: %s\n" msg; exit 1
   | Yojson.Json_error msg ->
