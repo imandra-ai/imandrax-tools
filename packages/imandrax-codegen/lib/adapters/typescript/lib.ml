@@ -28,7 +28,10 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly)
 ;;
 
 (** Parse a MIR Fun_decomp.t to corresponding TypeScript test data object *)
-let parse_fun_decomp (fun_decomp : Mir.Fun_decomp.t) : string * Extra_imports.t =
+let parse_fun_decomp
+    ~(infeasible_behavior : Sir.infeasible_region_behavior)
+    (fun_decomp : Mir.Fun_decomp.t)
+    : string * Extra_imports.t =
   let test_suite = Sir.Parser.Fun_decomp.parse_fun_decomp fun_decomp in
-  Emit.emit_test_suite_dict test_suite
+  Emit.emit_test_suite_dict ~infeasible_behavior test_suite
 ;;

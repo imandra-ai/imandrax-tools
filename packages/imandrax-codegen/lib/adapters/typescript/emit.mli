@@ -38,4 +38,7 @@ val emit_value_assignment : Sir.Value_assignment.t -> string * Extra_imports.t
 (** {1 Test Generation} *)
 
 (** Emit a test suite as TypeScript test data object *)
-val emit_test_suite_dict : Sir.test_suite -> string * Extra_imports.t
+val emit_test_suite_dict
+  :  infeasible_behavior:Sir.infeasible_region_behavior
+  -> Sir.test_suite
+  -> string * Extra_imports.t

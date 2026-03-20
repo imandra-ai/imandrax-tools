@@ -271,27 +271,51 @@ let emit_value_assignment (va : Sir.Value_assignment.t) : string * Extra_imports
 -------------------- *)
 
 (** Emit a test suite as TypeScript test data object *)
-let emit_test_suite_dict (tests : Sir.test_suite) : string * Extra_imports.t =
+let emit_test_suite_dict
+    ~(infeasible_behavior : Sir.infeasible_region_behavior)
+    (tests : Sir.test_suite)
+    : string * Extra_imports.t =
   let results =
     tests
     |> List.map (fun (test : Sir.test_decl) ->
-           let arg_results =
-             test.f_args
-             |> List.map (fun (name, _ty, value) ->
-                    let code, imports = emit_value value in
-                    (kv name code, imports))
-           in
-           let args_obj = arg_results |> List.map fst |> join_comma in
-           let args_imports = Extra_imports.union_list (List.map snd arg_results) in
-           let expected_code, expected_imports = emit_value (snd test.f_output) in
-           let entry =
-             sprintf
-               "  %s: {\n    input: { %s },\n    expected: %s\n  }"
-               (quote test.name)
-               args_obj
-               expected_code
-           in
-           (entry, Extra_imports.union args_imports expected_imports))
+           match test with
+           | Sir.Infeasible { name; reason; _ } ->
+               let entry =
+                 match infeasible_behavior with
+                 | Sir.Raise ->
+                     sprintf
+                       "  %s: {\n    infeasible: %s\n  }"
+                       (quote name)
+                       (quote reason)
+                 | Sir.Pass ->
+                     sprintf
+                       "  %s: {\n    infeasible: %s\n  }"
+                       (quote name)
+                       (quote reason)
+               in
+               (entry, Extra_imports.empty)
+           | Sir.Feasible { name; f_args; f_output; _ } ->
+               let arg_results =
+                 f_args
+                 |> List.map (fun (name, _ty, value) ->
+                        let code, imports = emit_value value in
+                        (kv name code, imports))
+               in
+               let args_obj = arg_results |> List.map fst |> join_comma in
+               let args_imports =
+                 Extra_imports.union_list (List.map snd arg_results)
+               in
+               let expected_code, expected_imports =
+                 emit_value (snd f_output)
+               in
+               let entry =
+                 sprintf
+                   "  %s: {\n    input: { %s },\n    expected: %s\n  }"
+                   (quote name)
+                   args_obj
+                   expected_code
+               in
+               (entry, Extra_imports.union args_imports expected_imports))
   in
   let entries = results |> List.map fst |> String.concat ",\n" in
   let imports = Extra_imports.union_list (List.map snd results) in
