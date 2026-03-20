@@ -21,7 +21,7 @@ let read_sir (name : string) : Sir.test_suite =
 
 let run_test : string -> unit = fun name ->
     let sir = read_sir name in
-    let code, _ = Typescript_adapter.Emit.emit_test_suite_dict ~infeasible_behavior:Raise sir in
+    let code, _ = Typescript_adapter.Emit.emit_test_suite_dict sir in
     print_endline code;
 ;;
 
@@ -43,6 +43,7 @@ let run_test : string -> unit = fun name ->
     ; "primitive_real"
     ; "multiple_parameters"
     ; "variant_poly"
+    ; "infeasible_region_in_trivial_forall"
     ]
   in
   print_endline "";
@@ -411,6 +412,22 @@ let%expect_test "variant_poly" =
       "test_6": {
         input: { c: { tag: "Empty", payload: null } },
         expected: 0
+      }
+    };
+    |}]
+;;
+
+let%expect_test "infeasible_region_in_trivial_forall" =
+  run_test "infeasible_region_in_trivial_forall";
+  [%expect
+    {|
+    const tests = {
+      "test_1": {
+        infeasible: "{ reason = \"max number of steps (100) reached\" }"
+      },
+      "test_2": {
+        input: { xs: [] },
+        expected: { tag: "Some", payload: [] }
       }
     };
     |}]

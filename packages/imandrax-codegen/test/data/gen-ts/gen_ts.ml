@@ -28,7 +28,7 @@ let (modes : (string * (Sexplib.Sexp.t -> string)) list) =
   ; ( "fun_decomp"
     , fun s ->
         Sir.test_suite_of_sexp s
-        |> Typescript_adapter.Emit.emit_test_suite_dict ~infeasible_behavior:Raise
+        |> Typescript_adapter.Emit.emit_test_suite_dict
         |> fun (code, import) -> concat_import_and_body code import )
   ]
 ;;
