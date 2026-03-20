@@ -38,6 +38,7 @@ let parse_decl (decl : (Term.t, Type.t) Decl.t_poly)
 
 (** Parse a MIR Fun_decomp.t to corresponding AST statments for test definitions *)
 let parse_fun_decomp
+    ~(infeasible_behavior : Sir.infeasible_region_behavior)
     (test_format : [< `Dict | `Function ])
     (fun_decomp : Mir.Fun_decomp.t)
     : Ast.stmt list =
@@ -45,6 +46,8 @@ let parse_fun_decomp
     Sir.Parser.Fun_decomp.parse_fun_decomp fun_decomp
   in
   match test_format with
-  | `Function -> test_suite |> List.map Transform.test_func_def_of_test_decl
+  | `Function ->
+      test_suite
+      |> List.map (Transform.test_func_def_of_test_decl ~infeasible_behavior)
   | `Dict -> [ Transform.test_data_dict_of_test_suite test_suite ]
 ;;

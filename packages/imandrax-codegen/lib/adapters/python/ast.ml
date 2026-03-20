@@ -21,6 +21,19 @@ let mk_string_expr (s : string) : expr =
 
 let mk_name_expr (id : string) : expr = Name { id; ctx = mk_ctx () }
 
+let mk_raise_exception (exception_class : string) (msg : string) : stmt =
+  Raise
+    { exc =
+        Some
+          (Call
+             { func = mk_name_expr exception_class
+             ; args = [ Constant { value = String msg; kind = None } ]
+             ; keywords = []
+             })
+    ; cause = None
+    }
+;;
+
 (* (* Convert a list of expressions of bools to a char expression *)
 
 TODO: remove this

@@ -12,4 +12,7 @@ val parse_decl : (Term.t, Type.t) Decl.t_poly -> (Ast.stmt list, string) result
 
 (** Parse a MIR Fun_decomp.t to corresponding AST statments for test definitions *)
 val parse_fun_decomp
-  : [< `Dict | `Function ] -> Mir.Fun_decomp.t -> Ast.stmt list
+  :  infeasible_behavior:Semantic_ir.infeasible_region_behavior
+  -> [< `Dict | `Function ]
+  -> Mir.Fun_decomp.t
+  -> Ast.stmt list
