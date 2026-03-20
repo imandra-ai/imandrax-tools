@@ -1,4 +1,4 @@
-(((name test_1) (f_name process_user)
+((Feasible (name test_1) (f_name process_user)
   (f_args
    ((u (TBase user)
      (VRecord (type_name user)
@@ -13,7 +13,7 @@
    \n- constraints:\
    \n    - not (u.active = Active)\
    \n"))
- ((name test_2) (f_name process_user)
+ (Feasible (name test_2) (f_name process_user)
   (f_args
    ((u (TBase user)
      (VRecord (type_name user)
@@ -29,7 +29,7 @@
    \n    - u.active = Active\
    \n    - u.id <= 0\
    \n"))
- ((name test_3) (f_name process_user)
+ (Feasible (name test_3) (f_name process_user)
   (f_args
    ((u (TBase user)
      (VRecord (type_name user)

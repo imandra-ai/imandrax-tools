@@ -1,4 +1,4 @@
-(((name test_1) (f_name bool_logic)
+((Feasible (name test_1) (f_name bool_logic)
   (f_args
    ((a (TBase bool) (VConst (CBool false)))
     (b (TBase bool) (VConst (CBool false)))))
@@ -11,7 +11,7 @@
    \n    - not a\
    \n    - not b\
    \n"))
- ((name test_2) (f_name bool_logic)
+ (Feasible (name test_2) (f_name bool_logic)
   (f_args
    ((a (TBase bool) (VConst (CBool false)))
     (b (TBase bool) (VConst (CBool true)))))
@@ -24,7 +24,7 @@
    \n    - b\
    \n    - not a\
    \n"))
- ((name test_3) (f_name bool_logic)
+ (Feasible (name test_3) (f_name bool_logic)
   (f_args
    ((a (TBase bool) (VConst (CBool true)))
     (b (TBase bool) (VConst (CBool false)))))
@@ -37,7 +37,7 @@
    \n    - a\
    \n    - not b\
    \n"))
- ((name test_4) (f_name bool_logic)
+ (Feasible (name test_4) (f_name bool_logic)
   (f_args
    ((a (TBase bool) (VConst (CBool true)))
     (b (TBase bool) (VConst (CBool true)))))

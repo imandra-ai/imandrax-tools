@@ -90,9 +90,12 @@ fun_decomp/with_basis
 fun_decomp/with_guards
   $ run_tsc fun_decomp/with_guards.ts
 
+fun_decomp/infeasible_region_in_trivial_forall
+  $ run_tsc fun_decomp/infeasible_region_in_trivial_forall.ts
+
 model/composite/inline_record
   $ run_tsc model/composite/inline_record.ts
-  ../../data/ts/model/composite/inline_record.ts(1,10): error TS2304: Cannot find name 'event'.
+  ../../data/ts/model/composite/inline_record.ts(1,10): error TS2552: Cannot find name 'event'. Did you mean 'Event'?
 
 model/composite/map_default_value_only
   $ run_tsc model/composite/map_default_value_only.ts
@@ -183,4 +186,3 @@ model/primitive/variant2
 model/primitive/variant3
   $ run_tsc model/primitive/variant3.ts
   ../../data/ts/model/primitive/variant3.ts(1,10): error TS2304: Cannot find name 'status'.
-

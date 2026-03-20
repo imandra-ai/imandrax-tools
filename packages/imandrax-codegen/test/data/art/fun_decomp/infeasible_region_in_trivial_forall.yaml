@@ -1,0 +1,33 @@
+name: infeasible_region_in_trivial_forall
+iml: |
+  let always_true (x : int) : bool = true
+
+  let check (xs : int list) : int list option =
+    if List.for_all always_true xs then Some xs else None
+decomp_kwargs:
+  name: check
+  prune: true
+regions:
+- model_str: {}
+  model_eval_str: 'assert false (* pruning the region failed: { reason = "max number
+    of steps (100) reached" } *)'
+  invariant_str: None
+  constraints_str:
+  - not (List.for_all always_true xs)
+- model_str:
+    xs: '[]'
+  model_eval_str: Some []
+  invariant_str: Some xs
+  constraints_str:
+  - List.for_all always_true xs
+decomp_res:
+  artifact:
+    kind: mir.fun_decomp
+    data: sk8heyByZWFzb24gPSAibWF4IG51bWJlciBvZiBzdGVwcyAoMTAwKSByZWFjaGVkIiB9tE9PYXNzZXJ0IGZhbHNlICgqIHBydW5pbmcgdGhlIHJlZ2lvbiBmYWlsZWQ6IHsgcmVhc29uID0gIm1heCBudW1iZXIgb2Ygc3RlcHMgKDEwMCkgcmVhY2hlZCIgfSAqKWJKbW9kZWxfZXZhbP9dtEROb25lYklpbnZhcmlhbnT/AbRPEm5vdCAoTGlzdC5mb3JfYWxsIGFsd2F5c190cnVlIHhzKWH/FbfzYktjb25zdHJhaW50c/5gtfFiRW1vZGVs+GT/VP9C/w7+tfhiQ3N0cva0TxVkMzhlYjZiYy04YTQ1LTQ1YjctOWJjNy05ZTI4NTBkMWM3ODZiQmlk/xti/yT4YLBIbWtfc19pbnSz+mJDaW509sMC9/8GYfWxR3R5Lmxpc3Sz+WJEbGlzdPfDAvj/B2H1sUl0eS5vcHRpb26z+2JGb3B0aW9u+cMC+v8LYGH/FMACHyagYkFh97D0YfLDAv8R9WH9YvL4sUZjLm5vbmWz+GJETm9uZfdi9/8GY/T/If8pxQP3/ykCY/b/MwJgsElta19zX2Jvb2yz+2JEYm9vbPfDAvj/CMEDAv+JAfpgYGBi8ftfEU/D2sqbNiFV1+aIIZPfkWDgbxXutJSnhjQXwkxkxCghY0thbHdheXNfdHJ1Zf8fAYb/AbLzYkthbHdheXNfdHJ1Zf5i/v86Y/T/QP9KtPZj8v9QAsIC9v9PY/X/WgLAAh/1qQugYkJ4c/pi9f/oAbP1Y/L/7wECYv8P+MEDAv/6Af+FAcEDAv+GAf5h/6ECwAIfpROgYkFh+LD0YfLDAv+iAvbBAwL4/6sBwQMC/wT/swHBAwL6/wNh/xRi8/pfEVXXPhfZu1rhvmyh7XxQeKkWl9w2vO0b6DlfaOVlkzUoY0xMaXN0LmZvcl9hbGz/IAGG/wKy82JMTGlzdC5mb3JfYWxs/wBi/wH/PmP1/3L/e7T2Y/L/gQECwgL3/5UBY/b/pQICYfbBAwL/rgL/sQJgYGLx/LBGbWtfbm90s/hiQ25vdPZi9v8FY/T/C/8WtPZj8v8cAsIC9v8kY/X/4QICYfZk8v+DA/+UBP/LBmBgYGH/hwTAAh8noGJBYfew9GHywwL/hwT2Yf5i8vmxRWMubmlss/diQltd9WL1/wNj9P8g/58ExQP4/ykCY/b/qgQCYGBi8f+yBGL/xQL4Y/X9/70EYvb/CmH0YGbx9P9PAQD/VLH5tEdTb21lIFtdYkptb2RlbF9ldmFs/wW0R1NvbWUgeHNiSWludmFyaWFudP8EtE8MTGlzdC5mb3JfYWxsIGFsd2F5c190cnVlIHhzYf8Pt/NiS2NvbnN0cmFpbnRz/rRCW11iQnhz92H1tfJiRW1vZGVs+GT/W/9G/xj+tfhiQ3N0cva2/54BYkJ4c/dh9bXyYkVtb2RlbPhh/7MBwQMC//EF/9cFYf/4BcEDAv/PBf/OBWH/2gVi9P6xRmMuc29tZbP4YkRTb21l92L3/wZj9P8b/ybFA/f/LwJj9v+RBgK29mJKbW9kZWxfZXZhbP20TxUzNWM0MjcxMy01Nzc2LTQwMWQtOTE0My00OWYzOGVlYmM1MTliQmlk/xtk/5AB/4AB/zH+Yf/8BGH//QZh/9YGYvT/e2L/ZPZj9P8C/5IBxQP4/w4CY/b//gYCYf/1A2T0+/8o/8gCYv+9A/ti/8AF/7QHYfdfEZJg7uq9wTpb6UNk0X3AMH+BdmgBk2TN2x4+vo81GuTtY0VjaGVja/8ZAYb6svJiRWNoZWNr+GP4/yz/OgU=
+    api_version: v18
+    storage: []
+  task:
+    id:
+      id: task:decomp:hx4A22DpUorub5LJ6rsDZfxj0cdgeKnW0XRHDo5PyVc=
+    kind: TASK_DECOMP
+  errors: []

@@ -191,3 +191,13 @@
   decomp_kwargs:
     name: f
     prune: true
+
+- name: infeasible_region_in_trivial_forall
+  iml: |
+    let always_true (x : int) : bool = true
+
+    let check (xs : int list) : int list option =
+      if List.for_all always_true xs then Some xs else None
+  decomp_kwargs:
+    name: check
+    prune: true

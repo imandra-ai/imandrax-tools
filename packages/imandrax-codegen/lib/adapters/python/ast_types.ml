@@ -187,6 +187,10 @@ and stmt =
   | ClassDef of class_def_stmt
   (* 801 *)
   | Pass
+  | Raise of
+      { exc : expr option
+      ; cause : expr option
+      }
   | Assert of
       { test : expr
       ; msg : expr option

@@ -1,4 +1,4 @@
-(((name test_1) (f_name f)
+((Feasible (name test_1) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Labeled)
@@ -13,7 +13,7 @@
    \n    - not Is_a(Pair, c)\
    \n    - not Is_a(Single, c)\
    \n"))
- ((name test_2) (f_name f)
+ (Feasible (name test_2) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Single) (args ((VConst (CInt 0))))))))
@@ -28,7 +28,7 @@
    \n    - not Is_a(Pair, c)\
    \n    - Destruct(Single, 0, c) <= 0\
    \n"))
- ((name test_3) (f_name f)
+ (Feasible (name test_3) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Single) (args ((VConst (CInt 1))))))))
@@ -43,7 +43,7 @@
    \n    - not Is_a(Pair, c)\
    \n    - Destruct(Single, 0, c) >= 1\
    \n"))
- ((name test_4) (f_name f)
+ (Feasible (name test_4) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Pair)
@@ -58,7 +58,7 @@
    \n    - not Is_a(Empty, c)\
    \n    - Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c)\
    \n"))
- ((name test_5) (f_name f)
+ (Feasible (name test_5) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Pair)
@@ -73,7 +73,7 @@
    \n    - Is_a(Pair, c)\
    \n    - not Is_a(Empty, c)\
    \n"))
- ((name test_6) (f_name f)
+ (Feasible (name test_6) (f_name f)
   (f_args
    ((c (TApp container ((TBase int) (TBase real)))
      (VConstruct (constructor Empty) (args ())))))

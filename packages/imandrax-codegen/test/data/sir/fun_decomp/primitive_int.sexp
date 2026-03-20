@@ -1,4 +1,4 @@
-(((name test_1) (f_name classify_number)
+((Feasible (name test_1) (f_name classify_number)
   (f_args ((x (TBase int) (VConst (CInt 1)))))
   (f_output ((TBase int) (VConst (CInt 1))))
   (docstr
@@ -9,7 +9,7 @@
    \n    - not (x = 0)\
    \n    - x >= 1\
    \n"))
- ((name test_2) (f_name classify_number)
+ (Feasible (name test_2) (f_name classify_number)
   (f_args ((x (TBase int) (VConst (CInt 0)))))
   (f_output ((TBase int) (VConst (CInt 0))))
   (docstr  "test_2\
@@ -18,7 +18,7 @@
           \n- constraints:\
           \n    - x = 0\
           \n"))
- ((name test_3) (f_name classify_number)
+ (Feasible (name test_3) (f_name classify_number)
   (f_args ((x (TBase int) (VConst (CInt -1)))))
   (f_output ((TBase int) (VConst (CInt -1))))
   (docstr

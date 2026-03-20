@@ -79,6 +79,12 @@ class Pass(stmt):
 
 
 @dc
+class Raise(stmt):
+    exc: expr | None
+    cause: expr | None
+
+
+@dc
 class expr(AST):
     pass
     # lineno: int

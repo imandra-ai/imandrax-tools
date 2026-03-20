@@ -25,7 +25,8 @@ val emit_value : Sir.value -> string * Extra_imports.t
 val emit_variant_payload : Sir.Variant_field.t list -> string * Extra_imports.t
 
 (** Emit a variant constructor as a TypeScript union member *)
-val emit_variant_constructor : Sir.variant_constructor -> string * Extra_imports.t
+val emit_variant_constructor
+  : Sir.variant_constructor -> string * Extra_imports.t
 
 (** Emit a SIR type declaration as TypeScript source *)
 val emit_type_decl : Sir.type_decl -> string * Extra_imports.t

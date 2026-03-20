@@ -99,19 +99,19 @@ let default_map =
 		this.map.forEach(callbackfn, thisArg);
 	}
 
-	keys(): IterableIterator<K> {
+	keys(): MapIterator<K> {
 		return this.map.keys();
 	}
 
-	values(): IterableIterator<V> {
+	values(): MapIterator<V> {
 		return this.map.values();
 	}
 
-	entries(): IterableIterator<[K, V]> {
+	entries(): MapIterator<[K, V]> {
 		return this.map.entries();
 	}
 
-	[Symbol.iterator](): IterableIterator<[K, V]> {
+	[Symbol.iterator](): MapIterator<[K, V]> {
 		return this.map[Symbol.iterator]();
 	}
 

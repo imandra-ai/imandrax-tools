@@ -252,104 +252,128 @@ def name():
     assert result == expected
 ```
 *)
-let test_func_def_of_test_decl (test_decl : Sir.test_decl) : stmt =
-  let ( (test_name : string)
-      , (f_name : string)
-      , (docstr : string)
-      , (f_args : (string * expr * expr) list)
-      , (output_type_annot : expr)
-      , (expected : expr) ) =
-    let f_args =
-      test_decl.f_args
-      |> List.map (fun (name, ty, tm) ->
-             name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm)
-    in
-    let output_type_annot, expected = test_decl.f_output in
-    ( test_decl.name
-    , test_decl.f_name
-    , test_decl.docstr
-    , f_args
-    , output_type_annot |> annot_of_sir_type_expr
-    , expected |> ast_expr_of_sir_value )
-  in
-  let call_keywords : keyword list =
-    List.map (fun (k, _, v) -> { arg = Some k; value = v }) f_args
-  in
-  (* `f(x)` *)
-  let call : expr =
-    Call
-      { func = Name { id = f_name; ctx = mk_ctx () }
-      ; args = []
-      ; keywords = call_keywords
-      }
-  in
-  (* `result = f(x)` *)
-  let assign_call_result : stmt =
-    mk_assign
-      (Name { id = "result"; ctx = mk_ctx () })
-      (Some output_type_annot)
-      call
-  in
-  (* `expected = ...` *)
-  let assign_expected : stmt =
-    mk_assign
-      (Name { id = "expected"; ctx = mk_ctx () })
-      (Some output_type_annot)
-      expected
-  in
-
-  (* `assert result == expected` *)
-  let assert_eq : stmt =
-    mk_assert_eq
-      (Name { id = "result"; ctx = mk_ctx () })
-      (Name { id = "expected"; ctx = mk_ctx () })
-  in
-
-  let func_body =
-    [ ExprStmt { value = Constant { value = String docstr; kind = None } }
-    ; assign_call_result
-    ; assign_expected
-    ; assert_eq
-    ]
-  in
-  FunctionDef
-    { name = test_name
-    ; args = empty_arguments ()
-    ; body = func_body
-    ; decorator_list = []
-    ; returns = None
-    ; type_comment = None
-    ; type_params = []
-    }
+let test_func_def_of_test_decl
+    ~(infeasible_behavior : Sir.infeasible_region_behavior)
+    (test_decl : Sir.test_decl)
+    : stmt =
+  match test_decl with
+  | Sir.Infeasible { name = test_name; f_name = _; docstr; reason } ->
+      let func_body =
+        [ ExprStmt { value = Constant { value = String docstr; kind = None } } ]
+        @
+        match infeasible_behavior with
+        | Sir.Raise ->
+            (* raise Exception("Infeasible region: ...") *)
+            [ mk_raise_exception "Exception" (Printf.sprintf "Infeasible region: %s" reason) ]
+        | Sir.Pass -> [ Pass ]
+      in
+      FunctionDef
+        { name = test_name
+        ; args = empty_arguments ()
+        ; body = func_body
+        ; decorator_list = []
+        ; returns = None
+        ; type_comment = None
+        ; type_params = []
+        }
+  | Sir.Feasible { name = test_name; f_name; f_args; f_output; docstr } ->
+      let f_args =
+        f_args
+        |> List.map (fun (name, ty, tm) ->
+               name, annot_of_sir_type_expr ty, ast_expr_of_sir_value tm)
+      in
+      let output_type_annot, expected = f_output in
+      let output_type_annot = output_type_annot |> annot_of_sir_type_expr in
+      let expected = expected |> ast_expr_of_sir_value in
+      let call_keywords : keyword list =
+        List.map (fun (k, _, v) -> { arg = Some k; value = v }) f_args
+      in
+      let call : expr =
+        Call
+          { func = Name { id = f_name; ctx = mk_ctx () }
+          ; args = []
+          ; keywords = call_keywords
+          }
+      in
+      let assign_call_result : stmt =
+        mk_assign
+          (Name { id = "result"; ctx = mk_ctx () })
+          (Some output_type_annot)
+          call
+      in
+      let assign_expected : stmt =
+        mk_assign
+          (Name { id = "expected"; ctx = mk_ctx () })
+          (Some output_type_annot)
+          expected
+      in
+      let assert_eq : stmt =
+        mk_assert_eq
+          (Name { id = "result"; ctx = mk_ctx () })
+          (Name { id = "expected"; ctx = mk_ctx () })
+      in
+      let func_body =
+        [ ExprStmt { value = Constant { value = String docstr; kind = None } }
+        ; assign_call_result
+        ; assign_expected
+        ; assert_eq
+        ]
+      in
+      FunctionDef
+        { name = test_name
+        ; args = empty_arguments ()
+        ; body = func_body
+        ; decorator_list = []
+        ; returns = None
+        ; type_comment = None
+        ; type_params = []
+        }
 ;;
 
 let test_data_dict_of_test_decl (test_decl : Sir.test_decl) : expr =
-  let (args : (string * expr) list) =
-    test_decl.f_args
-    |> List.map (fun (name, _ty, tm) -> name, ast_expr_of_sir_value tm)
-  in
-  let (expected : expr) = test_decl.f_output |> snd |> ast_expr_of_sir_value in
-  let input_kwargs_dict : expr =
-    let keys, values = List.split args in
-    let key_opt_exprs =
-      keys
-      |> List.map (fun k -> Some (Constant { value = String k; kind = None }))
-    in
-    Dict { keys = key_opt_exprs; values }
-  in
-  Dict
-    { keys =
-        [ Some (Constant { value = String "input_kwargs"; kind = None })
-        ; Some (Constant { value = String "expected"; kind = None })
-        ]
-    ; values = [ input_kwargs_dict; expected ]
-    }
+  match test_decl with
+  | Sir.Infeasible { reason; _ } ->
+      (** Create a dictionary with a single key-value pair for infeasible region
+      {@python[
+        {"infeasible": "reason"}
+      ]}
+      *)
+      Dict
+        { keys =
+            [ Some (Constant { value = String "infeasible"; kind = None }) ]
+        ; values = [ Constant { value = String reason; kind = None } ]
+        }
+  | Sir.Feasible { f_args; f_output; _ } ->
+      let (args : (string * expr) list) =
+        f_args
+        |> List.map (fun (name, _ty, tm) -> name, ast_expr_of_sir_value tm)
+      in
+      let (expected : expr) = f_output |> snd |> ast_expr_of_sir_value in
+      let input_kwargs_dict : expr =
+        let keys, values = List.split args in
+        let key_opt_exprs =
+          keys
+          |> List.map (fun k ->
+                 Some (Constant { value = String k; kind = None }))
+        in
+        Dict { keys = key_opt_exprs; values }
+      in
+      Dict
+        { keys =
+            [ Some (Constant { value = String "input_kwargs"; kind = None })
+            ; Some (Constant { value = String "expected"; kind = None })
+            ]
+        ; values = [ input_kwargs_dict; expected ]
+        }
 ;;
 
 (** Parse SIR test suite to an assignment statement of a test data dictionary *)
 let test_data_dict_of_test_suite (test_suite : Sir.test_suite) : stmt =
   let (test_names : string list) =
-    test_suite |> List.map (fun (test_decl : Sir.test_decl) -> test_decl.name)
+    test_suite
+    |> List.map (fun (test_decl : Sir.test_decl) ->
+           match test_decl with
+           | Sir.Feasible { name; _ } | Sir.Infeasible { name; _ } -> name)
   in
 
   let (test_data_dict_items : expr list) =

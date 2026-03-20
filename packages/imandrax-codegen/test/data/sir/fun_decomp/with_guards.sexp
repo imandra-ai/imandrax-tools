@@ -1,4 +1,4 @@
-(((name test_1) (f_name classify)
+((Feasible (name test_1) (f_name classify)
   (f_args
    ((x (TBase int) (VConst (CInt 0))) (y (TBase int) (VConst (CInt 0)))))
   (f_output ((TBase int) (VConst (CInt 0))))
@@ -8,7 +8,7 @@
           \n- constraints:\
           \n    - x <= 0\
           \n"))
- ((name test_2) (f_name classify)
+ (Feasible (name test_2) (f_name classify)
   (f_args
    ((x (TBase int) (VConst (CInt 1))) (y (TBase int) (VConst (CInt 0)))))
   (f_output ((TBase int) (VConst (CInt 0))))
@@ -20,7 +20,7 @@
    \n    - x >= 1\
    \n    - y <= 0\
    \n"))
- ((name test_3) (f_name classify)
+ (Feasible (name test_3) (f_name classify)
   (f_args
    ((y (TBase int) (VConst (CInt 1))) (x (TBase int) (VConst (CInt 1)))))
   (f_output ((TBase int) (VConst (CInt 3))))
@@ -34,7 +34,7 @@
    \n    - x >= 1\
    \n    - y >= 1\
    \n"))
- ((name test_4) (f_name classify)
+ (Feasible (name test_4) (f_name classify)
   (f_args
    ((y (TBase int) (VConst (CInt 2))) (x (TBase int) (VConst (CInt 1)))))
   (f_output ((TBase int) (VConst (CInt 2))))
@@ -48,7 +48,7 @@
    \n    - x >= 1\
    \n    - y >= 1\
    \n"))
- ((name test_5) (f_name classify)
+ (Feasible (name test_5) (f_name classify)
   (f_args
    ((y (TBase int) (VConst (CInt 1))) (x (TBase int) (VConst (CInt 2)))))
   (f_output ((TBase int) (VConst (CInt 1))))
