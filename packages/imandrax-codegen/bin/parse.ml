@@ -36,20 +36,20 @@ let read_and_parse mode input =
   else
     parse_json (Yojson.Safe.from_string content)
 
-let to_python_ast test_format = function
+let to_python_ast ~infeasible_behavior test_format = function
   | `Model m -> Python_adapter.Lib.parse_model m
-  | `FunDecomp fd -> Python_adapter.Lib.parse_fun_decomp test_format fd
+  | `FunDecomp fd -> Python_adapter.Lib.parse_fun_decomp ~infeasible_behavior test_format fd
   | `Decl d ->
     match Python_adapter.Lib.parse_decl d with
     | Ok stmts -> stmts
     | Error msg -> failwith msg
 
-let to_typescript = function
+let to_typescript ~infeasible_behavior = function
   | `Model m ->
     let code, imports = Typescript_adapter.Lib.parse_model m in
     Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
   | `FunDecomp fd ->
-    let code, imports = Typescript_adapter.Lib.parse_fun_decomp fd in
+    let code, imports = Typescript_adapter.Lib.parse_fun_decomp ~infeasible_behavior fd in
     Typescript_adapter.Config.Extra_imports.lib_content imports ^ code
   | `Decl d ->
     match Typescript_adapter.Lib.parse_decl d with
@@ -71,7 +71,7 @@ let write_string output s =
   | path -> CCIO.File.write_exn path s
 
 let usage () =
-  Printf.eprintf "Usage: %s <input|-> [output|-] --mode <model|fun-decomp|decl> [--lang <python|typescript>] [--as-dict]\n"
+  Printf.eprintf "Usage: %s <input|-> [output|-] --mode <model|fun-decomp|decl> [--lang <python|typescript>] [--as-dict] [--on-infeasible <raise|pass>]\n"
     Sys.argv.(0);
   exit 1
 
@@ -86,11 +86,17 @@ let parse_lang_of_string = function
   | "typescript" | "ts" -> TypeScript
   | s -> failwith (Printf.sprintf "Invalid lang '%s'" s)
 
+let parse_infeasible_behavior_of_string = function
+  | "raise" -> Semantic_ir.Raise
+  | "pass" -> Semantic_ir.Pass
+  | s -> failwith (Printf.sprintf "Invalid infeasible behavior '%s'" s)
+
 let () =
   let args = Array.to_list Sys.argv |> List.tl in
   let mode = ref None in
   let lang = ref Python in
   let as_dict = ref false in
+  let infeasible_behavior = ref Semantic_ir.Raise in
   let positional = ref [] in
 
   let rec parse = function
@@ -103,6 +109,9 @@ let () =
       parse rest
     | "--as-dict" :: rest ->
       as_dict := true;
+      parse rest
+    | "--on-infeasible" :: b :: rest ->
+      infeasible_behavior := parse_infeasible_behavior_of_string b;
       parse rest
     | arg :: _ when String.length arg > 1 && arg.[0] = '-' && arg.[1] <> '-' && arg <> "-" ->
       failwith (Printf.sprintf "Unknown flag '%s'" arg)
@@ -122,14 +131,15 @@ let () =
     | _ -> usage ()
   in
   let test_format : test_format = if !as_dict then `Dict else `Function in
+  let infeasible_behavior = !infeasible_behavior in
 
   try
     let parsed = read_and_parse mode input in
     match lang with
     | Python ->
-      parsed |> to_python_ast test_format |> python_ast_to_json |> write_json output
+      parsed |> to_python_ast ~infeasible_behavior test_format |> python_ast_to_json |> write_json output
     | TypeScript ->
-      parsed |> to_typescript |> write_string output
+      parsed |> to_typescript ~infeasible_behavior |> write_string output
   with
   | Failure msg -> Printf.eprintf "Error: %s\n" msg; exit 1
   | Yojson.Json_error msg ->
