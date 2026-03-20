@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-codegen"
-version = "18.4.2"
+version = "18.5.0"
 description = "Code generator for ImandraX artifact"
 readme = "README.md"
 authors = [
@@ -10,8 +10,8 @@ requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
-    "imandrax-api-models>=18.0.0",
-    "imandrax-api[async]>=0.18.0.1",
+    "imandrax-api-models>=18.0.0,<19",
+    "imandrax-api[async]>=0.18.0.1,<0.19",
     "iml-query>=0.3.4",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
@@ -77,6 +77,7 @@ reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
 reportUnusedImport = false
 reportUnusedExpression = false
+reportUnusedVariable='information'
 
 
 [tool.ruff]

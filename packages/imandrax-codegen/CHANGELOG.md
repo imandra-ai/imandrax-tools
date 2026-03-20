@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [18.5.0] - 2026-03-19
+
+- Public API for counter-example source code generation
+
 ## [18.4.0] - 2026-03-06
 
 - Return type definition and test declaration separately
