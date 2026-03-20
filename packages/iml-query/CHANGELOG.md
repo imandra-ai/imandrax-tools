@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.7.2 - 2026.03.20
+
+- fix: use alias import name for module if exists
+
 ## v0.7.1 - 2026.02.27
 
 - fix: entry file should only strip imports
