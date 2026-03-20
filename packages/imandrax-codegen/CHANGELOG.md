@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [18.6.0] - 2026-03-20
+
+- Handle infeasible regions
+
 ## [18.5.0] - 2026-03-19
 
 - Public API for counter-example source code generation
