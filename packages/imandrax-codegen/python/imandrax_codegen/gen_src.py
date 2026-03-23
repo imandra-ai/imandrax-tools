@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from typing import Any, Literal, assert_never
 
@@ -14,6 +13,7 @@ from imandrax_api_models import (  # noqa: F401, RUF100
 )
 from imandrax_api_models.client import ImandraXClient
 from imandrax_codegen.unparse import unparse
+from iml_query.processing import extract_type_decl_names
 
 from .art_parse import Lang, Mode, ast_of_art, code_of_art
 
@@ -33,42 +33,6 @@ def _get_fun_arg_types(  # pyright: ignore[reportUnusedFunction]
         return None
 
     return list(map(lambda s: s.strip(), name_ty_map[fun_name].split('->')))
-
-
-def _extract_type_decl_names(iml_code: str) -> list[str]:
-    """
-    Extract all type definition names from OCaml code using regex.
-
-    Args:
-        ocaml_code: String containing OCaml code
-
-    Returns:
-        List of type names defined in the code
-
-    Examples:
-        >>> code = 'type direction = North | South'
-        >>> extract_ocaml_type_names(code)
-        ['direction']
-    """
-    # Pattern matches: "type" or "and" keyword followed by optional type parameters, then type name
-    # Handles both regular types and recursive types (type ... and ...)
-    # Also handles parameterized types:
-    #   - Single param without parens: type 'a option
-    #   - Multi param with parens: type ('a, 'b) container
-    #   - Wildcard param: type _ expr (GADTs)
-    pattern = r'\b(?:type|and)\s+(?:(?:\([^)]+\)|\'[a-z_][a-zA-Z0-9_]*|_)\s+)?([a-z_][a-zA-Z0-9_]*(?:\s*,\s*[a-z_][a-zA-Z0-9_]*)*)'
-
-    matches = re.finditer(pattern, iml_code)
-    type_names: list[str] = []
-
-    for match in matches:
-        # Extract the captured group (type name(s))
-        names = match.group(1)
-        # Split by comma in case of mutually recursive types: type t1, t2 = ...
-        for name in names.split(','):
-            type_names.append(name.strip())
-
-    return type_names
 
 
 class GenSourceCodeError(ValueError):
@@ -181,7 +145,7 @@ def gen_test_cases(
     assert decomp_art, 'No artifact returned from decompose'
 
     # Get type declarations
-    arg_types: list[str] = _extract_type_decl_names(iml)
+    arg_types: list[str] = extract_type_decl_names(iml)
     decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(decomp_res, lang, decls)
@@ -230,7 +194,7 @@ def gen_counter_example(
             assert_never(vg_type)
 
     # Get type declarations
-    arg_types: list[str] = _extract_type_decl_names(iml)
+    arg_types: list[str] = extract_type_decl_names(iml)
     decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(model_res, lang, decls)
