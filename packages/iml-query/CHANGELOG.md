@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.8.0 - 2026.03-23
+
+- add queyr for type declaration extraction
+
 ## v0.7.1 - 2026.02.27
 
 - fix: entry file should only strip imports
