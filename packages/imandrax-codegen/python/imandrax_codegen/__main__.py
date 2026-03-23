@@ -93,6 +93,10 @@ def gen_test_command(
 ) -> None:
     """Typer command for generating test cases from IML."""
     iml = read_input(iml_path)
+    if '@@@import' in iml:
+        raise typer.BadParameter(
+            'Import statements are not supported in IML files for test case generation.'
+        )
     target_lang = _parse_lang(lang)
     if isinstance(target_lang, Exception):
         raise target_lang
