@@ -9,7 +9,7 @@ from imandrax_codegen.art_parse import code_of_art
 from imandrax_codegen.gen_src import Lang, gen_test_cases
 from imandrax_codegen.unparse import join_code_parts
 
-app = typer.Typer()
+app = typer.Typer(no_args_is_help=True, rich_markup_mode='markdown')
 
 
 def _parse_lang(lang: str) -> Lang | Exception:
@@ -41,9 +41,8 @@ def write_output(output: str | None, content: str) -> None:
         typer.echo(content, nl=not content.endswith('\n'))
 
 
-@app.callback(invoke_without_command=True)
-def main(
-    ctx: typer.Context,
+@app.command()
+def code_of_artifact(
     lang: Annotated[
         str,
         typer.Option('-l', '--lang', help='Target language'),
@@ -62,9 +61,6 @@ def main(
     ] = Mode.model,
 ) -> None:
     """Generate source code from ImandraX artifact."""
-    if ctx.invoked_subcommand is not None:
-        return
-
     content = read_input(input_path)
     target_lang = _parse_lang(lang)
     if isinstance(target_lang, Exception):
