@@ -12,7 +12,11 @@ from imandrax_api_models import (  # noqa: F401, RUF100
     VerifyRes,
 )
 from imandrax_api_models.client import ImandraXClient
-from imandrax_codegen.unparse import unparse
+from imandrax_codegen.unparse import (
+    format_code,
+    gen_preamble,
+    unparse,
+)
 from iml_query.processing import extract_type_decl_names
 
 from .art_parse import Lang, Mode, ast_of_art, code_of_art
@@ -96,13 +100,15 @@ def gen_source_code(
             ]
             type_def_stmts = [stmt for stmts in type_defs_stmts for stmt in stmts]
             body_stmts = ast_of_art(art, mode=mode)
-            type_def_src = (
-                unparse(type_def_stmts, include_future_import=True)
-                if type_def_stmts
-                else ''
+            type_def_src = unparse(type_def_stmts) if type_def_stmts else ''
+            src_body = format_code(unparse(body_stmts))
+
+            full_src = type_def_src + '\n' + src_body
+            preamble = gen_preamble(
+                full_src, future_annotations=(len(type_def_stmts) != 0)
             )
-            src_body = unparse(body_stmts, include_future_import=False)
-            return (type_def_src, src_body)
+            type_def_src_w_imports = format_code(preamble + type_def_src)
+            return (type_def_src_w_imports, src_body)
 
 
 # Main

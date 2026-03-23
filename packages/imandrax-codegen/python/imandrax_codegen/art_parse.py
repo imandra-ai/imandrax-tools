@@ -109,9 +109,10 @@ def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
         art = _serialize_artifact(art)
     match lang:
         case 'python':
-            from imandrax_codegen.unparse import unparse
+            from imandrax_codegen.unparse import format_code, gen_preamble, unparse
 
             stmts = ast_of_art(art, mode)
-            return unparse(stmts)
+            body = unparse(stmts)
+            return format_code(gen_preamble(body) + body)
         case 'typescript':
             return _run_parser(art, mode, 'typescript')
