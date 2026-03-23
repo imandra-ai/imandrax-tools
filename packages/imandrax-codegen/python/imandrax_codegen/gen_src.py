@@ -92,9 +92,6 @@ def gen_source_code(
                 src_body,
             )
         case 'python':
-            # TODO(#20):
-            # Python still needs two-stage generation otherwise
-            # we get two `from __future__ import annotations`
             type_defs_stmts = [
                 ast_of_art(decl.artifact, mode='decl') for decl in decls_res.decls
             ]
