@@ -123,8 +123,27 @@ def to_stdlib(node: Any) -> Any:
 
 def unparse(
     nodes: list[custom_ast.stmt],
+) -> str:
+    stdlib_stmts: list[stdlib_ast.stmt] = to_stdlib(nodes)
+    module = stdlib_ast.Module(body=stdlib_stmts, type_ignores=[])
+    stdlib_ast.fix_missing_locations(module)
+    return stdlib_ast.unparse(module)
+
+
+def check_needs_option_lib(code: str) -> bool:
+    """Check if the code needs the option_lib definition.
+
+    This is determined by adding a fake import statement and checking
+    if it will be removed by ruff checking unused imports.
+    """
+    code_with_import = ('from imandrax_option_lib import option, Some') + '\n\n' + code
+    return 'from imandrax_option_lib' in remove_unused_import(code_with_import)
+
+
+def gen_preamble(
+    src: str,
     alias_real_to_float: bool = False,
-    include_future_import: bool = True,
+    future_annotations: bool = True,
     # TODO: add a config field?
     # - [x] whether to alias `real` to `float` or not
     #   - [ ] alternatively: use Decimal instead of float
@@ -143,17 +162,12 @@ def unparse(
     #     second: B
     # TODO: use ruff upgrade and --target-version parameter
 ) -> str:
-    """Convert custom AST to Python source code using stdlib ast.unparse."""
-    stdlib_stmts: list[stdlib_ast.stmt] = to_stdlib(nodes)
+    """Generate preamble (imports, type aliases, option lib) based on src content."""
 
     def mk_ast(src: str) -> list[stdlib_ast.stmt]:
         return stdlib_ast.parse(src).body
 
-    def gen_code(stmts: list[stdlib_ast.stmt]) -> str:
-        """Generate Python source code from a list of AST statements."""
-        module = stdlib_ast.Module(body=stmts, type_ignores=[])
-        stdlib_ast.fix_missing_locations(module)
-        return stdlib_ast.unparse(module)
+    needs_option_lib = check_needs_option_lib(src)
 
     future_annotations_import = stdlib_ast.ImportFrom(
         module='__future__',
@@ -174,37 +188,28 @@ def unparse(
         ],
         level=0,
     )
-    option_lib_import = mk_ast('from imandrax_option_lib import option, Some')
-    option_lib_definition: list[stdlib_ast.stmt] = mk_ast(OPTION_LIB_SRC)
     alias_real: list[stdlib_ast.stmt] = mk_ast('real = float')
 
-    body = [
-        *([] if not include_future_import else [future_annotations_import]),
+    option_lib_definition: list[stdlib_ast.stmt] = mk_ast(OPTION_LIB_SRC)
+    preamble_ast = [
+        *([] if not future_annotations else [future_annotations_import]),
         dataclass_import,
         typing_import,
-        *option_lib_import,
+        *(option_lib_definition if needs_option_lib else []),
         *(alias_real if alias_real_to_float else []),
-        *stdlib_stmts,
     ]
 
-    code = gen_code(body)
-
-    code = remove_unused_import(code)
-
-    # After removing unused imports, if "from imandrax_option_lib" is still present,
-    # it means that the option_lib definition is needed
-    if 'from imandrax_option_lib' in code:
-        body = [
-            *([] if not include_future_import else [future_annotations_import]),
-            dataclass_import,
-            typing_import,
-            *option_lib_definition,
-            *(alias_real if alias_real_to_float else []),
-            *stdlib_stmts,
-        ]
-        code = gen_code(body)
-
-    return format_code(code)
+    delim = '# __PREAMBLE_DELIM__'
+    module = stdlib_ast.Module(body=preamble_ast, type_ignores=[])
+    stdlib_ast.fix_missing_locations(module)
+    preamble_code = stdlib_ast.unparse(module)
+    # Combine preamble + delimiter comment + src so ruff can check
+    # which preamble imports are actually used by src
+    combined = preamble_code + '\n' + delim + '\n' + src
+    combined = remove_unused_import(combined)
+    # Extract just the preamble (everything before the delimiter)
+    preamble_code = combined.split(delim)[0]
+    return preamble_code
 
 
 def join_code_parts(code_parts: list[str]) -> str:

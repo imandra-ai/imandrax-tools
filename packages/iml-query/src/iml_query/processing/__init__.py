@@ -6,6 +6,7 @@ from tree_sitter import Range
 
 from iml_query.queries import (
     OPAQUE_QUERY_SRC,
+    TYPE_DEFINITION_QUERY_SRC,
     EvalCapture,
 )
 from iml_query.tree_sitter_utils import (
@@ -33,6 +34,7 @@ __all__ = [
     'extract_verify_reqs',
     'extract_instance_reqs',
     'extract_decomp_reqs',
+    'extract_type_decl_names',
     'insert_verify_req',
     'insert_instance_req',
     'insert_decomp_req',
@@ -49,6 +51,36 @@ def iml_outline(iml: str) -> dict[str, Any]:
     outline['decompose_req'] = extract_decomp_reqs(iml, tree)[2]
     outline['opaque_function'] = extract_opaque_function_names(iml)
     return outline
+
+
+def extract_type_decl_names(iml: str) -> list[str]:
+    """
+    Extract all type definition names from IML source using tree-sitter.
+
+    Args:
+        iml: IML source code string.
+
+    Returns:
+        List of type names defined in the source code.
+
+    Examples:
+        >>> extract_type_decl_names('type direction = North | South')
+        ['direction']
+        >>> extract_type_decl_names('type issuer = { id : string }')
+        ['issuer']
+
+    """
+    type_names: list[str] = []
+    matches = run_query(
+        mk_query(TYPE_DEFINITION_QUERY_SRC),
+        code=iml,
+    )
+    for _, capture in matches:
+        type_name_node = capture['type_name'][0]
+        name = unwrap_bytes(type_name_node.text).decode('utf-8')
+        type_names.append(name)
+
+    return type_names
 
 
 def extract_opaque_function_names(iml: str) -> list[str]:

@@ -437,7 +437,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "18.6.0"
+version = "18.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
@@ -464,7 +464,7 @@ requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "imandrax-api", extras = ["async"], specifier = ">=0.18.0.1,<0.19" },
     { name = "imandrax-api-models", specifier = ">=18.0.0,<19" },
-    { name = "iml-query", specifier = ">=0.3.4" },
+    { name = "iml-query", specifier = ">=0.8" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "rich", specifier = ">=14.2.0" },
@@ -480,7 +480,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.5.1"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -490,9 +490,9 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/03/65cae639ae2af023ef856d763401bdd3d89bbd06527a62752659e4fe4cfd/iml_query-0.5.1.tar.gz", hash = "sha256:52e621ca7bfe20c1f1f9c02c954e2568165dd73b83f6ffae4873b862dc01b799", size = 96135, upload-time = "2025-12-05T15:16:12.093Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/1a/b7afd19bfdc857ad45074aba4114a36afbaf68c59ca622191ef19a52e197/iml_query-0.8.0.tar.gz", hash = "sha256:6cca5418ca9e985c452866519cb278be89bfba5b6a778d8434c21429c69edabf", size = 103176, upload-time = "2026-03-23T13:59:01.117Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/c9/a517d195832e8498f7cdc26c8c27f7ca0f9b0b2b3f330bf3c32333ee6a9f/iml_query-0.5.1-py3-none-any.whl", hash = "sha256:4d8d691ccf0352724f62c5f6461954843aa7ee335f2165f49cd0975107104243", size = 16183, upload-time = "2025-12-05T15:16:10.933Z" },
+    { url = "https://files.pythonhosted.org/packages/82/a0/61166c5178461371421b9de05ebcef2245db4dad4c7c07ef6e67376de11b/iml_query-0.8.0-py3-none-any.whl", hash = "sha256:fc70c088354445e86fc33866b505adca08a19a385b08b15a9e0d4dea5f18c30c", size = 19836, upload-time = "2026-03-23T13:58:59.946Z" },
 ]
 
 [[package]]
@@ -1308,11 +1308,11 @@ wheels = [
 
 [[package]]
 name = "tree-sitter-iml"
-version = "0.25.2"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/22/ec/9bc96aa94db6656cbed3c911fdd2a99693cdd165bc94e22ecc4bc8136c2a/tree_sitter_iml-0.25.2.tar.gz", hash = "sha256:74c16612b41362fcbf8c42a77dca8a8d85c3784bb1acf1e1b57acee0aa0eff34", size = 2290267, upload-time = "2025-09-29T15:29:36.561Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/b7/b2f87e2e4ddd37fe84a9ccb43435fd3cf8d89a4137048dfcfcaa483b5d27/tree_sitter_iml-0.26.0.tar.gz", hash = "sha256:cb49f123917c89a662f1a1d1477e06427c05a1aa24af5b88a87550d051c84094", size = 2288724, upload-time = "2026-02-03T14:42:09.379Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/36/f11162aa3f290f807ace028d0b9b6b99d4045b3920d1fa98422d9a8fe906/tree_sitter_iml-0.25.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:4aefa2a6c4502ddf1e6159ef6c3543aac73990801be6aabe2ac3fcdb53dc196d", size = 957429, upload-time = "2025-09-29T15:29:34.142Z" },
+    { url = "https://files.pythonhosted.org/packages/66/d9/7e887a48acc97ff5f8a739e7feb06b803f8849c005432aa510c85a756cfe/tree_sitter_iml-0.26.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b316f1bf8207c7fa478f73e1b8568b503c2e1659effd1fb4d2c2b8fbe0af7f84", size = 958304, upload-time = "2026-02-03T14:42:07.06Z" },
 ]
 
 [[package]]

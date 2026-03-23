@@ -279,3 +279,18 @@ class OpaqueCapture(BaseCapture):
     function_definition: Node
     function_name: Node
     opaque_attr: Node
+
+
+TYPE_DEFINITION_QUERY_SRC = r"""
+(type_definition
+    (type_binding
+        (type_constructor) @type_name
+    )
+) @type_definition
+"""
+
+
+@dataclass(slots=True, frozen=True)
+class TypeDefCapture(BaseCapture):
+    type_definition: Node
+    type_name: Node

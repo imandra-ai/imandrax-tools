@@ -4,6 +4,11 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [18.6.1] - 2026-03-23
+
+- Fix duplicated option-lib generation
+- Use tree-sitter query for type declaration extraction
+
 ## [18.6.0] - 2026-03-20
 
 - Handle infeasible regions

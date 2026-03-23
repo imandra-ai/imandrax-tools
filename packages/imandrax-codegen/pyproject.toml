@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-codegen"
-version = "18.6.0"
+version = "18.6.1"
 description = "Code generator for ImandraX artifact"
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "imandrax-api-models>=18.0.0,<19",
     "imandrax-api[async]>=0.18.0.1,<0.19",
-    "iml-query>=0.3.4",
+    "iml-query>=0.8",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
@@ -33,9 +33,9 @@ dev = [
 package = true
 
 [tool.uv.sources]
+# iml-query = { path = "../iml-query", editable = true }
 # imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
-# imandrax-api = { path = "../../vendor/imandrax-api/src/py" }
 
 [tool.uv.workspace]
 members = [
