@@ -6,7 +6,7 @@ from typing import Annotated
 
 import typer
 from imandrax_codegen.art_parse import code_of_art
-from imandrax_codegen.gen_tests import Lang, gen_test_cases
+from imandrax_codegen.gen_src import Lang, gen_test_cases
 from imandrax_codegen.unparse import join_code_parts
 
 app = typer.Typer()
