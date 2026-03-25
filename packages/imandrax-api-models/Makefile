@@ -11,6 +11,17 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
+.PHONY: typecheck-ty
+typecheck-ty:  ## Typecheck with ty
+	uvx ty check
+
+.PHONY: typecheck-pyright
+typecheck-pyright:  ## Typecheck with pyright
+	uvx pyright -p pyproject.toml src/ tests/
+
+.PHONY: typecheck
+typecheck: typecheck-ty typecheck-pyright  ## Typecheck with ty and pyright
+
 .PHONY: test
 test:  ## Run tests
 	uv run --env-file .env pytest .
