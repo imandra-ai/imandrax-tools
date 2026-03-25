@@ -74,11 +74,6 @@ GADT_monomorphic
 nested_generics
   $ run_test nested_generics.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class My_ty:
       arg0: tagged[validated[maybe[identity[int]]]]
@@ -91,22 +86,6 @@ nested_generics
 real_and_option
   $ run_test real_and_option.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
   @dataclass
   class my_ty:
       x: real
@@ -118,22 +97,6 @@ real_and_option
 record_with_composite_type
   $ run_test record_with_composite_type.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
   @dataclass
   class shape:
       circle: option[int]
@@ -143,11 +106,6 @@ record_with_composite_type
 record
   $ run_test record.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class point:
       x: int
@@ -165,11 +123,6 @@ tuple_two_int
 variant_poly_two_var
   $ run_test variant_poly_two_var.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeVar
-  
   a = TypeVar('a')
   b = TypeVar('b')
   
@@ -209,11 +162,6 @@ variant_poly_two_var
 variant_poly
   $ run_test variant_poly.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeVar
-  
   a = TypeVar('a')
   
   
@@ -247,11 +195,6 @@ variant_poly
 variant_recursive
   $ run_test variant_recursive.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class Leaf:
       arg0: int
@@ -270,11 +213,6 @@ variant_recursive
 variant_simple
   $ run_test variant_simple.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class Red:
       pass
@@ -297,11 +235,6 @@ variant_simple
 variant_two
   $ run_test variant_two.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class Circle:
       arg0: int
@@ -319,22 +252,6 @@ variant_two
 variant_with_composite_payload
   $ run_test variant_with_composite_payload.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
   @dataclass
   class Circle:
       arg0: option[int]
@@ -347,11 +264,6 @@ variant_with_composite_payload
 variant_with_payload
   $ run_test variant_with_payload.yaml
   ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
   @dataclass
   class Point:
       pass
