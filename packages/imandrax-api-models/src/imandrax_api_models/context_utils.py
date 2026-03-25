@@ -177,7 +177,8 @@ def format_eval_res_errors(
     return res
 
 
-def format_eval_output(eval_output: EvalOutput) -> str: ...
+def format_eval_output(eval_output: EvalOutput) -> str:
+    raise NotImplementedError()
 
 
 def _extract_internal_error(msg: str, max_len: int = 300) -> str:
@@ -287,7 +288,8 @@ def format_decomp_res(decomp_res: DecomposeRes) -> str:
 # ====================
 
 
-def format_goal_state(po_res: PO_Res) -> str: ...
+def format_goal_state(po_res: PO_Res) -> str:
+    raise NotImplementedError()
 
 
 def get_goal_state_pp_bin_path() -> Path:

@@ -453,7 +453,7 @@ InferredTypes = TypeAdapter(list[InferredType])
 
 
 class TypecheckRes(TypecheckResProto):
-    types: list[InferredType] = Field(description='Parsed inferred types')
+    types: list[InferredType] = Field(description='Parsed inferred types')  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @field_validator('types', mode='before')
     @classmethod

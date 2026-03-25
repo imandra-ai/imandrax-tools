@@ -1,11 +1,12 @@
 import os
 from typing import cast
 
+import imandrax_api.bindings.task_pb2 as xtask_pb2
 import imandrax_api.lib as xtypes
 import pytest
 from dirty_equals import IsBytes, IsStr
 from google.protobuf.message import Message
-from imandrax_api import Client, bindings as xbinding, url_dev, url_prod  # noqa: F401
+from imandrax_api import Client, url_dev, url_prod  # noqa: F401
 from inline_snapshot import snapshot
 
 from imandrax_api_models import (
@@ -508,7 +509,7 @@ def test_get_decls(c: Client):
 
 def test_task(c: Client):
     eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
-    task_pb = cast(xbinding.task_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
+    task_pb = cast(xtask_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
     task = Task.model_validate(task_pb)
     assert task.model_dump() == snapshot(
         {
@@ -520,7 +521,7 @@ def test_task(c: Client):
 
 def test_art_list_res(c: Client):
     eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
-    task_pb = cast(xbinding.task_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
+    task_pb = cast(xtask_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
     art_list_res_pb = c.list_artifacts(task_pb)
     art_list_res = ArtifactListResult.model_validate(art_list_res_pb)
     assert art_list_res == snapshot(
@@ -530,7 +531,7 @@ def test_art_list_res(c: Client):
 
 def test_art_zip(c: Client):
     eval_res = c.eval_src(IML_CODE_WITH_GOAL_STATE)
-    task_pb = cast(xbinding.task_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
+    task_pb = cast(xtask_pb2.Task, eval_res.tasks[0])  # pyright: ignore[reportUnknownMemberType]
     art_zip_pb = c.get_artifact_zip(task=task_pb, kind='po_res')
     art_zip = ArtifactZip.model_validate(art_zip_pb)
     art = art_zip.to_artifact()
