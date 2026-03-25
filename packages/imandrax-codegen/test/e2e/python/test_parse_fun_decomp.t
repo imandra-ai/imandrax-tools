@@ -11,6 +11,9 @@ Setup: Define helper function
 basic
   $ run_test basic.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -39,6 +42,9 @@ basic
 complex_variant_record
   $ run_test complex_variant_record.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -81,6 +87,9 @@ complex_variant_record
 composite_record
   $ run_test composite_record.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -122,6 +131,9 @@ composite_record
 composite_tuple
   $ run_test composite_tuple.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -164,6 +176,22 @@ composite_tuple
 infeasible_region_in_trivial_forall
   $ run_test infeasible_region_in_trivial_forall.yaml
   ```python
+  from __future__ import annotations
+  
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  
+  
   def test_1():
       """test_1
   
@@ -192,6 +220,9 @@ infeasible_region_in_trivial_forall
 list_operations
   $ run_test list_operations.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -234,6 +265,9 @@ list_operations
 multiple_parameters
   $ run_test multiple_parameters.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -322,6 +356,9 @@ multiple_parameters
 nested_conditions
   $ run_test nested_conditions.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -378,6 +415,22 @@ nested_conditions
 option_type
   $ run_test option_type.yaml
   ```python
+  from __future__ import annotations
+  
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  
+  
   def test_1():
       """test_1
   
@@ -420,6 +473,9 @@ option_type
 primitive_bool
   $ run_test primitive_bool.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -476,6 +532,9 @@ primitive_bool
 primitive_int
   $ run_test primitive_int.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -517,6 +576,9 @@ primitive_int
 primitive_real
   $ run_test primitive_real.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -533,6 +595,9 @@ primitive_real
 variant_poly
   $ run_test variant_poly.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -621,6 +686,9 @@ variant_poly
 variant_simple
   $ run_test variant_simple.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -663,6 +731,9 @@ variant_simple
 variant_with_data
   $ run_test variant_with_data.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -691,6 +762,9 @@ variant_with_data
 with_basis
   $ run_test with_basis.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
@@ -719,6 +793,9 @@ with_basis
 with_guards
   $ run_test with_guards.yaml
   ```python
+  from __future__ import annotations
+  
+  
   def test_1():
       """test_1
   
