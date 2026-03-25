@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from imandrax_api import bindings as xbinding
+import imandrax_api.bindings.task_pb2 as xtask_pb2
 from pydantic import Field
 
 from ..proto_utils import BaseModel
@@ -24,11 +24,11 @@ class Task(BaseModel):
     id: TaskID | None = Field(default=None)
     kind: TaskKind
 
-    def to_proto(self) -> xbinding.task_pb2.Task:
+    def to_proto(self) -> xtask_pb2.Task:
         task_id = None
         if self.id is not None:
-            task_id = xbinding.task_pb2.TaskID(id=self.id.id)
-        return xbinding.task_pb2.Task(id=task_id, kind=self.kind.value)
+            task_id = xtask_pb2.TaskID(id=self.id.id)
+        return xtask_pb2.Task(id=task_id, kind=self.kind.value)
 
 
 class Origin(BaseModel):

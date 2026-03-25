@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.0.0] - 2026-03-25
+
+- Add qcheck models and endpoints
+
 ## [18.2.0] - 2026-03-03
 
 - Show result type in VG result context formatting

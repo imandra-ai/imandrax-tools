@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "18.2.0"
+version = "19.0.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
-    "imandrax-api[async]>=0.18",
+    "imandrax-api[async]>=0.19",
     "pydantic>=2.12.4",
 ]
 
