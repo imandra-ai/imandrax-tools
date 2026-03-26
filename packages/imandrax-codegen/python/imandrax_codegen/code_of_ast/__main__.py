@@ -7,7 +7,7 @@ from typing import Annotated
 
 import typer
 from imandrax_codegen.ast_deserialize import stmts_of_json
-from imandrax_codegen.unparse import unparse
+from imandrax_codegen.unparse import format_code, gen_preamble, unparse
 
 app = typer.Typer()
 
@@ -48,18 +48,20 @@ def code_of_ocaml_ast(
     stmts = stmts_of_json(json_str)
 
     # Generate Python code
-    python_code = unparse(
+    code = unparse(
         stmts,
-        alias_real_to_float=include_real_to_float_alias,
     )
+    code = unparse(stmts)
+    premable = gen_preamble(code, alias_real_to_float=include_real_to_float_alias)
+    code = format_code(premable + '\n' + code)
 
     # Write output
     if output:
         with Path(output).open('w') as f:
-            f.write(python_code)
+            f.write(code)
             f.write('\n')
     else:
-        typer.echo(python_code)
+        typer.echo(code)
 
 
 if __name__ == '__main__':

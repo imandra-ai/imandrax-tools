@@ -144,6 +144,7 @@ int option none
   
   
   option: TypeAlias = Some[T] | None
+  
   a = TypeVar('a')
   w: option[a] = None
   
@@ -166,6 +167,7 @@ int option
   
   
   option: TypeAlias = Some[T] | None
+  
   w: option[int] = Some(2)
   
   ```

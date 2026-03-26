@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.0.0] - 2026-03-25
+
+- imandrax-api update: qcheck
+
 ## [18.6.1] - 2026-03-23
 
 - Fix duplicated option-lib generation

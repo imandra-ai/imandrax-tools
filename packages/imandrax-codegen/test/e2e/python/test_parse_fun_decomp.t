@@ -173,6 +173,50 @@ composite_tuple
   
   ```
 
+infeasible_region_in_trivial_forall
+  $ run_test infeasible_region_in_trivial_forall.yaml
+  ```python
+  from __future__ import annotations
+  
+  from dataclasses import dataclass
+  from typing import Generic, TypeAlias, TypeVar
+  
+  T = TypeVar('T')
+  
+  
+  @dataclass
+  class Some(Generic[T]):
+      value: T
+  
+  
+  option: TypeAlias = Some[T] | None
+  
+  
+  def test_1():
+      """test_1
+  
+      - invariant: None
+      - constraints:
+          - not (List.for_all always_true xs)
+      """
+      raise Exception(
+          'Infeasible region: { reason = "max number of steps (100) reached" }'
+      )
+  
+  
+  def test_2():
+      """test_2
+  
+      - invariant: Some xs
+      - constraints:
+          - List.for_all always_true xs
+      """
+      result: option[list[int]] = check(xs=[])
+      expected: option[list[int]] = Some([])
+      assert result == expected
+  
+  ```
+
 list_operations
   $ run_test list_operations.yaml
   ```python

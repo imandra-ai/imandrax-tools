@@ -134,7 +134,7 @@ def test_2():
         - y >= 1
         - x <= 0
     """
-    result: int = nested_check(y=1, x=0)
+    result: int = nested_check(x=0, y=1)
     expected: int = 1
     assert result == expected
 
@@ -414,7 +414,7 @@ def test_1():
         - not (a = b)
         - not (b = c)
     """
-    result: int = calculate(b=1, c=2, a=0)
+    result: int = calculate(a=0, b=1, c=2)
     expected: int = 0
     assert result == expected
 
@@ -428,7 +428,7 @@ def test_2():
         - a <= b
         - not (a = b)
     """
-    result: int = calculate(a=0, c=1, b=1)
+    result: int = calculate(a=0, b=1, c=1)
     expected: int = 0
     assert result == expected
 
@@ -441,7 +441,7 @@ def test_3():
         - a = b
         - a <= b
     """
-    result: int = calculate(b=0, a=0, c=0)
+    result: int = calculate(a=0, b=0, c=0)
     expected: int = 0
     assert result == expected
 
@@ -456,7 +456,7 @@ def test_4():
         - not (a = b)
         - not (b = c)
     """
-    result: int = calculate(b=0, a=1, c=1)
+    result: int = calculate(a=1, b=0, c=1)
     expected: int = 0
     assert result == expected
 
@@ -471,7 +471,7 @@ def test_5():
         - b <= c
         - not (a = b)
     """
-    result: int = calculate(a=0, c=-1, b=-1)
+    result: int = calculate(a=0, b=-1, c=-1)
     expected: int = 0
     assert result == expected
 
@@ -484,7 +484,7 @@ def test_6():
         - not (a <= b)
         - not (b <= c)
     """
-    result: int = calculate(a=1, c=-1, b=0)
+    result: int = calculate(a=1, b=0, c=-1)
     expected: int = 0
     assert result == expected
 ''')
@@ -768,7 +768,7 @@ def test_3():
         - x >= 1
         - y >= 1
     """
-    result: int = classify(y=1, x=1)
+    result: int = classify(x=1, y=1)
     expected: int = 3
     assert result == expected
 
@@ -783,7 +783,7 @@ def test_4():
         - x >= 1
         - y >= 1
     """
-    result: int = classify(y=2, x=1)
+    result: int = classify(x=1, y=2)
     expected: int = 2
     assert result == expected
 
@@ -797,7 +797,7 @@ def test_5():
         - x >= 1
         - y >= 1
     """
-    result: int = classify(y=1, x=2)
+    result: int = classify(x=2, y=1)
     expected: int = 1
     assert result == expected
 ''')
