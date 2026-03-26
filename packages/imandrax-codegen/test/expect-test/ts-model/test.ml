@@ -165,13 +165,13 @@ let%expect_test "primitive/int_option_none" =
 let%expect_test "composite/variant_and_record" =
    run_test "composite/variant_and_record";
    [%expect
-     {| const w: movement = { tag: "Move", payload: [{ x: 1, y: 2, z: 3. }, { tag: "North", payload: null }] }; |}]
+     {| const w: movement = { tag: "Move", payload: [{ x: 1, y: 2, z: 3.0 }, { tag: "North", payload: null }] }; |}]
 ;;
 
 let%expect_test "composite/inline_record" =
    run_test "composite/inline_record";
    [%expect
-     {| const w: event = { tag: "Scroll", payload: 2. }; |}]
+     {| const w: event = { tag: "Scroll", payload: 2.0 }; |}]
 ;;
 
 let%expect_test "composite/map_default_value_only" =

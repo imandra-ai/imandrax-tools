@@ -172,7 +172,13 @@ let emit_const (c : Sir.const_value) : string * Extra_imports.t =
   let code =
     match c with
     | Sir.CInt i -> string_of_int i
-    | Sir.CFloat f -> string_of_float f
+    | Sir.CFloat f ->
+        (* OCaml's string_of_float produces "2." for 2.0, which is invalid
+           TypeScript. Append "0" to get "2.0". *)
+        let s = string_of_float f in
+        if String.length s > 0 && s.[String.length s - 1] = '.'
+        then s ^ "0"
+        else s
     | Sir.CBool b -> if b then "true" else "false"
     | Sir.CString s -> quote (ts_escape_string s)
     | Sir.CChar ch -> quote (ts_escape_string (String.make 1 ch))

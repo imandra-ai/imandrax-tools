@@ -1,3 +1,5 @@
+# Note: for multiple type definitions, we only request one type
+# Thus, the artifact won't contain the types it depends on
 - name: record
   iml: |
     type point = { x: int; y: int }
