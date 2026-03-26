@@ -1,7 +1,7 @@
 Setup: Define helper function
   $ run_tsc() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen/test/expect-test/tsc && \
-  >    pnpm exec tsc "../../data/ts/$1" --noEmit --lib ES2020 --strict 2>&1 || true
+  >    pnpm exec tsc "../../data/ts/$1" --noEmit --lib ES2020 --strict 2>&1
   > ); }
 
 decl/nested_generics
@@ -10,6 +10,7 @@ decl/nested_generics
   ../../data/ts/decl/nested_generics.ts(2,37): error TS2304: Cannot find name 'validated'.
   ../../data/ts/decl/nested_generics.ts(2,47): error TS2304: Cannot find name 'maybe'.
   ../../data/ts/decl/nested_generics.ts(2,53): error TS2304: Cannot find name 'identity'.
+  [2]
 
 decl/real_and_option
   $ run_tsc decl/real_and_option.ts
@@ -35,6 +36,7 @@ decl/variant_simple
 decl/variant_two
   $ run_tsc decl/variant_two.ts
   ../../data/ts/decl/variant_two.ts(3,32): error TS2304: Cannot find name 'rect'.
+  [2]
 
 decl/variant_with_composite_payload
   $ run_tsc decl/variant_with_composite_payload.ts
@@ -96,6 +98,7 @@ fun_decomp/infeasible_region_in_trivial_forall
 model/composite/inline_record
   $ run_tsc model/composite/inline_record.ts
   ../../data/ts/model/composite/inline_record.ts(1,10): error TS2552: Cannot find name 'event'. Did you mean 'Event'?
+  [2]
 
 model/composite/map_default_value_only
   $ run_tsc model/composite/map_default_value_only.ts
@@ -124,10 +127,12 @@ model/composite/set_nonempty
 model/composite/variant_and_record
   $ run_tsc model/composite/variant_and_record.ts
   ../../data/ts/model/composite/variant_and_record.ts(1,10): error TS2304: Cannot find name 'movement'.
+  [2]
 
 model/polymorphic/annotated_polymorphic_weird_type_name
   $ run_tsc model/polymorphic/annotated_polymorphic_weird_type_name.ts
   ../../data/ts/model/polymorphic/annotated_polymorphic_weird_type_name.ts(1,10): error TS2304: Cannot find name '_a_0'.
+  [2]
 
 model/polymorphic/annotated_polymorphic
   $ run_tsc model/polymorphic/annotated_polymorphic.ts
@@ -136,10 +141,12 @@ model/polymorphic/nested_poly
   $ run_tsc model/polymorphic/nested_poly.ts
   ../../data/ts/model/polymorphic/nested_poly.ts(1,10): error TS2304: Cannot find name 'container3'.
   ../../data/ts/model/polymorphic/nested_poly.ts(1,37): error TS2304: Cannot find name 'container2'.
+  [2]
 
 model/polymorphic/poly_3
   $ run_tsc model/polymorphic/poly_3.ts
   ../../data/ts/model/polymorphic/poly_3.ts(1,10): error TS2304: Cannot find name 'container3'.
+  [2]
 
 model/primitive/bool_list
   $ run_tsc model/primitive/bool_list.ts
@@ -168,6 +175,7 @@ model/primitive/real
 model/primitive/record
   $ run_tsc model/primitive/record.ts
   ../../data/ts/model/primitive/record.ts(1,10): error TS2304: Cannot find name 'user'.
+  [2]
 
 model/primitive/single_element_int_list
   $ run_tsc model/primitive/single_element_int_list.ts
@@ -178,11 +186,14 @@ model/primitive/tuple_of_bool_and_int
 model/primitive/variant1
   $ run_tsc model/primitive/variant1.ts
   ../../data/ts/model/primitive/variant1.ts(1,10): error TS2304: Cannot find name 'status'.
+  [2]
 
 model/primitive/variant2
   $ run_tsc model/primitive/variant2.ts
   ../../data/ts/model/primitive/variant2.ts(1,10): error TS2304: Cannot find name 'status'.
+  [2]
 
 model/primitive/variant3
   $ run_tsc model/primitive/variant3.ts
   ../../data/ts/model/primitive/variant3.ts(1,10): error TS2304: Cannot find name 'status'.
+  [2]
