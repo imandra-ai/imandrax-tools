@@ -1,1 +1,1 @@
-const w: movement = { tag: "Move", payload: [{ x: 1, y: 2, z: 3. }, { tag: "North", payload: null }] };
+const w: movement = { tag: "Move", payload: [{ x: 1, y: 2, z: 3.0 }, { tag: "North", payload: null }] };

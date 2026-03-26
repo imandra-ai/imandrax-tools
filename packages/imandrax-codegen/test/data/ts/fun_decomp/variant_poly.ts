@@ -1,6 +1,6 @@
 const tests = {
   "test_1": {
-    input: { c: { tag: "Labeled", payload: [0, 0.] } },
+    input: { c: { tag: "Labeled", payload: [0, 0.0] } },
     expected: 3
   },
   "test_2": {
@@ -12,11 +12,11 @@ const tests = {
     expected: 1
   },
   "test_4": {
-    input: { c: { tag: "Pair", payload: [0, 0.] } },
+    input: { c: { tag: "Pair", payload: [0, 0.0] } },
     expected: -2
   },
   "test_5": {
-    input: { c: { tag: "Pair", payload: [0, -1.] } },
+    input: { c: { tag: "Pair", payload: [0, -1.0] } },
     expected: 2
   },
   "test_6": {

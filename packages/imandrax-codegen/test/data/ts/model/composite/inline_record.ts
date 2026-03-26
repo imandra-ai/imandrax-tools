@@ -1,1 +1,1 @@
-const w: event = { tag: "Scroll", payload: 2. };
+const w: event = { tag: "Scroll", payload: 2.0 };
