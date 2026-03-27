@@ -25,6 +25,8 @@ name = "goal-state"
 version = "0.1.0"
 dependencies = [
  "imandrax-api",
+ "num-bigint",
+ "num-rational",
 ]
 
 [[package]]
