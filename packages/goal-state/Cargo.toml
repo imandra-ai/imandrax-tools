@@ -1,0 +1,7 @@
+[package]
+name = "goal-state"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+imandrax-api = { git = "https://github.com/imandra-ai/imandrax-api", branch = "hy/fix-rust-binding" }
