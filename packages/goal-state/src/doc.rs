@@ -5,9 +5,8 @@
 ///   1. Build a Doc tree using the combinators below
 ///   2. Render to a string with `pretty(width, doc)`
 
-// ---------------------------------------------------------------------------
 // Doc — the main algebraic data type
-// ---------------------------------------------------------------------------
+// ====================
 
 #[derive(Clone, Debug)]
 pub enum Doc {
@@ -20,9 +19,8 @@ pub enum Doc {
     Union(Box<Doc>, Box<Doc>), // x flat, y broken
 }
 
-// ---------------------------------------------------------------------------
 // SimpleDoc — intermediate representation after layout selection
-// ---------------------------------------------------------------------------
+// ====================
 
 #[derive(Clone, Debug)]
 enum SimpleDoc {
@@ -31,9 +29,8 @@ enum SimpleDoc {
     SLine(usize, Box<SimpleDoc>),
 }
 
-// ---------------------------------------------------------------------------
 // Internal helpers
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Flatten a document: LINE → space, LINEBREAK → empty, everything else unchanged.
 fn flatten(doc: &Doc) -> Doc {
@@ -67,9 +64,8 @@ fn fits(remaining: isize, sdoc: &SimpleDoc) -> bool {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Core layout algorithm
-// ---------------------------------------------------------------------------
+// ====================
 
 type WorkItem = (usize, Doc); // (indent, doc)
 
@@ -149,9 +145,8 @@ fn layout(sdoc: SimpleDoc) -> String {
     parts.join("")
 }
 
-// ---------------------------------------------------------------------------
 // Public API — primitives
-// ---------------------------------------------------------------------------
+// ====================
 
 /// The empty document.
 pub fn nil() -> Doc {
@@ -187,9 +182,8 @@ pub fn vtext(s: &str, visual_length: usize) -> Doc {
     }
 }
 
-// ---------------------------------------------------------------------------
 // Public API — combinators
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Concatenate two documents.
 pub fn concat(x: Doc, y: Doc) -> Doc {
@@ -227,9 +221,8 @@ pub fn group(x: Doc) -> Doc {
     Doc::Union(Box::new(flat), Box::new(x))
 }
 
-// ---------------------------------------------------------------------------
 // Public API — derived separators
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Lay out documents separated by `line` (spaces or newlines).
 pub fn vsep(docs: Vec<Doc>) -> Doc {
@@ -241,9 +234,8 @@ pub fn fill(docs: Vec<Doc>) -> Doc {
     punctuate(group(line()), docs)
 }
 
-// ---------------------------------------------------------------------------
 // Public API — enclosures
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Wrap a document between two delimiter documents.
 pub fn enclose(l: Doc, r: Doc, x: Doc) -> Doc {
@@ -262,9 +254,8 @@ pub fn braces(x: Doc) -> Doc {
     enclose(text("{"), text("}"), x)
 }
 
-// ---------------------------------------------------------------------------
 // Public API — list layouts
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Lay out `docs` between `ldelim`/`rdelim` separated by `sep`.
 /// Tries the flat layout first; falls back to one item per line.
@@ -289,18 +280,16 @@ pub fn enclose_sep(ldelim: Doc, rdelim: Doc, sep: Doc, docs: Vec<Doc>) -> Doc {
     group(concat(body, rdelim))
 }
 
-// ---------------------------------------------------------------------------
 // Public API — main entry point
-// ---------------------------------------------------------------------------
+// ====================
 
 /// Pretty-print `doc` to a string, fitting within `width` columns where possible.
 pub fn pretty(width: usize, doc: Doc) -> String {
     layout(best(width, 0, vec![(0, doc)]))
 }
 
-// ---------------------------------------------------------------------------
 // Helpers (used by formatter)
-// ---------------------------------------------------------------------------
+// ====================
 
 pub fn join(e: Doc, docs: Vec<Doc>) -> Doc {
     if docs.is_empty() {
