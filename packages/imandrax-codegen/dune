@@ -1,6 +1,6 @@
 ; Include subdirectories for library and binaries
 
-(dirs lib bin test examples python)
+(dirs lib bin tests examples python)
 
 (alias
  (name default)
