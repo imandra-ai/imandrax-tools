@@ -209,7 +209,7 @@ checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
 [[package]]
 name = "imandrax-api"
 version = "0.1.0"
-source = "git+https://github.com/imandra-ai/imandrax-api?branch=hy%2Ffix-rust-binding#e9be6ed46da654950fe77c88396b6b44e6ef3bfb"
+source = "git+https://github.com/imandra-ai/imandrax-api#caf994ace79f9925cbab5aac51d494f7f3d79337"
 dependencies = [
  "anyhow",
  "bumpalo",
@@ -458,7 +458,7 @@ dependencies = [
 [[package]]
 name = "twine"
 version = "0.1.0"
-source = "git+https://github.com/imandra-ai/imandrax-api?branch=hy%2Ffix-rust-binding#e9be6ed46da654950fe77c88396b6b44e6ef3bfb"
+source = "git+https://github.com/imandra-ai/imandrax-api#caf994ace79f9925cbab5aac51d494f7f3d79337"
 
 [[package]]
 name = "unicode-ident"
