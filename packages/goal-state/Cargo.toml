@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 imandrax-api = { version = "0.1.0", path = "../../../imandrax-api/src/rust/lib" }
+twine = { version = "*", path = "../../../imandrax-api/src/rust/lib/twine" }
 num-bigint = "0.4"
 num-rational = "0.4"
 
