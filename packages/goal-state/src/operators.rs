@@ -1,3 +1,4 @@
+//! Ported from imandrax-vscode/src/goal-state/imandrax_operators.ts
 use imandrax_api::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

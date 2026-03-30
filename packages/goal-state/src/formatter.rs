@@ -1,3 +1,4 @@
+//! Ported from `imandrax-vscode/src/goal-state/term-formatter.ts` part 2
 use imandrax_api::*;
 use num_bigint::BigInt;
 

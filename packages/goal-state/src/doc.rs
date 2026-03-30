@@ -1,9 +1,11 @@
-/// Wadler's Pretty Printing Algorithm
-/// Based on "A Prettier Printer" by Philip Wadler (1997)
-///
-/// The algorithm works in two phases:
-///   1. Build a Doc tree using the combinators below
-///   2. Render to a string with `pretty(width, doc)`
+//! Wadler's Pretty Printing Algorithm
+//! Based on "A Prettier Printer" by Philip Wadler (1997)
+//!
+//! The algorithm works in two phases:
+//!   1. Build a Doc tree using the combinators below
+//!   2. Render to a string with `pretty(width, doc)`
+//!
+//! Ported from `imandrax-vscode/src/goal-state/term-formatter.ts` part 1
 
 // Doc — the main algebraic data type
 // ====================
