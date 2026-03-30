@@ -120,6 +120,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
+name = "from-twine-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -209,10 +218,10 @@ checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
 [[package]]
 name = "imandrax-api"
 version = "0.1.0"
-source = "git+https://github.com/imandra-ai/imandrax-api#caf994ace79f9925cbab5aac51d494f7f3d79337"
 dependencies = [
  "anyhow",
  "bumpalo",
+ "from-twine-derive",
  "num-bigint",
  "num-rational",
  "twine",
@@ -458,7 +467,6 @@ dependencies = [
 [[package]]
 name = "twine"
 version = "0.1.0"
-source = "git+https://github.com/imandra-ai/imandrax-api#caf994ace79f9925cbab5aac51d494f7f3d79337"
 
 [[package]]
 name = "unicode-ident"
