@@ -63,6 +63,7 @@ fn format_subgoals(fmt: &TermFormatter, ok: bool, subgoals: &[&Sequent]) -> Stri
     buf
 }
 
+#[derive(Debug)]
 pub enum NoGoalState {
     Proved,
     CounterModel,
