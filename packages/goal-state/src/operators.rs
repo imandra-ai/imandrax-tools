@@ -1,4 +1,8 @@
 //! Ported from imandrax-vscode/src/goal-state/imandrax_operators.ts
+//!
+//! OCaml-style operator precedence and associativity (operator_info,
+//! operator_info_of_term, needs_parentheses, short_id)
+
 use imandrax_api::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

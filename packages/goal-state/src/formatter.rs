@@ -1,4 +1,10 @@
 //! Ported from `imandrax-vscode/src/goal-state/term-formatter.ts` part 2
+//!
+//! TermFormatter with term2doc handling all 14 MirTermView variants (Const,
+//! If, Apply, Var, Sym, Construct, Destruct, Is_a, Tuple, Field, Tuple_field,
+//! Record, Case, Sequence), plus const2doc and sym2doc.
+//! All HTML/hover/LSP details stripped — pure plain-text output.
+
 use imandrax_api::*;
 use num_bigint::BigInt;
 
