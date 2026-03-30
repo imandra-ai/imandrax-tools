@@ -3,7 +3,7 @@
     Reads YAML artifacts from TEST_DATA_ART_DIR/{model,decl,fun_decomp}/
     and writes SIR S-expressions to TEST_DATA_SIR_DIR/{model,decl,fun_decomp}/.
 
-    Usage: TEST_DATA_ART_DIR=test/data/art TEST_DATA_SIR_DIR=test/data/sir dune exec gen_sir.exe *)
+    Usage: TEST_DATA_ART_DIR=tests/data/art TEST_DATA_SIR_DIR=tests/data/sir dune exec gen_sir.exe *)
 
 module Codegen = Imandrax_codegen
 module Sir = Semantic_ir

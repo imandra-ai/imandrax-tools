@@ -3,7 +3,7 @@
     Reads SIR S-expressions from TEST_DATA_SIR_DIR/{model,decl,fun_decomp}/
     and writes TypeScript code to TEST_DATA_TS_DIR/{model,decl,fun_decomp}/.
 
-    Usage: TEST_DATA_SIR_DIR=test/data/sir TEST_DATA_TS_DIR=test/data/ts dune exec gen_ts.exe *)
+    Usage: TEST_DATA_SIR_DIR=tests/data/sir TEST_DATA_TS_DIR=tests/data/ts dune exec gen_ts.exe *)
 
 module Sir = Semantic_ir
 

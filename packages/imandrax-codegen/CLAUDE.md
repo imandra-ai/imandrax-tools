@@ -41,7 +41,7 @@ yq "." artifact.yaml -o json | dune exec bin/parse.exe -- - --mode model | uv ru
 │   ├── ast_types.py        # Python AST type definitions
 │   ├── unparse.py          # Converts Python AST to source code
 │   └── utils.py            # Utilities
-├── test/
+├── tests/
 │   ├── data/art               # Test input YAML files
 │   │   ├── decl/           # Declaration tests
 │   │   ├── model/          # Model tests
@@ -81,12 +81,12 @@ Parse modes: `--mode model`, `--mode decl`, `--mode fun_decomp`
 
 ```bash
 # Test model parsing
-yq "." test/data/model/primitive/int_option_none.yaml -o json | \
+yq "." tests/data/model/primitive/int_option_none.yaml -o json | \
   dune exec bin/parse.exe -- - --mode model | \
   uv run imandrax-codegen -
 
 # Test declaration parsing
-yq "." test/data/decl/variant_with_payload.yaml -o json | \
+yq "." tests/data/decl/variant_with_payload.yaml -o json | \
   dune exec bin/parse.exe -- - --mode decl | \
   uv run imandrax-codegen -
 ```

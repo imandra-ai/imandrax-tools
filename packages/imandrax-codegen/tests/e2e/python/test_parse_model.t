@@ -2,7 +2,7 @@ Setup: Define helper function
   $ fence() { printf '```python\n'; cat; printf '```'; }
   $ run_test() { (
   >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen && \
-  >    py-gen-parse "test/data/art/model/$1" - --mode model \
+  >    py-gen-parse "tests/data/art/model/$1" - --mode model \
   >    | uv run python/imandrax_codegen/code_of_ast - \
   >    | fence
   > ); }

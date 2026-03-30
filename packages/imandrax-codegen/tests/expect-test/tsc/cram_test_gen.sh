@@ -12,7 +12,7 @@ TEST_DATA_DIR="$SCRIPT_DIR/../../data/ts"
 cat <<'EOF'
 Setup: Define helper function
   $ run_tsc() { (
-  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen/test/expect-test/tsc && \
+  >    cd $DUNE_SOURCEROOT/packages/imandrax-codegen/tests/expect-test/tsc && \
   >    pnpm exec tsc "../../data/ts/$1" --noEmit --lib ES2020 --strict 2>&1 || true
   > ); }
 

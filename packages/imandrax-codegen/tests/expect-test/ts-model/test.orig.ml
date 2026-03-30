@@ -3,7 +3,7 @@
 module Sir = Semantic_ir
 
 let workspace_dir = "../../.."
-let default_TEST_DATA_SIR_DIR = "test/data/sir"
+let default_TEST_DATA_SIR_DIR = "tests/data/sir"
 
 let sir_data_dir =
   let art_data_dir_rel_to_workspace =
