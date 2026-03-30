@@ -368,7 +368,7 @@ dependencies = [
  "insta",
  "num-bigint",
  "num-rational",
- "twine",
+ "twine-data",
  "zip",
 ]
 
@@ -453,7 +453,7 @@ dependencies = [
  "from-twine-derive",
  "num-bigint",
  "num-rational",
- "twine",
+ "twine-data",
 ]
 
 [[package]]
@@ -862,7 +862,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b36ee98fd31ec7426d599183e8fe26932a8dc1fb76ddb6214d05493377d34ca"
 
 [[package]]
-name = "twine"
+name = "twine-data"
 version = "0.1.0"
 
 [[package]]

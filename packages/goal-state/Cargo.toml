@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 imandrax-api = { version = "0.1.0", path = "../../../imandrax-api/src/rust/lib" }
-twine = { version = "*", path = "../../../imandrax-api/src/rust/lib/twine" }
+twine = { package = "twine-data", version = "*", path = "../../../imandrax-api/src/rust/lib/twine" }
 bumpalo = "3.16.0"
 anyhow = "1"
 zip = "2"
