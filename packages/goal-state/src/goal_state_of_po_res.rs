@@ -70,6 +70,23 @@ pub enum NoGoalState {
     Error,
 }
 
+pub fn format_goal_state(po_res: &PO_res) -> Result<String, NoGoalState> {
+    let fmt = TermFormatter::new(WIDTH);
+    let subgoals: Vec<&Sequent> = match po_res.res {
+        Ok(_) => return Err(NoGoalState::Proved),
+        Err(TasksPO_resError::No_proof(np)) if np.counter_model.is_none() => np.subgoals.to_vec(),
+        Err(TasksPO_resError::No_proof(_)) => return Err(NoGoalState::CounterModel),
+        _ => {
+            return Err(NoGoalState::Error);
+        }
+    };
+
+    Ok(format_subgoals(&fmt, true, &subgoals))
+}
+
+// Helpers
+// ====================
+
 /// Read twine binary bytes and deserialize into a `PO_res`, then call `f` with it.
 pub fn with_po_res_from_twine<R>(
     data: &[u8],
@@ -93,18 +110,4 @@ pub fn with_po_res_from_zip<R>(path: &Path, f: impl for<'a> FnOnce(&PO_res<'a>) 
     let mut data = Vec::with_capacity(entry.size() as usize);
     entry.read_to_end(&mut data)?;
     with_po_res_from_twine(&data, f)
-}
-
-pub fn format_goal_state(po_res: &PO_res) -> Result<String, NoGoalState> {
-    let fmt = TermFormatter::new(WIDTH);
-    let subgoals: Vec<&Sequent> = match po_res.res {
-        Ok(_) => return Err(NoGoalState::Proved),
-        Err(TasksPO_resError::No_proof(np)) if np.counter_model.is_none() => np.subgoals.to_vec(),
-        Err(TasksPO_resError::No_proof(_)) => return Err(NoGoalState::CounterModel),
-        _ => {
-            return Err(NoGoalState::Error);
-        }
-    };
-
-    Ok(format_subgoals(&fmt, true, &subgoals))
 }
