@@ -1,3 +1,8 @@
+//! PyO3 bindings for the `goal-state` crate, exposed as `imandrax_tools.goal_state`.
+//!
+//! The compiled extension is installed as `imandrax_tools/goal_state/_goal_state.so`
+//! and re-exported through `imandrax_tools/goal_state/__init__.py`.
+
 use ::goal_state::{NoGoalState, format_goal_state, with_po_res_from_twine, with_po_res_from_zip};
 use pyo3::create_exception;
 use pyo3::exceptions::PyRuntimeError;
@@ -50,7 +55,7 @@ fn format_goal_state_from_zip(path: &str) -> PyResult<String> {
 }
 
 #[pymodule]
-fn goal_state(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _goal_state(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(format_goal_state_from_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(format_goal_state_from_zip, m)?)?;
     m.add("GoalStateProved", m.py().get_type::<GoalStateProved>())?;

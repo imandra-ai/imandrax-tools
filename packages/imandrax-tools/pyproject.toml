@@ -26,7 +26,7 @@ build-backend = "maturin"
 
 [tool.maturin]
 python-source = "src"
-module-name = "imandrax_tools.goal_state"
+module-name = "imandrax_tools.goal_state._goal_state"
 
 [dependency-groups]
 dev = [
