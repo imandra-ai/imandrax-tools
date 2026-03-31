@@ -1,11 +1,18 @@
+use ::goal_state::{NoGoalState, format_goal_state, with_po_res_from_twine, with_po_res_from_zip};
 use pyo3::create_exception;
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
-use crate::{NoGoalState, format_goal_state, with_po_res_from_twine, with_po_res_from_zip};
-
-create_exception!(goal_state, GoalStateProved, pyo3::exceptions::PyException);
-create_exception!(goal_state, GoalStateCounterModel, pyo3::exceptions::PyException);
+create_exception!(
+    imandrax_tools.goal_state,
+    GoalStateProved,
+    pyo3::exceptions::PyException
+);
+create_exception!(
+    imandrax_tools.goal_state,
+    GoalStateCounterModel,
+    pyo3::exceptions::PyException
+);
 
 fn no_goal_state_to_err(e: NoGoalState) -> PyErr {
     match e {
@@ -43,10 +50,13 @@ fn format_goal_state_from_zip(path: &str) -> PyResult<String> {
 }
 
 #[pymodule]
-pub fn goal_state(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn goal_state(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(format_goal_state_from_bytes, m)?)?;
     m.add_function(wrap_pyfunction!(format_goal_state_from_zip, m)?)?;
     m.add("GoalStateProved", m.py().get_type::<GoalStateProved>())?;
-    m.add("GoalStateCounterModel", m.py().get_type::<GoalStateCounterModel>())?;
+    m.add(
+        "GoalStateCounterModel",
+        m.py().get_type::<GoalStateCounterModel>(),
+    )?;
     Ok(())
 }
