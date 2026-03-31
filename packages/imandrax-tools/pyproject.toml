@@ -20,6 +20,11 @@ codegen = [
     "imandrax-codegen>=18.1.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]
+
 [build-system]
 requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
@@ -28,10 +33,8 @@ build-backend = "maturin"
 python-source = "src"
 module-name = "imandrax_tools.goal_state._goal_state"
 
-[dependency-groups]
-dev = [
-    "pytest>=9.0.1",
-]
+# Development tools
+# ====================
 
 [tool.ruff.lint]
 extend-select = [
