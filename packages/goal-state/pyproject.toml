@@ -7,12 +7,6 @@ name = "goal-state"
 requires-python = ">=3.9"
 dynamic = ["version"]
 
-[dependency-groups]
-dev = ["pytest>=8"]
-
 [tool.maturin]
 features = ["python"]
-module-name = "goal_state"
-
-[tool.pyright]
-venvPath = ".venv"
+module-name = "imandrax_tools.goal_state"
