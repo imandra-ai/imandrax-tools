@@ -1,18 +1,24 @@
 # $schema: https://json.schemastore.org/github-workflow.json
-name: release
+name: release-tools
 on:
   workflow_dispatch:
-    inputs:
-      working-directory:
-        description: the package to release
-        required: true
-        type: choice
-        options:
-          - packages/imandrax-api-models
-          - packages/iml-query
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact-suffix: linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact-suffix: linux-aarch64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact-suffix: macos-arm64
+
+    runs-on: ${{ matrix.os }}
 
     outputs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
@@ -24,20 +30,24 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - name: Build
-        run: uv build
-        working-directory: ${{ inputs.working-directory }}
+      - name: Build wheel (${{ matrix.artifact-suffix }})
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+          manylinux: auto
+          working-directory: packages/imandrax-tools
 
       - name: Upload build
         uses: actions/upload-artifact@v5
         with:
-          name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          name: dist-${{ matrix.artifact-suffix }}
+          path: packages/imandrax-tools/dist/
 
       - name: Check version
         id: check-version
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: packages/imandrax-tools
         run: |
           version_data=$(uv version --output-format=json)
           version=$(echo "$version_data" | jq -r '.version')
@@ -47,6 +57,24 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
           echo "tag=$tag" >> $GITHUB_OUTPUT
+
+  build-sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          working-directory: packages/imandrax-tools
+
+      - name: Upload sdist
+        uses: actions/upload-artifact@v5
+        with:
+          name: dist-sdist
+          path: packages/imandrax-tools/dist/
 
   pre-release-test:
     needs: build
@@ -58,17 +86,17 @@ jobs:
 
       - uses: actions/download-artifact@v6
         with:
-          name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          name: dist-linux-x86_64
+          path: packages/imandrax-tools/dist/
 
       - name: Run pre-release tests
-        run: make pre-release-test
-        working-directory: ${{ inputs.working-directory }}
+        run: make test-wheel
+        working-directory: packages/imandrax-tools
         env:
           IMANDRAX_API_KEY: ${{ secrets.IMANDRA_UNIVERSE_API_KEY }}
 
   pypi-publish:
-    needs: [build, pre-release-test]
+    needs: [build, build-sdist, pre-release-test]
     permissions:
       id-token: write
     runs-on: ubuntu-latest
@@ -77,13 +105,14 @@ jobs:
 
       - uses: actions/download-artifact@v6
         with:
-          name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          pattern: dist-*
+          merge-multiple: true
+          path: packages/imandrax-tools/dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: ${{ inputs.working-directory }}/dist/
+          packages-dir: packages/imandrax-tools/dist/
           print-hash: true
 
   github-release:
@@ -96,13 +125,14 @@ jobs:
 
       - uses: actions/download-artifact@v6
         with:
-          name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          pattern: dist-*
+          merge-multiple: true
+          path: packages/imandrax-tools/dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.build.outputs.tag }}
           name: ${{ needs.build.outputs.pkg-name }} ${{ needs.build.outputs.version }}
-          files: ${{ inputs.working-directory }}/dist/*
+          files: packages/imandrax-tools/dist/*
           generate_release_notes: true
