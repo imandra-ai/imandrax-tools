@@ -9,6 +9,7 @@
   imandrax_codegen
   imandrax-codegen.adapters.python
   imandrax-codegen.adapters.typescript
+  imandrax-codegen.adapters.js_of_iml
   imandrax-api
   imandrax-api.mir
   imandrax-api.artifact

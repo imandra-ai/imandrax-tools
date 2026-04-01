@@ -1,0 +1,5 @@
+(test
+ (name test_zq)
+ ; the record in test_canonical exists only to be compared structurally
+ (flags (:standard -w +a-69-70))
+ (libraries iml_prelude num))

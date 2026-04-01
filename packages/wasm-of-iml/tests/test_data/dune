@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (modes wasm)
+ (libraries imandrax-api-prelude zarith_stubs_js))

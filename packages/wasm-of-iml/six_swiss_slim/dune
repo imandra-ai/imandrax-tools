@@ -1,0 +1,19 @@
+; six_swiss built against the slim prelude (Zq-based, wasm-capable).
+; The parallel six_swiss_js/ build against imandrax-api-prelude is kept so the
+; two can be diffed for behavioural drift.
+;
+; (modes js) here because this repo's switch is still on js_of_ocaml 6.0.1;
+; WASI needs 6.4.1 + dune 3.22+, where this becomes (modes wasm) plus
+; (wasm_of_ocaml (flags --enable wasi)).
+
+(executable
+ (name six_swiss_wrapper)
+ (modes js byte exe)
+ ; Warnings disabled for machine-generated/extracted code:
+ ;   32 - the codec set is emitted whole (json_of_int has no call site here,
+ ;        since match_price returns a real option)
+ ;   44 - `open Iml_prelude` shadows Stdlib's int/list/option/=/< on purpose;
+ ;        that shadowing IS the prelude
+ ;   70 - extracted modules ship without .mli
+ (flags (:standard -w -4-32-44-70))
+ (libraries iml_prelude))

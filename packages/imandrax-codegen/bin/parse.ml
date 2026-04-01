@@ -2,7 +2,7 @@ module Codegen = Imandrax_codegen
 
 type parse_mode = Model | FunDecomp | Decl
 type test_format = [ `Function | `Dict ]
-type lang = Python | TypeScript
+type lang = Python | TypeScript | JsOfIml
 
 let is_yaml_file path =
   Filename.check_suffix path ".yaml" || Filename.check_suffix path ".yml"
@@ -44,6 +44,14 @@ let to_python_ast ~infeasible_behavior test_format = function
     | Ok stmts -> stmts
     | Error msg -> failwith msg
 
+let to_js_of_iml = function
+  | `Decl d ->
+    (match Js_of_iml_adapter.Lib.parse_decl d with
+     | Ok (_sir_decl, ocaml_code) -> ocaml_code
+     | Error msg -> failwith msg)
+  | `Model _ -> failwith "js_of_iml: model mode not supported (use decl mode)"
+  | `FunDecomp _ -> failwith "js_of_iml: fun-decomp mode not supported (use decl mode)"
+
 let to_typescript = function
   | `Model m ->
     let code, imports = Typescript_adapter.Lib.parse_model m in
@@ -84,6 +92,7 @@ let parse_mode_of_string = function
 let parse_lang_of_string = function
   | "python" | "py" -> Python
   | "typescript" | "ts" -> TypeScript
+  | "js_of_iml" | "js-of-iml" -> JsOfIml
   | s -> failwith (Printf.sprintf "Invalid lang '%s'" s)
 
 let parse_infeasible_behavior_of_string = function
@@ -142,6 +151,8 @@ let () =
       if infeasible_behavior <> Semantic_ir.Raise then
         Printf.eprintf "Warning: --on-infeasible is ignored for TypeScript (infeasible regions are always marked as data)\n";
       parsed |> to_typescript |> write_string output
+    | JsOfIml ->
+      parsed |> to_js_of_iml |> write_string output
   with
   | Failure msg -> Printf.eprintf "Error: %s\n" msg; exit 1
   | Yojson.Json_error msg ->

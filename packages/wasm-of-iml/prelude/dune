@@ -1,0 +1,7 @@
+; Slim IML prelude: admitted-IML-only, no imandrax-api dependency,
+; self-contained bignum arithmetic so it compiles to wasm/WASI. See zq.ml.
+
+(library
+ (name iml_prelude)
+ (modules zq iml_prelude)
+ (libraries containers))

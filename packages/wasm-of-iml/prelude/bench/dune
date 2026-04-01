@@ -1,0 +1,7 @@
+; Benchmarks the canonical-limb bignum against the string/num representation
+; it replaced. zq_old.ml is the previous zq.ml, kept only as a baseline.
+
+(executable
+ (name bench_zq)
+ (modules bench_zq zq_old)
+ (libraries iml_prelude num unix))

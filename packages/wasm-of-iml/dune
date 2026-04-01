@@ -1,0 +1,7 @@
+(library
+  (name wasm_of_iml)
+  (libraries
+    imandrax-api-prelude
+    zarith_stubs_js
+  )
+)

@@ -1,0 +1,5 @@
+(executable
+ (name six_swiss_wrapper)
+ (modes js)
+ (js_of_ocaml (javascript_files stubs.js))
+ (libraries imandrax-api-prelude zarith_stubs_js))
