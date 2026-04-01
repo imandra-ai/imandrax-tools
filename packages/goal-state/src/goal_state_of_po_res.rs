@@ -92,7 +92,7 @@ pub fn with_po_res_from_twine<R>(
     data: &[u8],
     f: impl for<'a> FnOnce(&PO_res<'a>) -> R,
 ) -> Result<R> {
-    let decoder = twine::Decoder::new(data)?;
+    let decoder = twine_data::Decoder::new(data)?;
     let bump = Bump::new();
     let entry = decoder.entrypoint()?;
     let po_res: PO_res = FromTwine::read(&decoder, &bump, entry)?;
