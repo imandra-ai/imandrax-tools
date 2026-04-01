@@ -1,0 +1,12 @@
+[package]
+name = "imandrax-tools-ext"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "rust/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+goal-state = { path = "../goal-state" }
+pyo3 = { version = "0.23", features = ["extension-module"] }

@@ -8,6 +8,6 @@ Usage:
     from imandrax_tools.iml_query import ...
 """
 
-from . import api_models, iml_query
+from . import api_models, goal_state, iml_query
 
-__all__ = ['api_models', 'iml_query']
+__all__ = ('api_models', 'goal_state', 'iml_query')

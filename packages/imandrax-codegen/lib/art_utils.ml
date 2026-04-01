@@ -161,7 +161,7 @@ let yaml_to_decl ?(debug = false) (yaml : Yaml.value) : Mir.Decl.t =
 ;;
 
 let%expect_test _ =
-  let file_path = "../test/data/art/model/primitive/empty_list.yaml" in
+  let file_path = "../tests/data/art/model/primitive/empty_list.yaml" in
   let y =
     CCIO.File.read_exn (CCIO.File.make file_path)
     |> Yaml.of_string
@@ -217,7 +217,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   let file_path =
-    "../test/data/art/model/primitive/tuple_of_bool_and_int.yaml"
+    "../tests/data/art/model/primitive/tuple_of_bool_and_int.yaml"
   in
   let y =
     CCIO.File.read_exn (CCIO.File.make file_path)
@@ -279,7 +279,7 @@ let%expect_test _ =
 ;;
 
 let%expect_test _ =
-  let file_path = "../test/data/art/model/composite/set_empty.yaml" in
+  let file_path = "../tests/data/art/model/composite/set_empty.yaml" in
   let y =
     CCIO.File.read_exn (CCIO.File.make file_path)
     |> Yaml.of_string

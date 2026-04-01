@@ -1,0 +1,17 @@
+[package]
+name = "goal-state"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+imandrax-api = { version = "0.1.0", git = "https://github.com/imandra-ai/imandrax-api.git" }
+twine-data = "0.1.0"
+bumpalo = "3.16.0"
+anyhow = "1"
+zip = "2"
+num-bigint = "0.4"
+num-rational = "0.4"
+
+[dev-dependencies]
+hegeltest = "0.3.4"
+insta = "1.47.1"

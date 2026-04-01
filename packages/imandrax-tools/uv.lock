@@ -360,7 +360,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.18.0.1"
+version = "0.19"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -368,7 +368,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/47/9b/2711a0927bc149dcfb377094a6862d9f062e9737537d74009338a66a8c74/imandrax_api-0.18.0.1-py3-none-any.whl", hash = "sha256:2d98d081daee52ad998afa45acd88188b6116615fc80a315e07e2d1bdfe38e06", size = 62246, upload-time = "2026-01-08T18:19:38.786Z" },
+    { url = "https://files.pythonhosted.org/packages/19/0e/0c74a21fa340a2d51d2d70a80b29a98bde943bdbc8ed17699c2b2c0c93b5/imandrax_api-0.19-py3-none-any.whl", hash = "sha256:a0a0f1308db34520e9ecd4c859b5065d63baae569c5a6178402338a8fcae67ba", size = 63637, upload-time = "2026-03-12T22:29:33.038Z" },
 ]
 
 [package.optional-dependencies]
@@ -378,16 +378,16 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "18.0.0"
+version = "19.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/30/6f899ddb11eddb4d6c408f12188ba73225d98750f1858694cd702a256929/imandrax_api_models-18.0.0.tar.gz", hash = "sha256:ba499542ddfd51745785cfc55c69d983695534f3ae94c0f44c20a73fb39a140d", size = 12703, upload-time = "2025-12-15T14:26:00.969Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/87/d20ab9f567bdf088170514793dbf8714f979ad0b341505310e515f713a4d/imandrax_api_models-19.0.0.tar.gz", hash = "sha256:7e8ffa0ad7d07412b0344ea5bd9467030d68d2470f9ad7b724e2635827221d29", size = 15833, upload-time = "2026-03-25T13:01:10.658Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/e8/5ee9b5245a86b96d942706e5c80ec81e5ca1f0a9f352c3c32ec6c8233c02/imandrax_api_models-18.0.0-py3-none-any.whl", hash = "sha256:7cf3ceaa152e5d6c03bda81228ec9e545f900d622be45dcdf15665fcee5e58b1", size = 17378, upload-time = "2025-12-15T14:25:59.926Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/02/20fe54845c70f1399ca8aaef5c4444b642b1fb64ab4f8536f0fc94e5827a/imandrax_api_models-19.0.0-py3-none-any.whl", hash = "sha256:19d0e59cfdde77e231f30fc3d8c3d81f8d185fd54f8caee6b5671462e7fb9751", size = 21278, upload-time = "2026-03-25T13:01:09.353Z" },
 ]
 
 [package.optional-dependencies]
@@ -397,7 +397,7 @@ client = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "18.1.0"
+version = "19.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -411,14 +411,15 @@ dependencies = [
     { name = "ruff" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/c8/543f63dc5bb84ad32ae20f5addfcd04c9a2b14b4e00ea5f0fa0211a5915b/imandrax_codegen-18.1.0.tar.gz", hash = "sha256:cb89a1b3d97b653b5312fc175d50a27cf80fcf11f3b5fa2567c5acdd74b39480", size = 10347, upload-time = "2026-01-12T17:38:30.866Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/09/13f9bafb065280aca749c49892bfe445b64d1603a1424c82aedfdf94b555/imandrax_codegen-18.1.0-py3-none-any.whl", hash = "sha256:487da3d8bc1ec3968daa5d322545fc9302c3a46c4c9e202c2f8c79553f154299", size = 11396, upload-time = "2026-01-12T17:38:29.433Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/db/a7f95a9955e6d635462de0f19902f6e8c07641629cfff64fdad056626039/imandrax_codegen-19.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9ba9a0b9e8bbb922cdb3d10cb3e0dd7fda52053f7b0cd49b1b2824f716586cbb", size = 3951290, upload-time = "2026-03-25T20:03:35.422Z" },
+    { url = "https://files.pythonhosted.org/packages/81/a2/e398aa4ec4ea843b4b67ca68cebec8e0d285776a12b9945e501be5161f63/imandrax_codegen-19.0.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:0f0d99764874684ac3f84d1cd85cbcd02e02bd1921a1c4d88cd689ef236be4f9", size = 6715066, upload-time = "2026-03-25T20:03:37.641Z" },
+    { url = "https://files.pythonhosted.org/packages/b2/cf/1c24756e049c6c28c5b18abe920cf766e76e19b28d1810fccc8657658a15/imandrax_codegen-19.0.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:5a3034d5fc618954e2362a0925af0e7f0a52cc145b9a173e2e0a4bb19785fe2d", size = 5833773, upload-time = "2026-03-25T20:03:39.505Z" },
 ]
 
 [[package]]
 name = "imandrax-tools"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "imandrax-api-models" },
@@ -440,10 +441,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "imandrax-api-models", specifier = ">=18" },
-    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = ">=18.0.0" },
-    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = ">=18.1.0" },
-    { name = "iml-query", specifier = ">=0.5.1" },
+    { name = "imandrax-api-models", specifier = ">=19,<20" },
+    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = ">=19,<20" },
+    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = ">=19,<20" },
+    { name = "iml-query", specifier = ">=0.8.0" },
 ]
 provides-extras = ["extended-client", "codegen"]
 
@@ -452,7 +453,7 @@ dev = [{ name = "pytest", specifier = ">=9.0.1" }]
 
 [[package]]
 name = "iml-query"
-version = "0.5.1"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -462,9 +463,9 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/03/65cae639ae2af023ef856d763401bdd3d89bbd06527a62752659e4fe4cfd/iml_query-0.5.1.tar.gz", hash = "sha256:52e621ca7bfe20c1f1f9c02c954e2568165dd73b83f6ffae4873b862dc01b799", size = 96135, upload-time = "2025-12-05T15:16:12.093Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/1a/b7afd19bfdc857ad45074aba4114a36afbaf68c59ca622191ef19a52e197/iml_query-0.8.0.tar.gz", hash = "sha256:6cca5418ca9e985c452866519cb278be89bfba5b6a778d8434c21429c69edabf", size = 103176, upload-time = "2026-03-23T13:59:01.117Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/c9/a517d195832e8498f7cdc26c8c27f7ca0f9b0b2b3f330bf3c32333ee6a9f/iml_query-0.5.1-py3-none-any.whl", hash = "sha256:4d8d691ccf0352724f62c5f6461954843aa7ee335f2165f49cd0975107104243", size = 16183, upload-time = "2025-12-05T15:16:10.933Z" },
+    { url = "https://files.pythonhosted.org/packages/82/a0/61166c5178461371421b9de05ebcef2245db4dad4c7c07ef6e67376de11b/iml_query-0.8.0-py3-none-any.whl", hash = "sha256:fc70c088354445e86fc33866b505adca08a19a385b08b15a9e0d4dea5f18c30c", size = 19836, upload-time = "2026-03-23T13:58:59.946Z" },
 ]
 
 [[package]]
@@ -700,16 +701,16 @@ wheels = [
 
 [[package]]
 name = "protobuf"
-version = "5.29.5"
+version = "5.29.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/29/d09e70352e4e88c9c7a198d5645d7277811448d76c23b00345670f7c8a38/protobuf-5.29.5.tar.gz", hash = "sha256:bc1463bafd4b0929216c35f437a8e28731a2b7fe3d98bb77a600efced5a15c84", size = 425226, upload-time = "2025-05-28T23:51:59.82Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7e/57/394a763c103e0edf87f0938dafcd918d53b4c011dfc5c8ae80f3b0452dbb/protobuf-5.29.6.tar.gz", hash = "sha256:da9ee6a5424b6b30fd5e45c5ea663aef540ca95f9ad99d1e887e819cdf9b8723", size = 425623, upload-time = "2026-02-04T22:54:40.584Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/11/6e40e9fc5bba02988a214c07cf324595789ca7820160bfd1f8be96e48539/protobuf-5.29.5-cp310-abi3-win32.whl", hash = "sha256:3f1c6468a2cfd102ff4703976138844f78ebd1fb45f49011afc5139e9e283079", size = 422963, upload-time = "2025-05-28T23:51:41.204Z" },
-    { url = "https://files.pythonhosted.org/packages/81/7f/73cefb093e1a2a7c3ffd839e6f9fcafb7a427d300c7f8aef9c64405d8ac6/protobuf-5.29.5-cp310-abi3-win_amd64.whl", hash = "sha256:3f76e3a3675b4a4d867b52e4a5f5b78a2ef9565549d4037e06cf7b0942b1d3fc", size = 434818, upload-time = "2025-05-28T23:51:44.297Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/73/10e1661c21f139f2c6ad9b23040ff36fee624310dc28fba20d33fdae124c/protobuf-5.29.5-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:e38c5add5a311f2a6eb0340716ef9b039c1dfa428b28f25a7838ac329204a671", size = 418091, upload-time = "2025-05-28T23:51:45.907Z" },
-    { url = "https://files.pythonhosted.org/packages/6c/04/98f6f8cf5b07ab1294c13f34b4e69b3722bb609c5b701d6c169828f9f8aa/protobuf-5.29.5-cp38-abi3-manylinux2014_aarch64.whl", hash = "sha256:fa18533a299d7ab6c55a238bf8629311439995f2e7eca5caaff08663606e9015", size = 319824, upload-time = "2025-05-28T23:51:47.545Z" },
-    { url = "https://files.pythonhosted.org/packages/85/e4/07c80521879c2d15f321465ac24c70efe2381378c00bf5e56a0f4fbac8cd/protobuf-5.29.5-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:63848923da3325e1bf7e9003d680ce6e14b07e55d0473253a690c3a8b8fd6e61", size = 319942, upload-time = "2025-05-28T23:51:49.11Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/cc/7e77861000a0691aeea8f4566e5d3aa716f2b1dece4a24439437e41d3d25/protobuf-5.29.5-py3-none-any.whl", hash = "sha256:6cf42630262c59b2d8de33954443d94b746c952b01434fc58a417fdbd2e84bd5", size = 172823, upload-time = "2025-05-28T23:51:58.157Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/88/9ee58ff7863c479d6f8346686d4636dd4c415b0cbeed7a6a7d0617639c2a/protobuf-5.29.6-cp310-abi3-win32.whl", hash = "sha256:62e8a3114992c7c647bce37dcc93647575fc52d50e48de30c6fcb28a6a291eb1", size = 423357, upload-time = "2026-02-04T22:54:25.805Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/66/2dc736a4d576847134fb6d80bd995c569b13cdc7b815d669050bf0ce2d2c/protobuf-5.29.6-cp310-abi3-win_amd64.whl", hash = "sha256:7e6ad413275be172f67fdee0f43484b6de5a904cc1c3ea9804cb6fe2ff366eda", size = 435175, upload-time = "2026-02-04T22:54:28.592Z" },
+    { url = "https://files.pythonhosted.org/packages/06/db/49b05966fd208ae3f44dcd33837b6243b4915c57561d730a43f881f24dea/protobuf-5.29.6-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:b5a169e664b4057183a34bdc424540e86eea47560f3c123a0d64de4e137f9269", size = 418619, upload-time = "2026-02-04T22:54:30.266Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/d7/48cbf6b0c3c39761e47a99cb483405f0fde2be22cf00d71ef316ce52b458/protobuf-5.29.6-cp38-abi3-manylinux2014_aarch64.whl", hash = "sha256:a8866b2cff111f0f863c1b3b9e7572dc7eaea23a7fae27f6fc613304046483e6", size = 320284, upload-time = "2026-02-04T22:54:31.782Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/dd/cadd6ec43069247d91f6345fa7a0d2858bef6af366dbd7ba8f05d2c77d3b/protobuf-5.29.6-cp38-abi3-manylinux2014_x86_64.whl", hash = "sha256:e3387f44798ac1106af0233c04fb8abf543772ff241169946f698b3a9a3d3ab9", size = 320478, upload-time = "2026-02-04T22:54:32.909Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/cb/e3065b447186cb70aa65acc70c86baf482d82bf75625bf5a2c4f6919c6a3/protobuf-5.29.6-py3-none-any.whl", hash = "sha256:6b9edb641441b2da9fa8f428760fc136a49cf97a52076010cf22a2ff73438a86", size = 173126, upload-time = "2026-02-04T22:54:39.462Z" },
 ]
 
 [[package]]
@@ -999,11 +1000,11 @@ wheels = [
 
 [[package]]
 name = "tree-sitter-iml"
-version = "0.25.2"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/22/ec/9bc96aa94db6656cbed3c911fdd2a99693cdd165bc94e22ecc4bc8136c2a/tree_sitter_iml-0.25.2.tar.gz", hash = "sha256:74c16612b41362fcbf8c42a77dca8a8d85c3784bb1acf1e1b57acee0aa0eff34", size = 2290267, upload-time = "2025-09-29T15:29:36.561Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/b7/b2f87e2e4ddd37fe84a9ccb43435fd3cf8d89a4137048dfcfcaa483b5d27/tree_sitter_iml-0.26.0.tar.gz", hash = "sha256:cb49f123917c89a662f1a1d1477e06427c05a1aa24af5b88a87550d051c84094", size = 2288724, upload-time = "2026-02-03T14:42:09.379Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/36/f11162aa3f290f807ace028d0b9b6b99d4045b3920d1fa98422d9a8fe906/tree_sitter_iml-0.25.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:4aefa2a6c4502ddf1e6159ef6c3543aac73990801be6aabe2ac3fcdb53dc196d", size = 957429, upload-time = "2025-09-29T15:29:34.142Z" },
+    { url = "https://files.pythonhosted.org/packages/66/d9/7e887a48acc97ff5f8a739e7feb06b803f8849c005432aa510c85a756cfe/tree_sitter_iml-0.26.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b316f1bf8207c7fa478f73e1b8568b503c2e1659effd1fb4d2c2b8fbe0af7f84", size = 958304, upload-time = "2026-02-03T14:42:07.06Z" },
 ]
 
 [[package]]

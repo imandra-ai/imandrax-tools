@@ -10,9 +10,9 @@ help:  ## Show this help message
 			printf "\033[36m%-20s\033[0m %s\n", a[1], a[2] \
 		}' $(MAKEFILE_LIST)
 
-TEST_DATA_ART_DIR := test/data/art
-TEST_DATA_SIR_DIR := test/data/sir
-TEST_DATA_TS_DIR := test/data/ts
+TEST_DATA_ART_DIR := tests/data/art
+TEST_DATA_SIR_DIR := tests/data/sir
+TEST_DATA_TS_DIR := tests/data/ts
 
 export TEST_DATA_ART_DIR
 export TEST_DATA_SIR_DIR
@@ -53,45 +53,45 @@ copy-artifacts: copy-model copy-fun-decomp copy-decl  ## Copy artifacts to test 
 
 .PHONY: copy-art-model
 copy-art-model:
-	@echo "Copying model artifacts to test/data/model/..."
+	@echo "Copying model artifacts to tests/data/model/..."
 	rsync -av --delete scripts/gen_model_art/result/ $(TEST_DATA_ART_DIR)/model/
 
 .PHONY: copy-art-fun-decomp
 copy-art-fun-decomp:
-	@echo "Copying fun_decomp artifacts to test/data/fun_decomp/..."
+	@echo "Copying fun_decomp artifacts to tests/data/fun_decomp/..."
 	rsync -av --delete scripts/gen_fun_decomp_art/result/ $(TEST_DATA_ART_DIR)/fun_decomp/
 
 .PHONY: copy-art-decl
 copy-art-decl:
-	@echo "Copying decl artifacts to test/data/decl/..."
+	@echo "Copying decl artifacts to tests/data/decl/..."
 	rsync -av --delete scripts/gen_decl_art/result/ $(TEST_DATA_ART_DIR)/decl/
 
 .PHONY: gen-sir
 gen-sir:  ## Generate SIR S-expressions from twine data
 	@echo "Generating SIR S-expressions..."
-	dune exec test/data/gen-sir/gen_sir.exe
+	dune exec tests/data/gen-sir/gen_sir.exe
 
 .PHONY: gen-ts
 gen-ts:  ## Generate TypeScript code from SIR data
 	@echo "Generating TypeScript code..."
-	dune exec test/data/gen-ts/gen_ts.exe
+	dune exec tests/data/gen-ts/gen_ts.exe
 
 gen-cram-tests: gen-cram-test-model gen-cram-test-fun-decomp gen-cram-test-decl  ## Generate cram test files
 
 .PHONY: gen-cram-test-model
 gen-cram-test-model:
 	@echo "Regenerating test_parse_model.t..."
-	bash test/e2e/python/cram_test_gen__model.sh > test/e2e/python/test_parse_model.t
+	bash tests/e2e/python/cram_test_gen__model.sh > tests/e2e/python/test_parse_model.t
 
 .PHONY: gen-cram-test-fun-decomp
 gen-cram-test-fun-decomp:
 	@echo "Regenerating test_parse_fun_decomp.t..."
-	bash test/e2e/python/cram_test_gen__fun_decomp.sh > test/e2e/python/test_parse_fun_decomp.t
+	bash tests/e2e/python/cram_test_gen__fun_decomp.sh > tests/e2e/python/test_parse_fun_decomp.t
 
 .PHONY: gen-cram-test-decl
 gen-cram-test-decl:
 	@echo "Regenerating test_parse_decl.t..."
-	bash test/e2e/python/cram_test_gen__decl.sh > test/e2e/python/test_parse_decl.t
+	bash tests/e2e/python/cram_test_gen__decl.sh > tests/e2e/python/test_parse_decl.t
 
 # Cross-platform binary builds
 # ====================
@@ -230,19 +230,19 @@ test-linux-aarch64-wheel: build-py-linux-aarch64  ## Build and test Linux aarch6
 
 .PHONY: test-py
 test-py:  ## Run tests for Python package
-	uv run pytest test/python
+	uv run pytest tests/python
 
 .PHONY: pre-release-test-linux-x86_64
 pre-release-test-linux-x86_64:  ## Run pre-release tests for Linux x86_64 Python wheel
-	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*x86_64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*x86_64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest tests/python
 
 .PHONY: pre-release-test-linux-aarch64
 pre-release-test-linux-aarch64:  ## Run pre-release tests for Linux aarch64 Python wheel
-	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*aarch64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*manylinux*aarch64*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest tests/python
 
 .PHONY: pre-release-test-macos
 pre-release-test-macos:  ## Run pre-release tests for macOS Python wheel
-	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*macos*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest test/python
+	uv run --no-project --with "$$(ls ./dist/imandrax_codegen-*macos*.whl)" --with pytest --with inline-snapshot --with pyyaml pytest tests/python
 
 .PHONY: publish-testpypi
 publish-testpypi:  ## Publish to test.pypi.org

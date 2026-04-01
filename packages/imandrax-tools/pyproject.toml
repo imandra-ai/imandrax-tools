@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-tools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -8,26 +8,33 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "imandrax-api-models>=18",
-    "iml-query>=0.5.1",
+    "imandrax-api-models>=19,<20",
+    "iml-query>=0.8.0",
 ]
 
 [project.optional-dependencies]
 extended-client = [
-    "imandrax-api-models[client]>=18.0.0",
+    "imandrax-api-models[client]>=19,<20",
 ]
 codegen = [
-    "imandrax-codegen>=18.1.0",
+    "imandrax-codegen>=19,<20",
 ]
-
-[build-system]
-requires = ["uv_build>=0.8.22,<0.9.0"]
-build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.1",
 ]
+
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[tool.maturin]
+python-source = "src"
+module-name = "imandrax_tools.goal_state._goal_state"
+
+# Development tools
+# ====================
 
 [tool.ruff.lint]
 extend-select = [
@@ -80,6 +87,7 @@ venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
+reportMissingModuleSource = "none"
 reportMissingTypeStubs = false
 reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
