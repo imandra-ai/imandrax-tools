@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-imandrax-api = { version = "0.1.0", path = "../../../imandrax-api/src/rust/lib" }
+imandrax-api = { version = "0.1.0", git = "https://github.com/imandra-ai/imandrax-api.git" }
 twine-data = "0.1.0"
 bumpalo = "3.16.0"
 anyhow = "1"
