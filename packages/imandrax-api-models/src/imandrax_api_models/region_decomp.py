@@ -21,8 +21,12 @@ class RegionGroup:
     rg_children: list[RegionGroup]
     rg_weight: int
 
+    def n_descendant_regions(self) -> int:
+        return sum(c.n_descendant_regions() for c in self.rg_children)
+
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
+    """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
 
 
