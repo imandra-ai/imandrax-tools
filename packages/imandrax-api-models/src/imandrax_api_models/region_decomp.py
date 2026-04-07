@@ -144,13 +144,24 @@ def _loop_group_regions(
     return reduce(loop, constraints_by_most_frequent, init)['groups']
 
 
-def renderable_of_rg(rg: RegionGroup):
+# Show
+# ====================
+
+
+def renderable_of_rg(rg: RegionGroup) -> str:
     buf = ''
-    buf += f'{rg.rg_label_path}'
+    buf += f'[{",".join([str(i) for i in rg.rg_label_path])}]'
     buf += f'; {len(rg.rg_constraints)} constraints'
     n_children = len(rg.rg_children)
+    n_descendants = rg.n_descendant_regions()
     if n_children != 0:
         buf += f', {n_children} children'
+    else:
+        buf += ', no child'
+    if n_descendants != 0:
+        buf += f', {n_descendants} descendants'
+    else:
+        buf += ', no descendants'
     return buf
 
 
