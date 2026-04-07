@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import reduce
-from typing import NoReturn, Self, TypedDict
+from typing import NoReturn, Protocol, Self, TypedDict
 
 import yaml
 from imandrax_api.lib import RegionStr
@@ -49,10 +49,94 @@ class GroupedRegionDecomposition:
     def from_regions(cls, regions: list[RegionStr]) -> Self:
         return cls.from_groups(group_regions(regions))
 
+    def to_tree(
+        self,
+        *,
+        depth_limit: int | None = None,
+        summarize: RegionGroupSummarizer | None = None,
+    ) -> str:
+        summarize_ = summarize or default_region_group_summary
+        lines: list[str] = []
+        for i, group in enumerate(self.groups):
+            is_last = i == len(self.groups) - 1
+            _tree_lines(
+                lines,
+                group,
+                prefix='',
+                is_last=is_last,
+                depth_limit=depth_limit,
+                summarize=summarize_,
+            )
+        return '\n'.join(lines)
+
+
+class RegionGroupSummarizer(Protocol):
+    def __call__(self, group: RegionGroup) -> str: ...
+
+
+def default_region_group_summary(group: RegionGroup) -> str:
+    label = '.'.join(map(str, group.rg_label_path))
+    # rg_constraints is the full path from root; [-1] is this node's own constraint.
+    constraint = group.rg_constraints[-1] if group.rg_constraints else '?'
+    invariant: str | None = None
+    if (region := group.rg_region) is not None:
+        invariant = region.invariant_str
+    parts = [
+        f'[{label}]',
+        f'{constraint=}',
+        f'{invariant=}',
+        f'(w={group.rg_weight}, children={len(group.rg_children)}, descendants={group.n_descendant_regions()})',
+    ]
+    return ' '.join(parts)
+
+
+def _tree_lines(
+    lines: list[str],
+    group: RegionGroup,
+    *,
+    prefix: str,
+    is_last: bool,
+    depth_limit: int | None,
+    summarize: RegionGroupSummarizer,
+) -> None:
+    connector = '└── ' if is_last else '├── '
+    lines.append(f'{prefix}{connector}{summarize(group)}')
+
+    child_prefix = prefix + ('    ' if is_last else '│   ')
+    if depth_limit is not None and depth_limit <= 0 and group.rg_children:
+        lines.append(
+            f'{child_prefix}└── ... ({len(group.rg_children)} children, {group.n_descendant_regions()} descendants)'
+        )
+        return
+    next_limit = None if depth_limit is None else depth_limit - 1
+    for i, child in enumerate(group.rg_children):
+        _tree_lines(
+            lines,
+            child,
+            prefix=child_prefix,
+            is_last=i == len(group.rg_children) - 1,
+            depth_limit=next_limit,
+            summarize=summarize,
+        )
+
 
 def _loop_group_regions(
     idx_path: list[int], constraint_path: list[str], regions: list[RegionStr]
 ) -> list[RegionGroup]:
+    """
+    Recursively group regions by shared constraints.
+
+    At each level, collects all constraints from the remaining regions (excluding
+    those already in ``constraint_path``), then iterates over them by frequency.
+    For each constraint, regions that contain it are split into a sub-group and
+    grouped recursively.
+
+    Each resulting ``RegionGroup.rg_constraints`` is the **full accumulated path**
+    of constraints from the root down to that node (chronological order). Therefore
+    ``rg_constraints[-1]`` is the constraint introduced at that node's own level,
+    while earlier elements are inherited from ancestors.
+    """
+
     def raise_(exc: BaseException) -> NoReturn:
         raise exc
 
@@ -185,14 +269,18 @@ def _region_group_representer(
     dumper: yaml.Dumper, data: RegionGroup, *, depth_limit: int | None = None
 ) -> yaml.Node:
     mapping: dict[str, object] = {}
-    mapping['constraints'] = data.rg_constraints
-    # mapping['label_path'] = data.rg_label_path
+
     mapping['label_path'] = '.'.join(map(str, data.rg_label_path))
     mapping['weight'] = data.rg_weight
+
+    mapping['introduced_constraint'] = data.rg_constraints[-1]
+    if (region := data.rg_region) is not None:
+        mapping['invariant'] = region.invariant_str
+        mapping['example_input'] = region.model_str
+        mapping['example_output'] = region.model_eval_str
+
     mapping['n_children_regions'] = len(data.rg_children)
     mapping['n_descendant_regions'] = data.n_descendant_regions()
-    if data.rg_region is not None:
-        mapping['region'] = data.rg_region
     if data.rg_children:
         if depth_limit is None or depth_limit <= 0:
             mapping['children'] = data.rg_children
