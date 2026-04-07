@@ -5,10 +5,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import reduce
-from typing import NoReturn, TypedDict
+from typing import NoReturn, Self, TypedDict
 
 import yaml
 from imandrax_api.lib import RegionStr
+
+from imandrax_api_models.yaml_utils import str_representer
+
+__all__ = (
+    'RegionGroup',
+    'group_regions',
+    'dump_region_groups_yaml',
+    'GroupedRegionDecomposition',
+)
 
 
 @dataclass
@@ -26,6 +35,19 @@ class RegionGroup:
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
+
+
+@dataclass
+class GroupedRegionDecomposition:
+    groups: list[RegionGroup]
+
+    @classmethod
+    def from_groups(cls, groups: list[RegionGroup]) -> Self:
+        return cls(groups=groups)
+
+    @classmethod
+    def from_regions(cls, regions: list[RegionStr]) -> Self:
+        return cls.from_groups(group_regions(regions))
 
 
 def _loop_group_regions(
@@ -164,24 +186,25 @@ def _region_group_representer(
 ) -> yaml.Node:
     mapping: dict[str, object] = {}
     mapping['constraints'] = data.rg_constraints
-    mapping['label_path'] = data.rg_label_path
+    # mapping['label_path'] = data.rg_label_path
+    mapping['label_path'] = '.'.join(map(str, data.rg_label_path))
     mapping['weight'] = data.rg_weight
-    mapping['descendant_regions'] = data.n_descendant_regions()
+    mapping['n_children_regions'] = len(data.rg_children)
+    mapping['n_descendant_regions'] = data.n_descendant_regions()
     if data.rg_region is not None:
         mapping['region'] = data.rg_region
     if data.rg_children:
-        if depth_limit is not None and depth_limit <= 0:
-            mapping['children'] = f'<{len(data.rg_children)} children omitted>'
-        else:
+        if depth_limit is None or depth_limit <= 0:
             mapping['children'] = data.rg_children
+    # return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
     return dumper.represent_mapping('!RegionGroup', mapping)
 
 
 def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
-    class RegionDumper(yaml.Dumper):
+    class RegionGroupsDumper(yaml.Dumper):
         pass
 
-    RegionDumper.add_representer(
+    RegionGroupsDumper.add_representer(
         RegionStr,
         _region_str_representer,
     )
@@ -190,8 +213,9 @@ def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
         next_limit = None if depth_limit is None else depth_limit - 1
         return _region_group_representer(dumper, data, depth_limit=next_limit)
 
-    RegionDumper.add_representer(RegionGroup, _rg_representer)
-    return RegionDumper
+    RegionGroupsDumper.add_representer(RegionGroup, _rg_representer)
+    RegionGroupsDumper.add_representer(str, str_representer)
+    return RegionGroupsDumper
 
 
 def dump_region_groups_yaml(
