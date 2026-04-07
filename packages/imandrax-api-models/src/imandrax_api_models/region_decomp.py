@@ -7,10 +7,8 @@ from dataclasses import dataclass
 from functools import reduce
 from typing import NoReturn, TypedDict
 
+import yaml
 from imandrax_api.lib import RegionStr
-from rich.console import Console, RenderableType
-from rich.text import Text
-from rich.tree import Tree
 
 
 @dataclass
@@ -144,60 +142,72 @@ def _loop_group_regions(
     return reduce(loop, constraints_by_most_frequent, init)['groups']
 
 
-# Show
+# YAML Dump
 # ====================
 
 
-def renderable_of_rg(rg: RegionGroup) -> str:
-    buf = ''
-    buf += f'[{",".join([str(i) for i in rg.rg_label_path])}]'
-    buf += f'; {len(rg.rg_constraints)} constraints'
-    n_children = len(rg.rg_children)
-    n_descendants = rg.n_descendant_regions()
-    if n_children != 0:
-        buf += f', {n_children} children'
-    else:
-        buf += ', no child'
-    if n_descendants != 0:
-        buf += f', {n_descendants} descendants'
-    else:
-        buf += ', no descendants'
-    return buf
+def _region_str_representer(dumper: yaml.Dumper, data: RegionStr) -> yaml.Node:
+    mapping: dict[str, object] = {}
+    if data.constraints_str is not None:
+        mapping['constraints'] = data.constraints_str
+    if data.invariant_str is not None:
+        mapping['invariant'] = data.invariant_str
+    if data.model_str is not None:
+        mapping['model'] = data.model_str
+    if data.model_eval_str is not None:
+        mapping['model_eval'] = data.model_eval_str
+    return dumper.represent_mapping('!Region', mapping)
 
 
-def rich_tree_of_groups(region_groups: list[RegionGroup]) -> Tree:
+def _region_group_representer(
+    dumper: yaml.Dumper, data: RegionGroup, *, depth_limit: int | None = None
+) -> yaml.Node:
+    mapping: dict[str, object] = {}
+    mapping['constraints'] = data.rg_constraints
+    mapping['label_path'] = data.rg_label_path
+    mapping['weight'] = data.rg_weight
+    mapping['descendant_regions'] = data.n_descendant_regions()
+    if data.rg_region is not None:
+        mapping['region'] = data.rg_region
+    if data.rg_children:
+        if depth_limit is not None and depth_limit <= 0:
+            mapping['children'] = f'<{len(data.rg_children)} children omitted>'
+        else:
+            mapping['children'] = data.rg_children
+    return dumper.represent_mapping('!RegionGroup', mapping)
 
-    def add_children(tree: Tree, region_groups: list[RegionGroup]) -> Tree:
-        top_regions: list[tuple[Tree, RegionGroup]] = [
-            (tree.add(renderable_of_rg(rg)), rg) for rg in region_groups
-        ]
 
-        for tree, rg in top_regions:
-            add_children(tree, rg.rg_children)
-        return tree
+def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
+    class RegionDumper(yaml.Dumper):
+        pass
 
-    root = Tree('Region Decomposition')
-
-    return add_children(root, region_groups)
-
-
-def str_of_renderables(
-    *renderables: RenderableType | object,
-    plain: bool = True,
-) -> str:
-    console = Console(
-        record=True,
-        width=80,
-        color_system='standard',
-        force_terminal=False,
-        force_interactive=False,
-        force_jupyter=False,
+    RegionDumper.add_representer(
+        RegionStr,
+        _region_str_representer,
     )
-    with console.capture() as capture:
-        for renderable in renderables:
-            console.print(renderable)
-    exported_text = capture.get()
-    if plain:
-        return Text.from_ansi(exported_text).plain
-    else:
-        return exported_text
+
+    def _rg_representer(dumper: yaml.Dumper, data: RegionGroup) -> yaml.Node:
+        next_limit = None if depth_limit is None else depth_limit - 1
+        return _region_group_representer(dumper, data, depth_limit=next_limit)
+
+    RegionDumper.add_representer(RegionGroup, _rg_representer)
+    return RegionDumper
+
+
+def dump_region_groups_yaml(
+    groups: list[RegionGroup],
+    *,
+    depth_limit: int | None = None,
+) -> str:
+    """
+    Dump region groups to YAML.
+
+    Args:
+        groups: The region groups to dump.
+        depth_limit: Max depth of children to expand. None means unlimited.
+
+    """
+    dumper_cls = _make_dumper(depth_limit=depth_limit)
+    return yaml.dump(
+        groups, Dumper=dumper_cls, default_flow_style=False, sort_keys=False
+    )
