@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from functools import reduce
 from typing import NoReturn, Protocol, Self, TypedDict
@@ -34,6 +35,49 @@ class RegionGroup:
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
+
+
+@dataclass
+class IndexedRegionGroup:
+    """Equivalent to RegionGroup, but in flat structure."""
+
+    id: str
+    constraints: list[str]
+    label_path: list[int]
+    region: RegionStr | None
+    children: list[str]
+    weight: int
+
+
+def _gen_id() -> str:
+    return str(uuid.uuid4())[:8]
+
+
+def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
+    def loop(
+        group_and_id_lst: list[tuple[RegionGroup, str]], acc: list[IndexedRegionGroup]
+    ) -> None:
+        for rg, id in group_and_id_lst:
+            c_ids = [_gen_id() for _ in rg.children]
+
+            irg = IndexedRegionGroup(
+                id=id,
+                constraints=rg.constraints,
+                label_path=rg.label_path,
+                region=rg.region,
+                children=c_ids,
+                weight=rg.weight,
+            )
+            acc.append(irg)
+
+            children_group_and_id_lst = list(zip(rg.children, c_ids, strict=True))
+            loop(children_group_and_id_lst, acc)
+
+    initial_ids = [_gen_id() for _ in groups]
+    group_and_id_lst = list(zip(groups, initial_ids, strict=True))
+    acc: list[IndexedRegionGroup] = []
+    loop(group_and_id_lst, acc)
+    return acc
 
 
 @dataclass
@@ -294,11 +338,32 @@ def _region_group_representer(
     return dumper.represent_mapping('!RegionGroup', mapping)
 
 
+def _indexed_region_group_representer(
+    dumper: yaml.Dumper, data: IndexedRegionGroup
+) -> yaml.Node:
+    mapping: dict[str, object] = {}
+
+    mapping['label_path'] = '.'.join(map(str, data.label_path))
+    mapping['weight'] = data.weight
+
+    mapping['constraints'] = data.constraints
+    mapping['introduced_constraint'] = data.constraints[-1]
+    if (region := data.region) is not None:
+        mapping['invariant'] = region.invariant_str
+        mapping['example_input'] = region.model_str
+        mapping['example_output'] = region.model_eval_str
+
+    mapping['n_children_regions'] = len(data.children)
+    mapping['children'] = data.children
+    # return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
+    return dumper.represent_mapping('!IndexedRegionGroup', mapping)
+
+
 def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
-    class RegionGroupsDumper(yaml.Dumper):
+    class RegionDecompDumper(yaml.Dumper):
         pass
 
-    RegionGroupsDumper.add_representer(
+    RegionDecompDumper.add_representer(
         RegionStr,
         _region_str_representer,
     )
@@ -307,9 +372,12 @@ def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
         next_limit = None if depth_limit is None else depth_limit - 1
         return _region_group_representer(dumper, data, depth_limit=next_limit)
 
-    RegionGroupsDumper.add_representer(RegionGroup, _rg_representer)
-    RegionGroupsDumper.add_representer(str, str_representer)
-    return RegionGroupsDumper
+    RegionDecompDumper.add_representer(RegionGroup, _rg_representer)
+    RegionDecompDumper.add_representer(
+        IndexedRegionGroup, _indexed_region_group_representer
+    )
+    RegionDecompDumper.add_representer(str, str_representer)
+    return RegionDecompDumper
 
 
 def dump_region_groups_yaml(
