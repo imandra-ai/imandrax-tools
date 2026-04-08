@@ -22,6 +22,27 @@ __all__ = (
 
 @dataclass
 class RegionGroup:
+    """
+    A hierarchical group of regions sharing constraints.
+
+    Attributes:
+        constraints:
+            Full accumulated constraint path from root to this node (root-first).
+            `constraints[-1]` is the constraint introduced at this node's own level.
+        label_path:
+            Positional index path from root to this node (root-first, 1-indexed).
+            Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.
+            Levels where a constraint applies to all regions are skipped, so the path
+            length may be shorter than the tree depth.
+        region:
+            The concrete region, if this group contains exactly one.
+        children:
+            Sub-groups under this node.
+        weight:
+            Number of regions in the `has` partition at this node's level.
+
+    """
+
     constraints: list[str]
     label_path: list[int]
     region: RegionStr | None
@@ -223,10 +244,30 @@ def _loop_group_regions(
     For each constraint, regions that contain it are split into a sub-group and
     grouped recursively.
 
-    Each resulting ``RegionGroup.rg_constraints`` is the full accumulated path
-    of constraints from the root down to that node (chronological order). Therefore
-    ``rg_constraints[-1]`` is the constraint introduced at that node's own level,
-    while earlier elements are inherited from ancestors.
+    Preconditions:
+    - Every region in `regions` must have a non-empty `constraints_str`.
+    - `constraint_path` contains constraints already consumed by ancestor levels;
+      these are excluded from grouping at this level.
+    - `idx_path` is built in reverse (deepest-first); reversed to root-first
+      when stored in `RegionGroup.label_path`.
+
+    Postconditions:
+    - Every input region appears in exactly one output `RegionGroup` (partition).
+    - `RegionGroup.constraints` is the full accumulated constraint path from root
+      to that node (root-first). `constraints[-1]` is the constraint introduced
+      at that node's own level (its "own constraint").
+    - `RegionGroup.label_path` is root-first, 1-indexed. A level is skipped
+      (no index appended) when all remaining regions share the constraint and
+      there is more than one — i.e. the constraint doesn't discriminate.
+    - If recursion yields a single child group, that child is promoted (returned
+      directly) rather than wrapped, collapsing trivial intermediate nodes.
+
+    Invariants (across `reduce`/`loop` iterations):
+    - `acc['regions']` shrinks monotonically: each iteration moves regions into
+      `has` (grouped) or keeps them in `without` (remaining).
+    - `acc['constraint_path']` grows by one element per iteration (the current
+      `konstraint`), regardless of whether any regions matched.
+    - `acc['groups']` only grows: new groups are prepended when `has` is non-empty.
     """
 
     def raise_(exc: BaseException) -> NoReturn:
