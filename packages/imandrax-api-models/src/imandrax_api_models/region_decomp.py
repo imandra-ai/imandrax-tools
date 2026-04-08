@@ -72,7 +72,7 @@ class HumDecomposeRes:
             case ('Fail', _):
                 return None
             case ('Success', groups):
-                n_regions = sum([rg.n_descendant_regions() for rg in groups])
+                n_regions = sum([rg.n_regions() for rg in groups])
                 max_depth = _max_depth_of_groups(groups)
 
                 return {'n_regions': n_regions, 'max_depth': max_depth}
@@ -137,6 +137,10 @@ class RegionGroup:
     region: RegionStr | None
     children: list[RegionGroup]
     weight: int
+
+    def n_regions(self) -> int:
+        """Total regions in this subtree, including self."""
+        return 1 + sum(c.n_regions() for c in self.children)
 
     def n_descendant_regions(self) -> int:
         return sum(c.n_descendant_regions() for c in self.children)
