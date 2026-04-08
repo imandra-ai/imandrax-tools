@@ -16,7 +16,6 @@ from imandrax_api_models.yaml_utils import str_representer
 __all__ = (
     'RegionGroup',
     'group_regions',
-    'dump_region_groups_yaml',
     'GroupedRegionDecomposition',
 )
 
@@ -55,7 +54,7 @@ def _gen_id() -> str:
     return str(uuid.uuid4())[:8]
 
 
-def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
+def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
     def loop(
         group_and_id_lst: list[tuple[RegionGroup, str]],
         acc: list[IndexedRegionGroup],
@@ -82,7 +81,7 @@ def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGro
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
     loop(group_and_id_lst, acc, 1)
-    return acc
+    return acc[::-1]  # Reverse to get top-bottom order
 
 
 def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
@@ -158,7 +157,7 @@ class GroupedRegionDecomposition:
         self,
         depth_limit: int | None = None,
     ) -> str:
-        indexed_groups = region_groups_to_indexed(self.groups)
+        indexed_groups = indexed_of_region_groups(self.groups)
         to_dump = {'summary': self.summary(), 'region_groups': indexed_groups}
         return self.dumper_func(depth_limit)(to_dump)
 
@@ -322,7 +321,7 @@ def _loop_group_regions(
                     constraints=rg_constraints,
                     region=rg_region,
                     children=rg_children,
-                    label_path=new_idx_path,
+                    label_path=new_idx_path[::-1],
                     weight=rg_weight,
                 )
             res = [group, *groups], without
