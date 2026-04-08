@@ -7,6 +7,7 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 ## [19.1.0] - 2026-04-08
 
 - Add region decomp grouping and serialization utilities
+- Remove outdated goal-state pretty-printing (see `imandrax-tools.goal_state` for new version).
 
 ## [19.0.0] - 2026-03-25
 
