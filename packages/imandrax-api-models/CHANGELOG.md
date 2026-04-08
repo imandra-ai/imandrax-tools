@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.1.0] - 2026-04-08
+
+- Add region decomp grouping and serialization utilities
+
 ## [19.0.0] - 2026-03-25
 
 - Add qcheck models and endpoints
