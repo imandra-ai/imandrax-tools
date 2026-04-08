@@ -174,13 +174,10 @@ class GroupedRegionDecomposition:
         to_dump = {'summary': self.summary(), 'region_groups': self.groups}
         return self.dumper_func(depth_limit)(to_dump)
 
-    def to_yaml_str_flat(
-        self,
-        depth_limit: int | None = None,
-    ) -> str:
+    def to_yaml_str_flat(self) -> str:
         indexed_groups = indexed_of_region_groups(self.groups)
         to_dump = {'summary': self.summary(), 'region_groups': indexed_groups}
-        return self.dumper_func(depth_limit)(to_dump)
+        return self.dumper_func()(to_dump)
 
 
 class RegionGroupSummarizer(Protocol):
