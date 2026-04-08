@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-import uuid
+import itertools
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial, reduce
-from typing import NoReturn, Protocol, Self, TypedDict
+from typing import Any, Literal, NoReturn, Protocol, Self, TypedDict
 
 import yaml
+from devtools import pformat
 from imandrax_api.lib import RegionStr
 
+from imandrax_api_models.proto_models import DecomposeRes, Error
 from imandrax_api_models.yaml_utils import str_representer
 
 __all__ = (
@@ -18,6 +20,93 @@ __all__ = (
     'group_regions',
     'GroupedRegionDecomposition',
 )
+
+
+@dataclass
+class HumDecomposeRes:
+    """Human readable decomp result"""
+
+    _variants: (
+        tuple[Literal['Success'], list[RegionGroup]]
+        | tuple[Literal['Fail'], list[Error]]
+    )
+
+    @classmethod
+    def mk_success(cls, pl: list[RegionGroup]) -> Self:
+        return cls(_variants=('Success', pl))
+
+    @classmethod
+    def mk_fail(cls, pl: list[Error]) -> Self:
+        return cls(_variants=('Fail', pl))
+
+    @classmethod
+    def of_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
+        return hum_of_decomp_res(v)
+
+    def to_tree_str(
+        self,
+        *,
+        depth_limit: int | None = None,
+        summarize: RegionGroupSummarizer | None = None,
+    ) -> str:
+        match self._variants:
+            case ('Fail', errs):
+                return pformat(errs, indent=2)
+            case ('Success', groups):
+                summarize_ = summarize or default_region_group_summary
+                lines: list[str] = []
+                for i, group in enumerate(groups):
+                    is_last = i == len(groups) - 1
+                    _tree_lines(
+                        lines,
+                        group,
+                        prefix='',
+                        is_last=is_last,
+                        depth_limit=depth_limit,
+                        summarize=summarize_,
+                    )
+                return '\n'.join(lines)
+
+    def summary(self) -> dict[str, str | int] | None:
+        match self._variants:
+            case ('Fail', _):
+                return None
+            case ('Success', groups):
+                n_regions = sum([rg.n_descendant_regions() for rg in groups])
+                max_depth = _max_depth_of_groups(groups)
+
+                return {'n_regions': n_regions, 'max_depth': max_depth}
+
+    def to_dict_hierarchical(
+        self,
+        depth_limit: int | None = None,
+    ) -> dict[str, Any]:
+        match self._variants:
+            case ('Fail', errs):
+                return {'errors': errs}
+            case ('Success', groups):
+                return {'summary': self.summary(), 'region_groups': groups}
+
+    def to_dict_flat(
+        self,
+    ) -> dict[str, Any]:
+        match self._variants:
+            case ('Fail', errs):
+                return {'errors': errs}
+            case ('Success', groups):
+                indexed_groups = indexed_of_region_groups(groups)
+                return {'summary': self.summary(), 'region_groups': indexed_groups}
+
+
+def hum_of_decomp_res(decomp_res: DecomposeRes) -> HumDecomposeRes:
+    if decomp_res.err is None:
+        regions = decomp_res.regions_str
+        assert regions is not None
+        groups = group_regions(regions)
+        return HumDecomposeRes.mk_success(groups)
+
+    else:
+        return HumDecomposeRes.mk_fail(decomp_res.errors)
 
 
 @dataclass
@@ -71,8 +160,11 @@ class IndexedRegionGroup:
     depth: int  # 1-indexed depth
 
 
+_counter = itertools.count()
+
+
 def _gen_id() -> str:
-    return str(uuid.uuid4())[:8]
+    return str(next(_counter))
 
 
 def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
@@ -102,7 +194,7 @@ def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGro
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
     loop(group_and_id_lst, acc, 1)
-    return acc[::-1]  # Reverse to get top-bottom order
+    return acc
 
 
 def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
@@ -159,7 +251,7 @@ class GroupedRegionDecomposition:
 
     @staticmethod
     def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
-        dumper_cls = make_dumper(depth_limit=depth_limit)
+        dumper_cls = mk_dumper(depth_limit=depth_limit)
         return partial(
             yaml.dump,
             Dumper=dumper_cls,
@@ -442,7 +534,7 @@ def _indexed_region_group_representer(
     # return dumper.represent_mapping('!IndexedRegionGroup', mapping)
 
 
-def make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
+def mk_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
     class RegionDecompDumper(yaml.Dumper):
         pass
 
