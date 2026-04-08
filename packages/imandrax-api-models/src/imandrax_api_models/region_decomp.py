@@ -21,14 +21,14 @@ __all__ = (
 
 @dataclass
 class RegionGroup:
-    rg_constraints: list[str]
-    rg_label_path: list[int]
-    rg_region: RegionStr | None
-    rg_children: list[RegionGroup]
-    rg_weight: int
+    constraints: list[str]
+    label_path: list[int]
+    region: RegionStr | None
+    children: list[RegionGroup]
+    weight: int
 
     def n_descendant_regions(self) -> int:
-        return sum(c.n_descendant_regions() for c in self.rg_children)
+        return sum(c.n_descendant_regions() for c in self.children)
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
@@ -80,17 +80,17 @@ class RegionGroupSummarizer(Protocol):
 
 
 def default_region_group_summary(group: RegionGroup) -> str:
-    label = '.'.join(map(str, group.rg_label_path))
+    label = '.'.join(map(str, group.label_path))
     # rg_constraints is the full path from root; [-1] is this node's own constraint.
-    constraint = group.rg_constraints[-1] if group.rg_constraints else '?'
+    constraint = group.constraints[-1] if group.constraints else '?'
     invariant: str | None = None
-    if (region := group.rg_region) is not None:
+    if (region := group.region) is not None:
         invariant = region.invariant_str
     parts = [
         f'[{label}]',
         f'{constraint=}',
         f'{invariant=}',
-        f'(w={group.rg_weight}, children={len(group.rg_children)}, descendants={group.n_descendant_regions()})',
+        f'(w={group.weight}, children={len(group.children)}, descendants={group.n_descendant_regions()})',
     ]
     return ' '.join(parts)
 
@@ -108,18 +108,18 @@ def _tree_lines(
     lines.append(f'{prefix}{connector}{summarize(group)}')
 
     child_prefix = prefix + ('    ' if is_last else '│   ')
-    if depth_limit is not None and depth_limit <= 0 and group.rg_children:
+    if depth_limit is not None and depth_limit <= 0 and group.children:
         lines.append(
-            f'{child_prefix}└── ... ({len(group.rg_children)} children, {group.n_descendant_regions()} descendants)'
+            f'{child_prefix}└── ... ({len(group.children)} children, {group.n_descendant_regions()} descendants)'
         )
         return
     next_limit = None if depth_limit is None else depth_limit - 1
-    for i, child in enumerate(group.rg_children):
+    for i, child in enumerate(group.children):
         _tree_lines(
             lines,
             child,
             prefix=child_prefix,
-            is_last=i == len(group.rg_children) - 1,
+            is_last=i == len(group.children) - 1,
             depth_limit=next_limit,
             summarize=summarize,
         )
@@ -231,11 +231,11 @@ def _loop_group_regions(
                     rg_region = None
                 rg_weight = len(has)
                 group = RegionGroup(
-                    rg_constraints=rg_constraints,
-                    rg_region=rg_region,
-                    rg_children=rg_children,
-                    rg_label_path=new_idx_path,
-                    rg_weight=rg_weight,
+                    constraints=rg_constraints,
+                    region=rg_region,
+                    children=rg_children,
+                    label_path=new_idx_path,
+                    weight=rg_weight,
                 )
             res = [group, *groups], without
         else:
@@ -275,21 +275,21 @@ def _region_group_representer(
 ) -> yaml.Node:
     mapping: dict[str, object] = {}
 
-    mapping['label_path'] = '.'.join(map(str, data.rg_label_path))
-    mapping['weight'] = data.rg_weight
+    mapping['label_path'] = '.'.join(map(str, data.label_path))
+    mapping['weight'] = data.weight
 
-    mapping['constraints'] = data.rg_constraints
-    mapping['introduced_constraint'] = data.rg_constraints[-1]
-    if (region := data.rg_region) is not None:
+    mapping['constraints'] = data.constraints
+    mapping['introduced_constraint'] = data.constraints[-1]
+    if (region := data.region) is not None:
         mapping['invariant'] = region.invariant_str
         mapping['example_input'] = region.model_str
         mapping['example_output'] = region.model_eval_str
 
-    mapping['n_children_regions'] = len(data.rg_children)
+    mapping['n_children_regions'] = len(data.children)
     mapping['n_descendant_regions'] = data.n_descendant_regions()
-    if data.rg_children:
+    if data.children:
         if depth_limit is None or depth_limit <= 0:
-            mapping['children'] = data.rg_children
+            mapping['children'] = data.children
     # return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
     return dumper.represent_mapping('!RegionGroup', mapping)
 
