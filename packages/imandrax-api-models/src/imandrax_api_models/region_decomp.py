@@ -47,6 +47,7 @@ class IndexedRegionGroup:
     region: RegionStr | None
     children: list[str]
     weight: int
+    depth: int
 
 
 def _gen_id() -> str:
@@ -55,7 +56,9 @@ def _gen_id() -> str:
 
 def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
     def loop(
-        group_and_id_lst: list[tuple[RegionGroup, str]], acc: list[IndexedRegionGroup]
+        group_and_id_lst: list[tuple[RegionGroup, str]],
+        acc: list[IndexedRegionGroup],
+        depth: int,
     ) -> None:
         for rg, id in group_and_id_lst:
             c_ids = [_gen_id() for _ in rg.children]
@@ -67,16 +70,17 @@ def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGro
                 region=rg.region,
                 children=c_ids,
                 weight=rg.weight,
+                depth=depth,
             )
             acc.append(irg)
 
             children_group_and_id_lst = list(zip(rg.children, c_ids, strict=True))
-            loop(children_group_and_id_lst, acc)
+            loop(children_group_and_id_lst, acc, depth + 1)
 
     initial_ids = [_gen_id() for _ in groups]
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
-    loop(group_and_id_lst, acc)
+    loop(group_and_id_lst, acc, 0)
     return acc
 
 
@@ -117,6 +121,19 @@ class GroupedRegionDecomposition:
         depth_limit: int | None = None,
     ) -> str:
         return dump_region_groups_yaml(self.groups, depth_limit=depth_limit)
+
+    def to_yaml_str_flat(
+        self,
+        depth_limit: int | None = None,
+    ) -> str:
+        dumper_cls = _make_dumper()
+        indexed_groups = region_groups_to_indexed(self.groups)
+        return yaml.dump(
+            indexed_groups,
+            Dumper=dumper_cls,
+            default_flow_style=False,
+            sort_keys=False,
+        )
 
 
 class RegionGroupSummarizer(Protocol):
@@ -343,7 +360,9 @@ def _indexed_region_group_representer(
 ) -> yaml.Node:
     mapping: dict[str, object] = {}
 
+    mapping['id'] = data.id
     mapping['label_path'] = '.'.join(map(str, data.label_path))
+    mapping['depth'] = data.depth
     mapping['weight'] = data.weight
 
     mapping['constraints'] = data.constraints
@@ -355,8 +374,8 @@ def _indexed_region_group_representer(
 
     mapping['n_children_regions'] = len(data.children)
     mapping['children'] = data.children
-    # return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
-    return dumper.represent_mapping('!IndexedRegionGroup', mapping)
+    return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
+    # return dumper.represent_mapping('!IndexedRegionGroup', mapping)
 
 
 def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
