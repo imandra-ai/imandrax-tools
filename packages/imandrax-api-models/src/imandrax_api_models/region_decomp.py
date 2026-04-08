@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
-from functools import reduce
+from functools import partial, reduce
 from typing import NoReturn, Protocol, Self, TypedDict
 
 import yaml
@@ -47,7 +48,7 @@ class IndexedRegionGroup:
     region: RegionStr | None
     children: list[str]
     weight: int
-    depth: int
+    depth: int  # 1-indexed depth
 
 
 def _gen_id() -> str:
@@ -80,13 +81,33 @@ def region_groups_to_indexed(groups: list[RegionGroup]) -> list[IndexedRegionGro
     initial_ids = [_gen_id() for _ in groups]
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
-    loop(group_and_id_lst, acc, 0)
+    loop(group_and_id_lst, acc, 1)
     return acc
+
+
+def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
+    init: int = 1
+
+    def loop(groups: list[RegionGroup]):
+        label_lengths: list[int] = [len(rg.label_path) for rg in groups]
+        nonlocal init
+        init = max(init, (max(label_lengths) if label_lengths else 0))
+        for rg in groups:
+            loop(rg.children)
+
+    loop(groups)
+    return init
 
 
 @dataclass
 class GroupedRegionDecomposition:
     groups: list[RegionGroup]
+
+    def summary(self) -> dict[str, str | int]:
+        n_regions = sum([rg.n_descendant_regions() for rg in self.groups])
+        max_depth = _max_depth_of_groups(self.groups)
+
+        return {'n_regions': n_regions, 'max_depth': max_depth}
 
     @classmethod
     def from_groups(cls, groups: list[RegionGroup]) -> Self:
@@ -116,24 +137,30 @@ class GroupedRegionDecomposition:
             )
         return '\n'.join(lines)
 
+    @staticmethod
+    def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
+        dumper_cls = make_dumper(depth_limit=depth_limit)
+        return partial(
+            yaml.dump,
+            Dumper=dumper_cls,
+            default_flow_style=False,
+            sort_keys=False,
+        )
+
     def to_yaml_str(
         self,
         depth_limit: int | None = None,
     ) -> str:
-        return dump_region_groups_yaml(self.groups, depth_limit=depth_limit)
+        to_dump = {'summary': self.summary(), 'region_groups': self.groups}
+        return self.dumper_func(depth_limit)(to_dump)
 
     def to_yaml_str_flat(
         self,
         depth_limit: int | None = None,
     ) -> str:
-        dumper_cls = _make_dumper()
         indexed_groups = region_groups_to_indexed(self.groups)
-        return yaml.dump(
-            indexed_groups,
-            Dumper=dumper_cls,
-            default_flow_style=False,
-            sort_keys=False,
-        )
+        to_dump = {'summary': self.summary(), 'region_groups': indexed_groups}
+        return self.dumper_func(depth_limit)(to_dump)
 
 
 class RegionGroupSummarizer(Protocol):
@@ -197,7 +224,7 @@ def _loop_group_regions(
     For each constraint, regions that contain it are split into a sub-group and
     grouped recursively.
 
-    Each resulting ``RegionGroup.rg_constraints`` is the **full accumulated path**
+    Each resulting ``RegionGroup.rg_constraints`` is the full accumulated path
     of constraints from the root down to that node (chronological order). Therefore
     ``rg_constraints[-1]`` is the constraint introduced at that node's own level,
     while earlier elements are inherited from ancestors.
@@ -378,7 +405,7 @@ def _indexed_region_group_representer(
     # return dumper.represent_mapping('!IndexedRegionGroup', mapping)
 
 
-def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
+def make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
     class RegionDecompDumper(yaml.Dumper):
         pass
 
@@ -397,22 +424,3 @@ def _make_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
     )
     RegionDecompDumper.add_representer(str, str_representer)
     return RegionDecompDumper
-
-
-def dump_region_groups_yaml(
-    groups: list[RegionGroup],
-    *,
-    depth_limit: int | None = None,
-) -> str:
-    """
-    Dump region groups to YAML.
-
-    Args:
-        groups: The region groups to dump.
-        depth_limit: Max depth of children to expand. None means unlimited.
-
-    """
-    dumper_cls = _make_dumper(depth_limit=depth_limit)
-    return yaml.dump(
-        groups, Dumper=dumper_cls, default_flow_style=False, sort_keys=False
-    )
