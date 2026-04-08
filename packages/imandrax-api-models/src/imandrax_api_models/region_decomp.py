@@ -1,6 +1,5 @@
 """Post-processing (Hierarchical groupping) for region decomposition."""
 
-# %%
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -49,7 +48,7 @@ class GroupedRegionDecomposition:
     def from_regions(cls, regions: list[RegionStr]) -> Self:
         return cls.from_groups(group_regions(regions))
 
-    def to_tree(
+    def to_tree_str(
         self,
         *,
         depth_limit: int | None = None,
@@ -68,6 +67,12 @@ class GroupedRegionDecomposition:
                 summarize=summarize_,
             )
         return '\n'.join(lines)
+
+    def to_yaml_str(
+        self,
+        depth_limit: int | None = None,
+    ) -> str:
+        return dump_region_groups_yaml(self.groups, depth_limit=depth_limit)
 
 
 class RegionGroupSummarizer(Protocol):
@@ -273,6 +278,7 @@ def _region_group_representer(
     mapping['label_path'] = '.'.join(map(str, data.rg_label_path))
     mapping['weight'] = data.rg_weight
 
+    mapping['constraints'] = data.rg_constraints
     mapping['introduced_constraint'] = data.rg_constraints[-1]
     if (region := data.rg_region) is not None:
         mapping['invariant'] = region.invariant_str
