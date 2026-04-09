@@ -15,12 +15,6 @@ from imandrax_api.lib import RegionStr
 from imandrax_api_models.proto_models import DecomposeRes, Error
 from imandrax_api_models.yaml_utils import str_representer
 
-__all__ = (
-    'RegionGroup',
-    'group_regions',
-    'GroupedRegionDecomposition',
-)
-
 
 @dataclass
 class HumDecomposeRes:
@@ -76,6 +70,16 @@ class HumDecomposeRes:
                 max_depth = _max_depth_of_groups(groups)
 
                 return {'n_regions': n_regions, 'max_depth': max_depth}
+
+    @staticmethod
+    def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
+        dumper_cls = mk_dumper(depth_limit=depth_limit)
+        return partial(
+            yaml.dump,
+            Dumper=dumper_cls,
+            default_flow_style=False,
+            sort_keys=False,
+        )
 
     def to_dict_hierarchical(
         self,
@@ -143,7 +147,7 @@ class RegionGroup:
         return 1 + sum(c.n_regions() for c in self.children)
 
     def n_descendant_regions(self) -> int:
-        return sum(c.n_descendant_regions() for c in self.children)
+        return self.n_regions() - 1
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
@@ -198,7 +202,7 @@ def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGro
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
     loop(group_and_id_lst, acc, 1)
-    return acc
+    return acc[::-1]
 
 
 def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
@@ -213,67 +217,6 @@ def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
 
     loop(groups)
     return init
-
-
-@dataclass
-class GroupedRegionDecomposition:
-    groups: list[RegionGroup]
-
-    def summary(self) -> dict[str, str | int]:
-        n_regions = sum([rg.n_descendant_regions() for rg in self.groups])
-        max_depth = _max_depth_of_groups(self.groups)
-
-        return {'n_regions': n_regions, 'max_depth': max_depth}
-
-    @classmethod
-    def from_groups(cls, groups: list[RegionGroup]) -> Self:
-        return cls(groups=groups)
-
-    @classmethod
-    def from_regions(cls, regions: list[RegionStr]) -> Self:
-        return cls.from_groups(group_regions(regions))
-
-    def to_tree_str(
-        self,
-        *,
-        depth_limit: int | None = None,
-        summarize: RegionGroupSummarizer | None = None,
-    ) -> str:
-        summarize_ = summarize or default_region_group_summary
-        lines: list[str] = []
-        for i, group in enumerate(self.groups):
-            is_last = i == len(self.groups) - 1
-            _tree_lines(
-                lines,
-                group,
-                prefix='',
-                is_last=is_last,
-                depth_limit=depth_limit,
-                summarize=summarize_,
-            )
-        return '\n'.join(lines)
-
-    @staticmethod
-    def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
-        dumper_cls = mk_dumper(depth_limit=depth_limit)
-        return partial(
-            yaml.dump,
-            Dumper=dumper_cls,
-            default_flow_style=False,
-            sort_keys=False,
-        )
-
-    def to_yaml_str(
-        self,
-        depth_limit: int | None = None,
-    ) -> str:
-        to_dump = {'summary': self.summary(), 'region_groups': self.groups}
-        return self.dumper_func(depth_limit)(to_dump)
-
-    def to_yaml_str_flat(self) -> str:
-        indexed_groups = indexed_of_region_groups(self.groups)
-        to_dump = {'summary': self.summary(), 'region_groups': indexed_groups}
-        return self.dumper_func()(to_dump)
 
 
 class RegionGroupSummarizer(Protocol):
@@ -291,7 +234,7 @@ def default_region_group_summary(group: RegionGroup) -> str:
         f'[{label}]',
         f'{constraint=}',
         f'{invariant=}',
-        f'(w={group.weight}, children={len(group.children)}, descendants={group.n_descendant_regions()})',
+        f'(w={group.weight}, n_children={len(group.children)}, n_descendants={group.n_descendant_regions()})',
     ]
     return ' '.join(parts)
 
@@ -471,7 +414,7 @@ def _loop_group_regions(
     init = Acc(
         groups=[], regions=regions, idx_path=idx_path, constraint_path=constraint_path
     )
-    return reduce(loop, constraints_by_most_frequent, init)['groups']
+    return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
 
 
 # YAML Dump
