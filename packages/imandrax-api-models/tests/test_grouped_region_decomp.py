@@ -2,7 +2,7 @@ import imandrax_api
 from imandrax_api.lib import RegionStr
 from inline_snapshot import snapshot
 
-from imandrax_api_models.region_decomp import HumDecomposeRes
+from imandrax_api_models.region_decomp import HumDecomposeRes, RegionGroup
 
 
 def trust():
@@ -99,6 +99,27 @@ def test():
 """)
     hdr_dict_hierarchy = hdr.to_dict_hierarchical()
     hdr_dict_flat = hdr.to_dict_flat()
+    label_path_n_children_map_flat: list[tuple[str, int]] = [
+        ('.'.join(map(str, irg.label_path)), len(irg.children))
+        for irg in hdr_dict_flat['region_groups']
+    ]
+
+    # ::: test-child-count
+    def _collect_hierarchy(groups: list[RegionGroup]) -> list[tuple[str, int]]:
+        result: list[tuple[str, int]] = []
+        for rg in groups:
+            result.append(('.'.join(map(str, rg.label_path)), len(rg.children)))
+            if rg.children:
+                result.extend(_collect_hierarchy(rg.children))
+        return result
+
+    label_path_n_children_map_hierarchy: list[tuple[str, int]] = _collect_hierarchy(
+        hdr_dict_hierarchy['region_groups']
+    )
+    assert sorted(label_path_n_children_map_flat) == sorted(
+        label_path_n_children_map_hierarchy
+    )
+    # :::
 
     assert (hdr.dumper_func()(hdr_dict_hierarchy)) == snapshot("""\
 summary:
