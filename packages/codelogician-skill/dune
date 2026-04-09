@@ -12,6 +12,10 @@
 ;   extended-prelude/*.iml           → skill/extended-prelude/*.iml (copy)
 ;   knowledge-base/error_corpus/{error_corpus.json, error_corpus_schema.json} -> skill/error_corpus/
 
+(alias
+ (name default)
+ (deps
+  (alias skill)))
 
 ; Copies
 ; --------------------
