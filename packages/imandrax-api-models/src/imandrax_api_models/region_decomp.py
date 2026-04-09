@@ -173,21 +173,19 @@ class IndexedRegionGroup:
     depth: int  # 1-indexed depth
 
 
-_counter = itertools.count()
-
-
-def _gen_id() -> str:
-    return str(next(_counter))
-
-
 def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
+    id_generator = (str(i) for i in itertools.count())
+
+    def gen_id() -> str:
+        return next(id_generator)
+
     def loop(
         group_and_id_lst: list[tuple[RegionGroup, str]],
         acc: list[IndexedRegionGroup],
         depth: int,
     ) -> None:
         for rg, id in group_and_id_lst:
-            c_ids = [_gen_id() for _ in rg.children]
+            c_ids = [gen_id() for _ in rg.children]
 
             irg = IndexedRegionGroup(
                 id=id,
@@ -203,7 +201,7 @@ def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGro
             children_group_and_id_lst = list(zip(rg.children, c_ids, strict=True))
             loop(children_group_and_id_lst, acc, depth + 1)
 
-    initial_ids = [_gen_id() for _ in groups]
+    initial_ids = [gen_id() for _ in groups]
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
     loop(group_and_id_lst, acc, 1)
