@@ -16,3 +16,7 @@ description: Verify (prove a goal or find a counter-example) using `verify` and 
     - `verify P` returns PROVEN if P holds for all inputs
     - `verify P` returns a COUNTEREXAMPLE if P fails somewhere
     - `instance P` finds an input where P is true
+
+General Guidelines:
+- a workflow trace, reachability analysis, happy path -> use `instance` to find a concrete witness satisfying the expected outcome, confirming the happy path is reachable.
+- constraints or scenarios that must hold for all states, universal properties -> use `verify` to prove the propert universally or return a counterexample.
