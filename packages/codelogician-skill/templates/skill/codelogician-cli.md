@@ -35,7 +35,7 @@ All commands accept a `FILE` argument (path to an IML file, or `-` to read from 
 - `check-vg [FILE] [OPTIONS]`:
   - description: Check verification goals specified by `verify` or `instance` commands in an IML file. Runs eval first, then checks VGs concurrently.
   - options:
-    - `--index INTEGER`: Index(es) of VGs to check (1-based, repeatable). Defaults to all.
+    - `--index INTEGER`: Index(es) of VGs to check (0-based, repeatable). Defaults to all.
     - `--check-all`: Check all VGs (same as omitting `--index`).
     - `--json`: Output results as JSON (suppresses progress output).
 - `list-decomp [FILE] [OPTIONS]`:
@@ -45,7 +45,7 @@ All commands accept a `FILE` argument (path to an IML file, or `-` to read from 
 - `check-decomp [FILE] [OPTIONS]`:
   - description: Check decomp requests in an IML file. Runs eval first, then checks decomps concurrently.
   - options:
-    - `--index INTEGER`: Index(es) of decomp requests to check (1-based, repeatable). Defaults to all.
+    - `--index INTEGER`: Index(es) of decomp requests to check (0-based, repeatable). Defaults to all.
     - `--check-all`: Check all decomp requests (same as omitting `--index`).
     - `--json`: Output results as JSON (suppresses progress output).
 - `gen-test`:
