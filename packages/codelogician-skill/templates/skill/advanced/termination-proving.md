@@ -74,6 +74,8 @@ let rec countdown x =
 (* Works automatically *)
 ```
 
+NOTE: When no custom measure is given, ImandraX's heuristics will select the first argument that is tested in every branch, i.e., automatic measure synthesis will try a measure with a single argument.
+
 ## Approach 2: Lexicographic Ordering with @@adm
 
 Use when multiple arguments decrease in order:
