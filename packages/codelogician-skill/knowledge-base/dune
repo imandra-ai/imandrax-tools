@@ -1,6 +1,8 @@
 ; Combine all sub-artifacts -> context.yaml, promoted to source tree
+
 (rule
- (mode (promote (until-clean)))
+ (mode
+  (promote (until-clean)))
  (targets context.yaml)
  (deps
   constants/constants.yaml

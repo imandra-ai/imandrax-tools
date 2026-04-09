@@ -1,14 +1,12 @@
 (rule
-  (mode (promote (until-clean)))
-  (deps
-    (:templ prompts.py.jinja)
-    (:context ../../knowledge-base/context.yaml))
-  (target prompts.py)
-  (action
-    (progn
-      (run jinja -d %{context} -o %{target} %{templ})
-      (run uvx ty check %{target})
-      (run uvx ruff format %{target})
-    )
-  )
-)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:templ prompts.py.jinja)
+  (:context ../../knowledge-base/context.yaml))
+ (target prompts.py)
+ (action
+  (progn
+   (run jinja -d %{context} -o %{target} %{templ})
+   (run uvx ty check %{target})
+   (run uvx ruff format %{target}))))
