@@ -4,6 +4,8 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+- Region decomp icicle jupyter widget
+
 ## [19.1.0] - 2026-04-08
 
 - Add region decomp grouping and serialization utilities
