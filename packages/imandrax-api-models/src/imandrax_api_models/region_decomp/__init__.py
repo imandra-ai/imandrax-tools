@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import itertools
+import json
+import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial, reduce
@@ -106,6 +108,13 @@ class HumDecomposeRes:
                 indexed_groups = indexed_of_region_groups(groups)
                 return {'summary': self.summary(), 'region_groups': indexed_groups}
 
+    def _repr_html_(self) -> str:
+        match self._variants:
+            case ('Fail', errs):
+                return f'<pre>{pformat(errs, indent=2)}</pre>'
+            case ('Success', groups):
+                return _mk_icicle_widget_html(groups)
+
 
 def hum_of_decomp_res(decomp_res: DecomposeRes) -> HumDecomposeRes:
     if decomp_res.err is None:
@@ -153,6 +162,29 @@ class RegionGroup:
 
     def n_descendant_regions(self) -> int:
         return self.n_regions() - 1
+
+    def to_dict(self) -> dict[str, Any]:
+        """Core fields shared by all serialization formats."""
+        d: dict[str, Any] = {
+            'label_path': '.'.join(map(str, self.label_path)),
+            'constraints': self.constraints,
+            'introduced_constraint': self.constraints[-1] if self.constraints else '',
+            'weight': self.weight,
+            'n_children_regions': len(self.children),
+            'n_descendant_regions': self.n_descendant_regions(),
+        }
+        if (r := self.region) is not None:
+            d['invariant'] = r.invariant_str
+            d['example_input'] = r.model_str
+            d['example_output'] = r.model_eval_str
+        return d
+
+    def to_json_dict(self) -> dict[str, Any]:
+        """Serialize to a d3-hierarchy-compatible dict."""
+        d = self.to_dict()
+        if self.children:
+            d['children'] = [c.to_json_dict() for c in self.children]
+        return d
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
@@ -420,6 +452,27 @@ def _loop_group_regions(
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
 
 
+# Icicle Widget (Jupyter)
+# =======================
+
+
+def _mk_icicle_widget_html(groups: list[RegionGroup]) -> str:
+    root = {
+        'label_path': 'root',
+        'introduced_constraint': 'all regions',
+        'constraints': [],
+        'weight': sum(g.weight for g in groups),
+        'n_children_regions': len(groups),
+        'n_descendant_regions': sum(g.n_regions() for g in groups),
+        'children': [g.to_json_dict() for g in groups],
+    }
+    data_json = json.dumps(root)
+    widget_id = f'icicle-{uuid.uuid4().hex[:8]}'
+    from .icicle_widget import icicle_widget_html
+
+    return icicle_widget_html(widget_id, data_json)
+
+
 # YAML Dump
 # ====================
 
@@ -440,24 +493,10 @@ def _region_str_representer(dumper: yaml.Dumper, data: RegionStr) -> yaml.Node:
 def _region_group_representer(
     dumper: yaml.Dumper, data: RegionGroup, *, depth_limit: int | None = None
 ) -> yaml.Node:
-    mapping: dict[str, object] = {}
-
-    mapping['label_path'] = '.'.join(map(str, data.label_path))
-    mapping['weight'] = data.weight
-
-    mapping['constraints'] = data.constraints
-    mapping['introduced_constraint'] = data.constraints[-1]
-    if (region := data.region) is not None:
-        mapping['invariant'] = region.invariant_str
-        mapping['example_input'] = region.model_str
-        mapping['example_output'] = region.model_eval_str
-
-    mapping['n_children_regions'] = len(data.children)
-    mapping['n_descendant_regions'] = data.n_descendant_regions()
+    mapping: dict[str, object] = data.to_dict()
     if data.children:
         if depth_limit is None or depth_limit <= 0:
             mapping['children'] = data.children
-    # return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
     return dumper.represent_mapping('!RegionGroup', mapping)
 
 
