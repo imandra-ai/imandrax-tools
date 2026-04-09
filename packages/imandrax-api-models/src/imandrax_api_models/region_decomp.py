@@ -34,8 +34,13 @@ class HumDecomposeRes:
         return cls(_variants=('Fail', pl))
 
     @classmethod
-    def of_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
+    def from_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
         return hum_of_decomp_res(v)
+
+    @classmethod
+    def from_regions(cls, regions: list[RegionStr]) -> HumDecomposeRes:
+        groups = group_regions(regions)
+        return HumDecomposeRes.mk_success(groups)
 
     def to_tree_str(
         self,
