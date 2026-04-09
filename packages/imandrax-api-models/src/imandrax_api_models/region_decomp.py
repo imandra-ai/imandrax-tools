@@ -205,7 +205,7 @@ def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGro
     group_and_id_lst = list(zip(groups, initial_ids, strict=True))
     acc: list[IndexedRegionGroup] = []
     loop(group_and_id_lst, acc, 1)
-    return acc[::-1]
+    return acc
 
 
 def _max_depth_of_groups(groups: list[RegionGroup]) -> int:

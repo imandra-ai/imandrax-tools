@@ -250,22 +250,94 @@ summary:
   n_regions: 8
   max_depth: 6
 region_groups:
-- id: '3'
-  label_path: 1.2.3.4.1
+- id: '0'
+  label_path: '1'
   depth: 1
+  weight: 2
+  constraints:
+  - x <= 0
+  introduced_constraint: x <= 0
+  n_children_regions: 2
+  children:
+  - '4'
+  - '5'
+- id: '4'
+  label_path: '1.1'
+  depth: 2
+  weight: 1
+  constraints:
+  - x <= 0
+  - y <= 0
+  introduced_constraint: y <= 0
+  invariant: '6'
+  example_input:
+    x: '0'
+    y: '0'
+  example_output: '6'
+  n_children_regions: 0
+  children: []
+- id: '5'
+  label_path: 1.1.2
+  depth: 2
   weight: 1
   constraints:
   - x <= 0
   - y <= 0
   - y >= 1
+  introduced_constraint: y >= 1
+  invariant: '5'
+  example_input:
+    x: '0'
+    y: '1'
+  example_output: '5'
+  n_children_regions: 0
+  children: []
+- id: '1'
+  label_path: 1.2.1.1
+  depth: 1
+  weight: 1
+  constraints:
+  - x <= 0
+  - y <= 0
   - x >= 1
-  - y <= (-11)
-  introduced_constraint: y <= (-11)
-  invariant: '3'
+  - y >= (-10)
+  introduced_constraint: y >= (-10)
+  invariant: '4'
   example_input:
     x: '1'
-    y: (-11)
-  example_output: '3'
+    y: '0'
+  example_output: '4'
+  n_children_regions: 0
+  children: []
+- id: '2'
+  label_path: 1.2.3
+  depth: 1
+  weight: 2
+  constraints:
+  - x <= 0
+  - y <= 0
+  - y >= 1
+  introduced_constraint: y >= 1
+  n_children_regions: 2
+  children:
+  - '6'
+  - '7'
+- id: '6'
+  label_path: 1.2.3.1.1
+  depth: 2
+  weight: 1
+  constraints:
+  - x <= 0
+  - y <= 0
+  - y >= 1
+  - x <= y
+  - x >= 1
+  introduced_constraint: x >= 1
+  invariant: '2'
+  example_input:
+    x: '1'
+    y: '1'
+  example_output: '2'
   n_children_regions: 0
   children: []
 - id: '7'
@@ -287,94 +359,22 @@ region_groups:
   example_output: '1'
   n_children_regions: 0
   children: []
-- id: '6'
-  label_path: 1.2.3.1.1
-  depth: 2
+- id: '3'
+  label_path: 1.2.3.4.1
+  depth: 1
   weight: 1
   constraints:
   - x <= 0
   - y <= 0
   - y >= 1
-  - x <= y
   - x >= 1
-  introduced_constraint: x >= 1
-  invariant: '2'
+  - y <= (-11)
+  introduced_constraint: y <= (-11)
+  invariant: '3'
   example_input:
     x: '1'
-    y: '1'
-  example_output: '2'
+    y: (-11)
+  example_output: '3'
   n_children_regions: 0
   children: []
-- id: '2'
-  label_path: 1.2.3
-  depth: 1
-  weight: 2
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  introduced_constraint: y >= 1
-  n_children_regions: 2
-  children:
-  - '6'
-  - '7'
-- id: '1'
-  label_path: 1.2.1.1
-  depth: 1
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - x >= 1
-  - y >= (-10)
-  introduced_constraint: y >= (-10)
-  invariant: '4'
-  example_input:
-    x: '1'
-    y: '0'
-  example_output: '4'
-  n_children_regions: 0
-  children: []
-- id: '5'
-  label_path: 1.1.2
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  introduced_constraint: y >= 1
-  invariant: '5'
-  example_input:
-    x: '0'
-    y: '1'
-  example_output: '5'
-  n_children_regions: 0
-  children: []
-- id: '4'
-  label_path: '1.1'
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  introduced_constraint: y <= 0
-  invariant: '6'
-  example_input:
-    x: '0'
-    y: '0'
-  example_output: '6'
-  n_children_regions: 0
-  children: []
-- id: '0'
-  label_path: '1'
-  depth: 1
-  weight: 2
-  constraints:
-  - x <= 0
-  introduced_constraint: x <= 0
-  n_children_regions: 2
-  children:
-  - '4'
-  - '5'
 """)
