@@ -1,10 +1,57 @@
 # $schema: https://json.schemastore.org/github-workflow.json
 name: release-tools
 on:
+  push:
+    tags:
+      - "imandrax-tools==*"
   workflow_dispatch:
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      pkg-name: ${{ steps.validate.outputs.pkg-name }}
+      version: ${{ steps.validate.outputs.version }}
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Validate release
+        id: validate
+        shell: bash
+        working-directory: packages/imandrax-tools
+        run: |
+          # Read the canonical version from pyproject.toml and build the expected tag
+          version_data=$(uv version --output-format=json)
+          version=$(echo "$version_data" | jq -r '.version')
+          pkg_name=$(echo "$version_data" | jq -r '.package_name')
+          tag="${pkg_name}==${version}"
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "pkg-name=$pkg_name" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+          # Tag push: ensure the pushed git tag matches pyproject.toml version
+          # Manual dispatch: ensure the expected tag exists on HEAD
+          if [ "${{ github.event_name }}" = "push" ]; then
+            actual_tag="${GITHUB_REF#refs/tags/}"
+            if [ "$actual_tag" != "$tag" ]; then
+              echo "::error::Git tag '$actual_tag' does not match pyproject.toml version '$tag'"
+              exit 1
+            fi
+          else
+            if ! git tag --list "$tag" --points-at HEAD | grep -q .; then
+              echo "::error::Tag '$tag' not found on HEAD. Push the tag before dispatching."
+              exit 1
+            fi
+          fi
+
   build:
+    needs: validate
     strategy:
       matrix:
         include:
@@ -19,11 +66,6 @@ jobs:
             artifact-suffix: macos-arm64
 
     runs-on: ${{ matrix.os }}
-
-    outputs:
-      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
-      version: ${{ steps.check-version.outputs.version }}
-      tag: ${{ steps.check-version.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v5
@@ -43,20 +85,6 @@ jobs:
         with:
           name: dist-${{ matrix.artifact-suffix }}
           path: packages/imandrax-tools/dist/
-
-      - name: Check version
-        id: check-version
-        shell: bash
-        working-directory: packages/imandrax-tools
-        run: |
-          version_data=$(uv version --output-format=json)
-          version=$(echo "$version_data" | jq -r '.version')
-          package_name=$(echo "$version_data" | jq -r '.package_name')
-          tag="${package_name}==${version}"
-
-          echo "version=$version" >> $GITHUB_OUTPUT
-          echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
-          echo "tag=$tag" >> $GITHUB_OUTPUT
 
   build-sdist:
     runs-on: ubuntu-latest
@@ -116,7 +144,7 @@ jobs:
           print-hash: true
 
   github-release:
-    needs: [build, pypi-publish]
+    needs: [validate, pypi-publish]
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -132,7 +160,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.build.outputs.tag }}
-          name: ${{ needs.build.outputs.pkg-name }} ${{ needs.build.outputs.version }}
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ${{ needs.validate.outputs.pkg-name }} ${{ needs.validate.outputs.version }}
           files: packages/imandrax-tools/dist/*
           generate_release_notes: true

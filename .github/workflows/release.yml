@@ -1,6 +1,10 @@
 # $schema: https://json.schemastore.org/github-workflow.json
 name: release
 on:
+  push:
+    tags:
+      - "imandrax-api-models==*"
+      - "iml-query==*"
   workflow_dispatch:
     inputs:
       working-directory:
@@ -10,15 +14,72 @@ on:
         options:
           - packages/imandrax-api-models
           - packages/iml-query
+
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
-
     outputs:
-      pkg-name: ${{ steps.check-version.outputs.pkg-name }}
-      version: ${{ steps.check-version.outputs.version }}
-      tag: ${{ steps.check-version.outputs.tag }}
+      working-directory: ${{ steps.resolve.outputs.working-directory }}
+      pkg-name: ${{ steps.validate.outputs.pkg-name }}
+      version: ${{ steps.validate.outputs.version }}
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Resolve working directory
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${GITHUB_REF#refs/tags/}"
+            pkg="${tag%%==*}"
+            case "$pkg" in
+              imandrax-api-models) dir="packages/imandrax-api-models" ;;
+              iml-query) dir="packages/iml-query" ;;
+              *) echo "::error::Unknown package '$pkg'"; exit 1 ;;
+            esac
+            echo "working-directory=$dir" >> $GITHUB_OUTPUT
+          else
+            echo "working-directory=${{ inputs.working-directory }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate release
+        id: validate
+        shell: bash
+        working-directory: ${{ steps.resolve.outputs.working-directory }}
+        run: |
+          # Read the canonical version from pyproject.toml and build the expected tag
+          version_data=$(uv version --output-format=json)
+          version=$(echo "$version_data" | jq -r '.version')
+          pkg_name=$(echo "$version_data" | jq -r '.package_name')
+          tag="${pkg_name}==${version}"
+
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "pkg-name=$pkg_name" >> $GITHUB_OUTPUT
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+
+          # Tag push: ensure the pushed git tag matches pyproject.toml version
+          # Manual dispatch: ensure the expected tag exists on HEAD
+          if [ "${{ github.event_name }}" = "push" ]; then
+            actual_tag="${GITHUB_REF#refs/tags/}"
+            if [ "$actual_tag" != "$tag" ]; then
+              echo "::error::Git tag '$actual_tag' does not match pyproject.toml version '$tag'"
+              exit 1
+            fi
+          else
+            if ! git tag --list "$tag" --points-at HEAD | grep -q .; then
+              echo "::error::Tag '$tag' not found on HEAD. Push the tag before dispatching."
+              exit 1
+            fi
+          fi
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
@@ -26,30 +87,16 @@ jobs:
 
       - name: Build
         run: uv build
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ needs.validate.outputs.working-directory }}
 
       - name: Upload build
         uses: actions/upload-artifact@v5
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
-
-      - name: Check version
-        id: check-version
-        shell: bash
-        working-directory: ${{ inputs.working-directory }}
-        run: |
-          version_data=$(uv version --output-format=json)
-          version=$(echo "$version_data" | jq -r '.version')
-          package_name=$(echo "$version_data" | jq -r '.package_name')
-          tag="${package_name}==${version}"
-
-          echo "version=$version" >> $GITHUB_OUTPUT
-          echo "pkg-name=$package_name" >> $GITHUB_OUTPUT
-          echo "tag=$tag" >> $GITHUB_OUTPUT
+          path: ${{ needs.validate.outputs.working-directory }}/dist/
 
   pre-release-test:
-    needs: build
+    needs: [validate, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -59,16 +106,16 @@ jobs:
       - uses: actions/download-artifact@v6
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ needs.validate.outputs.working-directory }}/dist/
 
       - name: Run pre-release tests
         run: make pre-release-test
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ needs.validate.outputs.working-directory }}
         env:
           IMANDRAX_API_KEY: ${{ secrets.IMANDRA_UNIVERSE_API_KEY }}
 
   pypi-publish:
-    needs: [build, pre-release-test]
+    needs: [validate, build, pre-release-test]
     permissions:
       id-token: write
     runs-on: ubuntu-latest
@@ -78,16 +125,16 @@ jobs:
       - uses: actions/download-artifact@v6
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ needs.validate.outputs.working-directory }}/dist/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: ${{ inputs.working-directory }}/dist/
+          packages-dir: ${{ needs.validate.outputs.working-directory }}/dist/
           print-hash: true
 
   github-release:
-    needs: [build, pypi-publish]
+    needs: [validate, pypi-publish]
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -97,12 +144,12 @@ jobs:
       - uses: actions/download-artifact@v6
         with:
           name: dist
-          path: ${{ inputs.working-directory }}/dist/
+          path: ${{ needs.validate.outputs.working-directory }}/dist/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.build.outputs.tag }}
-          name: ${{ needs.build.outputs.pkg-name }} ${{ needs.build.outputs.version }}
-          files: ${{ inputs.working-directory }}/dist/*
+          tag_name: ${{ needs.validate.outputs.tag }}
+          name: ${{ needs.validate.outputs.pkg-name }} ${{ needs.validate.outputs.version }}
+          files: ${{ needs.validate.outputs.working-directory }}/dist/*
           generate_release_notes: true
