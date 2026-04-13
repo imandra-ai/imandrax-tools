@@ -1,33 +1,70 @@
+# pyright: reportIncompatibleVariableOverride=false
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Annotated, Literal
+from enum import Enum
+from typing import ClassVar, Protocol
 
-from pydantic import BaseModel, Field, computed_field
+from imandrax_api_models import EvalRes
+from pydantic import BaseModel, computed_field
+
+
+class Loc(BaseModel):
+    start_byte: int
+    end_byte: int
+    start_point: tuple[int, int]
+    end_point: tuple[int, int]
 
 
 class TopLevelDefinition(BaseModel):
     name: str
-
-    start_byte: int
-    end_byte: int
-    start_point: tuple[int, int]
-    end_point: tuple[int, int]
-
+    loc: Loc
     measure: str | None
     opaque: bool
 
 
-# Lintings
+class Severity(Enum):
+    # in the order of decreasing severity:
+    Error = 1  # must fix, blocks compilation
+    Warning = 2  # likely wrong, but not always
+    Info = 3  # informational, no action required
+    Hint = 4  # stylistic suggestion
+
+
+# Rule
 # ====================
 
 
-class BaseLintingError(BaseModel):
-    name: str
-    start_byte: int
-    end_byte: int
-    start_point: tuple[int, int]
-    end_point: tuple[int, int]
+class BaseRule(BaseModel):
+    id: ClassVar[str]
+    description: ClassVar[str]
+    severity: ClassVar[Severity]
+
+
+class NestedMeasureRule(BaseRule):
+    id: ClassVar[str] = 'nested-measure-attribute'
+    description: ClassVar[str] = 'Nested measure attribute'
+    severity: ClassVar[Severity] = Severity.Warning
+
+
+class NestedRecursiveFunctionRule(BaseRule):
+    id: ClassVar[str] = 'nested-recursive-function'
+    description: ClassVar[str] = 'Nested recursive function'
+    severity: ClassVar[Severity] = Severity.Warning
+
+
+Rule = NestedMeasureRule | NestedRecursiveFunctionRule
+
+NESTED_MEASURE_RULE = NestedMeasureRule()
+NESTED_RECURSIVE_FUNCTION_RULE = NestedRecursiveFunctionRule()
+
+# Diagnostics
+# ====================
+
+
+class BaseDiag(BaseModel):
+    rule: Rule
+    loc: Loc
 
     @computed_field
     @property
@@ -37,53 +74,45 @@ class BaseLintingError(BaseModel):
 
     def format_error_message(self) -> str:
         s = ''
-        s += f'{self.name}: {self.message}\n'
-        s += f'location: {self.start_point[0]}:{self.start_point[1]}\n'
+        s += f'{self.rule.id}: {self.message}\n'
+        s += f'location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n'
         return s
 
 
-class NestedMeasureError(BaseLintingError):
-    name: Literal['nested-measure-attribute'] = Field(
-        default='nested-measure-attribute'
-    )
+class NestedMeasureDiag(BaseDiag):
+    rule: ClassVar[Rule] = NESTED_MEASURE_RULE
 
     function_name: str
-    measure: str = Field(description='Measure attribute text')
-    top_function_name: str = Field(
-        description='Name of the top-level function containing the error'
-    )
+    measure: str
+    top_function_name: str
     nesting_level: int
 
     @computed_field
     @property
     def message(self) -> str:
-        s = ''
-        s += f'Measure attribute `{self.measure}` should be attached to a '
-        f'top-level function instead of a nested function `{self.function_name}`.\n'
-        return s
+        return (
+            f'Measure attribute `{self.measure}` should be attached to a '
+            f'top-level function instead of nested function `{self.function_name}`.'
+        )
 
 
-class NestedRecursiveFunctionError(BaseLintingError):
-    name: Literal['nested-recursive-function'] = Field(
-        default='nested-recursive-function'
-    )
+class NestedRecursiveFunctionDiag(BaseDiag):
+    rule: ClassVar[Rule] = NESTED_RECURSIVE_FUNCTION_RULE
 
     function_name: str
-    top_function_name: str = Field(
-        description='Name of the top-level function containing the error'
-    )
+    top_function_name: str
     nesting_level: int
 
     @computed_field
     @property
     def message(self) -> str:
-        s = ''
-        s += f'Recursive function `{self.function_name}` nested in '
-        f'{self.top_function_name} might cause proof-obligation difficulty and is'
-        'generally discouraged.\n'
-        return s
+        return (
+            f'Recursive function `{self.function_name}` nested in '
+            f'`{self.top_function_name}` might cause proof-obligation difficulty.'
+        )
 
 
-LintingError = Annotated[
-    (NestedMeasureError | NestedRecursiveFunctionError), Field(discriminator='name')
-]
+class RuleCheck(Protocol):
+    rule: Rule
+
+    def __call__(self, iml: str | None, eval_res: EvalRes | None) -> list[BaseDiag]: ...
