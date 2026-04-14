@@ -2,7 +2,7 @@
 name: tactic-reference
 description: Complete reference for all proof tactics
 ---
-{%- for tactic in tactics.tactics %}
+{%- for tactic in tactics %}
 
 {{ loop.index }}. `{{ tactic.name }}`
 - Signature: {{ tactic.signature }}
