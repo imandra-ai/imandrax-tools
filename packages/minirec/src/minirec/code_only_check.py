@@ -86,6 +86,8 @@ def _captures_to_top_defs(
         # Detect opaque attribute
         opaque = top_name_str in opaque_func_map
 
+        is_rec = top_capture.is_rec
+
         loc = Loc(
             start_byte=top_def_node.start_byte,
             end_byte=top_def_node.end_byte,
@@ -97,8 +99,9 @@ def _captures_to_top_defs(
             TopLevelDefinition(
                 name=top_name_str,
                 loc=loc,
+                is_rec=is_rec,
                 measure=measure,
-                opaque=opaque,
+                is_opaque=opaque,
             )
         )
 
