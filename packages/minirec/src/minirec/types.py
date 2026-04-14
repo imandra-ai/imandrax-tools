@@ -16,13 +16,6 @@ class Loc(BaseModel):
     end_point: tuple[int, int]
 
 
-class TopLevelDefinition(BaseModel):
-    name: str
-    loc: Loc
-    measure: str | None
-    opaque: bool
-
-
 class Severity(Enum):
     # in the order of decreasing severity:
     Error = 1  # must fix, blocks compilation

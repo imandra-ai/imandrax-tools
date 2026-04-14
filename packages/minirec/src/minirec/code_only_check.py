@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import structlog
 from iml_query.processing.base import resolve_nesting_definitions
-from iml_query.processing.decomp import DecompReqArgs, decomp_capture_to_req
+from iml_query.processing.decomp import decomp_capture_to_req
 from iml_query.processing.vg import (
-    VerifyReqArgs as VGReqArgs,
     instance_capture_to_req,
     verify_capture_to_req,
 )
@@ -32,31 +30,18 @@ from iml_query.tree_sitter_utils import (
     unwrap_bytes,
 )
 
+from .cst import DecompReq, TopLevelDefinition, VGReq
 from .types import (
     BaseDiag,
     Loc,
     NestedMeasureDiag,
     NestedRecursiveFunctionDiag,
-    TopLevelDefinition,
 )
 
 if TYPE_CHECKING:
     from tree_sitter import Range
 
 logger = structlog.get_logger(__name__)
-
-
-@dataclass
-class VGReq:
-    kind: Literal['verify', 'instance']
-    loc: Loc
-    req_args: VGReqArgs
-
-
-@dataclass
-class DecompReq:
-    loc: Loc
-    req_args: DecompReqArgs
 
 
 def _range_to_loc(r: Range) -> Loc:
