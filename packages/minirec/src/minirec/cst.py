@@ -7,7 +7,7 @@ from iml_query.processing.vg import (
 )
 from pydantic import BaseModel
 
-from .types import Loc
+from .common import Loc
 
 
 class TopLevelDefinition(BaseModel):

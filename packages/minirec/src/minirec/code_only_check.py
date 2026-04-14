@@ -30,13 +30,13 @@ from iml_query.tree_sitter_utils import (
     unwrap_bytes,
 )
 
-from .cst import DecompReq, TopLevelDefinition, VGReq
-from .types import (
+from .common import (
     BaseDiag,
     Loc,
     NestedMeasureDiag,
     NestedRecursiveFunctionDiag,
 )
+from .cst import DecompReq, TopLevelDefinition, VGReq
 
 if TYPE_CHECKING:
     from tree_sitter import Range
