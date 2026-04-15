@@ -96,6 +96,11 @@ venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+# reportUnnecessaryIsInstance = false
+# reportUnnecessaryTypeIgnoreComment = true
+# reportUnusedImport = "none"
+# reportUnusedExpression = false
 
 [dependency-groups]
 dev = [
@@ -104,8 +109,3 @@ dev = [
     "ipykernel>=7.2.0",
     "pytest>=9.0.3",
 ]
-# reportMissingTypeStubs = false
-# reportUnnecessaryIsInstance = false
-# reportUnnecessaryTypeIgnoreComment = true
-# reportUnusedImport = "none"
-# reportUnusedExpression = false
