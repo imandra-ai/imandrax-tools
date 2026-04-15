@@ -1125,15 +1125,11 @@ async = [
 [[package]]
 name = "imandrax-api-models"
 version = "19.1.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/01/cf13b80ea5d3d7caeff3ada7a2ed305cb38e6f3ec384a45bd02612d14175/imandrax_api_models-19.1.0.tar.gz", hash = "sha256:de83c389f31f9f37b69e9413f335996b484ec3e69631c4a872e23fed1fc4f8b2", size = 19321, upload-time = "2026-04-09T10:25:28.073Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/dc/949fbb2aeb904b09c710e3f10266b212aecac1d94bc34016cb40f9010e88/imandrax_api_models-19.1.0-py3-none-any.whl", hash = "sha256:89dab7e22bdef51a8c23c79234616e53f07d30d514517d283bb7a3421ade30b5", size = 24951, upload-time = "2026-04-09T10:25:26.678Z" },
 ]
 
 [package.optional-dependencies]
@@ -1141,10 +1137,32 @@ client = [
     { name = "iml-query" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.19" },
+    { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+]
+provides-extras = ["client"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "inline-snapshot", extras = ["dirty-equals"], specifier = ">=0.31.1" },
+    { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "jupytext", specifier = ">=1.19.1" },
+    { name = "marimo", specifier = ">=0.23.0" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-retry", specifier = ">=1.7.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
 [[package]]
 name = "iml-query"
 version = "0.8.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../iml-query" }
 dependencies = [
     { name = "devtools" },
     { name = "rich" },
@@ -1153,9 +1171,25 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/1a/b7afd19bfdc857ad45074aba4114a36afbaf68c59ca622191ef19a52e197/iml_query-0.8.0.tar.gz", hash = "sha256:6cca5418ca9e985c452866519cb278be89bfba5b6a778d8434c21429c69edabf", size = 103176, upload-time = "2026-03-23T13:59:01.117Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/a0/61166c5178461371421b9de05ebcef2245db4dad4c7c07ef6e67376de11b/iml_query-0.8.0-py3-none-any.whl", hash = "sha256:fc70c088354445e86fc33866b505adca08a19a385b08b15a9e0d4dea5f18c30c", size = 19836, upload-time = "2026-03-23T13:58:59.946Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "rich", specifier = ">=14.1.0" },
+    { name = "sexpdata", specifier = ">=1.0.2" },
+    { name = "structlog", specifier = ">=25.4.0" },
+    { name = "tree-sitter", specifier = ">=0.25.1" },
+    { name = "tree-sitter-iml", specifier = ">=0.26" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.2.1" },
+    { name = "inline-snapshot", specifier = ">=0.28.0" },
+    { name = "ipykernel", specifier = ">=6.30.1" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=8.4.2" },
 ]
 
 [[package]]
@@ -1605,8 +1639,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "imandrax-api", specifier = ">=0.19.0.1" },
-    { name = "imandrax-api-models", extras = ["client"], specifier = ">=19.1.0" },
-    { name = "iml-query", specifier = ">=0.8.0" },
+    { name = "imandrax-api-models", extras = ["client"], editable = "../imandrax-api-models" },
+    { name = "iml-query", editable = "../iml-query" },
     { name = "logfire", specifier = ">=4.32.0" },
     { name = "pydantic-ai", specifier = ">=1.80.0" },
 ]

@@ -19,6 +19,10 @@ dependencies = [
 requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
 
+[tool.uv.sources]
+iml-query = { path = "../iml-query", editable = true }
+imandrax-api-models = { path = "../imandrax-api-models", editable = true }
+
 [tool.ruff.lint]
 extend-select = [
     "Q",
