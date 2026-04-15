@@ -15,14 +15,21 @@ dependencies = [
     "pydantic-ai>=1.80.0",
 ]
 
-[build-system]
-requires = ["uv_build>=0.8.22,<0.9.0"]
-build-backend = "uv_build"
+[dependency-groups]
+dev = [
+    "hypothesis>=6.151.13",
+    "inline-snapshot>=0.32.6",
+    "ipykernel>=7.2.0",
+    "pytest>=9.0.3",
+]
 
 [tool.uv.sources]
 iml-query = { path = "../iml-query", editable = true }
 imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 
+[build-system]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
 [tool.ruff.lint]
 extend-select = [
     "Q",
@@ -103,13 +110,5 @@ typeCheckingMode = "strict"
 reportMissingTypeStubs = false
 # reportUnnecessaryIsInstance = false
 # reportUnnecessaryTypeIgnoreComment = true
-# reportUnusedImport = "none"
+reportUnusedImport = "none"
 # reportUnusedExpression = false
-
-[dependency-groups]
-dev = [
-    "hypothesis>=6.151.13",
-    "inline-snapshot>=0.32.6",
-    "ipykernel>=7.2.0",
-    "pytest>=9.0.3",
-]
