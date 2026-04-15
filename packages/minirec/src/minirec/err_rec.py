@@ -1,7 +1,7 @@
 # ruff: noqa: RUF100, F401
 from __future__ import annotations
 
-from imandrax_api_models import Error, ErrorKind, EvalRes
+from imandrax_api_models import Error, ErrorKind, EvalRes, Location
 from pydantic import BaseModel
 
 from .common import BaseDiag, InfixOperatorMissingParenthesesDiag
@@ -35,6 +35,32 @@ def _parse_eval_error(eval_res: EvalRes) -> EvalError:
     error_items = [EvalErrorItem.from_error(e) for e in eval_res.errors]
     po_error_items = [EvalErrorItem.from_error(e) for e in eval_res.po_errors]
     return EvalError(errors=error_items, po_errors=po_error_items)
+
+
+def index_iml_by_loc(iml: str, loc: Location) -> tuple[str, str]:
+    """
+    Get the code snippet corresponding to the given location.
+
+    Args:
+        iml (str): The IML code.
+        loc (Location): The location to index. (1-indexed)
+
+    """
+    lines = iml.splitlines()
+    if loc.start is None or loc.stop is None:
+        return '', ''
+    start_line = loc.start.line - 1
+    end_line = loc.stop.line - 1
+    start_col = loc.start.col - 1
+    end_col = loc.stop.col - 1
+
+    line_narrowed = '\n'.join(lines[start_line : end_line + 1])
+    col_narrowed = [
+        line_narrowed[0][start_col:],
+        *line_narrowed[1:-1],
+        line_narrowed[-1][: end_col + 1],
+    ]
+    return '\n'.join(line_narrowed), '\n'.join(col_narrowed)
 
 
 def check_infix_operator_missing_parentheses(
