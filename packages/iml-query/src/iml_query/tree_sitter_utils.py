@@ -420,108 +420,94 @@ def insert_lines(
 # ====================
 
 
-def fmt_node_with_leaf_text(node: Node) -> str:
-    return '\n'.join(_get_node_sexpr_with_leaf_text(node))
-
-
-def fmt_node_with_field_name(node: Node) -> str:
-    return _get_node_sexpr_with_field_name(str(node))
-
-
-def _get_node_sexpr_with_leaf_text(
+def fmt_node(
     node: Node | Tree,
-    depth: int = 0,
+    *,
+    anonymous_text: bool = True,
+    leaf_text: bool = True,
     max_depth: int | None = None,
-) -> list[str]:
+) -> str:
     """
-    Print node type in sexpr format.
+    Pretty-print a tree-sitter node as an S-expression.
 
-    Include 'text' only for leaf nodes.
+    Shows field names, and optionally literal text for anonymous and leaf nodes.
+
+    Args:
+        node: the node to print
+        anonymous_text: show literal text for anonymous nodes (e.g. "let", ":")
+        leaf_text: show literal text for named leaf nodes (e.g. value_name "int")
+        max_depth: maximum depth to recurse into
+
     """
+    lines: list[str] = []
+    _fmt_node_impl(node, lines, 0, max_depth, anonymous_text, leaf_text)
+    return '\n'.join(lines)
+
+
+# Keep old names as aliases
+fmt_node_with_leaf_text = fmt_node
+fmt_node_with_field_name = fmt_node
+
+
+def _fmt_node_impl(
+    node: Node | Tree,
+    lines: list[str],
+    depth: int,
+    max_depth: int | None,
+    anonymous_text: bool,
+    leaf_text: bool,
+) -> None:
     if isinstance(node, Tree):
         node = node.root_node
 
     if max_depth is not None and depth > max_depth:
-        return []
+        return
 
-    result: list[str] = []
     indent = '  ' * depth
-    if node.children:
-        result.append(f'{indent}{node.type}')
-        for child in node.children:
-            child_result = _get_node_sexpr_with_leaf_text(
-                child, depth + 1, max_depth
+    is_leaf = not node.children
+
+    if not node.is_named:
+        # Anonymous node — show literal text in quotes
+        if anonymous_text:
+            text = unwrap_bytes(node.text).decode('utf-8')
+            lines.append(f'{indent}"{text}"')
+        return
+
+    if is_leaf:
+        # Named leaf node
+        if leaf_text and node.text:
+            text = unwrap_bytes(node.text).decode('utf-8')
+            lines.append(f'{indent}({node.type} "{text}")')
+        else:
+            lines.append(f'{indent}({node.type})')
+        return
+
+    # Named node with children
+    lines.append(f'{indent}({node.type}')
+    for i, child in enumerate(node.children):
+        field_name = node.field_name_for_child(i)
+        if field_name:
+            # Collect child lines, then prefix the first one with field name
+            child_lines: list[str] = []
+            _fmt_node_impl(
+                child,
+                child_lines,
+                depth + 1,
+                max_depth,
+                anonymous_text,
+                leaf_text,
             )
-            if child_result:  # Only extend if child_result is not empty
-                result.extend(child_result)
-    else:
-        text = unwrap_bytes(node.text).decode('utf-8') if node.text else ''
-        if text.strip():  # Only print non-empty text
-            result.append(f"{indent}{node.type}: '{text}'")
+            if child_lines:
+                first = child_lines[0].lstrip()
+                child_lines[0] = f'{"  " * (depth + 1)}{field_name}: {first}'
+                lines.extend(child_lines)
         else:
-            result.append(f'{indent}{node.type}')
-    return result
-
-
-def _get_node_sexpr_with_field_name(s_expr: str, indent_size: int = 2):
-    """Format tree-sitter S-expression with field names."""
-    # Tokenize
-    tokens: list[str] = []
-    i = 0
-    while i < len(s_expr):
-        if s_expr[i] in '()':
-            tokens.append(s_expr[i])
-            i += 1
-        elif s_expr[i] == ' ':
-            i += 1
-        else:
-            token = ''
-            while i < len(s_expr) and s_expr[i] not in ' ()':
-                token += s_expr[i]
-                i += 1
-            if token:
-                tokens.append(token)
-
-    result: list[str] = []
-    indent_level = 0
-    i = 0
-
-    while i < len(tokens):
-        token = tokens[i]
-
-        if token == '(':
-            if result and not result[-1].endswith(' '):
-                result.append('\n' + ' ' * indent_level)
-            result.append('(')
-
-            # Add node type if it exists
-            if i + 1 < len(tokens) and tokens[i + 1] not in '()':
-                i += 1
-                result.append(tokens[i])
-                indent_level += indent_size
-
-        elif token == ')':
-            indent_level -= indent_size
-            result.append(')')
-
-        elif ':' in token:
-            # Field name - new line with indentation, but next item stays on
-            # same line
-            result.append('\n' + ' ' * indent_level + token + ' ')
-
-        else:
-            # Regular token
-            if result and not result[-1].endswith(' '):
-                result.append(' ')
-            result.append(token)
-
-        i += 1
-
-    return ''.join(result)
-
-
-if __name__ == '__main__':
-    s_expr = """(attribute_payload (expression_item (application_expression function: (value_path (value_name)) argument: (labeled_argument (label_name) expression: (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name)))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))) (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (list_expression (extension (attribute_id) (attribute_payload (expression_item (value_path (value_name))))))) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (boolean)) argument: (labeled_argument (label_name) expression: (constructor_path (constructor_name))) argument: (unit))))"""
-
-    formatted = _get_node_sexpr_with_field_name(s_expr)
-    print(formatted)
+            _fmt_node_impl(
+                child,
+                lines,
+                depth + 1,
+                max_depth,
+                anonymous_text,
+                leaf_text,
+            )
+    lines.append(f'{indent})')
