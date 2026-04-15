@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from tree_sitter import Range
 
 
-def _range_to_loc(r: Range) -> Loc:
+def range_to_loc(r: Range) -> Loc:
     return Loc(
         start_byte=r.start_byte,
         end_byte=r.end_byte,
@@ -137,7 +137,7 @@ class VGReq:
             case InstanceCapture():
                 kind = 'instance'
                 args, rng = instance_capture_to_req(cap)
-        return cls(kind=kind, loc=_range_to_loc(rng), req_args=args)
+        return cls(kind=kind, loc=range_to_loc(rng), req_args=args)
 
 
 @dataclass
@@ -148,7 +148,7 @@ class DecompReq:
     @classmethod
     def from_capture(cls, cap: DecompCapture) -> Self:
         args, rng = decomp_capture_to_req(cap)
-        return cls(loc=_range_to_loc(rng), req_args=args)
+        return cls(loc=range_to_loc(rng), req_args=args)
 
 
 # Rule-based checks

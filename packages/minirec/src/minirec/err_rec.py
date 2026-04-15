@@ -1,10 +1,29 @@
 # ruff: noqa: RUF100, F401
 from __future__ import annotations
 
-from imandrax_api_models import Error, ErrorKind, EvalRes, Location
-from pydantic import BaseModel
+from dataclasses import dataclass
+from pathlib import Path
+from typing import ClassVar, Self
 
-from .common import BaseDiag, InfixOperatorMissingParenthesesDiag
+from devtools import pprint
+from imandrax_api_models import Error, ErrorKind, EvalRes, Location
+from iml_query.queries import BaseCapture
+from iml_query.tree_sitter_utils import (
+    fmt_node,
+    get_parser,
+    mk_query,
+    run_queries,
+    run_query,
+    unwrap_bytes,
+)
+from IPython.core.getipython import get_ipython
+from pydantic import BaseModel
+from pygments.unistring import c
+from tree_sitter import Node
+
+from minirec.cst import range_to_loc
+
+from .common import BaseDiag, InfixOpMissingParenDiag
 
 
 class EvalErrorItem(BaseModel):
@@ -63,9 +82,42 @@ def index_iml_by_loc(iml: str, loc: Location) -> tuple[str, str]:
     return '\n'.join(line_narrowed), '\n'.join(col_narrowed)
 
 
+# ====================
+
+
+@dataclass(slots=True, frozen=True)
+class InfixOpMissingParenCapture(BaseCapture):
+    QUERY: ClassVar[str] = """
+    (value_definition
+      "let"
+      (ERROR
+        ["land" "lor" "lxor" "lsl" "lsr" "asr" "mod"]) @op
+      (let_binding))
+    """
+
+    op: Node
+
+    @classmethod
+    def from_code(cls, code: str) -> Self | None:
+        # TODO: backport this to iml-query
+        captures = run_query(query=cls.QUERY, code=code)
+        if not captures:
+            return None
+        return cls.from_ts_capture(captures[0][1])
+
+    def get_op(self) -> str:
+        return unwrap_bytes(self.op.text).decode('utf8')
+
+
 def check_infix_operator_missing_parentheses(
     iml: str, eval_res: EvalRes
-) -> InfixOperatorMissingParenthesesDiag | None:
+) -> InfixOpMissingParenDiag | None:
     eval_err = _parse_eval_error(eval_res)
     if eval_err.is_none() or eval_err.first_error_kind() != ErrorKind.SYNTAX_ERR:
         return None
+
+    if not (capture := InfixOpMissingParenCapture.from_code(iml)):
+        return None
+    op = capture.get_op()
+    loc = range_to_loc(capture.op.range)
+    return InfixOpMissingParenDiag(op=op, loc=loc)

@@ -46,17 +46,17 @@ class NestedRecursiveFunctionRule(BaseRule):
     severity: ClassVar[Severity] = Severity.Warning
 
 
-class InfixOperatorMissingParentheses(BaseRule):
-    id: ClassVar[str] = 'infix-operator-missing-parenthesis'
+class InfixOpMissingParen(BaseRule):
+    id: ClassVar[str] = 'infix-op-missing-paren'
     description: ClassVar[str] = 'Infix operator missing parenthesis'
     severity: ClassVar[Severity] = Severity.Error
 
 
-Rule = NestedMeasureRule | NestedRecursiveFunctionRule | InfixOperatorMissingParentheses
+Rule = NestedMeasureRule | NestedRecursiveFunctionRule | InfixOpMissingParen
 
 NESTED_MEASURE_RULE = NestedMeasureRule()
 NESTED_RECURSIVE_FUNCTION_RULE = NestedRecursiveFunctionRule()
-INFIX_OPERATOR_MISSING_PARENTHESES_RULE = InfixOperatorMissingParentheses()
+INFIX_OP_MISSING_PAREN_RULE = InfixOpMissingParen()
 
 
 # Diagnostics
@@ -113,17 +113,17 @@ class NestedRecursiveFunctionDiag(BaseDiag):
         )
 
 
-class InfixOperatorMissingParenthesesDiag(BaseDiag):
-    rule: ClassVar[Rule] = INFIX_OPERATOR_MISSING_PARENTHESES_RULE
+class InfixOpMissingParenDiag(BaseDiag):
+    rule: ClassVar[Rule] = INFIX_OP_MISSING_PAREN_RULE
     error_kind: ClassVar[ErrorKind] = ErrorKind.SYNTAX_ERR
 
-    operator: str  # The infix operator that is missing parenthesis
+    op: str  # The infix operator that is missing parenthesis
 
     @computed_field
     @property
     def message(self) -> str:
         return (
-            f'`{self.operator}` is an infix operator. When used in let-binding, it '
+            f'`{self.op}` is an infix operator. When used in let-binding, it '
             f'needs to be enclosed in parentheses.\n'
             'E.g. `let ( land ) = <new-definition>`'
         )
