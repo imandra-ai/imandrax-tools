@@ -5,7 +5,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import ClassVar, Protocol
 
-from imandrax_api_models import EvalRes
+from imandrax_api_models import ErrorKind, EvalRes
 from pydantic import BaseModel, computed_field
 
 
@@ -46,10 +46,18 @@ class NestedRecursiveFunctionRule(BaseRule):
     severity: ClassVar[Severity] = Severity.Warning
 
 
-Rule = NestedMeasureRule | NestedRecursiveFunctionRule
+class InfixOperatorMissingParentheses(BaseRule):
+    id: ClassVar[str] = 'infix-operator-missing-parenthesis'
+    description: ClassVar[str] = 'Infix operator missing parenthesis'
+    severity: ClassVar[Severity] = Severity.Error
+
+
+Rule = NestedMeasureRule | NestedRecursiveFunctionRule | InfixOperatorMissingParentheses
 
 NESTED_MEASURE_RULE = NestedMeasureRule()
 NESTED_RECURSIVE_FUNCTION_RULE = NestedRecursiveFunctionRule()
+INFIX_OPERATOR_MISSING_PARENTHESES_RULE = InfixOperatorMissingParentheses()
+
 
 # Diagnostics
 # ====================
@@ -102,6 +110,22 @@ class NestedRecursiveFunctionDiag(BaseDiag):
         return (
             f'Recursive function `{self.function_name}` nested in '
             f'`{self.top_function_name}` might cause proof-obligation difficulty.'
+        )
+
+
+class InfixOperatorMissingParenthesesDiag(BaseDiag):
+    rule: ClassVar[Rule] = INFIX_OPERATOR_MISSING_PARENTHESES_RULE
+    error_kind: ClassVar[ErrorKind] = ErrorKind.SYNTAX_ERR
+
+    operator: str  # The infix operator that is missing parenthesis
+
+    @computed_field
+    @property
+    def message(self) -> str:
+        return (
+            f'`{self.operator}` is an infix operator. When used in let-binding, it '
+            f'needs to be enclosed in parentheses.\n'
+            'E.g. `let ( land ) = <new-definition>`'
         )
 
 
