@@ -1,18 +1,11 @@
-# ruff: noqa: RUF100, F401
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import ClassVar, Self
 
-from devtools import pprint
 from imandrax_api_models import Error, ErrorKind, EvalRes, Location, TaskKind
 from iml_query.queries import BaseCapture
 from iml_query.tree_sitter_utils import (
-    fmt_node,
-    get_parser,
-    mk_query,
-    run_queries,
     run_query,
     unwrap_bytes,
 )
@@ -21,7 +14,11 @@ from tree_sitter import Node
 
 from minirec.cst import range_to_loc
 
-from .common import BaseDiag, DecompAsmSigMismatchDiag, InfixOpMissingParenDiag, NoLoc
+from .common import DecompAsmSigMismatchDiag, InfixOpMissingParenDiag, NoLoc
+
+
+class NeverError(Exception):
+    pass
 
 
 class EvalErrorItem(BaseModel):
@@ -47,6 +44,18 @@ class EvalError(BaseModel):
             return self.errors[0].err_kind
         return None
 
+    def err_locs(self) -> list[Location]:
+        locs: list[Location] = []
+        for e in (*self.errors, *self.po_errors):
+            msg = e.error.msg
+            if msg is None:
+                continue
+            locs.extend(msg.locs)
+        return locs
+
+    def err_imls(self, iml: str) -> list[str]:
+        return [index_iml_by_loc(iml, loc)[1] for loc in self.err_locs()]
+
 
 def _parse_eval_error(eval_res: EvalRes) -> EvalError:
     error_items = [EvalErrorItem.from_error(e) for e in eval_res.errors]
@@ -58,9 +67,9 @@ def index_iml_by_loc(iml: str, loc: Location) -> tuple[str, str]:
     """
     Get the code snippet corresponding to the given location.
 
-    Args:
-        iml (str): The IML code.
-        loc (Location): The location to index. (1-indexed)
+    Return:
+        0 (str): The IML code sliced by line numbers only
+        1 (str): The IML code further sliced by col numbers
 
     """
     lines = iml.splitlines()
