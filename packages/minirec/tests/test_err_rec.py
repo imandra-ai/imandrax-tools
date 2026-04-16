@@ -1,11 +1,15 @@
 from inline_snapshot import snapshot
 
-from minirec.common import InfixOpMissingParenDiag, Loc
-from minirec.db import EVAL_RES_INFIX_OP_MISSING_PAREN, IML_INFIX_OP_MISSING_PAREN
-from minirec.err_rec import check_infix_op_missing_paren
+from minirec.common import DecompAsmSigMismatchDiag, InfixOpMissingParenDiag, Loc, NoLoc
+from minirec.db import (
+    EVAL_RES_DECOMP_ASSUMING_SIG_MISMATCH,
+    EVAL_RES_INFIX_OP_MISSING_PAREN,
+    IML_INFIX_OP_MISSING_PAREN,
+)
+from minirec.err_rec import check_decomp_asm_mismatch, check_infix_op_missing_paren
 
 
-def test():
+def test_infix_op_missing_paren():
     diag_opt = check_infix_op_missing_paren(
         IML_INFIX_OP_MISSING_PAREN, EVAL_RES_INFIX_OP_MISSING_PAREN
     )
@@ -16,3 +20,9 @@ def test():
             op='land :',
         )
     )
+
+
+def test_decomp_asm_mismatch():
+    diag_opt = check_decomp_asm_mismatch(EVAL_RES_DECOMP_ASSUMING_SIG_MISMATCH)
+    assert diag_opt is not None
+    assert diag_opt == snapshot(DecompAsmSigMismatchDiag(loc=NoLoc(reason='WIP')))

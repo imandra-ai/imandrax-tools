@@ -123,9 +123,7 @@ def check_infix_op_missing_paren(
 # ====================
 
 
-def check_decomp_asm_mismatch(
-    iml: str, eval_res: EvalRes
-) -> DecompAsmSigMismatchDiag | None:
+def check_decomp_asm_mismatch(eval_res: EvalRes) -> DecompAsmSigMismatchDiag | None:
     no_err = not eval_res.has_errors
     eval_success = eval_res.success
 
