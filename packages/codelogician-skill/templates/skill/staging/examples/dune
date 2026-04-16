@@ -1,0 +1,11 @@
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/examples/*.md))
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/examples/*.iml))

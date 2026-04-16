@@ -1,0 +1,13 @@
+; Copy README from src/ and error_corpus JSONs from knowledge-base/
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/error-fix-data/README.md))
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../../../knowledge-base/error_corpus/error_corpus*.json))

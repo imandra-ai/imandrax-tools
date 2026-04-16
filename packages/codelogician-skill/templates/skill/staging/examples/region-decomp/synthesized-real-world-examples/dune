@@ -1,0 +1,6 @@
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files
+  ../../../../src/examples/region-decomp/synthesized-real-world-examples/*.iml))

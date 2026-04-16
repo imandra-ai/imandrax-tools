@@ -56,7 +56,7 @@
     (each entry (sorted (os/dir d))
       (def full (string d "/" entry))
       (case (os/stat full :mode)
-        :directory (walk full)
+        :directory (unless (string/has-prefix? "." entry) (walk full))
         :file (when (or (string/has-suffix? ".md" entry)
                         (string/has-suffix? ".md.jinja" entry))
                 (array/push results full)))))
@@ -70,7 +70,8 @@
   (defn walk [d]
     (each entry (sorted (os/dir d))
       (def full (string d "/" entry))
-      (when (= :directory (os/stat full :mode))
+      (when (and (= :directory (os/stat full :mode))
+                 (not (string/has-prefix? "." entry)))
         (def rel (string/slice full (+ 1 (length base-dir))))
         (array/push results rel)
         (walk full))))

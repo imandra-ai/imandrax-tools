@@ -1,0 +1,13 @@
+; Copy README from src/ and .iml files from the package-root extended-prelude/
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/extended-prelude/README.md))
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../../../extended-prelude/*.iml))
