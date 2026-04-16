@@ -36,6 +36,7 @@ let circle_area (d : real) : real =
 - Real arithmetic: `+.`, `-.`, `*.`, `/.`
 - Integer arithmetic: `+`, `-`, `*`, `/`
 - For equality, both real and integers use `=`. `=.` does not exist.
+- Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
 
 **Conversion functions:**
 - `Real.of_int : int -> real`
