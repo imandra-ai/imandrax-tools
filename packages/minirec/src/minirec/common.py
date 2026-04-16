@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 from typing import ClassVar, Protocol
 
@@ -63,9 +64,14 @@ INFIX_OP_MISSING_PAREN_RULE = InfixOpMissingParen()
 # ====================
 
 
+@dataclass(slots=True, frozen=True)
+class NoLoc:
+    reason: str
+
+
 class BaseDiag(BaseModel):
     rule: Rule
-    loc: Loc
+    loc: Loc | NoLoc
 
     @computed_field
     @property
@@ -76,7 +82,8 @@ class BaseDiag(BaseModel):
     def format_error_message(self) -> str:
         s = ''
         s += f'{self.rule.id}: {self.message}\n'
-        s += f'location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n'
+        if isinstance(self.loc, Loc):
+            s += f'location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n'
         return s
 
 
