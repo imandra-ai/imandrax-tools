@@ -85,13 +85,12 @@ def index_iml_by_loc(iml: str, loc: Location) -> tuple[str, str]:
 
 @dataclass(slots=True, frozen=True)
 class InfixOpMissingParenCapture(BaseCapture):
-    QUERY: ClassVar[str] = """
-    (value_definition
-      "let"
-      (ERROR
-        ["land" "lor" "lxor" "lsl" "lsr" "asr" "mod"]) @op
-      (let_binding))
-    """
+    QUERY: ClassVar[str] = """\
+(value_definition
+    "let"
+    (ERROR
+    ["land" "lor" "lxor" "lsl" "lsr" "asr" "mod"]) @op
+    (let_binding))"""
 
     op: Node
 
