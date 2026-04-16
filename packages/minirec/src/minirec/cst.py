@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Self
 
+import structlog
 from iml_query.processing.base import resolve_nesting_definitions
 from iml_query.processing.decomp import DecompReqArgs, decomp_capture_to_req
 from iml_query.processing.vg import (
@@ -11,6 +12,12 @@ from iml_query.processing.vg import (
     verify_capture_to_req,
 )
 from iml_query.queries import (
+    DECOMP_QUERY_SRC,
+    INSTANCE_QUERY_SRC,
+    MEASURE_QUERY_SRC,
+    OPAQUE_QUERY_SRC,
+    VALUE_DEFINITION_QUERY_SRC,
+    VERIFY_QUERY_SRC,
     DecompCapture,
     InstanceCapture,
     MeasureCapture,
@@ -20,6 +27,8 @@ from iml_query.queries import (
 )
 from iml_query.tree_sitter_utils import (
     get_nesting_relationship,
+    get_parser,
+    run_queries,
     unwrap_bytes,
 )
 from pydantic import BaseModel
@@ -33,6 +42,8 @@ from .common import (
 
 if TYPE_CHECKING:
     from tree_sitter import Range
+
+logger = structlog.get_logger(__name__)
 
 
 def range_to_loc(r: Range) -> Loc:
@@ -50,6 +61,61 @@ class TopLevelDefinition(BaseModel):
     is_rec: bool
     is_opaque: bool
     measure: str | None
+
+
+def parse_iml(
+    iml: str,
+) -> tuple[list[TopLevelDefinition], list[BaseDiag], list[VGReq], list[DecompReq]]:
+    tree = get_parser().parse(bytes(iml, 'utf-8'))
+    queries = {
+        'value_def_functions': VALUE_DEFINITION_QUERY_SRC,
+        'measure_functions': MEASURE_QUERY_SRC,
+        'opaque_functions': OPAQUE_QUERY_SRC,
+        'decomp_req': DECOMP_QUERY_SRC,
+        'verify_req': VERIFY_QUERY_SRC,
+        'instance_req': INSTANCE_QUERY_SRC,
+    }
+    captures_map = run_queries(queries, node=tree.root_node)
+    value_def_captures: list[ValueDefCapture] = [
+        ValueDefCapture.from_ts_capture(capture)
+        for capture in captures_map.get('value_def_functions', [])
+    ]
+    measure_captures: list[MeasureCapture] = [
+        MeasureCapture.from_ts_capture(capture)
+        for capture in captures_map.get('measure_functions', [])
+    ]
+    opaque_captures: list[OpaqueCapture] = [
+        OpaqueCapture.from_ts_capture(capture)
+        for capture in captures_map.get('opaque_functions', [])
+    ]
+    top_defs = _captures_to_top_defs(
+        value_def_captures,
+        measure_captures,
+        opaque_captures,
+    )
+    lint_diags: list[BaseDiag] = [
+        *_check_nested_rec(value_def_captures),
+        *_check_nested_measures(value_def_captures, measure_captures),
+    ]
+
+    decomp_captures: list[DecompCapture] = [
+        DecompCapture.from_ts_capture(capture)
+        for capture in captures_map.get('decomp_req', [])
+    ]
+    verify_captures: list[VerifyCapture] = [
+        VerifyCapture.from_ts_capture(capture)
+        for capture in captures_map.get('verify_req', [])
+    ]
+    instance_captures: list[InstanceCapture] = [
+        InstanceCapture.from_ts_capture(capture)
+        for capture in captures_map.get('instance_req', [])
+    ]
+    decomp_reqs = [DecompReq.from_capture(cap) for cap in decomp_captures]
+    vg_reqs = [
+        VGReq.from_capture(cap) for cap in [*verify_captures, *instance_captures]
+    ]
+
+    return top_defs, lint_diags, vg_reqs, decomp_reqs
 
 
 def parse_value_definitions(
