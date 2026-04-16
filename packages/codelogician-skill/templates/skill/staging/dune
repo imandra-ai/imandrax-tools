@@ -1,0 +1,40 @@
+; Top-level staging rules:
+;   - copy plain .md files from ../src/
+;   - render iml-syntax.md from iml-syntax.md.jinja
+;   - assemble SKILL.md from SKILL.pt1.md1 + janet-generated tree
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../src/*.md))
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:tpl ../src/iml-syntax.md.jinja)
+  (:ctx ../../../knowledge-base/context.yaml))
+ (target iml-syntax.md)
+ (action
+  (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:pt1 ../src/SKILL.pt1.md1)
+  (source_tree ../src)
+  ../../../scripts/skill-dir-tree.janet)
+ (target SKILL.md)
+ (action
+  (with-stdout-to
+   %{target}
+   (progn
+    (cat %{pt1})
+    (echo "\n")
+    (bash "janet ../../../scripts/skill-dir-tree.janet ../src")
+    (echo
+     "\nNote: there are some *.iml examples and *.json files as well that are not shown in the tree. Find them yourself if needed.")))))

@@ -1,0 +1,29 @@
+; Copy ordinal.md and render tactics.md + all-prelude-module-signatures.md
+
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/reference/ordinal.md))
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:tpl ../../src/reference/tactics.md.jinja)
+  (:ctx ../../../../knowledge-base/context.yaml))
+ (target tactics.md)
+ (action
+  (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:tpl ../../src/reference/all-prelude-module-signatures.md.jinja)
+  (:ctx ../../../../knowledge-base/context.yaml))
+ (target all-prelude-module-signatures.md)
+ (action
+  (bash "jinja -d %{ctx} -o %{target} %{tpl}")))

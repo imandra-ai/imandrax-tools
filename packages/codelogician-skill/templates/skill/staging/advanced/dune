@@ -1,0 +1,5 @@
+(copy_files
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (files ../../src/advanced/*.md))

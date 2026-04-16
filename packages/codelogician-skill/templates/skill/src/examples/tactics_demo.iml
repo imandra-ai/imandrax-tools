@@ -1,0 +1,397 @@
+(* Tactics demonstration file for IML documentation.
+   These examples are derived from imandrax-examples and verified to work.
+   G.Passmore, Imandra *)
+
+(* ============================================================
+   SECTION 1: Basic tactics - auto, simp, simplify
+   ============================================================ *)
+
+(* auto - the flagship automated prover *)
+lemma rev_append x y =
+  List.rev (x @ y) = List.rev y @ List.rev x
+[@@by auto]
+
+lemma rev_len x =
+  List.length (List.rev x) = List.length x
+[@@by auto] [@@rw]
+
+lemma len_append x y =
+  List.length (x @ y) = List.length x + List.length y
+[@@by auto] [@@rw]
+
+(* simp with specific rules - [%simp rule1, rule2] *)
+let k x = x + 1 - 1
+
+lemma foo_simp x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp rev_len, len_append]]
+
+(* simp_only - strict mode that only uses listed rules *)
+lemma foo_simp_only x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp_only rev_len]
+   @> [%simp_only len_append, k]]
+
+(* simplify () - full waterfall simplifier *)
+lemma simplify_example =
+  List.length [1;2;3] = 3
+[@@by simplify ()]
+
+(* ============================================================
+   SECTION 2: Induction tactics - induct, induction
+   ============================================================ *)
+
+let rec square_sum xs =
+  match xs with
+  | [] -> 0
+  | x::xs -> x*x + square_sum xs
+
+lemma square_psd x =
+  x * x >= 0
+
+lemma sum_non_neg x y =
+  x >= 0 && y >= 0
+  ==>
+  x + y >= 0
+[@@by auto] [@@rw]
+
+(* induction with @>| for multiple subgoals *)
+lemma square_sum_non_neg xs =
+  square_sum xs >= 0
+[@@by induction ()
+  @>| [[%norm square_sum xs] @> arith;
+       [%norm square_sum xs]
+        @> [%use square_psd (List.hd xs)]
+        @> [%simp_only sum_non_neg]]]
+
+(* induct with function induction scheme *)
+let rec merge (l : int list) (m : int list) =
+ match l, m with
+  | [], _ -> m
+  | _, [] -> l
+  | a :: ls, b :: ms ->
+    if a < b then
+     a :: (merge ls m)
+    else
+     b :: (merge l ms)
+[@@adm l, m]
+[@@by auto]
+
+let rec num_occurs x y =
+ match y with
+  | [] -> 0
+  | hd :: tl when hd = x ->
+    1 + num_occurs x tl
+  | _ :: tl ->
+    num_occurs x tl
+
+(* induction ~id:[%id fn] for functional induction *)
+theorem num_occur_merge a x y =
+  num_occurs a (merge x y) = num_occurs a x + num_occurs a y
+[@@by induction ~id:[%id merge] ()
+   @>| [lift_ifs @>>| ([%replace x] <|> [%replace y]) @> simplify ();
+        [%normalize num_occurs a (merge x y)]
+         @> [%replace num_occurs a (merge x (List.tl y))]
+         @> lift_ifs
+            @>| [swap (-1) @> [%normalize num_occurs a y] @> trivial;
+                 [%normalize num_occurs a y] @> arith];
+        [%normalize num_occurs a (merge x y)]
+         @> lift_ifs
+         @>| [[%normalize num_occurs a x]
+               @> [%replace num_occurs a (merge (List.tl x) y)]
+               @> lift_ifs @> trivial;
+               [%normalize num_occurs a x]
+                @> [%replace num_occurs a (merge (List.tl x) y)]
+                @> arith]]] [@@rw]
+
+(* induct with on_vars for structural induction *)
+let rec odds l =
+  match l with
+  | []  -> []
+  | [x] -> [x]
+  | x :: _ :: rst -> x :: odds rst
+
+theorem odds_len_1 x =
+  x <> [] && List.tl x <> []
+  ==>
+  (List.length (odds x) [@trigger]) < List.length x
+[@@by induct ~on_fun:[%id odds] ()] [@@fc]
+
+(* ============================================================
+   SECTION 3: Arithmetic tactics - arith, nonlin
+   ============================================================ *)
+
+(* arith - linear arithmetic decision procedure *)
+lemma arith_example x y z =
+  x + y > z && z > 0
+  ==>
+  x + y > 0
+[@@by arith]
+
+(* nonlin - non-linear arithmetic *)
+lemma times_psd x y =
+  Real.(x >= 0.0) && Real.(y >= 0.0)
+  ==>
+  Real.((x * y) [@trigger] >= 0.0)
+[@@by nonlin ()] [@@fc]
+
+lemma times_pd x y =
+  Real.(x > 0.0) && Real.(y > 0.0)
+  ==>
+  Real.((x * y) [@trigger] > 0.0)
+[@@by nonlin ()] [@@fc]
+
+(* ============================================================
+   SECTION 4: [%use ...] - using lemmas as hypotheses
+   ============================================================ *)
+
+lemma use_example xs =
+  square_sum xs >= 0
+  ==>
+  square_sum xs + 1 > 0
+[@@by [%use square_sum_non_neg xs] @> arith]
+
+(* Multiple [%use] in sequence *)
+type poly = Real.t list
+
+let rec eval_poly (p:poly) (x:Real.t list) : Real.t =
+  match p, x with
+  | a :: p, b :: x ->
+    Real.(a*b + eval_poly p x)
+  | [a], [] -> a
+  | _ -> 0.0
+
+let rec good_poly_x_sizes (p:poly) (x:Real.t list) : bool =
+  match p, x with
+  | [_], [] -> true
+  | _::p, _::x -> good_poly_x_sizes p x
+  | _ -> false
+
+let rec is_neg_const (p:poly) : bool =
+  match p with
+  | [] -> false
+  | [c] -> Real.(c < 0.0)
+  | c::p -> c = 0.0 && is_neg_const p
+
+lemma eval_const_neg p x =
+  is_neg_const p && good_poly_x_sizes p x
+   ==>
+  Real.((eval_poly p x) < 0.0)
+[@@by auto] [@@fc] [@@rw]
+
+(* ============================================================
+   SECTION 5: [%normalize ...] / [%norm ...] - normalization
+   ============================================================ *)
+
+(* [%norm term] normalizes term under current hypotheses *)
+lemma norm_example x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by [%simp_only k]
+    @> [%simp_only len_append]
+    @> [%norm List.length (List.rev (List.append x y))]
+    @> trivial]
+
+(* normalize with rules parameter *)
+lemma norm_with_rules x y =
+  k (List.length (List.rev (x @ y))) = (List.length (y @ x))
+[@@by normalize ~rules:[[%id rev_len]] [%t List.length (List.rev (x @ y))]
+    @> [%simp_only k]
+    @> [%simp_only len_append]]
+
+(* ============================================================
+   SECTION 6: [%replace ...] - substitution with equalities
+   ============================================================ *)
+
+(* [%replace x] uses hypothesis x=t to replace x with t *)
+lemma replace_example x y =
+  x = y && y > 0
+  ==>
+  x > 0
+[@@by [%replace x] @> trivial]
+
+(* ============================================================
+   SECTION 7: lift_ifs - lifting if-then-else
+   ============================================================ *)
+
+let rec find_non_zero xs =
+  match xs with
+  | [] -> None
+  | x::xs -> if x<>0 then Some x else find_non_zero xs
+
+lemma zero_squeeze n =
+  n >= 0
+  ==>
+  (n <= 0) = (n = 0)
+[@@by auto] [@@rw]
+
+lemma lift_ifs_example xs =
+  square_sum xs > 0
+  ==>
+  find_non_zero xs <> None
+[@@by induction ~id:[%id find_non_zero] ()
+   @>| [[%simp_only find_non_zero, square_sum];
+       [%norm square_sum xs]
+        @> lift_ifs
+        @>| [[%replace List.hd xs]
+             @> esimp @> [%expand find_non_zero xs] @> lift_ifs;
+             [%use square_sum_non_neg (List.tl xs)]
+             @> [%simp_only zero_squeeze]]]]
+
+(* ============================================================
+   SECTION 8: swap, drop - goal manipulation
+   ============================================================ *)
+
+(* swap (-1) moves first conclusion to hypotheses (negated) *)
+(* swap 0 moves first hypothesis to conclusions (negated) *)
+lemma swap_example a y =
+  num_occurs a y > 0
+  ==>
+  num_occurs a y >= 1
+[@@by swap (-1) @> arith]
+
+(* ============================================================
+   SECTION 9: [%subgoal ...] - cut rule
+   ============================================================ *)
+
+(* [%subgoal condition] assumes condition and creates subgoal to prove it *)
+lemma subgoal_example n m =
+  n >= 0 && m >= 0
+  ==>
+  n * m >= 0
+[@@by [%subgoal n >= 0 && m >= 0] @> auto]
+
+(* ============================================================
+   SECTION 10: unroll - bounded unrolling
+   ============================================================ *)
+
+type instr =
+  | Halt
+  | Const of int
+  | Add
+
+type machine_state = {
+  halted: bool;
+  pc: int;
+  stack: int list;
+}
+
+let step_machine prog (s : machine_state) : machine_state =
+  if s.halted then s else
+  match List.nth s.pc prog with
+  | None -> s
+  | Some Halt -> { s with halted = true }
+  | Some (Const k) ->
+    { s with pc = s.pc + 1; stack = k :: s.stack }
+  | Some Add ->
+    match s.stack with
+    | a :: b :: rst ->
+      { s with pc = s.pc + 1; stack = (a+b) :: rst }
+    | _ -> s
+
+let rec run_machine prog (s : machine_state) n =
+    if n <= 0 then s
+    else run_machine prog (step_machine prog s) (n-1)
+
+(* unroll N unrolls recursive definitions N times *)
+lemma unroll_example =
+  run_machine [Const 1; Const 2; Add; Halt]
+              {halted=false; pc=0; stack=[]}
+              10
+  = {halted=true; pc=3; stack=[3]}
+[@@by unroll 20]
+
+(* ============================================================
+   SECTION 11: Tactic combinators - @>, @>|, @>>|, <|>
+   ============================================================ *)
+
+(* @> sequences two tactics: first must produce exactly one subgoal *)
+lemma seq_example x =
+  x >= 0 ==> x + 1 > 0
+[@@by intros @> arith]
+
+(* @>| applies different tactics to different subgoals *)
+lemma branch_example x =
+  (x > 0 || x <= 0) && x + 1 > x
+[@@by split_and @>| [auto; arith]]
+
+(* @>>| applies same tactic to all subgoals *)
+lemma broadcast_example xs =
+  List.length xs >= 0 && List.length (List.rev xs) >= 0
+[@@by split_and @>>| auto]
+
+(* <|> tries first tactic, if it fails tries second *)
+lemma alt_example a x y =
+  num_occurs a (merge x y) = num_occurs a x + num_occurs a y
+  ==>
+  num_occurs a (merge x y) >= 0
+[@@by ([%replace x] <|> [%replace y] <|> auto)]
+
+(* ============================================================
+   SECTION 12: @>>| with induction - common pattern
+   ============================================================ *)
+
+type car_state = {
+  w : int;
+  y : int;
+  v : int;
+}
+
+let controller sgn_y sgn_old_y =
+  (-3 * sgn_y) + (2 * sgn_old_y)
+
+let sgn x =
+  if x < 0 then -1
+  else if x = 0 then 0
+  else 1
+
+let next_car_state dw s =
+  { w = s.w + dw;
+    y = s.y + s.v + s.w + dw;
+    v = s.v +
+        controller
+          (sgn (s.y + s.v + s.w + dw))
+          (sgn s.y)
+  }
+
+let arbitrary_delta_ws = List.for_all (fun x -> x = -1 || x = 0 || x = 1)
+
+let rec final_state s dws =
+  match dws with
+  | [] -> s
+  | dw :: dws' ->
+    let s' = next_car_state dw s in
+    final_state s' dws'
+[@@adm dws]
+
+let good_state s =
+  match s.y, s.w + s.v with
+  | -3, 1 -> true
+  | -2, 1 -> true
+  | -2, 2 -> true
+  | -1, 2 -> true
+  | -1, 3 -> true
+  | 0, -1 -> true
+  | 0, 0  -> true
+  | 0, 1  -> true
+  | 1, -2 -> true
+  | 1, -3 -> true
+  | 2, -1 -> true
+  | 2, -2 -> true
+  | 3, -1 -> true
+  | _ -> false
+
+theorem safety_1 s dw =
+  good_state s
+  && (dw = -1 || dw = 0 || dw = 1)
+ ==>
+  good_state (next_car_state dw s)
+[@@rw]
+
+(* induction @>>| auto - apply auto to all induction subgoals *)
+lemma all_good s dws =
+  good_state s && arbitrary_delta_ws dws
+  ==>
+  good_state ((final_state s dws))
+[@@by induction ~id:[%id final_state] ()
+   @>>| auto]
+[@@disable next_car_state, good_state]

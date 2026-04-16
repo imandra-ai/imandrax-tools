@@ -1,0 +1,37 @@
+; Generate prelude.json from knowledge-base and render prelude module .md files
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (:src ../../../../../knowledge-base/reference_prelude/prelude.yaml))
+ (target prelude.json)
+ (action
+  (with-stdout-to
+   %{target}
+   (run yq ".prelude" %{src} -o json))))
+
+(rule
+ (alias skill)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (glob_files ../../../src/reference/prelude/*.md.jinja)
+  (:ctx ../../../../../knowledge-base/context.yaml))
+ (targets
+  Int.md
+  LChar.md
+  LString.md
+  List.md
+  Map.md
+  Multiset.md
+  Option.md
+  Real.md
+  Result.md
+  Set.md
+  String.md
+  top-level.md)
+ (action
+  (bash
+   "for f in ../../../src/reference/prelude/*.md.jinja; do out=$(basename \"${f%.jinja}\"); jinja -d %{ctx} -o \"$out\" \"$f\"; done")))
