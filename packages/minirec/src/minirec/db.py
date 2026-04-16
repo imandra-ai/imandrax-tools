@@ -21,22 +21,30 @@ from imandrax_api_models import (
     TaskKind,
 )
 from imandrax_api_models.client import ImandraXClient, get_imandrax_api_key
+from imandrax_tools import try_get_goal_state
 from inline_snapshot import get_snapshot_value, snapshot
 
 UNTRUSTING = os.environ.get('UNTRUSTING') in ['1', 'true', 'True']
 
 
-def _eval_src(src: str) -> EvalRes:
+def _eval_src(src: str) -> tuple[EvalRes, str | None]:
     c = ImandraXClient(url=url_prod, auth_token=get_imandrax_api_key())
-    return c.eval_src(src)
+    eval_res = c.eval_src(src)
+
+    check_po_tasks = [t for t in eval_res.tasks if t.kind == TaskKind.TASK_CHECK_PO]
+
+    gs_opt: str | None = None
+    if eval_res.success and check_po_tasks:
+        gs_opt = try_get_goal_state(c, check_po_tasks[0])
+    return eval_res, gs_opt
 
 
 def test() -> EvalRes:
-    iml = IML_DECOMP_ASSUMING_SIG_MISMATCH
+    iml = IML_HAS_GOAL_STATE
 
     ss: EvalRes = snapshot()
     if UNTRUSTING:
-        eval_res = _eval_src(iml)
+        eval_res, _gs_opt = _eval_src(iml)
         assert ss == eval_res
 
     return get_snapshot_value(ss)
@@ -163,3 +171,55 @@ Error{ Kind.name = "TacticEvalErr" }:
         )
     ],
 )
+
+# ====================
+
+IML_HAS_GOAL_STATE = """\
+(* Number of subsets of a (finite) set in Imandra, rep'd as lists.
+   Theorem 52 in the 100 Theorems list.
+
+   Grant Passmore, Imandra
+ *)
+
+(* prepend x to every subset in a family *)
+let rec prepend (x:'a) (sets:'a list list) : 'a list list =
+  match sets with
+  | [] -> []
+  | s::ss -> (x::s) :: prepend x ss
+[@@measure (Ordinal.of_int (List.length sets))] [@@by auto]
+
+(* Powerset of a list: P([]) = [[]]; P(x::xs) = P(xs) @ (map (x::) (P(xs))) *)
+let rec powerset (xs:'a list) : 'a list list =
+  match xs with
+  | [] -> [[]]
+  | x::xt ->
+      let ps = powerset xt in
+      ps @ (prepend x ps)
+[@@measure (Ordinal.of_int (List.length xs))] [@@by auto]
+
+let rec pow (a:int) (n:int) : int =
+  if n <= 0 then 1 else a * pow a (n - 1)
+[@@measure (Ordinal.of_int n)] [@@by auto]
+
+theorem pow_zero a = pow a 0 = 1 [@@by auto]
+
+theorem pow_succ a n =
+  n >= 0 ==> pow a (n + 1) = a * pow a n
+[@@by intros @> auto]
+
+theorem pow2_step n =
+  n >= 0 ==> pow 2 (n + 1) = 2 * pow 2 n
+[@@by intros @> [%use pow_succ 2 n] @> auto]
+
+lemma len_append x y =
+  List.length (x @ y) = List.length x + List.length y
+    (*
+[@@by auto] [@@rw]  (* With this line, it can be proved automatically *)
+
+lemma len_prepend x xs =
+  List.length (prepend x xs) = List.length xs
+[@@by auto] [@@rw]
+
+theorem powerset_len xs =
+  List.length (powerset xs) = pow 2 (List.length xs)
+[@@by auto] *)"""
