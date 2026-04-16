@@ -43,7 +43,7 @@ def try_get_goal_state(c: ImandraXClient, task: Task) -> str | None:
         po_res_art_zip: ArtifactZip = c.get_artifact_zip(task, kind='po_res')
         with NamedTemporaryFile(mode='w+b', suffix='.zip') as f:
             f.write(po_res_art_zip.art_zip)
-            f.seek(0)
+            f.flush()
             goal_state_s = format_goal_state_from_zip(f.name)
         return goal_state_s
     except (GoalStateCounterModel, GoalStateProved):
