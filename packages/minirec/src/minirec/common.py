@@ -53,11 +53,23 @@ class InfixOpMissingParen(BaseRule):
     severity: ClassVar[Severity] = Severity.Error
 
 
-Rule = NestedMeasureRule | NestedRecursiveFunctionRule | InfixOpMissingParen
+class DecompAsmSigMismatch(BaseRule):
+    id: ClassVar[str] = 'decomp-asm-sig-mismatch'
+    description: ClassVar[str] = 'Region decomp assuming signature mismatch'
+    severity: ClassVar[Severity] = Severity.Error
+
+
+Rule = (
+    NestedMeasureRule
+    | NestedRecursiveFunctionRule
+    | InfixOpMissingParen
+    | DecompAsmSigMismatch
+)
 
 NESTED_MEASURE_RULE = NestedMeasureRule()
 NESTED_RECURSIVE_FUNCTION_RULE = NestedRecursiveFunctionRule()
 INFIX_OP_MISSING_PAREN_RULE = InfixOpMissingParen()
+DECOMP_ASM_SIG_MISMATCH = DecompAsmSigMismatch()
 
 
 # Diagnostics
@@ -134,6 +146,22 @@ class InfixOpMissingParenDiag(BaseDiag):
             f'needs to be enclosed in parentheses.\n'
             'E.g. `let ( land ) = <new-definition>`'
         )
+
+
+class DecompAsmSigMismatchDiag(BaseDiag):
+    rule: ClassVar[Rule] = DECOMP_ASM_SIG_MISMATCH
+    error_kind: ClassVar[ErrorKind] = ErrorKind.TACTIC_EVAL_ERR
+
+    # TODO: in current error message, there's no way to know which decomp and corresponding
+    #   ~assuming is causing the mismatch error
+    # function_name: str
+    # assuming: list[str]  # List of assuming functions
+
+    @computed_field
+    @property
+    def message(self) -> str:
+        return 'Invalid decomp arguments: `~asssuming` has inconsistent type signature with the function being decomposed.'
+        # return f'{self.function_name} has inconsistent type with {self.assuming} in region decomp.'
 
 
 class RuleCheck(Protocol):

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import ClassVar, Self
 
 from devtools import pprint
-from imandrax_api_models import Error, ErrorKind, EvalRes, Location
+from imandrax_api_models import Error, ErrorKind, EvalRes, Location, TaskKind
 from iml_query.queries import BaseCapture
 from iml_query.tree_sitter_utils import (
     fmt_node,
@@ -21,7 +21,7 @@ from tree_sitter import Node
 
 from minirec.cst import range_to_loc
 
-from .common import BaseDiag, InfixOpMissingParenDiag
+from .common import BaseDiag, DecompAsmSigMismatchDiag, InfixOpMissingParenDiag, NoLoc
 
 
 class EvalErrorItem(BaseModel):
@@ -118,3 +118,42 @@ def check_infix_op_missing_paren(
     op = capture.get_op()
     loc = range_to_loc(capture.op.range)
     return InfixOpMissingParenDiag(op=op, loc=loc)
+
+
+# ====================
+
+
+def check_decomp_asm_mismatch(
+    iml: str, eval_res: EvalRes
+) -> DecompAsmSigMismatchDiag | None:
+    no_err = not eval_res.has_errors
+    eval_success = eval_res.success
+
+    has_tactic_eval_err = False
+    inject_asm_mentioned_in_msg = False
+    for msg in eval_res.messages:
+        is_tactic_eval_err_ = (
+            ErrorKind.from_proto_kind(msg) == ErrorKind.TACTIC_EVAL_ERR
+        )
+        inject_asm_mentioned_in_msg_ = 'Inject_asm' in msg
+        if is_tactic_eval_err_ and inject_asm_mentioned_in_msg_:
+            has_tactic_eval_err = True
+            inject_asm_mentioned_in_msg = True
+            break
+
+    # Safe guard
+    has_decomp_task = any(t.kind == TaskKind.TASK_DECOMP for t in eval_res.tasks)
+    no_po_result = len(eval_res.po_results) == 0
+
+    if (
+        no_err
+        & eval_success
+        & has_tactic_eval_err
+        & inject_asm_mentioned_in_msg
+        & has_decomp_task
+        & no_po_result
+    ):
+        loc = NoLoc(reason='WIP')
+        return DecompAsmSigMismatchDiag(loc=loc)
+    else:
+        return None

@@ -123,6 +123,10 @@ let precond x = x > (1 / 2)
 let f x = if x > 0 then (if x > 1 then 1 else 0) else (if x > -1 then -1 else 0)
 [@@decomp top ~assuming:[%id precond] ()]"""
 
+# eval_model_res should be good (sucess=True)
+# no po_results, eval is true, has decomp task
+# trace keyword: Inject_asm, Imandrax_decomp__Strategy,
+# tasks has decomp
 EVAL_RES_DECOMP_ASSUMING_SIG_MISMATCH = EvalRes(
     success=True,
     messages=[
