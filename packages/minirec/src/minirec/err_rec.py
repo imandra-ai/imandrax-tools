@@ -107,7 +107,7 @@ class InfixOpMissingParenCapture(BaseCapture):
         return unwrap_bytes(self.op.text).decode('utf8')
 
 
-def check_infix_operator_missing_parentheses(
+def check_infix_op_missing_paren(
     iml: str, eval_res: EvalRes
 ) -> InfixOpMissingParenDiag | None:
     eval_err = _parse_eval_error(eval_res)
