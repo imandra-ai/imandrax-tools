@@ -22,48 +22,46 @@ def _eval_src(src: str) -> EvalRes:
     return c.eval_src(src)
 
 
-# ====================
+def test() -> EvalRes:
+    iml = IML_INFIX_OP_MISSING_PAREN
 
-
-IML_INFIX_OPERATOR = """\
-let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
-"""
-
-
-def trust() -> EvalRes:
-    iml = IML_INFIX_OPERATOR
-
-    ss: EvalRes = snapshot(
-        EvalRes(
-            success=False,
-            errors=[
-                Error(
-                    msg=ErrorMessage(
-                        msg='syntax error',
-                        locs=[
-                            Location(
-                                file='<none>',
-                                start=Position(line=1, col=5),
-                                stop=Position(line=1, col=8),
-                            )
-                        ],
-                        backtrace="""\
-Raised at Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap in file "src/ocaml-parse/base/imandrax_parse.ml", line 80, characters 4-49
-Called from Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap_and_rw.(fun) in file "src/ocaml-parse/base/imandrax_parse.ml", line 142, characters 6-32
-""",
-                    ),
-                    kind='{ Kind.name = "SyntaxErr" }',
-                    process='imandrax-server',
-                )
-            ],
-        )
-    )
+    ss: EvalRes = snapshot()
     if UNTRUSTING:
         assert ss == _eval_src(iml)
 
     return get_snapshot_value(ss)
 
 
-EVAL_RES_INFIX_OPERATOR = trust()
+# ====================
+
+
+IML_INFIX_OP_MISSING_PAREN = """\
+let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
+"""
+
+
+EVAL_RES_INFIX_OP_MISSING_PAREN = EvalRes(
+    success=False,
+    errors=[
+        Error(
+            msg=ErrorMessage(
+                msg='syntax error',
+                locs=[
+                    Location(
+                        file='<none>',
+                        start=Position(line=1, col=5),
+                        stop=Position(line=1, col=8),
+                    )
+                ],
+                backtrace="""\
+Raised at Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap in file "src/ocaml-parse/base/imandrax_parse.ml", line 80, characters 4-49
+Called from Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap_and_rw.(fun) in file "src/ocaml-parse/base/imandrax_parse.ml", line 142, characters 6-32
+""",
+            ),
+            kind='{ Kind.name = "SyntaxErr" }',
+            process='imandrax-server',
+        )
+    ],
+)
 
 # ====================
