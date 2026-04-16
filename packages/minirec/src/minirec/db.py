@@ -34,10 +34,45 @@ def test() -> EvalRes:
 
 # ====================
 
+IML_NESTED_MEASURE = """\
+let build_fib (f : int list) (i : int) (n : int) : int list =
+  let non_rec_irrelevant_f x = x + 1
+  in
+  let rec helper curr_f curr_i =
+    if curr_i > n then
+      curr_f
+    else
+      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with
+      | (Some prev1, Some prev2) ->
+          let new_f = curr_f @ [prev1 + prev2] in
+          helper new_f (curr_i + 1)
+      | _ -> curr_f
+  [@@measure Ordinal.of_int (n - curr_i)]
+  in
+  helper f i"""
+
+IML_NESTED_REC = """\
+let build_fib (f : int list) (i : int) (n : int) : int list =
+  let non_rec_irrelevant_f x = x + 1
+  in
+  let rec helper curr_f curr_i =
+    if curr_i > n then
+      curr_f
+    else
+      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with
+      | (Some prev1, Some prev2) ->
+          let new_f = curr_f @ [prev1 + prev2] in
+          helper new_f (curr_i + 1)
+      | _ -> curr_f
+  in
+  helper f i"""
+
+
+# ====================
+
 
 IML_INFIX_OP_MISSING_PAREN = """\
-let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
-"""
+let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]"""
 
 
 EVAL_RES_INFIX_OP_MISSING_PAREN = EvalRes(
