@@ -10,7 +10,16 @@ from __future__ import annotations
 import os
 
 from imandrax_api import url_prod
-from imandrax_api_models import Error, ErrorMessage, EvalRes, Location, Position
+from imandrax_api_models import (
+    Error,
+    ErrorMessage,
+    EvalRes,
+    Location,
+    Position,
+    Task,
+    TaskID,
+    TaskKind,
+)
 from imandrax_api_models.client import ImandraXClient, get_imandrax_api_key
 from inline_snapshot import get_snapshot_value, snapshot
 
@@ -23,11 +32,12 @@ def _eval_src(src: str) -> EvalRes:
 
 
 def test() -> EvalRes:
-    iml = IML_INFIX_OP_MISSING_PAREN
+    iml = IML_DECOMP_ASSUMING_SIG_MISMATCH
 
     ss: EvalRes = snapshot()
     if UNTRUSTING:
-        assert ss == _eval_src(iml)
+        eval_res = _eval_src(iml)
+        assert ss == eval_res
 
     return get_snapshot_value(ss)
 
@@ -100,3 +110,52 @@ Called from Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap_and_rw.(fun) in 
 )
 
 # ====================
+
+IML_DECOMP_ASSUMING_SIG_MISMATCH = """
+let precond_wrong x = x >. (1.0 /. 2.0)
+
+let f_wrong x = if x > 0 then (if x > 1 then 1 else 0) else (if x > -1 then -1 else 0)
+[@@decomp top ~assuming:[%id precond_wrong] ()]"""
+
+IML_DECOMP_ASSUMING_SIG_MISMATCH_NON_EXAMPLE = """
+let precond x = x > (1 / 2)
+
+let f x = if x > 0 then (if x > 1 then 1 else 0) else (if x > -1 then -1 else 0)
+[@@decomp top ~assuming:[%id precond] ()]"""
+
+EVAL_RES_DECOMP_ASSUMING_SIG_MISMATCH = EvalRes(
+    success=True,
+    messages=[
+        """\
+Error{ Kind.name = "TacticEvalErr" }:
+  File "src/decomp/strategy.ml", line 428, characters 8-14: Assertion failed
+  backtrace:
+  Raised at Imandrax_decomp__Strategy.Inject_asm.mk_asm_sko_d in file "src/decomp/strategy.ml", lines 428-430, characters 8-56
+  Called from Imandrax_decomp__Strategy.Inject_asm.top in file "src/decomp/strategy.ml", line 481, characters 38-63
+  Called from Imandrax_decomp__Strategy.strategy_with_asm in file "src/decomp/strategy.ml", line 503, characters 14-59
+  Called from Imandrax_decomp__Strategy.strategy_with_asm in file "src/decomp/strategy.ml", lines 492-506, characters 6-7
+  Called from Imandrax_reasoning__Eval_decomp.eval_direct_ in file "src/reasoning/eval_decomp.ml", lines 293-294, characters 4-76
+  Called from Stdlib__Fun.protect in file "fun.ml", line 34, characters 8-15
+  Re-raised at Stdlib__Fun.protect in file "fun.ml", line 39, characters 6-52
+  Called from Imandrax_reasoning__Eval_decomp.with_decomp_state in file "src/reasoning/eval_decomp.ml", line 260, characters 8-12
+  Called from Imandrax_reasoning__Eval_decomp.Eval_.eval_decomp_ in file "src/reasoning/eval_decomp.ml", line 495, characters 19-33
+  Called from Imandrax_leval__Eval.apply_custom in file "src/leval/eval.ml", line 247, characters 2-28
+  Called from Imandrax_leval__Eval.eval' in file "src/leval/eval.ml" (inlined), line 406, characters 43-63
+  Called from Imandrax_leval__Eval.eval in file "src/leval/eval.ml", line 409, characters 11-22
+  Called from Imandrax_reasoning__Eval_decomp.eval_term_ in file "src/reasoning/eval_decomp.ml", line 628, characters 10-54
+  Called from Imandrax_reasoning__Eval_decomp.eval in file "src/reasoning/eval_decomp.ml", line 711, characters 6-31
+  Called from Imandrax_session__Decomp_runner.run_decomp_directly in file "src/session/decomp_runner.ml", lines 35-36, characters 4-62
+  Called from Stdlib__Fun.protect in file "fun.ml", line 34, characters 8-15
+  Re-raised at Stdlib__Fun.protect in file "fun.ml", line 39, characters 6-52
+  Called from Imandrakit_log__Trace_async.with_span_real_ in file "vendor/imandrakit/src/log/trace_async.ml", line 78, characters 14-46
+  Re-raised at Imandrakit_log__Trace_async.with_span_real_ in file "vendor/imandrakit/src/log/trace_async.ml", line 85, characters 6-40
+  Called from Imandrakit_error__Error.try_catch in file "vendor/imandrakit/src/error/error.ml", line 44, characters 9-15\
+"""
+    ],
+    tasks=[
+        Task(
+            id=TaskID(id='task:decomp:Rcz2VDPaCDtbQiXe0P8EvOnPYpK864Qx9wJCQWX8B4o='),
+            kind=TaskKind.TASK_DECOMP,
+        )
+    ],
+)
