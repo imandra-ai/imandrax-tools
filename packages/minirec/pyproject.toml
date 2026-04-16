@@ -31,9 +31,6 @@ imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 requires = ["uv_build>=0.8.22,<0.9.0"]
 build-backend = "uv_build"
 
-[tool.pytest.ini_options]
-python_functions = ["trust*"]
-
 [tool.ruff.lint]
 extend-select = [
     "Q",
