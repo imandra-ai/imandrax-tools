@@ -16,9 +16,7 @@ from iml_query.tree_sitter_utils import (
     run_query,
     unwrap_bytes,
 )
-from IPython.core.getipython import get_ipython
 from pydantic import BaseModel
-from pygments.unistring import c
 from tree_sitter import Node
 
 from minirec.cst import range_to_loc
