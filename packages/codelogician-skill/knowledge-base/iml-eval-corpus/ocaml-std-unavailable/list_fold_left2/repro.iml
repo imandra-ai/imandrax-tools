@@ -1,0 +1,2 @@
+let sum_pairs (l1 : int list) (l2 : int list) : int =
+  List.fold_left2 (fun acc x y -> acc + x + y) 0 l1 l2

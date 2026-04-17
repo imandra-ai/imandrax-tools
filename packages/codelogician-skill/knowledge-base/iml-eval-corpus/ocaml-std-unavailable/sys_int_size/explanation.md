@@ -1,0 +1,2 @@
+IML integers have arbitrary precision, so there is no built-in `max_int` or `min_int` derived from `Sys.int_size` constant.
+Consider refactoring to use a specific constant for your use case or making it opaque if it's externally defined.

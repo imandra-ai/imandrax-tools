@@ -1,0 +1,1 @@
+`Option.map2` does not exist in IML's Option module. Use `Option.monoid_product` or monadic composition instead.

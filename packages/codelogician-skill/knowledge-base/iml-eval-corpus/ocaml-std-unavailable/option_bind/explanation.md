@@ -1,0 +1,1 @@
+In IML, the function is called `Option.flat_map` instead of `Option.bind`. The monadic bind operator is available as `>>=` within the Option module.
