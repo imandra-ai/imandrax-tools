@@ -1,5 +1,5 @@
 (rule
- (targets constants.yaml)
+ (targets context.yaml)
  (mode
   (promote (until-clean)))
  (deps
