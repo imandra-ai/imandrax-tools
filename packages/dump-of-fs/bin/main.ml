@@ -1,6 +1,7 @@
 open Cmdliner
 
 type output_format = Json | Yaml_fmt
+type multiline_style = Literal | Folded
 
 let die fmt =
   Printf.ksprintf
@@ -17,7 +18,8 @@ let die fmt =
    (`|`), everything else is left to libyaml to pick a sensible style.
    ========================================================================== *)
 
-let emit_yaml (v : Yojson.Safe.t) : (string, [ `Msg of string ]) result =
+let emit_yaml ~multiline (v : Yojson.Safe.t) :
+    (string, [ `Msg of string ]) result =
   let open Yaml.Stream in
   let ( let* ) = Result.bind in
   let* e = emitter ~len:(1 lsl 20) () in
@@ -32,8 +34,11 @@ let emit_yaml (v : Yojson.Safe.t) : (string, [ `Msg of string ]) result =
         style;
       }
   in
+  let multiline_style : Yaml.scalar_style =
+    match multiline with Literal -> `Literal | Folded -> `Folded
+  in
   let pick_string_style s : Yaml.scalar_style =
-    if String.contains s '\n' then `Literal else `Any
+    if String.contains s '\n' then multiline_style else `Any
   in
   let rec go (v : Yojson.Safe.t) =
     match v with
@@ -87,14 +92,14 @@ let emit_yaml (v : Yojson.Safe.t) : (string, [ `Msg of string ]) result =
   let* () = emit e Event.Stream_end in
   Ok (emitter_buf e)
 
-let render tree = function
+let render ~multiline tree = function
   | Json -> Yojson.Safe.pretty_to_string tree
   | Yaml_fmt ->
-    (match emit_yaml tree with
+    (match emit_yaml ~multiline tree with
      | Ok s -> s
      | Error (`Msg m) -> die "rendering YAML: %s" m)
 
-let run root format output no_default_ignore ignores =
+let run root format output no_default_ignore ignores multiline =
   let root =
     try Unix.realpath root
     with Unix.Unix_error (e, _, _) ->
@@ -107,7 +112,7 @@ let run root format output no_default_ignore ignores =
   let tree =
     try Dump_of_fs.build_tree root opts with Failure msg -> die "%s" msg
   in
-  let rendered = render tree format in
+  let rendered = render ~multiline tree format in
   match output with
   | None -> print_endline rendered
   | Some path ->
@@ -145,6 +150,19 @@ let ignores_arg =
   let doc = "Additional ignore pattern (glob syntax); repeatable." in
   Arg.(value & opt_all string [] & info [ "ignore" ] ~docv:"PATTERN" ~doc)
 
+let multiline_conv =
+  Arg.enum [ ("literal", Literal); ("folded", Folded) ]
+
+let multiline_arg =
+  let doc =
+    "YAML block scalar style for multiline strings: literal (|) preserves \
+     newlines; folded (>) turns single newlines into spaces. Only affects \
+     --format yaml."
+  in
+  Arg.(
+    value & opt multiline_conv Literal
+    & info [ "yaml-multiline" ] ~docv:"STYLE" ~doc)
+
 let cmd =
   let info =
     Cmd.info "dump-of-fs"
@@ -157,7 +175,8 @@ let cmd =
       $ format_arg
       $ output_arg
       $ no_default_ignore_arg
-      $ ignores_arg)
+      $ ignores_arg
+      $ multiline_arg)
   in
   Cmd.v info term
 

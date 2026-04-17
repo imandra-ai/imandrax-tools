@@ -7,7 +7,7 @@
 ## Usage
 
 ```sh
-dump-of-fs <ROOT> [--format json|yaml] [--output FILE] [--ignore PATTERN]... [--no-default-ignore]
+dump-of-fs <ROOT> [--format json|yaml] [--output FILE] [--ignore PATTERN]... [--no-default-ignore] [--yaml-multiline literal|folded]
 ```
 
 ### Example
@@ -60,8 +60,12 @@ event-streaming API) rather than `Yaml.to_string`, so the output is more
 readable:
 
 - Mappings and sequences are emitted in block style (`-`, indented keys).
-- Strings containing `\n` are emitted as literal block scalars (`|`). All other
-  scalars are left to libyaml to pick a sensible style.
+- Strings containing `\n` are emitted as a block scalar; the style is
+  controlled by `--yaml-multiline=literal|folded` (default: `literal`).
+  - `literal` (`|`) preserves newlines.
+  - `folded` (`>`) turns single newlines into spaces (paragraph-style). Only
+    safe when multiline content is truly a single logical paragraph.
+- All other scalars are left to libyaml to pick a sensible style.
 
 Known limitation: libyaml's default emitter escapes non-ASCII characters, which
 forces double-quoted style for any multiline string containing non-ASCII

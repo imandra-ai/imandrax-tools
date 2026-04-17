@@ -8,5 +8,5 @@
  (action
   (with-stdout-to
    %{targets}
-   (run dump-of-fs src --format yaml --no-default-ignore)
+   (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline folded)
    )))
