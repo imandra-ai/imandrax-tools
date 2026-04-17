@@ -1,0 +1,3 @@
+(library
+ (name dump_of_fs)
+ (libraries containers yojson yaml re unix))

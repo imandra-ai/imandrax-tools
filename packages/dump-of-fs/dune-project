@@ -1,0 +1,33 @@
+(lang dune 3.20)
+
+(name dump-of-fs)
+
+(generate_opam_files true)
+
+(source
+ (github username/reponame))
+
+(authors "Hongyu Lin <hongyu@imandra.ai>")
+
+(maintainers "Hongyu Lin <hongyu@imandra.ai>")
+
+(license LICENSE)
+
+(documentation https://url/to/documentation)
+
+(package
+ (name dump-of-fs)
+ (synopsis "Dump a file tree into a single JSON/YAML document")
+ (description
+  "An executable that builds a single JSON / YAML document out of a file\ntree of text files, with JSON/YAML injection and gitignore-aware filtering.")
+ (depends
+  ocaml
+  dune
+  containers
+  yojson
+  yaml
+  cmdliner
+  re
+  (alcotest :with-test))
+ (tags
+  ("cli" "filesystem" "json" "yaml")))
