@@ -13,3 +13,9 @@
   - Future TODO: this might be configurable
 - default ignore: `.gitignore` + dotfiles
   - CLI: support `--no-default-ignore` flag
+- JSON / YAML injection
+  - NOTE: this is the only way to get arrays
+  - inject under file name. E.g.: `foo/bar.json` -> `"foo": { "bar": <content of bar.json> }`
+    - Future: make this configurable
+  - Future: opt-out flag (always-on for now)
+  - Raise if: error during parsing, name collision
