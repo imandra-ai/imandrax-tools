@@ -1,0 +1,1 @@
+Arrays are mutable data structures and not available in IML, which is a pure functional language without mutable state. All operations must be immutable.

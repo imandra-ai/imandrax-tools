@@ -1,0 +1,4 @@
+(* Use list instead of Array *)
+let example () =
+  let arr = List.mapi (fun _ _ -> 0) (0 -- 5) in
+  arr

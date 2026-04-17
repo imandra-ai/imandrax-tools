@@ -1,0 +1,3 @@
+(* Use a parameter to track state *)
+let counter (count : int) : int =
+  count + 1
