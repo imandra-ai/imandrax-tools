@@ -1,0 +1,1 @@
+Termination measures (`[@@measure ...]`) expects a function that returns an ordinal value (`Ordinal.t`). Consider using functions like `Ordinal.of_int` to obtain Ordinal.t.
