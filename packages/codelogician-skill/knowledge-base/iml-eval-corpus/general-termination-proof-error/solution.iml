@@ -1,0 +1,9 @@
+let left_pad_measure n xs =
+  Ordinal.of_int (n - List.length xs)
+
+let rec left_pad c n xs =
+  if List.length xs >= n then
+    xs
+  else
+    left_pad c n (c :: xs)
+[@@measure left_pad_measure n xs]

@@ -1,0 +1,1 @@
+Every recursive function must be proven terminating. When no `[@@measure ...]` attribute is given, ImandraX tries a default measure based on the function's arguments. When the definition is rejected with a counter-satisfiable termination goal with the default measure, consider supplying a custom measure function.

@@ -1,0 +1,5 @@
+let rec left_pad c n xs =
+  if List.length xs >= n then
+    xs
+  else
+    left_pad c n (c :: xs)
