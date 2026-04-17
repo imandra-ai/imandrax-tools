@@ -52,3 +52,19 @@ Ready to feed into jinja2: `{{ intro }}`, `{{ sub.notes }}`, `{{ config.version 
     - Future: make this configurable
   - Future: opt-out flag (always-on for now)
   - Raise if: error during parsing, name collision
+
+## YAML output style
+
+The `--format yaml` path uses a custom per-scalar emitter (built on libyaml's
+event-streaming API) rather than `Yaml.to_string`, so the output is more
+readable:
+
+- Mappings and sequences are emitted in block style (`-`, indented keys).
+- Strings containing `\n` are emitted as literal block scalars (`|`). All other
+  scalars are left to libyaml to pick a sensible style.
+
+Known limitation: libyaml's default emitter escapes non-ASCII characters, which
+forces double-quoted style for any multiline string containing non-ASCII
+(e.g. `ε`). `ocaml-yaml` does not expose `yaml_emitter_set_unicode`, so those
+strings still render quoted with `\uNNNN` escapes. ASCII-only multiline strings
+are unaffected.

@@ -2,19 +2,6 @@ open Cmdliner
 
 type output_format = Json | Yaml_fmt
 
-let rec yojson_to_yaml (v : Yojson.Safe.t) : Yaml.value =
-  match v with
-  | `Null -> `Null
-  | `Bool b -> `Bool b
-  | `Int i -> `Float (float_of_int i)
-  | `Intlit s -> `String s
-  | `Float f -> `Float f
-  | `String s -> `String s
-  | `List xs -> `A (List.map yojson_to_yaml xs)
-  | `Tuple xs -> `A (List.map yojson_to_yaml xs)
-  | `Assoc kvs -> `O (List.map (fun (k, v) -> (k, yojson_to_yaml v)) kvs)
-  | `Variant (_, _) -> `Null
-
 let die fmt =
   Printf.ksprintf
     (fun s ->
@@ -22,10 +9,88 @@ let die fmt =
       exit 1)
     fmt
 
+(* ==========================================================================
+   Custom YAML emitter
+
+   Walks a Yojson.Safe.t and emits libyaml events directly, so that per-scalar
+   styling is possible. Multiline strings are emitted as literal block scalars
+   (`|`), everything else is left to libyaml to pick a sensible style.
+   ========================================================================== *)
+
+let emit_yaml (v : Yojson.Safe.t) : (string, [ `Msg of string ]) result =
+  let open Yaml.Stream in
+  let ( let* ) = Result.bind in
+  let* e = emitter ~len:(1 lsl 20) () in
+  let scalar_ev ?(style : Yaml.scalar_style = `Any) value =
+    Event.Scalar
+      {
+        anchor = None;
+        tag = None;
+        value;
+        plain_implicit = true;
+        quoted_implicit = true;
+        style;
+      }
+  in
+  let pick_string_style s : Yaml.scalar_style =
+    if String.contains s '\n' then `Literal else `Any
+  in
+  let rec go (v : Yojson.Safe.t) =
+    match v with
+    | `Null -> emit e (scalar_ev ~style:`Plain "")
+    | `Bool b -> emit e (scalar_ev ~style:`Plain (if b then "true" else "false"))
+    | `Int i -> emit e (scalar_ev ~style:`Plain (string_of_int i))
+    | `Intlit s -> emit e (scalar_ev ~style:`Plain s)
+    | `Float f ->
+      let s =
+        if Float.is_integer f && Float.abs f < 1e18 then
+          string_of_int (int_of_float f)
+        else Printf.sprintf "%.17g" f
+      in
+      emit e (scalar_ev ~style:`Plain s)
+    | `String s -> emit e (scalar_ev ~style:(pick_string_style s) s)
+    | `List xs | `Tuple xs ->
+      let* () =
+        emit e
+          (Event.Sequence_start
+             { anchor = None; tag = None; implicit = true; style = `Block })
+      in
+      let* () =
+        List.fold_left
+          (fun acc x ->
+            let* () = acc in
+            go x)
+          (Ok ()) xs
+      in
+      emit e Event.Sequence_end
+    | `Assoc kvs ->
+      let* () =
+        emit e
+          (Event.Mapping_start
+             { anchor = None; tag = None; implicit = true; style = `Block })
+      in
+      let* () =
+        List.fold_left
+          (fun acc (k, v) ->
+            let* () = acc in
+            let* () = emit e (scalar_ev ~style:(pick_string_style k) k) in
+            go v)
+          (Ok ()) kvs
+      in
+      emit e Event.Mapping_end
+    | `Variant _ -> emit e (scalar_ev ~style:`Plain "")
+  in
+  let* () = emit e (Event.Stream_start { encoding = `Utf8 }) in
+  let* () = emit e (Event.Document_start { version = None; implicit = true }) in
+  let* () = go v in
+  let* () = emit e (Event.Document_end { implicit = true }) in
+  let* () = emit e Event.Stream_end in
+  Ok (emitter_buf e)
+
 let render tree = function
   | Json -> Yojson.Safe.pretty_to_string tree
   | Yaml_fmt ->
-    (match Yaml.to_string (yojson_to_yaml tree) with
+    (match emit_yaml tree with
      | Ok s -> s
      | Error (`Msg m) -> die "rendering YAML: %s" m)
 
