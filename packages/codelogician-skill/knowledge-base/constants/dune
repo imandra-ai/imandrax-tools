@@ -1,11 +1,12 @@
-; Merge all source *.yaml -> constants.yaml
-
 (rule
  (targets constants.yaml)
  (mode
   (promote (until-clean)))
- (deps main.yaml quickstart_examples.yaml)
+ (deps
+  (source_tree src)
+ )
  (action
   (with-stdout-to
    %{targets}
-   (bash "yq eval-all '. as $item ireduce ({}; . * $item)' %{deps}"))))
+   (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline folded)
+   )))
