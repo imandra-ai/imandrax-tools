@@ -10,7 +10,7 @@
  (action
   (with-stdout-to
    %{target}
-   (run yq ".prelude" %{src} -o json))))
+   (run yq %{src} -o json))))
 
 (rule
  (alias skill)
@@ -18,7 +18,7 @@
   (promote (until-clean)))
  (deps
   (glob_files ../../../src/reference/prelude/*.md.jinja)
-  (:ctx ../../../../../knowledge-base/context.yaml))
+  (:ctx ../../../../../knowledge-base/context/context.yaml))
  (targets
   Int.md
   LChar.md

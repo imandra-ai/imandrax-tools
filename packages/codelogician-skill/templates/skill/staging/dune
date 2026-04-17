@@ -15,7 +15,7 @@
   (promote (until-clean)))
  (deps
   (:tpl ../src/iml-syntax.md.jinja)
-  (:ctx ../../../knowledge-base/context.yaml))
+  (:ctx ../../../knowledge-base/context/context.yaml))
  (target iml-syntax.md)
  (action
   (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
