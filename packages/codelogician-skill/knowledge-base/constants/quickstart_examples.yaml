@@ -1,5 +1,5 @@
 content:
-  overview: >
+  overview: |
     Each example demonstrates key concepts in IML through:
     1. Explanatory comments before functions that highlight important concepts
     2. REPL evaluation results showing type signatures and values. Comments marked with
@@ -8,7 +8,7 @@ content:
     These comments are only for educational purposes. They teach you about the thinking
     process of writing IML code but they might not desired to exist when writing IML code.
   examples:
-    - >
+    - |
       (* Float-like literal is interpreted as type `real`, arbitary precision real number. *)
       let pi = 3.14159
       (* val pi : real = 314159/100000 *)
@@ -20,7 +20,7 @@ content:
       let r = d /. 2.0 in
       pi *. r *. r
       (* val circle_area : real -> real = <fun> *)
-    - >
+    - |
       (* Note: `int` is the type for integers. *)
       let count_negatives_in_row (row : int list) : int =
           List.fold_left (fun acc num -> if num < 0 then acc + 1 else acc) 0 row
@@ -38,7 +38,7 @@ content:
             : int option =
           List.fold_left
             (fun acc i ->
-              (* import Option module locally to use `let*`. could also be imported at thebeginning by `open Option` *)
+              (* import Option module locally to use `let*`. could also be imported at the beginning by `open Option` *)
               let open Option in
               let* acc_val = acc in
               let+ row_count = map count_negatives_in_row (List.nth i m) in
@@ -47,7 +47,7 @@ content:
             (0 -- (n - 1))
         (* val count_negative_numbers_in_a_column_wise_row_wise_sorted_matrix :
           int list list -> int -> int -> int option = <fun> *)
-    - >
+    - |
       (* Note:
       - integer division and modulo in IML: `mod: int -> int -> int`. And `/`.
       *)
@@ -79,7 +79,7 @@ content:
           let limit = Real.to_int (Real.of_int num |> sqrt) in
           calculate_sum_of_divisors num limit + 1
         (* val sum_of_all_proper_divisors_of_a_natural_number : int -> int = <fun> *)
-    - >
+    - |
       (* Another example with conversion between `real` and `int`. *)
       let sum_of_first_n_numbers (n: int) : real =
         (Real.of_int n *. (Real.of_int n +. 1.0)) /. 2.0
@@ -92,7 +92,7 @@ content:
         let sum_squares_n = sum_of_squares_of_first_n_numbers n in
         (sum_first_n +. sum_squares_n) |> Real.to_int
       (* val sum_matrix_element_absolute_difference_row_column_numbers_2 : int -> int = <fun> *)
-    - >
+    - |
       (* Note:
       - for opeartions that is unavailable in IML, `[@@opaque]` can be attached
         to a dummy implementation with correct type signature. Such implementation
@@ -118,7 +118,7 @@ content:
         let sorted_arr = List.sort ~leq:(fun a b -> a <= b) arr in
         find_minimum_xor sorted_arr
       (* val minimum_xor_value_pair : int list -> int = <fun> *)
-    - >
+    - |
       (* Another example using `[@@opaque]` *)
       open Option
       let random_int : int -> int = () [@@opaque]
@@ -146,7 +146,7 @@ content:
         in
         helper arr (List.length arr - 1)
       (* val shuffle_a_given_array : int list -> int list = <fun> *)
-    - >
+    - |
       (* Character and String:
       - IML supports logic-mode character `LChar.t` and logic-mode string `LString.t`.
       - `{l|...|l}` is used to create a logic-mode string, `LString.t`, aka, `LChar.t list`.
