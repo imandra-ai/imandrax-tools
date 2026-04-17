@@ -4,6 +4,39 @@
 - Useful for managing template engine context, e.g. for `jinja2`
 - Support configurable ignore (e.g. dotfiles, user-provided patterns), inject JSON / YAML file (when encoutering JSON / YAML files, insert their contents)
 
+## Usage
+
+```sh
+dump-of-fs <ROOT> [--format json|yaml] [--output FILE] [--ignore PATTERN]... [--no-default-ignore]
+```
+
+### Example
+
+Given this tree:
+
+```
+ctx/
+├── intro.md          "hello"
+├── sub/
+│   └── notes.txt     "world"
+└── config.json       {"version": 1}
+```
+
+Running `dump-of-fs ctx` produces:
+
+```json
+{
+  "intro": "hello",
+  "sub": {
+    "notes": "world"
+  },
+  "config": {
+    "version": 1
+  }
+}
+```
+
+Ready to feed into jinja2: `{{ intro }}`, `{{ sub.notes }}`, `{{ config.version }}`.
 
 ## Behaviors
 - file name: extension gets stripped
