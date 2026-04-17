@@ -38,7 +38,7 @@ let emit_yaml ~multiline (v : Yojson.Safe.t) :
     match multiline with Literal -> `Literal | Folded -> `Folded
   in
   let pick_string_style s : Yaml.scalar_style =
-    if String.contains s '\n' then multiline_style else `Any
+    if String.contains s '\n' then multiline_style else `Single_quoted
   in
   let rec go (v : Yojson.Safe.t) =
     match v with
