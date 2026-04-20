@@ -1,0 +1,1 @@
+Recursive functions (`let rec`) nested inside another definition make termination proofs harder, since a measure attribute cannot be attached to the inner binding. Lift the inner `let rec` to a top-level definition and pass any captured arguments explicitly.

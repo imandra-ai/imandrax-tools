@@ -1,0 +1,1 @@
+A `[@@measure ...]` attribute should be attached to a top-level recursive function. When attached to a nested `let rec`, the measure is misplaced — lift the recursive function (and its measure) to the top level.
