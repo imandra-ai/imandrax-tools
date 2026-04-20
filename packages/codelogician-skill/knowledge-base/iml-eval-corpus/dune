@@ -1,0 +1,20 @@
+; Per-entry rules live in each leaf subdir's dune file, sharing
+; dune.repro.inc and dune.solutions.inc from this directory.
+
+; Generate flat-named mirrors of ocaml-std-unavailable/<name>/ as
+; ocaml-stdlib-unknown-id-<name>/ so consumers can read entries without
+; walking the grouping dir. Mirror contents are copied (promoted).
+
+; By default dune ignores dirs starting with `_`; opt the source group back in.
+(dirs :standard _unknown-id-ocaml-stdlib)
+
+(rule
+ (mode (promote (until-clean)))
+ (target dune.flat_mirror.inc)
+ (deps
+  (:script gen_flat_mirror_rules.py)
+  (source_tree _unknown-id-ocaml-stdlib))
+ (action
+  (with-stdout-to %{target} (run uv run --script %{script}))))
+
+(include dune.flat_mirror.inc)
