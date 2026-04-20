@@ -1,0 +1,4 @@
+let counter () =
+  let count = ref 0 in
+  count := !count + 1;
+  !count

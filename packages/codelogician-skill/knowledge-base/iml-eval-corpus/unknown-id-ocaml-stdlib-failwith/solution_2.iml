@@ -1,0 +1,6 @@
+(* Return a Result type with error message *)
+let divide (x : int) (y : int) : (int, string) result =
+  if y = 0 then
+    Error "Division by zero"
+  else
+    Ok (x / y)

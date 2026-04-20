@@ -1,0 +1,6 @@
+(* Return a sentinel value (changes function signature semantics). *)
+let divide (x : int) (y : int) : int =
+  if y = 0 then
+    0
+  else
+    x / y

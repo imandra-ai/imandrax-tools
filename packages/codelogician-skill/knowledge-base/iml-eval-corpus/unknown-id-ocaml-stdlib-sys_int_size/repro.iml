@@ -1,0 +1,5 @@
+let clamp (x : int) : int =
+  if x < min_int then
+    min_int
+  else
+    x

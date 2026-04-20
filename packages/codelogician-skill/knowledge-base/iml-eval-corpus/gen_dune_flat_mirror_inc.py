@@ -1,5 +1,6 @@
-"""Emit dune stanzas that mirror each `ocaml-std-unavailable/<name>/` dir
-to a flat top-level `ocaml-stdlib-unknown-id-<name>/` dir (promoted).
+"""Emit dune stanzas that mirror each `_unknown-id-ocaml-stdlib/<name>/` dir
+to a flat top-level `unknown-id-ocaml-stdlib-<name>/` dir (promoted), and
+render each entry's `query/__main__.py` from the shared jinja template.
 
 Run from this file's directory. Output goes to stdout; dune captures it
 into `dune.flat_mirror.inc`.
@@ -24,7 +25,21 @@ def main() -> None:
 (subdir {flat}
  (copy_files
   (mode (promote (until-clean)))
-  (files ../{SRC_GROUP}/{name}/*.{{iml,json,md,scm}})))"""
+  (files ../{SRC_GROUP}/{name}/*.{{iml,json,md,scm}}))
+
+ (subdir query
+  (rule
+   (mode (promote (until-clean)))
+   (target __main__.py)
+   (deps
+    (:tmpl ../../{SRC_GROUP}/query.__main__.py.j2)
+    (:meta ../../{SRC_GROUP}/meta.json))
+   (action
+    (run uv run --with jinja2-cli jinja2
+         %{{tmpl}} %{{meta}}
+         --format=json -s {name} -D name={name}
+         -o %{{target}})))))
+"""
         print(out)
 
 
