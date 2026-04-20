@@ -1,2 +1,0 @@
-; Per-entry rules live in each leaf subdir's dune file, sharing
-; dune.repro.inc and dune.solutions.inc from this directory.
