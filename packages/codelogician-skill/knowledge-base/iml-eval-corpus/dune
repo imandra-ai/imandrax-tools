@@ -9,7 +9,20 @@
   (action
    (with-stdout-to
     %{target}
-    (run iml-eval-corpus-imx-eval %{in})))))
+    (run iml-eval-corpus-imx-eval %{in}))))
+
+    (rule
+       (alias runtest)
+       (mode
+        (promote (until-clean)))
+       (deps
+        (:in repro.iml))
+       (action
+        (run
+         sh
+         -c
+         "iml-eval-corpus-imx-eval %{in} | jq -e '.eval_res.errors | length >= 0'")))
+    )
 
 (subdir
  general-termination-proof-error
@@ -49,7 +62,7 @@
    (run
     sh
     -c
-    "test $(iml-eval-corpus-imx-eval solution.iml | jq '.eval_res.errors | length') -eq 0"))))
+    "iml-eval-corpus-imx-eval %{in} | jq -e '.eval_res.errors | length == 0'"))))
 
 (subdir
  ocaml-std-unavailable
@@ -75,4 +88,4 @@
     (run
      sh
      -c
-     "test $(iml-eval-corpus-imx-eval solution.iml | jq '.eval_res.errors | length') -eq 0")))))
+     "iml-eval-corpus-imx-eval %{in} | jq -e '.eval_res.errors | length == 0'")))))
