@@ -18,3 +18,15 @@
   (with-stdout-to %{target} (run uv run --script %{script}))))
 
 (include dune.flat_mirror.inc)
+
+; Aggregate per-entry repro/solution/explanation/eval_res into a single JSON
+(rule
+ (target iml_eval_corpus.json)
+ (deps
+  (:script gen_aggregated_json.py)
+  (source_tree function-in-composite-type)
+  (source_tree general-termination-proof-error)
+  (source_tree measure-type-err)
+  (source_tree _unknown-id-ocaml-stdlib))
+ (action
+  (with-stdout-to %{target} (run uv run --script %{script}))))
