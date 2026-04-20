@@ -1,0 +1,2 @@
+let add_options (x : int option) (y : int option) : int option =
+  Option.map2 (fun a b -> a + b) x y

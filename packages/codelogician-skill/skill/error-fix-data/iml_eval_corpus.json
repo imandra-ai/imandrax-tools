@@ -1,0 +1,237 @@
+{
+  "items": [
+    {
+      "name": "function-in-composite-type",
+      "repro": "let f (x : int) : int = x + 1\n\nlet ls_f = [f; f; f]\n",
+      "err_msg": {
+        "msg": "Function definition is not valid:\nFunctions must return a first-order type,\nbut `ls_f` returns `(int -> int) list`",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 3,
+              "col": 1
+            },
+            "stop": {
+              "line": 3,
+              "col": 20
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": null,
+      "explanation": "IML requires functions to be \"first-order\": a function value cannot be stored inside a composite type such as a list, tuple, record, or variant. "
+    },
+    {
+      "name": "general-termination-proof-error",
+      "repro": "let rec left_pad c n xs =\n  if List.length xs >= n then\n    xs\n  else\n    left_pad c n (c :: xs)\n",
+      "err_msg": {
+        "msg": "Goal is counter-satisfiable.",
+        "locs": [],
+        "backtrace": null
+      },
+      "is_po_err": true,
+      "solution": "let left_pad_measure n xs =\n  Ordinal.of_int (n - List.length xs)\n\nlet rec left_pad c n xs =\n  if List.length xs >= n then\n    xs\n  else\n    left_pad c n (c :: xs)\n[@@measure left_pad_measure n xs]\n",
+      "explanation": "Every recursive function must be proven terminating. When no `[@@measure ...]` attribute is given, ImandraX tries a default measure based on the function's arguments. When the definition is rejected with a counter-satisfiable termination goal with the default measure, consider supplying a custom measure function."
+    },
+    {
+      "name": "measure-type-err",
+      "repro": "let m (n : int) : int = n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
+      "err_msg": {
+        "msg": "Expression is expected to have type `Ordinal.t`,\nbut its inferred type is `int`.\nThe subtypes `Ordinal.t` and `int` do not match.",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 5,
+              "col": 12
+            },
+            "stop": {
+              "line": 5,
+              "col": 14
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "let m (n : int) : Ordinal.t = Ordinal.of_int n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
+      "explanation": "Termination measures (`[@@measure ...]`) expects a function that returns an ordinal value (`Ordinal.t`). Consider using functions like `Ordinal.of_int` to obtain Ordinal.t."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-array",
+      "repro": "let example () =\n  let arr = Array.make 5 0 in\n  arr\n",
+      "err_msg": {
+        "msg": "Unknown identifier `Array.make`.",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 13
+            },
+            "stop": {
+              "line": 2,
+              "col": 22
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Use list instead of Array *)\nlet example () =\n  let arr = List.mapi (fun _ _ -> 0) (0 -- 5) in\n  arr",
+      "explanation": "Arrays are mutable data structures and not available in IML, which is a pure functional language without mutable state. All operations must be immutable."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-failwith",
+      "repro": "let divide (x : int) (y : int) : int =\n  if y = 0 then\n    failwith \"Division by zero\"\n  else\n    x / y\n",
+      "err_msg": {
+        "msg": "Unknown identifier \"failwith\".",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 3,
+              "col": 5
+            },
+            "stop": {
+              "line": 3,
+              "col": 12
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Return an option type with None for error cases *)\nlet divide (x : int) (y : int) : int option =\n  if y = 0 then\n    None\n  else\n    Some (x / y)\n",
+      "solution_2": "(* Return a Result type with error message *)\nlet divide (x : int) (y : int) : (int, string) result =\n  if y = 0 then\n    Error \"Division by zero\"\n  else\n    Ok (x / y)\n",
+      "solution_3": "(* Return a sentinel value (changes function signature semantics). *)\nlet divide (x : int) (y : int) : int =\n  if y = 0 then\n    0\n  else\n    x / y\n",
+      "explanation": "IML is a pure language without exceptions. The `failwith` function from OCaml is not available. Error handling must use `Option` or `Result` types instead."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-list_fold_left2",
+      "repro": "let sum_pairs (l1 : int list) (l2 : int list) : int =\n  List.fold_left2 (fun acc x y -> acc + x + y) 0 l1 l2\n",
+      "err_msg": {
+        "msg": "Unknown function `List.fold_left2`.",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 3
+            },
+            "stop": {
+              "line": 2,
+              "col": 17
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Use List.map2 to create pairs first, then fold. *)\nlet sum_pairs (l1 : int list) (l2 : int list) : int =\n  match List.map2 (fun x y -> (x, y)) l1 l2 with\n  | Error _ -> 0\n  | Ok pairs -> List.fold_left (fun acc (x, y) -> acc + x + y) 0 pairs\n",
+      "solution_2": "(* Implement custom recursive function. *)\nlet rec sum_pairs (l1 : int list) (l2 : int list) : int =\n  match l1, l2 with\n  | [], [] -> 0\n  | x :: xs, y :: ys -> x + y + sum_pairs xs ys\n  | _, _ -> 0\n",
+      "explanation": "`List.fold_left2` does not exist in IML's List module. IML has `List.map2` but not `fold_left2`."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-option_bind",
+      "repro": "let process (x : int option) : int option =\n  Option.bind x (fun v -> Some (v + 1))\n",
+      "err_msg": {
+        "msg": "Unknown function `Option.bind`.",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 3
+            },
+            "stop": {
+              "line": 2,
+              "col": 13
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Use Option.flat_map. *)\nlet process (x : int option) : int option =\n  Option.flat_map (fun v -> Some (v + 1)) x\n\n(* Equivalently, use >>= operator. () *)\nlet process' (x : int option) : int option =\n  Option.(x >>= fun v -> Some (v + 1))\n\n\n(* Equivalently, use let* with open Option. *)\nlet process'' (x : int option) : int option =\n  let open Option in\n  let* v = x in\n  Some (v + 1)",
+      "explanation": "In IML, the function is called `Option.flat_map` instead of `Option.bind`. The monadic bind operator is available as `>>=` within the Option module."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-option_map2",
+      "repro": "let add_options (x : int option) (y : int option) : int option =\n  Option.map2 (fun a b -> a + b) x y\n",
+      "err_msg": {
+        "msg": "Unknown function `Option.map2`.",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 3
+            },
+            "stop": {
+              "line": 2,
+              "col": 13
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Use Option.monoid_product with map. *)\nlet add_options (x : int option) (y : int option) : int option =\n  Option.monoid_product x y |> Option.map (fun (a, b) -> a + b)\n\n(* Or, use let+ and and+ operators. *)\nlet add_options' (x : int option) (y : int option) : int option =\n  let open Option in\n  let+ a = x\n  and+ b = y in\n  a + b\n\n(* Or, use flat_map for monadic composition. *)\nlet add_options'' (x : int option) (y : int option) : int option =\n  Option.flat_map (fun a ->\n    Option.map (fun b -> a + b) y\n  ) x",
+      "explanation": "`Option.map2` does not exist in IML's Option module. Use `Option.monoid_product` or monadic composition instead."
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-ref",
+      "repro": "let counter () =\n  let count = ref 0 in\n  count := !count + 1;\n  !count\n",
+      "err_msg": {
+        "msg": "Unknown identifier \"ref\".",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 15
+            },
+            "stop": {
+              "line": 2,
+              "col": 17
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": "(* Use a parameter to track state *)\nlet counter (count : int) : int =\n  count + 1\n",
+      "solution_2": "(* Use recursion for stateful computation *)\nlet rec count_up_to (n : int) (current : int) : int =\n  if current >= n then\n    current\n  else\n    count_up_to n (current + 1)\n",
+      "solution_3": "(* Return the new state explicitly. *)\nlet increment (count : int) : int =\n  count + 1\n\nlet counter () : int =\n  let count = 0 in\n  let count = increment count in\n  count\n",
+      "explanation": null
+    },
+    {
+      "name": "unknown-id-ocaml-stdlib-sys_int_size",
+      "repro": "let clamp (x : int) : int =\n  if x < min_int then\n    min_int\n  else\n    x\n",
+      "err_msg": {
+        "msg": "Unknown identifier \"min_int\".",
+        "locs": [
+          {
+            "file": "<none>",
+            "start": {
+              "line": 2,
+              "col": 10
+            },
+            "stop": {
+              "line": 2,
+              "col": 16
+            }
+          }
+        ],
+        "backtrace": null
+      },
+      "is_po_err": false,
+      "solution": null,
+      "explanation": "IML integers have arbitrary precision, so there is no built-in `max_int` or `min_int` derived from `Sys.int_size` constant.\nConsider refactoring to use a specific constant for your use case or making it opaque if it's externally defined."
+    }
+  ]
+}

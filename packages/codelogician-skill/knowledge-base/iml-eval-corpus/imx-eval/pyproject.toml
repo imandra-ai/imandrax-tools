@@ -1,0 +1,17 @@
+[project]
+name = "imx-eval"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "imandrax-api-models[client]>=19.1.0",
+    "imandrax-tools>=0.2.0",
+]
+
+[project.scripts]
+iml-eval-corpus-imx-eval = "main:main"
+
+
+[tool.uv.sources]
+imandrax-tools = { path = "../../../../imandrax-tools", editable = true }

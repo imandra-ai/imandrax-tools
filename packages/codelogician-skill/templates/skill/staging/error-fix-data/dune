@@ -1,4 +1,4 @@
-; Copy README from src/ and error_corpus JSONs from knowledge-base/
+; Copy README from src/ and error_corpus.json from knowledge-base/iml-eval-corpus/
 
 (copy_files
  (alias skill)
@@ -10,4 +10,4 @@
  (alias skill)
  (mode
   (promote (until-clean)))
- (files ../../../../knowledge-base/error_corpus/error_corpus*.json))
+ (files ../../../../knowledge-base/iml-eval-corpus/iml_eval_corpus.json))

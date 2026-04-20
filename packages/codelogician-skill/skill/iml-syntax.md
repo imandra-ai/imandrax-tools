@@ -110,7 +110,7 @@ let count_negatives_in_row (row : int list) : int =
       : int option =
     List.fold_left
       (fun acc i ->
-        (* import Option module locally to use `let*`. could also be imported at thebeginning by `open Option` *)
+        (* import Option module locally to use `let*`. could also be imported at the beginning by `open Option` *)
         let open Option in
         let* acc_val = acc in
         let+ row_count = map count_negatives_in_row (List.nth i m) in
@@ -253,5 +253,4 @@ let change_bits_can_made_one_flip (s : LString.t) : bool =
   zeros = 1 || ones = 1
 (* val change_bits_can_made_one_flip : LString.t -> bool = <fun> *)
 ```
-
 

@@ -1,0 +1,16 @@
+(rule
+ (targets context.yaml)
+ (mode
+  (promote (until-clean)))
+ (deps
+  (source_tree src)
+  src/iml_caveats.yaml
+  src/prelude.yaml
+  src/quickstart_examples.yaml
+  src/tactics.yaml
+ )
+ (action
+  (with-stdout-to
+   %{targets}
+   (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline literal)
+   )))

@@ -1,0 +1,4 @@
+(executable
+ (public_name dump-of-fs)
+ (name main)
+ (libraries dump_of_fs cmdliner yojson yaml unix))

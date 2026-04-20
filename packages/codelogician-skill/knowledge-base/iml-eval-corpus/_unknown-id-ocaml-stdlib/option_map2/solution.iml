@@ -1,0 +1,16 @@
+(* Use Option.monoid_product with map. *)
+let add_options (x : int option) (y : int option) : int option =
+  Option.monoid_product x y |> Option.map (fun (a, b) -> a + b)
+
+(* Or, use let+ and and+ operators. *)
+let add_options' (x : int option) (y : int option) : int option =
+  let open Option in
+  let+ a = x
+  and+ b = y in
+  a + b
+
+(* Or, use flat_map for monadic composition. *)
+let add_options'' (x : int option) (y : int option) : int option =
+  Option.flat_map (fun a ->
+    Option.map (fun b -> a + b) y
+  ) x

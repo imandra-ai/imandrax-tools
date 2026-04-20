@@ -1,0 +1,8 @@
+(* Return the new state explicitly. *)
+let increment (count : int) : int =
+  count + 1
+
+let counter () : int =
+  let count = 0 in
+  let count = increment count in
+  count

@@ -1,0 +1,24 @@
+(rule
+  (mode (promote (until-clean)))
+  (action
+    (copy ../../reference_prelude/prelude.yaml prelude.yaml)
+  )
+)
+
+(rule
+  (mode (promote (until-clean)))
+  (action
+    (copy ../../reference_tactics/tactics.yaml tactics.yaml)
+  )
+)
+
+(rule
+  (mode (promote (until-clean)))
+  (action
+    (progn
+      (copy ../../constants/iml_caveats.yaml iml_caveats.yaml)
+      (copy ../../constants/quickstart_examples.yaml quickstart_examples.yaml)
+      (copy ../../constants/short_iml_101.yaml short_iml_101.yaml)
+    )
+  )
+)

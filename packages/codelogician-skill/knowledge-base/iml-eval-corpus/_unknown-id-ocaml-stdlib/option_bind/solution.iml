@@ -1,0 +1,14 @@
+(* Use Option.flat_map. *)
+let process (x : int option) : int option =
+  Option.flat_map (fun v -> Some (v + 1)) x
+
+(* Equivalently, use >>= operator. () *)
+let process' (x : int option) : int option =
+  Option.(x >>= fun v -> Some (v + 1))
+
+
+(* Equivalently, use let* with open Option. *)
+let process'' (x : int option) : int option =
+  let open Option in
+  let* v = x in
+  Some (v + 1)

@@ -1,0 +1,2 @@
+let process (x : int option) : int option =
+  Option.bind x (fun v -> Some (v + 1))

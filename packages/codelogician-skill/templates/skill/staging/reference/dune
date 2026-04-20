@@ -12,7 +12,7 @@
   (promote (until-clean)))
  (deps
   (:tpl ../../src/reference/tactics.md.jinja)
-  (:ctx ../../../../knowledge-base/context.yaml))
+  (:ctx ../../../../knowledge-base/context/context.yaml))
  (target tactics.md)
  (action
   (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
@@ -23,7 +23,7 @@
   (promote (until-clean)))
  (deps
   (:tpl ../../src/reference/all-prelude-module-signatures.md.jinja)
-  (:ctx ../../../../knowledge-base/context.yaml))
+  (:ctx ../../../../knowledge-base/context/context.yaml))
  (target all-prelude-module-signatures.md)
  (action
   (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
