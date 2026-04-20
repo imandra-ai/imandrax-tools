@@ -23,7 +23,7 @@
 (rule
  (target iml_eval_corpus.json)
  (deps
-  (:script gen_aggregated_json.py)
+  (:script gen_iml_eval_corpus_json.py)
   (source_tree function-in-composite-type)
   (source_tree general-termination-proof-error)
   (source_tree measure-type-err)
