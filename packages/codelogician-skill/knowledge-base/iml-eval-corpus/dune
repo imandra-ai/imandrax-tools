@@ -12,7 +12,7 @@
  (mode (promote (until-clean)))
  (target dune.flat_mirror.inc)
  (deps
-  (:script gen_dune_flat_mirror_inc.py.py)
+  (:script gen_dune_flat_mirror_inc.py)
   (source_tree _unknown-id-ocaml-stdlib))
  (action
   (with-stdout-to %{target} (run uv run --script %{script}))))
@@ -27,6 +27,6 @@
   (source_tree function-in-composite-type)
   (source_tree general-termination-proof-error)
   (source_tree measure-type-err)
-  (source_tree _unknown-id-ocaml-stdlib))
+  (glob_files_rec unknown-id-ocaml-stdlib-*/*))
  (action
   (with-stdout-to %{target} (run uv run --script %{script}))))

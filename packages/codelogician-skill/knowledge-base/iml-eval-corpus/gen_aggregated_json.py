@@ -16,8 +16,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-GROUP_DIR = "_unknown-id-ocaml-stdlib"
-GROUP_FLAT_PREFIX = "unknown-id-ocaml-stdlib"
 ERR_MSG_JQ = ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg"
 
 
@@ -41,13 +39,21 @@ def extract_err_msg(eval_res_path: Path) -> dict[str, Any] | None:
     return None
 
 
+def read_solutions(entry_dir: Path) -> dict[str, str | None]:
+    data: dict[str, str | None] = {}
+    data["solution"] = read_text(entry_dir / "solution.iml")
+    for path in sorted(entry_dir.glob("solution_*.iml")):
+        data[path.stem] = path.read_text()
+    return data
+
+
 def entry_for(name: str, entry_dir: Path) -> dict[str, Any]:
     item = {
         "name": name,
         "repro": read_text(entry_dir / "repro.iml"),
         ERR_MSG_JQ: extract_err_msg(entry_dir / "eval_res.json"),
         "is_po_err": (entry_dir / ".is_po_error").is_file(),
-        "solution": read_text(entry_dir / "solution.iml"),
+        **(read_solutions(entry_dir)),
         "explanation": read_text(entry_dir / "explanation.md"),
     }
     return item
@@ -58,14 +64,7 @@ def main() -> None:
     entries: list[tuple[str, Path]] = []
 
     for child in sorted(here.iterdir()):
-        if not child.is_dir() or child.name.startswith("."):
-            continue
-        if child.name == GROUP_DIR:
-            for sub in sorted(child.iterdir()):
-                if sub.is_dir() and (sub / "repro.iml").is_file():
-                    entries.append((f"{GROUP_FLAT_PREFIX}-{sub.name}", sub))
-            continue
-        if child.name.startswith("_"):
+        if not child.is_dir() or child.name.startswith((".", "_")):
             continue
         if (child / "repro.iml").is_file():
             entries.append((child.name, child))
