@@ -1179,6 +1179,7 @@ dependencies = [
     { name = "imandrax-tools" },
     { name = "iml-query" },
     { name = "minirec" },
+    { name = "typer" },
 ]
 
 [package.dev-dependencies]
@@ -1192,6 +1193,7 @@ requires-dist = [
     { name = "imandrax-tools", editable = "../../../imandrax-tools" },
     { name = "iml-query", editable = "../../../iml-query" },
     { name = "minirec", editable = "../../../minirec" },
+    { name = "typer", specifier = ">=0.24.1" },
 ]
 
 [package.metadata.requires-dev]

@@ -109,23 +109,6 @@ def check_measure_type_err(iml: str, eval_res: EvalRes) -> MeasureTypeErrDiag | 
 
 # %%
 if __name__ == "__main__":
-    import json
+    from iml_eval_corpus.cli import main_from_check
 
-    repro_iml = (CURR_DIR.parent / "repro.iml").read_text()
-    eval_res_data = json.loads((CURR_DIR.parent / "eval_res.json").read_text())
-    eval_res = EvalRes.model_validate(eval_res_data["eval_res"])
-
-    diag = check_measure_type_err(repro_iml, eval_res)
-    print("diag:", diag)
-    if diag is not None:
-        print()
-        print("JSON schema:")
-        import json as _json
-
-        print(_json.dumps(MeasureTypeErrDiag.model_json_schema(), indent=2))
-        print()
-        print("Instance:")
-        print(diag.model_dump_json(indent=2))
-        print()
-        print("Formatted:")
-        print(diag.format_error_message())
+    main_from_check(check_measure_type_err)

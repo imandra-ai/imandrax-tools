@@ -11,7 +11,8 @@ dependencies = [
     "imandrax-api-models>=19.1.0",
     "imandrax-tools>=0.2.0",
     "iml-query>=0.8.0",
-    "minirec"
+    "minirec",
+    "typer>=0.24.1",
 ]
 
 [tool.uv.sources]
@@ -28,6 +29,12 @@ build-backend = "uv_build"
 dev = [
     "ipykernel>=7.2.0",
 ]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
 
 
 [tool.ty.rules]
