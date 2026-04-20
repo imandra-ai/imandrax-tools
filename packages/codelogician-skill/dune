@@ -20,4 +20,4 @@
  (target
   (dir skill))
  (action
-  (bash "rsync -a --delete --exclude=dune templates/skill/staging/ skill/")))
+  (bash "rsync -a --delete --exclude=dune --exclude=.gitignore templates/skill/staging/ skill/")))
