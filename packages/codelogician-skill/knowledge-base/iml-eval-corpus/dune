@@ -36,3 +36,43 @@
    (with-stdout-to
     %{target}
     (run iml-eval-corpus-imx-eval %{in})))))
+
+(subdir
+ measure-type-err
+ (rule
+  (alias runtest)
+  (mode
+   (promote (until-clean)))
+  (deps
+   (:in solution.iml))
+  (action
+   (run
+    sh
+    -c
+    "test $(iml-eval-corpus-imx-eval solution.iml | jq '.eval_res.errors | length') -eq 0"))))
+
+(subdir
+ ocaml-std-unavailable
+ (subdir
+  failwith
+  (rule
+   (mode
+    (promote (until-clean)))
+   (target eval_res.json)
+   (deps
+    (:in repro.iml))
+   (action
+    (with-stdout-to
+     %{target}
+     (run iml-eval-corpus-imx-eval %{in}))))
+  (rule
+   (alias runtest)
+   (mode
+    (promote (until-clean)))
+   (deps
+    (:in solution.iml))
+   (action
+    (run
+     sh
+     -c
+     "test $(iml-eval-corpus-imx-eval solution.iml | jq '.eval_res.errors | length') -eq 0")))))
