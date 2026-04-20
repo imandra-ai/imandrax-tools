@@ -3,7 +3,7 @@
     {
       "name": "function-in-composite-type",
       "repro": "let f (x : int) : int = x + 1\n\nlet ls_f = [f; f; f]\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Function definition is not valid:\nFunctions must return a first-order type,\nbut `ls_f` returns `(int -> int) list`",
         "locs": [
           {
@@ -27,7 +27,7 @@
     {
       "name": "general-termination-proof-error",
       "repro": "let rec left_pad c n xs =\n  if List.length xs >= n then\n    xs\n  else\n    left_pad c n (c :: xs)\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Goal is counter-satisfiable.",
         "locs": [],
         "backtrace": null
@@ -39,7 +39,7 @@
     {
       "name": "measure-type-err",
       "repro": "let m (n : int) : int = n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Expression is expected to have type `Ordinal.t`,\nbut its inferred type is `int`.\nThe subtypes `Ordinal.t` and `int` do not match.",
         "locs": [
           {
@@ -63,7 +63,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-array",
       "repro": "let example () =\n  let arr = Array.make 5 0 in\n  arr\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown identifier `Array.make`.",
         "locs": [
           {
@@ -87,7 +87,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-failwith",
       "repro": "let divide (x : int) (y : int) : int =\n  if y = 0 then\n    failwith \"Division by zero\"\n  else\n    x / y\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown identifier \"failwith\".",
         "locs": [
           {
@@ -113,7 +113,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-list_fold_left2",
       "repro": "let sum_pairs (l1 : int list) (l2 : int list) : int =\n  List.fold_left2 (fun acc x y -> acc + x + y) 0 l1 l2\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown function `List.fold_left2`.",
         "locs": [
           {
@@ -138,7 +138,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-option_bind",
       "repro": "let process (x : int option) : int option =\n  Option.bind x (fun v -> Some (v + 1))\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown function `Option.bind`.",
         "locs": [
           {
@@ -162,7 +162,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-option_map2",
       "repro": "let add_options (x : int option) (y : int option) : int option =\n  Option.map2 (fun a b -> a + b) x y\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown function `Option.map2`.",
         "locs": [
           {
@@ -186,7 +186,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-ref",
       "repro": "let counter () =\n  let count = ref 0 in\n  count := !count + 1;\n  !count\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown identifier \"ref\".",
         "locs": [
           {
@@ -212,7 +212,7 @@
     {
       "name": "unknown-id-ocaml-stdlib-sys_int_size",
       "repro": "let clamp (x : int) : int =\n  if x < min_int then\n    min_int\n  else\n    x\n",
-      ".eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg": {
+      "err_msg": {
         "msg": "Unknown identifier \"min_int\".",
         "locs": [
           {

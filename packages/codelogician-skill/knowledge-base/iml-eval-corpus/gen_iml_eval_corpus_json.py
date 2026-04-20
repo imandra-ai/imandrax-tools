@@ -51,7 +51,7 @@ def entry_for(name: str, entry_dir: Path) -> dict[str, Any]:
     item = {
         "name": name,
         "repro": read_text(entry_dir / "repro.iml"),
-        ERR_MSG_JQ: extract_err_msg(entry_dir / "eval_res.json"),
+        "err_msg": extract_err_msg(entry_dir / "eval_res.json"),
         "is_po_err": (entry_dir / ".is_po_error").is_file(),
         **(read_solutions(entry_dir)),
         "explanation": read_text(entry_dir / "explanation.md"),

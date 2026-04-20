@@ -9,7 +9,7 @@ Each entry in `items` has:
 
 - `name` — entry identifier.
 - `repro` — the `repro.iml` source that triggers the error.
-- `.eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg` — the error message object (`msg`, `locs`, `backtrace`) extracted from `eval_res.json` via that jq query. To access this field in jq, quote it, e.g. `jq '.items[0]["'"'"'.eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg"'"'"']'`.
+- `err_msg` — the error message object (`msg`, `locs`, `backtrace`) extracted from eval result via jq query `.eval_res | (.errors[0] // .po_results[0].errors[0]) | .msg`.
 - `is_po_err` — `true` if the error is a proof-obligation error (marked via a `.is_po_error` file in the source entry).
 - `solution` — the fixed IML source.
 - `explanation` — prose explanation of the error and the fix.
