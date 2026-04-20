@@ -1,0 +1,41 @@
+{
+  "eval_res": {
+    "success": true,
+    "messages": [],
+    "errors": [
+      {
+        "msg": {
+          "msg": "Function definition is not valid:\nFunctions must return a first-order type,\nbut `ls_f` returns `(int -> int) list`",
+          "locs": [
+            {
+              "file": "<none>",
+              "start": {
+                "line": 3,
+                "col": 1
+              },
+              "stop": {
+                "line": 3,
+                "col": 20
+              }
+            }
+          ],
+          "backtrace": null
+        },
+        "kind": "{ Kind.name = \"ValidationError\" }",
+        "stack": [
+          {
+            "msg": "Validating declaration `(Fun\n                           { f_name =\n                             `ls_f/JBmJSMJVzFzy4uIMSBroxX24-xjFlPB50K0IAl3qdr0`;\n                             f_ty = { params = []; ty = (int -> int) list };\n                             f_args = []; f_body = [f; f; f];\n                             f_clique = None;\n                             f_kind =\n                             Fun_defined {is_macro = false;\n                               from_lambda = false};\n                             f_hints =\n                             { f_validate_strat = VS_validate {tactic = None};\n                               f_unroll_def = None; f_enable = [];\n                               f_disable = []; f_timeout = None;\n                               f_admission = None; f_decomp = None }\n                             })`",
+            "locs": [],
+            "backtrace": "Raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 23, characters 12-23\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\n"
+          }
+        ],
+        "process": "imandrax-server"
+      }
+    ],
+    "tasks": [],
+    "po_results": [],
+    "eval_results": [],
+    "decomp_results": []
+  },
+  "goal-state": null
+}
