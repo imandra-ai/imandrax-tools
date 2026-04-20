@@ -12,7 +12,7 @@
  (mode (promote (until-clean)))
  (target dune.flat_mirror.inc)
  (deps
-  (:script gen_flat_mirror_rules.py)
+  (:script gen_dune_flat_mirror_inc.py.py)
   (source_tree _unknown-id-ocaml-stdlib))
  (action
   (with-stdout-to %{target} (run uv run --script %{script}))))
