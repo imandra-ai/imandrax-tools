@@ -1,0 +1,61 @@
+{
+  "eval_res": {
+    "success": true,
+    "messages": [],
+    "errors": [
+      {
+        "msg": {
+          "msg": "Expression is expected to have type `Ordinal.t`,\nbut its inferred type is `int`.\nThe subtypes `Ordinal.t` and `int` do not match.",
+          "locs": [
+            {
+              "file": "<none>",
+              "start": {
+                "line": 5,
+                "col": 12
+              },
+              "stop": {
+                "line": 5,
+                "col": 14
+              }
+            }
+          ],
+          "backtrace": null
+        },
+        "kind": "{ Kind.name = \"TypeErr\" }",
+        "stack": [],
+        "process": "imandrax-server"
+      },
+      {
+        "msg": {
+          "msg": "MIR.Term.apply:\n  type error when applying (Ordinal.is_valid : Ordinal.t -> bool)\n  to args ([measure_fun.f] : [bool])",
+          "locs": [],
+          "backtrace": "Raised at Stdlib__Hashtbl.MakeSeeded.find in file \"hashtbl.ml\", line 399, characters 25-40\nCalled from Imandrax_api_mir__Term.Build_.hashcons_ in file \"vendor/imandrax-api/src/lib/mir/term.ml\", line 225, characters 10-22\n"
+        },
+        "kind": "{ Kind.name = \"TypeErr\" }",
+        "stack": [
+          {
+            "msg": "Validating declaration `(Fun\n                           { f_name =\n                             `f/YpIFSuewqTSqmzApHWyMabcqCgOAYar9kUH_dVMq41Y`;\n                             f_ty = { params = []; ty = int -> int };\n                             f_args = [{ id = n/265246; ty = int }];\n                             f_body = if n <= 0 then 0 else f (n - 1);\n                             f_clique =\n                             (Some {f/YpIFSuewqTSqmzApHWyMabcqCgOAYar9kUH_dVMq41Y});\n                             f_kind =\n                             Fun_defined {is_macro = false;\n                               from_lambda = false};\n                             f_hints =\n                             { f_validate_strat = VS_validate {tactic = None};\n                               f_unroll_def = None; f_enable = [];\n                               f_disable = []; f_timeout = None;\n                               f_admission =\n                               (Some { measured_subset = [];\n                                       measure_fun =\n                                       (Some measure_fun.f/HINsU-hnW_I_1GJtRRDSuWUgt1YtjFSE28IIgmDNPAQ)\n                                       });\n                               f_decomp = None }\n                             })`",
+            "locs": [],
+            "backtrace": "Raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 23, characters 12-23\nCalled from Imandrax_mir__Term.apply_ty_.loop in file \"src/mir/term.ml\", line 409, characters 46-53\nCalled from Imandrax_mir__Term.apply in file \"src/mir/term.ml\", line 416, characters 11-24\nCalled from Stdlib__List.map in file \"list.ml\", line 83, characters 15-19\nCalled from Imandrax_validate__Termination_po.po_of_call in file \"src/validate/termination_po.ml\", line 592, characters 8-39\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\nRe-raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 24, characters 15-53\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\" (inlined), lines 727-728, characters 8-46\nCalled from Stdlib__List.map in file \"list.ml\" (inlined), line 83, characters 15-19\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\" (inlined), lines 726-729, characters 6-19\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\", lines 726-729, characters 6-19\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\nRe-raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 24, characters 15-53\nCalled from Imandrax_session__Validation.validate_decls_.check_decl in file \"src/session/validation.ml\", line 68, characters 10-63\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\n"
+          },
+          {
+            "msg": "Computing proof obligations for termination",
+            "locs": [],
+            "backtrace": "Raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 23, characters 12-23\nCalled from Imandrax_mir__Term.apply_ty_.loop in file \"src/mir/term.ml\", line 409, characters 46-53\nCalled from Imandrax_mir__Term.apply in file \"src/mir/term.ml\", line 416, characters 11-24\nCalled from Stdlib__List.map in file \"list.ml\", line 83, characters 15-19\nCalled from Imandrax_validate__Termination_po.po_of_call in file \"src/validate/termination_po.ml\", line 592, characters 8-39\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\nRe-raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 24, characters 15-53\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\" (inlined), lines 727-728, characters 8-46\nCalled from Stdlib__List.map in file \"list.ml\" (inlined), line 83, characters 15-19\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\" (inlined), lines 726-729, characters 6-19\nCalled from Imandrax_validate__Termination_po.compute_ in file \"src/validate/termination_po.ml\", lines 726-729, characters 6-19\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\n"
+          },
+          {
+            "msg": "PO of call { sc_original =\n             { c_fun_name = f; c_ty_args = []; c_args = [(n/265246 : int)];\n               c_as_term = (f (n/265246 : int)) };\n             sc_sub =\n             { c_fun_name = f; c_ty_args = [];\n               c_args = [(- (n/265246 : int) 1)];\n               c_as_term = (f (- (n/265246 : int) 1)) };\n             sc_path = [(not (<= (n/265246 : int) 0))] }",
+            "locs": [],
+            "backtrace": "Raised at Imandrakit_error__Error_core.raise_err in file \"vendor/imandrakit/src/error/error_core.ml\", line 23, characters 12-23\nCalled from Imandrax_mir__Term.apply_ty_.loop in file \"src/mir/term.ml\", line 409, characters 46-53\nCalled from Imandrax_mir__Term.apply in file \"src/mir/term.ml\", line 416, characters 11-24\nCalled from Stdlib__List.map in file \"list.ml\", line 83, characters 15-19\nCalled from Imandrax_validate__Termination_po.po_of_call in file \"src/validate/termination_po.ml\", line 592, characters 8-39\nCalled from Imandrakit_error__Error_core.guard in file \"vendor/imandrakit/src/error/error_core.ml\", line 83, characters 6-10\n"
+          }
+        ],
+        "process": "imandrax-server"
+      }
+    ],
+    "tasks": [],
+    "po_results": [],
+    "eval_results": [],
+    "decomp_results": []
+  },
+  "goal-state": null
+}

@@ -1,0 +1,50 @@
+{
+  "eval_res": {
+    "success": true,
+    "messages": [
+      "{PO_res.stats={ time_s = 21.6ms }; res=(No_proof\n                                          { err =\n                                            Error{ Kind.name = \"TacticEvalErr\" }:\n                                              Goal is counter-satisfiable.;\n                                            counter_model =\n                                            (Some { tys =\n                                                    [('a,\n                                                      (Ty_alias_unit unit));\n                                                      (_a_0,\n                                                       (Ty_finite\n                                                          [C__a_0_0; C__a_0_1\n                                                            ]))\n                                                      ];\n                                                    consts =\n                                                    [((c/408302 : 'a),\n                                                      C__a_0_0);\n                                                      ((n/408306 : int), 2);\n                                                      ((xs/408310 : 'a list),\n                                                       [])\n                                                      ];\n                                                    funs = [];\n                                                    representable = true;\n                                                    completed = true;\n                                                    ty_subst =\n                                                    [(_a_0/6vs47frpASL5-M8E8YUTM-U7RfzgPc3rzwVM2XrH0Tw,\n                                                      _a_0);\n                                                      (_a_0/6vs47frpASL5-M8E8YUTM-U7RfzgPc3rzwVM2XrH0Tw,\n                                                       _a_0)\n                                                      ]\n                                                    });\n                                            subgoals =\n                                            [\n                                              |----------------------------------------------------------------------\n                                               not\n                                               (List.length<_a_0> xs >= n)\n                                               && (Ordinal.is_valid\n                                                   (Ordinal.Int\n                                                    (count.list<_a_0>\n                                                     (const<int _a_0> 0) xs))\n                                                   && Ordinal.is_valid\n                                                      (Ordinal.Int\n                                                       (count.list<_a_0>\n                                                        (const<int _a_0> 0)\n                                                        (c :: xs))))\n                                               ==> not\n                                                   (not\n                                                    (List.length<_a_0>\n                                                     (c :: xs) >= n))\n                                                   || Ordinal.(<<)\n                                                      (Ordinal.Int\n                                                       (count.list<_a_0>\n                                                        (const<int _a_0> 0)\n                                                        (c :: xs)))\n                                                      (Ordinal.Int\n                                                       (count.list<_a_0>\n                                                        (const<int _a_0> 0)\n                                                        xs))\n                                              ];\n                                            sub_anchor = None }); \u2026}"
+    ],
+    "errors": [],
+    "tasks": [
+      {
+        "id": {
+          "id": "task:po:KwQhACO10XTEp1C9q-Ia2ZPdvlAflcVMs7436VJuAEY="
+        },
+        "kind": "TASK_CHECK_PO"
+      }
+    ],
+    "po_results": [
+      {
+        "unknown": null,
+        "err": null,
+        "proof": null,
+        "instance": {
+          "model": {
+            "m_type": "Counter_example",
+            "src": "module M = struct\n  type _a_0 = C__a_0_0 | C__a_0_1\n  let c = C__a_0_0\n  let n = 2\n  let xs = []\n\nend\n",
+            "artifact": null
+          }
+        },
+        "verified_upto": null,
+        "qcheck_ok": null,
+        "errors": [
+          {
+            "msg": {
+              "msg": "Goal is counter-satisfiable.",
+              "locs": [],
+              "backtrace": null
+            },
+            "kind": "{ Kind.name = \"TacticEvalErr\" }",
+            "stack": [],
+            "process": "imandrax-server"
+          }
+        ],
+        "task": null,
+        "origin": null
+      }
+    ],
+    "eval_results": [],
+    "decomp_results": []
+  },
+  "goal-state": null
+}

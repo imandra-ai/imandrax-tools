@@ -1,8 +1,36 @@
 (subdir
  function-in-composite-type
  (rule
-  (mode (promote (until-clean)))
-  (deps (:in repro.iml))
+  (mode
+   (promote (until-clean)))
+  (deps
+   (:in repro.iml))
+  (target eval_res.json)
+  (action
+   (with-stdout-to
+    %{target}
+    (run iml-eval-corpus-imx-eval %{in})))))
+
+(subdir
+ general-termination-proof-error
+ (rule
+  (mode
+   (promote (until-clean)))
+  (deps
+   (:in repro.iml))
+  (target eval_res.json)
+  (action
+   (with-stdout-to
+    %{target}
+    (run iml-eval-corpus-imx-eval %{in})))))
+
+(subdir
+ measure-type-err
+ (rule
+  (mode
+   (promote (until-clean)))
+  (deps
+   (:in repro.iml))
   (target eval_res.json)
   (action
    (with-stdout-to
