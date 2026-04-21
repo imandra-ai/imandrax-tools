@@ -5,7 +5,7 @@ import re
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes
-from minirec.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
+from iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
 from pydantic import computed_field
 
 IDENTIFIER: str = "ref"
