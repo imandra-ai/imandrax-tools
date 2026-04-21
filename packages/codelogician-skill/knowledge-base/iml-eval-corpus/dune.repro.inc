@@ -7,7 +7,7 @@
    %{target}
    (run iml-eval-corpus-imx-eval %{in}))))
 
-; Assert the expected failure.
+; Assert the expected failure in eval_res.json
 (rule
 (alias runtest)
 (deps eval_res.json (glob_files .is_po_error) (glob_files .error_in_msg))
