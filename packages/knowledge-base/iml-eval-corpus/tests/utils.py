@@ -11,7 +11,7 @@ from typing import Any
 
 from imandrax_api_models import EvalRes
 
-CORPUS_ROOT = Path(__file__).resolve().parent.parent
+CORPUS_ROOT = Path(__file__).resolve().parent.parent / "corpus"
 
 
 def discover_categories() -> list[Path]:

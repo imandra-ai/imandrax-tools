@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import ClassVar
 
-from imandrax_api_models import ErrorKind, EvalRes, TaskKind
-from iml_eval_corpus.common import BaseDiag, BaseRule, NoLoc, Severity
+from imandrax_api_models import ErrorKind, ErrorKindParsingError, EvalRes, TaskKind
 from pydantic import computed_field
+
+from iml_eval_corpus.common import BaseDiag, BaseRule, NoLoc, Severity
 
 CURR_DIR = Path(__file__).parent
 
@@ -64,12 +65,15 @@ def check_decomp_asm_mismatch(
 
     has_tactic_eval_err_with_inject_asm = False
     for msg in eval_res.messages:
-        if (
-            ErrorKind.from_proto_kind(msg) == ErrorKind.TACTIC_EVAL_ERR
-            and "Inject_asm" in msg
-        ):
-            has_tactic_eval_err_with_inject_asm = True
-            break
+        try:
+            if (
+                ErrorKind.from_proto_kind(msg) == ErrorKind.TACTIC_EVAL_ERR
+                and "Inject_asm" in msg
+            ):
+                has_tactic_eval_err_with_inject_asm = True
+                break
+        except ErrorKindParsingError:
+            pass
     if not has_tactic_eval_err_with_inject_asm:
         return None
 
