@@ -1115,7 +1115,7 @@ async = [
 [[package]]
 name = "imandrax-api-models"
 version = "19.1.0"
-source = { editable = "../../../imandrax-api-models" }
+source = { editable = "../../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
@@ -1152,7 +1152,7 @@ dev = [
 [[package]]
 name = "imandrax-tools"
 version = "0.2.0"
-source = { editable = "../../../imandrax-tools" }
+source = { editable = "../../imandrax-tools" }
 dependencies = [
     { name = "imandrax-api-models" },
     { name = "iml-query" },
@@ -1190,10 +1190,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "imandrax-api-models", editable = "../../../imandrax-api-models" },
-    { name = "imandrax-tools", editable = "../../../imandrax-tools" },
-    { name = "iml-query", editable = "../../../iml-query" },
-    { name = "minirec", editable = "../../../minirec" },
+    { name = "imandrax-api-models", editable = "../../imandrax-api-models" },
+    { name = "imandrax-tools", editable = "../../imandrax-tools" },
+    { name = "iml-query", editable = "../../iml-query" },
+    { name = "minirec", editable = "../../minirec" },
     { name = "typer", specifier = ">=0.24.1" },
 ]
 
@@ -1206,7 +1206,7 @@ dev = [
 [[package]]
 name = "iml-query"
 version = "0.8.0"
-source = { editable = "../../../iml-query" }
+source = { editable = "../../iml-query" }
 dependencies = [
     { name = "devtools" },
     { name = "rich" },
@@ -1659,7 +1659,7 @@ wheels = [
 [[package]]
 name = "minirec"
 version = "0.1.0"
-source = { editable = "../../../minirec" }
+source = { editable = "../../minirec" }
 dependencies = [
     { name = "imandrax-api" },
     { name = "imandrax-api-models", extra = ["client"] },
@@ -1672,9 +1672,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "imandrax-api", specifier = ">=0.19.0.1" },
-    { name = "imandrax-api-models", extras = ["client"], editable = "../../../imandrax-api-models" },
-    { name = "imandrax-tools", editable = "../../../imandrax-tools" },
-    { name = "iml-query", editable = "../../../iml-query" },
+    { name = "imandrax-api-models", extras = ["client"], editable = "../../imandrax-api-models" },
+    { name = "imandrax-tools", editable = "../../imandrax-tools" },
+    { name = "iml-query", editable = "../../iml-query" },
     { name = "logfire", specifier = ">=4.32.0" },
     { name = "pydantic-ai", specifier = ">=1.80.0" },
 ]

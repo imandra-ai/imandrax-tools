@@ -19,10 +19,10 @@ dependencies = [
 iml-eval-corpus-imx-eval = "iml_eval_corpus.imx_eval:main"
 
 [tool.uv.sources]
-minirec = { path = "../../../minirec", editable = true }
-iml-query = { path = "../../../iml-query", editable = true }
-imandrax-api-models = { path = "../../../imandrax-api-models", editable = true }
-imandrax-tools = { path = "../../../imandrax-tools", editable = true }
+minirec = { path = "../../minirec", editable = true }
+iml-query = { path = "../../iml-query", editable = true }
+imandrax-api-models = { path = "../../imandrax-api-models", editable = true }
+imandrax-tools = { path = "../../imandrax-tools", editable = true }
 
 [build-system]
 requires = ["uv_build>=0.8.22,<0.9.0"]
