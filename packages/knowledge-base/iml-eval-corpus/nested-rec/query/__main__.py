@@ -57,9 +57,7 @@ class NestedRecursiveFunctionDiag(BaseDiag):
 # ====================
 
 
-def check_nested_rec(
-    iml: str, eval_res: EvalRes
-) -> NestedRecursiveFunctionDiag | None:
+def check_nested_rec(iml: str, eval_res: EvalRes) -> NestedRecursiveFunctionDiag | None:
     """Match the `nested-recursive-function` pattern.
 
     Conditions:
@@ -84,9 +82,9 @@ def check_nested_rec(
         return NestedRecursiveFunctionDiag(
             loc=range_to_loc(child.function_definition.range),
             function_name=unwrap_bytes(child.function_name.text).decode("utf-8"),
-            top_function_name=unwrap_bytes(
-                nesting["parent"].function_name.text
-            ).decode("utf-8"),
+            top_function_name=unwrap_bytes(nesting["parent"].function_name.text).decode(
+                "utf-8"
+            ),
             nesting_level=nesting["nesting_level"],
         )
     return None
