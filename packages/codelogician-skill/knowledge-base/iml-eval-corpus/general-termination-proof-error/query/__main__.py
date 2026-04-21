@@ -130,6 +130,15 @@ def check_general_termination_proof_error(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = GENERAL_TERMINATION_PROOF_ERROR_RULE
+Diag = GeneralTerminationProofErrorDiag
+check = check_general_termination_proof_error
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

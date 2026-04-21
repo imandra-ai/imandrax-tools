@@ -108,6 +108,15 @@ def check_measure_type_err(iml: str, eval_res: EvalRes) -> MeasureTypeErrDiag | 
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = MEASURE_TYPE_ERR_RULE
+Diag = MeasureTypeErrDiag
+check = check_measure_type_err
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

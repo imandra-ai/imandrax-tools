@@ -129,6 +129,15 @@ def check_function_in_composite_type(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = FUNCTION_IN_COMPOSITE_TYPE_RULE
+Diag = FunctionInCompositeTypeDiag
+check = check_function_in_composite_type
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

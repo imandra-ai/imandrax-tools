@@ -93,6 +93,15 @@ def check_nested_rec(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = NESTED_RECURSIVE_FUNCTION_RULE
+Diag = NestedRecursiveFunctionDiag
+check = check_nested_rec
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

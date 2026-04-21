@@ -113,6 +113,15 @@ def check_nested_measure(iml: str, eval_res: EvalRes) -> NestedMeasureDiag | Non
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = NESTED_MEASURE_RULE
+Diag = NestedMeasureDiag
+check = check_nested_measure
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

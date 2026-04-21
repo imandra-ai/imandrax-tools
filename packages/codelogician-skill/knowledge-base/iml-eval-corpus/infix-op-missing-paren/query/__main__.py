@@ -105,6 +105,15 @@ def check_infix_op_missing_paren(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = INFIX_OP_MISSING_PAREN_RULE
+Diag = InfixOpMissingParenDiag
+check = check_infix_op_missing_paren
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

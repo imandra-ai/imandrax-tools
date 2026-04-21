@@ -90,6 +90,15 @@ def check_unknown_id_ocaml_stdlib(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = UNKNOWN_ID_RULE
+Diag = UnknownIdOCamlStdlibDiag
+check = check_unknown_id_ocaml_stdlib
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 

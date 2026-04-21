@@ -82,6 +82,15 @@ def check_decomp_asm_mismatch(
 
 
 # %%
+# Query-module Protocol aliases (see iml_eval_corpus.query_protocol)
+# ====================
+
+RULE = DECOMP_ASM_SIG_MISMATCH_RULE
+Diag = DecompAsmSigMismatchDiag
+check = check_decomp_asm_mismatch
+
+
+# %%
 if __name__ == "__main__":
     from iml_eval_corpus.cli import main_from_check
 
