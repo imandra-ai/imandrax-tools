@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
 """Emit dune stanzas that mirror each `_unknown-id-ocaml-stdlib/<name>/` dir
 to a flat top-level `unknown-id-ocaml-stdlib-<name>/` dir (promoted), and
 render each entry's `query/__main__.py` from the shared jinja template.
@@ -44,7 +48,7 @@ def main() -> None:
     (:tmpl ../../{SRC_GROUP}/query.__main__.py.j2)
     (:meta ../../{SRC_GROUP}/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{{tmpl}} %{{meta}}
          --format=json -s {name} -D name={name}
          -o %{{target}})))))

@@ -16,7 +16,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s array -D name=array
          -o %{target})))))
@@ -34,7 +34,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s failwith -D name=failwith
          -o %{target})))))
@@ -52,7 +52,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s list_fold_left2 -D name=list_fold_left2
          -o %{target})))))
@@ -70,7 +70,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s option_bind -D name=option_bind
          -o %{target})))))
@@ -88,7 +88,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s option_map2 -D name=option_map2
          -o %{target})))))
@@ -106,7 +106,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s ref -D name=ref
          -o %{target})))))
@@ -124,7 +124,7 @@
     (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
-    (run uv run --with jinja2-cli jinja2
+    (run uvx --from jinja2-cli jinja2
          %{tmpl} %{meta}
          --format=json -s sys_int_size -D name=sys_int_size
          -o %{target})))))
