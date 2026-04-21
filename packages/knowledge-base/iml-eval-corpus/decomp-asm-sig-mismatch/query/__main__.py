@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes, TaskKind
-from minirec.common import BaseDiag, BaseRule, NoLoc, Severity
+from iml_eval_corpus.common import BaseDiag, BaseRule, NoLoc, Severity
 from pydantic import computed_field
 
 CURR_DIR = Path(__file__).parent

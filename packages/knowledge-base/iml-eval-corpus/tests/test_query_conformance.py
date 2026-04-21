@@ -6,7 +6,7 @@ import inspect
 from pathlib import Path
 
 import pytest
-from minirec.common import BaseDiag, BaseRule
+from iml_eval_corpus.common import BaseDiag, BaseRule
 
 from iml_eval_corpus.query_protocol import QueryModule
 

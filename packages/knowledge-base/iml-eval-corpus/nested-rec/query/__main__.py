@@ -16,8 +16,8 @@ from iml_query.tree_sitter_utils import (
     run_queries,
     unwrap_bytes,
 )
-from minirec.common import BaseDiag, BaseRule, Severity
-from minirec.cst import range_to_loc
+from iml_eval_corpus.common import BaseDiag, BaseRule, Severity
+from iml_eval_corpus.cst import range_to_loc
 from pydantic import computed_field
 
 CURR_DIR = Path(__file__).parent

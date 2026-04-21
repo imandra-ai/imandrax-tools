@@ -7,8 +7,8 @@ from typing import ClassVar, Self
 from imandrax_api_models import ErrorKind, EvalRes
 from iml_query.queries import MEASURE_QUERY_SRC, BaseCapture, MeasureCapture
 from iml_query.tree_sitter_utils import run_query, unwrap_bytes
-from minirec.common import BaseDiag, BaseRule, Severity
-from minirec.cst import range_to_loc
+from iml_eval_corpus.common import BaseDiag, BaseRule, Severity
+from iml_eval_corpus.cst import range_to_loc
 from pydantic import computed_field
 from tree_sitter import Node
 
