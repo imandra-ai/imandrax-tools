@@ -1,10 +1,3 @@
-from IPython.core.getipython import get_ipython
-
-if ip := get_ipython():
-    ip.run_line_magic("reload_ext", "autoreload")
-    ip.run_line_magic("autoreload", "2")
-
-
 from imandrax_api_models import Location
 from tree_sitter import Node
 

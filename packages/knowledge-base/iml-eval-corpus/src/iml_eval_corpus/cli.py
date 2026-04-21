@@ -18,7 +18,8 @@ from typing import Annotated, Any, Callable, TypeVar
 
 import typer
 from imandrax_api_models import EvalRes
-from minirec.common import BaseDiag
+
+from iml_eval_corpus.common import BaseDiag
 
 D = TypeVar("D", bound=BaseDiag)
 

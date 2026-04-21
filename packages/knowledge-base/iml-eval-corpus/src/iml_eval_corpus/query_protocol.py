@@ -15,7 +15,8 @@ from __future__ import annotations
 from typing import Callable, Protocol, runtime_checkable
 
 from imandrax_api_models import EvalRes
-from minirec.common import BaseDiag, BaseRule
+
+from iml_eval_corpus.common import BaseDiag, BaseRule
 
 CheckFn = Callable[[str, EvalRes], BaseDiag | None]
 
