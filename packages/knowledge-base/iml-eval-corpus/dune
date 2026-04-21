@@ -19,7 +19,10 @@
 
 (include dune.flat_mirror.inc)
 
-; Aggregate per-entry repro/solution/explanation/eval_res into a single JSON
+; Aggregate per-entry repro/solution/explanation/eval_res into a single JSON.
+; The script scans the source tree directly (passed as an arg) rather than
+; its own staged dir, since per-entry files are promoted to source and not
+; staged into the rule's build dir.
 (rule
  (target iml_eval_corpus.json)
  (deps
@@ -29,4 +32,6 @@
   (source_tree measure-type-err)
   (glob_files_rec unknown-id-ocaml-stdlib-*/*))
  (action
-  (with-stdout-to %{target} (run uv run --script %{script}))))
+  (with-stdout-to %{target}
+   (run uv run --script %{script}
+        %{project_root}/iml-eval-corpus))))

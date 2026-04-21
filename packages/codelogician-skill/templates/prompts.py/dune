@@ -3,7 +3,7 @@
   (promote (until-clean)))
  (deps
   (:templ prompts.py.jinja)
-  (:context ../../knowledge-base/context.yaml))
+  (:context %{project_root}/../knowledge-base/context.yaml))
  (target prompts.py)
  (action
   (progn

@@ -1,4 +1,8 @@
-"""Aggregate per-entry corpus dirs into a single `error_corpus.json`.
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+"""Aggregate per-entry corpus dirs into a single `iml_eval_corpus.json`.
 
 Each leaf entry dir contains at minimum `repro.iml`; optional siblings:
 `solution.iml`, `explanation.md`, `eval_res.json`, `.is_po_error`.
@@ -7,12 +11,12 @@ Entries under the grouping dir `_unknown-id-ocaml-stdlib/<name>/` are
 emitted with a flattened name `unknown-id-ocaml-stdlib-<name>` to match
 the flat-mirror convention.
 
-Run from this file's directory. Output goes to stdout; dune captures it
-into `error_corpus.json`.
+Usage: `gen_iml_eval_corpus_json.py <scan_root>`. Output goes to stdout;
 """
 
 # pyright: basic
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -60,7 +64,9 @@ def entry_for(name: str, entry_dir: Path) -> dict[str, Any]:
 
 
 def main() -> None:
-    here = Path(__file__).parent
+    if len(sys.argv) != 2:
+        sys.exit(f"usage: {sys.argv[0]} <scan_root>")
+    here = Path(sys.argv[1])
     entries: list[tuple[str, Path]] = []
 
     for child in sorted(here.iterdir()):
