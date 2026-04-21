@@ -15,6 +15,9 @@ dependencies = [
     "typer>=0.24.1",
 ]
 
+[project.scripts]
+iml-eval-corpus-imx-eval = "iml_eval_corpus.imx_eval:main"
+
 [tool.uv.sources]
 minirec = { path = "../../../minirec", editable = true }
 iml-query = { path = "../../../iml-query", editable = true }
