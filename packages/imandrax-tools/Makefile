@@ -44,7 +44,7 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 		--exclude='__pycache__' \
 		--exclude='.pytest_cache' \
 		--exclude='.ruff_cache' \
-		--exclude='_unknown-id-ocaml-stdlib' \
+		--exclude='_unknown_id_ocaml_stdlib' \
 		--exclude='solutions_eval_res.json' \
 		$(CORPUS_SRC) \
 		$(CORPUS_TGT)
