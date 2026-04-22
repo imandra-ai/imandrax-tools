@@ -4,7 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.2.0] - 2026-04-22
+
 - Region decomp icicle jupyter widget
+- Expose error kind parsing error
 
 ## [19.1.0] - 2026-04-08
 
