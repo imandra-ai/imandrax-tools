@@ -11,6 +11,9 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
+CORPUS_SRC := ../knowledge-base/iml-eval-corpus/corpus/
+CORPUS_TGT := src/imandrax_tools/iml_eval_corpus/corpus/
+
 .PHONY: sync-corpus
 sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the package tree (excludes dune files)
 	rsync -a --delete \
@@ -22,9 +25,10 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 		--exclude='.ruff_cache' \
 		--exclude='_unknown-id-ocaml-stdlib' \
 		--exclude='solutions_eval_res.json' \
-		../knowledge-base/iml-eval-corpus/corpus/ \
-		src/imandrax_tools/iml_eval_corpus/corpus/
-	uvx ruff format src/imandrax_tools/iml_eval_corpus/corpus/
+		$(CORPUS_SRC) \
+		$(CORPUS_TGT)
+	uvx ruff format $(CORPUS_TGT)
+	uvx ruff check $(CORPUS_TGT) --fix
 
 .PHONY: build
 build: sync-corpus  ## Build
