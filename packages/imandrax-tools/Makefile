@@ -14,6 +14,20 @@ help:  ## Show this help (usage: make help)
 CORPUS_SRC := ../knowledge-base/iml-eval-corpus/corpus/
 CORPUS_TGT := src/imandrax_tools/iml_eval_corpus/corpus/
 
+define get-pypi-latest-ver
+$(shell curl -s "https://pypi.org/pypi/$(1)/json" | jq -r '.info.version')
+endef
+
+PACKAGES := iml-query imandrax-api-models imandrax-codegen
+
+.PHONY: bump-sub-packages
+bump-sub-packages:  ## Bump subpacakges
+	uv add --no-sync "iml-query==$(call get-pypi-latest-ver,iml-query)"
+	uv add --no-sync "imandrax-api-models==$(call get-pypi-latest-ver,imandrax-api-models)"
+	uv add --no-sync "imandrax-api-models[client]==$(call get-pypi-latest-ver,imandrax-api-models)" --optional extended-client
+	uv add --no-sync "imandrax-codegen==$(call get-pypi-latest-ver,imandrax-codegen)" --optional codegen
+	uv sync --all-extras
+
 .PHONY: sync-corpus
 sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the package tree (excludes dune files)
 	rsync -a --delete \

@@ -8,8 +8,8 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "imandrax-api-models>=19,<20",
-    "iml-query>=0.8.0",
+    "imandrax-api-models==19.2.0",
+    "iml-query==0.9.0",
     "pydantic>=2",
     "structlog>=24",
     "tree-sitter>=0.23",
@@ -17,10 +17,10 @@ dependencies = [
 
 [project.optional-dependencies]
 extended-client = [
-    "imandrax-api-models[client]>=19,<20",
+    "imandrax-api-models[client]==19.2.0",
 ]
 codegen = [
-    "imandrax-codegen>=19,<20",
+    "imandrax-codegen==19.0.0",
 ]
 
 [dependency-groups]
