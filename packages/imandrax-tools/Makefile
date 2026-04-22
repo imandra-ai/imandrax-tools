@@ -21,6 +21,7 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 		--exclude='.pytest_cache' \
 		--exclude='.ruff_cache' \
 		--exclude='_unknown-id-ocaml-stdlib' \
+		--exclude='solutions_eval_res.json' \
 		../knowledge-base/iml-eval-corpus/corpus/ \
 		src/imandrax_tools/iml_eval_corpus/corpus/
 	uvx ruff format src/imandrax_tools/iml_eval_corpus/corpus/
