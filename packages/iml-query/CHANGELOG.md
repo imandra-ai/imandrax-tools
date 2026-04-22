@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+## v0.9.0 - 2026.04-22
+
+- enhance node pretty-print utils
+- various improments
+- minimum CLI for debug usage
+
 ## v0.8.0 - 2026.03-23
 
-- add queyr for type declaration extraction
+- add query for type declaration extraction
 
 ## v0.7.1 - 2026.02.27
 
