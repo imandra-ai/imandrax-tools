@@ -6,13 +6,7 @@ module Term = Imandrax_api_mir.Term
 module Model = Imandrax_api_mir.Model
 module Sir = Semantic_ir
 
-let workspace_dir = "../../.."
-
-let art_data_dir =
-  let art_data_dir_rel_to_workspace = Sys.getenv "TEST_DATA_ART_DIR" in
-  workspace_dir ^ "/" ^ art_data_dir_rel_to_workspace
-;;
-
+let art_data_dir = Sys.getcwd () ^ "/../../data/art" |> Unix.realpath
 let art_data_model_dir = art_data_dir ^ "/model"
 
 (* Load a Mir.model from a yaml file *)
