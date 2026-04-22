@@ -51,10 +51,10 @@ class BaseDiag(BaseModel):
         pass
 
     def format_error_message(self) -> str:
-        s = ""
-        s += f"{self.rule.id}: {self.message}\n"
+        s = ''
+        s += f'{self.rule.id}: {self.message}\n'
         if isinstance(self.loc, Loc):
-            s += f"location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n"
+            s += f'location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n'
         return s
 
 

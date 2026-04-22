@@ -6,9 +6,8 @@ import inspect
 from pathlib import Path
 
 import pytest
-from iml_eval_corpus.common import BaseDiag, BaseRule
-
-from iml_eval_corpus.query_protocol import QueryModule
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule
+from imandrax_tools.iml_eval_corpus.query_protocol import QueryModule
 
 from .utils import discover_categories, load_query_module
 

@@ -9,8 +9,8 @@ from typing import ClassVar, Self
 from imandrax_api_models import ErrorKind, EvalRes
 from iml_query.queries import BaseCapture
 from iml_query.tree_sitter_utils import run_query, unwrap_bytes
-from iml_eval_corpus.common import BaseDiag, BaseRule, Severity
-from iml_eval_corpus.cst import range_to_loc
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Severity
+from imandrax_tools.iml_eval_corpus.cst import range_to_loc
 from pydantic import computed_field
 from tree_sitter import Node
 
@@ -115,6 +115,6 @@ check = check_infix_op_missing_paren
 
 # %%
 if __name__ == "__main__":
-    from iml_eval_corpus.cli import main_from_check
+    from imandrax_tools.iml_eval_corpus.cli import main_from_check
 
     main_from_check(check_infix_op_missing_paren)

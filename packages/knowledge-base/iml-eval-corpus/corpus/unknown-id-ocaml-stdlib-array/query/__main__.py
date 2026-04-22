@@ -5,7 +5,7 @@ import re
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes
-from iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
 from pydantic import computed_field
 
 IDENTIFIER: str = "Array.make"
@@ -99,6 +99,6 @@ check = check_unknown_id_ocaml_stdlib
 
 # %%
 if __name__ == "__main__":
-    from iml_eval_corpus.cli import main_from_check
+    from imandrax_tools.iml_eval_corpus.cli import main_from_check
 
     main_from_check(check_unknown_id_ocaml_stdlib)

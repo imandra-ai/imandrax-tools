@@ -7,8 +7,6 @@ import structlog
 from iml_query.processing.decomp import DecompReqArgs, decomp_capture_to_req
 from iml_query.processing.vg import (
     VerifyReqArgs as VGReqArgs,
-)
-from iml_query.processing.vg import (
     instance_capture_to_req,
     verify_capture_to_req,
 )
@@ -63,27 +61,27 @@ class TopLevelDefinition(BaseModel):
 def parse_iml(
     iml: str,
 ) -> tuple[list[TopLevelDefinition], list[VGReq], list[DecompReq]]:
-    tree = get_parser().parse(bytes(iml, "utf-8"))
+    tree = get_parser().parse(bytes(iml, 'utf-8'))
     queries = {
-        "value_def_functions": VALUE_DEFINITION_QUERY_SRC,
-        "measure_functions": MEASURE_QUERY_SRC,
-        "opaque_functions": OPAQUE_QUERY_SRC,
-        "decomp_req": DECOMP_QUERY_SRC,
-        "verify_req": VERIFY_QUERY_SRC,
-        "instance_req": INSTANCE_QUERY_SRC,
+        'value_def_functions': VALUE_DEFINITION_QUERY_SRC,
+        'measure_functions': MEASURE_QUERY_SRC,
+        'opaque_functions': OPAQUE_QUERY_SRC,
+        'decomp_req': DECOMP_QUERY_SRC,
+        'verify_req': VERIFY_QUERY_SRC,
+        'instance_req': INSTANCE_QUERY_SRC,
     }
     captures_map = run_queries(queries, node=tree.root_node)
     value_def_captures: list[ValueDefCapture] = [
         ValueDefCapture.from_ts_capture(capture)
-        for capture in captures_map.get("value_def_functions", [])
+        for capture in captures_map.get('value_def_functions', [])
     ]
     measure_captures: list[MeasureCapture] = [
         MeasureCapture.from_ts_capture(capture)
-        for capture in captures_map.get("measure_functions", [])
+        for capture in captures_map.get('measure_functions', [])
     ]
     opaque_captures: list[OpaqueCapture] = [
         OpaqueCapture.from_ts_capture(capture)
-        for capture in captures_map.get("opaque_functions", [])
+        for capture in captures_map.get('opaque_functions', [])
     ]
     top_defs = _captures_to_top_defs(
         value_def_captures,
@@ -93,15 +91,15 @@ def parse_iml(
 
     decomp_captures: list[DecompCapture] = [
         DecompCapture.from_ts_capture(capture)
-        for capture in captures_map.get("decomp_req", [])
+        for capture in captures_map.get('decomp_req', [])
     ]
     verify_captures: list[VerifyCapture] = [
         VerifyCapture.from_ts_capture(capture)
-        for capture in captures_map.get("verify_req", [])
+        for capture in captures_map.get('verify_req', [])
     ]
     instance_captures: list[InstanceCapture] = [
         InstanceCapture.from_ts_capture(capture)
-        for capture in captures_map.get("instance_req", [])
+        for capture in captures_map.get('instance_req', [])
     ]
     decomp_reqs = [DecompReq.from_capture(cap) for cap in decomp_captures]
     vg_reqs = [
@@ -131,11 +129,11 @@ def _captures_to_top_defs(
     """Extract top-level definitions from tree-sitter captures."""
     # Lookup maps
     measure_func_map: dict[str, MeasureCapture] = {
-        unwrap_bytes(capture.function_name.text).decode("utf-8"): capture
+        unwrap_bytes(capture.function_name.text).decode('utf-8'): capture
         for capture in measure_captures
     }
     opaque_func_map: set[str] = {
-        unwrap_bytes(capture.function_name.text).decode("utf-8")
+        unwrap_bytes(capture.function_name.text).decode('utf-8')
         for capture in opaque_captures
     }
 
@@ -145,13 +143,13 @@ def _captures_to_top_defs(
     for top_capture in top_captures:
         top_name = top_capture.function_name
         top_def_node = top_capture.function_definition
-        top_name_str = unwrap_bytes(top_name.text).decode("utf-8")
+        top_name_str = unwrap_bytes(top_name.text).decode('utf-8')
 
         # Detect measure attribute
         measure: None | str = None
         if top_name_str in measure_func_map:
             m_cap = measure_func_map[top_name_str]
-            measure = unwrap_bytes(m_cap.measure_attr.text).decode("utf-8")
+            measure = unwrap_bytes(m_cap.measure_attr.text).decode('utf-8')
 
         # Detect opaque attribute
         opaque = top_name_str in opaque_func_map
@@ -180,7 +178,7 @@ def _captures_to_top_defs(
 
 @dataclass
 class VGReq:
-    kind: Literal["verify", "instance"]
+    kind: Literal['verify', 'instance']
     loc: Loc
     req_args: VGReqArgs
 
@@ -188,10 +186,10 @@ class VGReq:
     def from_capture(cls, cap: VerifyCapture | InstanceCapture) -> Self:
         match cap:
             case VerifyCapture():
-                kind = "verify"
+                kind = 'verify'
                 args, rng = verify_capture_to_req(cap)
             case InstanceCapture():
-                kind = "instance"
+                kind = 'instance'
                 args, rng = instance_capture_to_req(cap)
         return cls(kind=kind, loc=range_to_loc(rng), req_args=args)
 

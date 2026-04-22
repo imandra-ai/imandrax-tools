@@ -11,8 +11,21 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
+.PHONY: sync-corpus
+sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the package tree (excludes dune files)
+	rsync -a --delete \
+		--exclude='dune' \
+		--exclude='dune.*.inc' \
+		--exclude='gen_*.py' \
+		--exclude='__pycache__' \
+		--exclude='.pytest_cache' \
+		--exclude='.ruff_cache' \
+		--exclude='_*' \
+		../knowledge-base/iml-eval-corpus/corpus/ \
+		src/imandrax_tools/iml_eval_corpus/corpus/
+
 .PHONY: build
-build:  ## Build
+build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*
 	uv build --no-sources
 

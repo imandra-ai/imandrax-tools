@@ -8,6 +8,8 @@ Usage:
     from imandrax_tools.iml_query import ...
 """
 
+from __future__ import annotations
+
 from . import api_models, goal_state, iml_query
 
 __all__ = ('api_models', 'goal_state', 'iml_query')

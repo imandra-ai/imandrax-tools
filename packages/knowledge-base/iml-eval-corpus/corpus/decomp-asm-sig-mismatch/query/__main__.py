@@ -8,7 +8,7 @@ from typing import ClassVar
 from imandrax_api_models import ErrorKind, ErrorKindParsingError, EvalRes, TaskKind
 from pydantic import computed_field
 
-from iml_eval_corpus.common import BaseDiag, BaseRule, NoLoc, Severity
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, NoLoc, Severity
 
 CURR_DIR = Path(__file__).parent
 
@@ -96,6 +96,6 @@ check = check_decomp_asm_mismatch
 
 # %%
 if __name__ == "__main__":
-    from iml_eval_corpus.cli import main_from_check
+    from imandrax_tools.iml_eval_corpus.cli import main_from_check
 
     main_from_check(check_decomp_asm_mismatch)
