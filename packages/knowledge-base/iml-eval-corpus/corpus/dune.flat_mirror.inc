@@ -11,9 +11,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -29,9 +29,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -47,9 +47,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -65,9 +65,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -83,9 +83,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -101,9 +101,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
@@ -119,9 +119,9 @@
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__main__.py.j2)
+    (:tmpl ../../_unknown-id-ocaml-stdlib/query.__init__.py.j2)
     (:meta ../../_unknown-id-ocaml-stdlib/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2

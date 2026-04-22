@@ -43,9 +43,9 @@ def main() -> None:
  (subdir query
   (rule
    (mode (promote (until-clean)))
-   (target __main__.py)
+   (target __init__.py)
    (deps
-    (:tmpl ../../{SRC_GROUP}/query.__main__.py.j2)
+    (:tmpl ../../{SRC_GROUP}/query.__init__.py.j2)
     (:meta ../../{SRC_GROUP}/meta.json))
    (action
     (run uvx --from jinja2-cli jinja2
