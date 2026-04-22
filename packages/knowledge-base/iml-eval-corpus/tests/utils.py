@@ -26,7 +26,7 @@ def discover_categories() -> list[Path]:
             continue
         if p.name.startswith((".", "_")):
             continue
-        if not (p / "query" / "__main__.py").exists():
+        if not (p / "query" / "__init__.py").exists():
             continue
         if not (p / "repro.iml").exists():
             continue
@@ -40,7 +40,7 @@ def load_query_module(category: Path) -> ModuleType:
     if mod_name in sys.modules:
         return sys.modules[mod_name]
     spec = importlib.util.spec_from_file_location(
-        mod_name, category / "query" / "__main__.py"
+        mod_name, category / "query" / "__init__.py"
     )
     assert spec is not None and spec.loader is not None, (
         f"could not build import spec for {category}"
