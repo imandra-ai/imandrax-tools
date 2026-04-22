@@ -20,9 +20,10 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 		--exclude='__pycache__' \
 		--exclude='.pytest_cache' \
 		--exclude='.ruff_cache' \
-		--exclude='_*' \
+		--exclude='_unknown-id-ocaml-stdlib' \
 		../knowledge-base/iml-eval-corpus/corpus/ \
 		src/imandrax_tools/iml_eval_corpus/corpus/
+	uvx ruff format src/imandrax_tools/iml_eval_corpus/corpus/
 
 .PHONY: build
 build: sync-corpus  ## Build
