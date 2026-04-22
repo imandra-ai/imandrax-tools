@@ -8,7 +8,6 @@ the bottom of the file (aliases are fine):
     Diag: type[BaseDiag]                  # the diag class (Diag.rule is RULE)
     check: Callable[[str, EvalRes], Diag | None]
 
-A runtime conformance test verifies this contract before the repro tests run.
 """
 
 from __future__ import annotations
@@ -25,6 +24,12 @@ CheckFn = Callable[[str, EvalRes], BaseDiag | None]
 
 @runtime_checkable
 class QueryModule(Protocol):
-    RULE: BaseRule
-    Diag: type[BaseDiag]
-    check: CheckFn
+    # Declared as properties so the Protocol attributes are read-only and
+    # therefore covariant — a module exporting a BaseRule/BaseDiag subclass
+    # still satisfies the contract.
+    @property
+    def RULE(self) -> BaseRule: ...
+    @property
+    def Diag(self) -> type[BaseDiag]: ...
+    @property
+    def check(self) -> CheckFn: ...

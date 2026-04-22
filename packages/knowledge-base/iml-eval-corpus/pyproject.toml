@@ -41,5 +41,8 @@ venv = ".venv"
 pythonVersion = "3.12"
 
 
+[tool.ty.environment]
+python = '.venv'
+
 [tool.ty.rules]
 missing-argument = "ignore"
