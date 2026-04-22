@@ -16,6 +16,9 @@ dependencies = [
     "tree-sitter-iml>=0.26",
 ]
 
+[project.scripts]
+iml-query = "iml_query.cli:main"
+
 [tool.uv.sources]
 
 [build-system]

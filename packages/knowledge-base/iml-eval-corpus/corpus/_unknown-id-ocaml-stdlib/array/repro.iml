@@ -1,0 +1,3 @@
+let example () =
+  let arr = Array.make 5 0 in
+  arr

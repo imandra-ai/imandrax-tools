@@ -1,0 +1,5 @@
+let clamp (x : int) : int =
+  if x > max_int then
+    max_int
+  else
+    x

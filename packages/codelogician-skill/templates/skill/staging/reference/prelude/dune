@@ -5,7 +5,7 @@
  (mode
   (promote (until-clean)))
  (deps
-  (:src ../../../../../knowledge-base/reference_prelude/prelude.yaml))
+  (:src %{project_root}/../knowledge-base/reference_prelude/prelude.yaml))
  (target prelude.json)
  (action
   (with-stdout-to
@@ -18,7 +18,7 @@
   (promote (until-clean)))
  (deps
   (glob_files ../../../src/reference/prelude/*.md.jinja)
-  (:ctx ../../../../../knowledge-base/context/context.yaml))
+  (:ctx %{project_root}/../knowledge-base/context/context.yaml))
  (targets
   Int.md
   LChar.md

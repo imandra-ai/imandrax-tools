@@ -1,0 +1,20 @@
+; Aggregate per-entry repro/solution/explanation/eval_res into a single JSON.
+; The script scans the source tree directly (passed as an arg) rather than
+; its own staged dir, since per-entry files are promoted to source and not
+; staged into the rule's build dir.
+(rule
+ (target iml_eval_corpus.json)
+ (deps
+  (:script gen_iml_eval_corpus_json.py)
+  (source_tree corpus/decomp-asm-sig-mismatch)
+  (source_tree corpus/function-in-composite-type)
+  (source_tree corpus/general-termination-proof-error)
+  (source_tree corpus/infix-op-missing-paren)
+  (source_tree corpus/measure-type-err)
+  (source_tree corpus/nested-measure)
+  (source_tree corpus/nested-rec)
+  (glob_files_rec unknown-id-ocaml-stdlib-*/*))
+ (action
+  (with-stdout-to %{target}
+   (run uv run --script %{script}
+        %{project_root}/iml-eval-corpus/corpus))))

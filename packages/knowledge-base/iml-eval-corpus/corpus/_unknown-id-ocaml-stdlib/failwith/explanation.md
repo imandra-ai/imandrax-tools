@@ -1,0 +1,1 @@
+IML is a pure language without exceptions. The `failwith` function from OCaml is not available. Error handling must use `Option` or `Result` types instead.

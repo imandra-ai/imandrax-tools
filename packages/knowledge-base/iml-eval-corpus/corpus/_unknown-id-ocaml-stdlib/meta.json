@@ -1,0 +1,30 @@
+{
+  "array": {
+    "identifier": "Array.make",
+    "hint": "Arrays are mutable data structures and not available in IML, which is a pure functional language without mutable state. All operations must be immutable."
+  },
+  "failwith": {
+    "identifier": "failwith",
+    "hint": "IML is a pure language without exceptions. The `failwith` function from OCaml is not available. Error handling must use `Option` or `Result` types instead."
+  },
+  "list_fold_left2": {
+    "identifier": "List.fold_left2",
+    "hint": "`List.fold_left2` does not exist in IML's List module. IML has `List.map2` but not `fold_left2`."
+  },
+  "option_bind": {
+    "identifier": "Option.bind",
+    "hint": "In IML, the function is called `Option.flat_map` instead of `Option.bind`. The monadic bind operator is available as `>>=` within the Option module."
+  },
+  "option_map2": {
+    "identifier": "Option.map2",
+    "hint": "`Option.map2` does not exist in IML's Option module. Use `Option.monoid_product` or monadic composition instead."
+  },
+  "ref": {
+    "identifier": "ref",
+    "hint": "`ref` creates a mutable reference cell, which is not available in IML. IML is a pure functional language; rewrite the computation without mutable state (e.g. thread state through function arguments or use an immutable data structure)."
+  },
+  "sys_int_size": {
+    "identifier": "min_int",
+    "hint": "IML integers have arbitrary precision, so there is no built-in `max_int` or `min_int` derived from `Sys.int_size`. Consider refactoring to use a specific constant for your use case or making it opaque if it's externally defined."
+  }
+}

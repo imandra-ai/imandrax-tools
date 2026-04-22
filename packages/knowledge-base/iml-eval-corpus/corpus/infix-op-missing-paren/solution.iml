@@ -1,0 +1,1 @@
+let ( land ) : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]

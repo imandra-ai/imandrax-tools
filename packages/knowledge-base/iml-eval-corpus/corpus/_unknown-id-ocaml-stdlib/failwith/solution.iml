@@ -1,0 +1,6 @@
+(* Return an option type with None for error cases *)
+let divide (x : int) (y : int) : int option =
+  if y = 0 then
+    None
+  else
+    Some (x / y)

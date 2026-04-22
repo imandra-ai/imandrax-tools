@@ -1,0 +1,4 @@
+let precond_wrong x = x >. (1.0 /. 2.0)
+
+let f_wrong x = if x > 0 then (if x > 1 then 1 else 0) else (if x > -1 then -1 else 0)
+[@@decomp top ~assuming:[%id precond_wrong] ()]

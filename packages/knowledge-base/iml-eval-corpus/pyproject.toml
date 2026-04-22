@@ -1,0 +1,43 @@
+[project]
+name = "iml-eval-corpus"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "hongyu", email = "hongyu@imandra.ai" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "imandrax-api-models>=19.1.0",
+    "imandrax-tools>=0.2.0",
+    "iml-query>=0.8.0",
+    "typer>=0.24.1",
+]
+
+[project.scripts]
+iml-eval-corpus-imx-eval = "iml_eval_corpus.imx_eval:main"
+
+[tool.uv.sources]
+iml-query = { path = "../../iml-query", editable = true }
+imandrax-api-models = { path = "../../imandrax-api-models", editable = true }
+imandrax-tools = { path = "../../imandrax-tools", editable = true }
+
+[build-system]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+    "pytest>=8.0",
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+
+
+[tool.ty.rules]
+missing-argument = "ignore"

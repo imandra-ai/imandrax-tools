@@ -10,6 +10,10 @@ from ..proto_utils import BaseModel
 from .locs import Location
 
 
+class ErrorKindParsingError(Exception):
+    pass
+
+
 # from https://github.com/imandra-ai/imandrax-api/blob/1a4abb4eb59d9545c6f0af9698956437b5b5dcb8/src/internal/error_data/imandrax_errors.ml
 class ErrorKind(str, Enum):
     APPLIED_SYMBOL_TYPE_ERR = 'AppliedSymbolTypeErr'
@@ -82,7 +86,7 @@ class ErrorKind(str, Enum):
     def from_proto_kind(cls, proto_kind: str) -> Self:
         kinds = re.findall(r'\{ Kind.name = "(.+)" \}', proto_kind)
         if len(kinds) != 1:
-            raise ValueError('Unable to parse kind')
+            raise ErrorKindParsingError('Unable to parse kind')
         return cls(kinds[0])
 
 

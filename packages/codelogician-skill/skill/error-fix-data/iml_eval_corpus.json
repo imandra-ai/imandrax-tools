@@ -1,6 +1,14 @@
 {
   "items": [
     {
+      "name": "decomp-asm-sig-mismatch",
+      "repro": "let precond_wrong x = x >. (1.0 /. 2.0)\n\nlet f_wrong x = if x > 0 then (if x > 1 then 1 else 0) else (if x > -1 then -1 else 0)\n[@@decomp top ~assuming:[%id precond_wrong] ()]\n",
+      "err_msg": null,
+      "is_po_err": false,
+      "solution": null,
+      "explanation": "Region decomposition (`[@@decomp top ~assuming:[%id ...]]`) fails internally when the `~assuming` predicate's argument type does not match the type of the function being decomposed. The failure surfaces as a `TacticEvalErr` mentioning `Imandrax_decomp__Strategy.Inject_asm`, with no proof-obligation results produced.\n\nFix: ensure the `~assuming` precondition takes an argument of the same type as the target function. For example, rewrite a `real`-typed precondition to use integer arithmetic matching an `int`-typed target.\n"
+    },
+    {
       "name": "function-in-composite-type",
       "repro": "let f (x : int) : int = x + 1\n\nlet ls_f = [f; f; f]\n",
       "err_msg": {
@@ -27,38 +35,58 @@
     {
       "name": "general-termination-proof-error",
       "repro": "let rec left_pad c n xs =\n  if List.length xs >= n then\n    xs\n  else\n    left_pad c n (c :: xs)\n",
-      "err_msg": {
-        "msg": "Goal is counter-satisfiable.",
-        "locs": [],
-        "backtrace": null
-      },
+      "err_msg": null,
       "is_po_err": true,
       "solution": "let left_pad_measure n xs =\n  Ordinal.of_int (n - List.length xs)\n\nlet rec left_pad c n xs =\n  if List.length xs >= n then\n    xs\n  else\n    left_pad c n (c :: xs)\n[@@measure left_pad_measure n xs]\n",
       "explanation": "Every recursive function must be proven terminating. When no `[@@measure ...]` attribute is given, ImandraX tries a default measure based on the function's arguments. When the definition is rejected with a counter-satisfiable termination goal with the default measure, consider supplying a custom measure function."
     },
     {
-      "name": "measure-type-err",
-      "repro": "let m (n : int) : int = n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
+      "name": "infix-op-missing-paren",
+      "repro": "let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]\n",
       "err_msg": {
-        "msg": "Expression is expected to have type `Ordinal.t`,\nbut its inferred type is `int`.\nThe subtypes `Ordinal.t` and `int` do not match.",
+        "msg": "syntax error",
         "locs": [
           {
             "file": "<none>",
             "start": {
-              "line": 5,
-              "col": 12
+              "line": 1,
+              "col": 5
             },
             "stop": {
-              "line": 5,
-              "col": 14
+              "line": 1,
+              "col": 8
             }
           }
         ],
-        "backtrace": null
+        "backtrace": "Raised at Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap in file \"src/ocaml-parse/base/imandrax_parse.ml\", line 80, characters 4-49\nCalled from Imandrax_ocaml_parse_base__Imandrax_parse.Make.wrap_and_rw.(fun) in file \"src/ocaml-parse/base/imandrax_parse.ml\", line 142, characters 6-32\n"
       },
+      "is_po_err": false,
+      "solution": null,
+      "explanation": "OCaml/IML infix operator keywords (`land`, `lor`, `lxor`, `lsl`, `lsr`, `asr`, `mod`) cannot be rebound directly with `let <op> = ...`. Wrap the operator name in parentheses to turn it into a prefix identifier:\n\n```iml\nlet ( land ) : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]\n```\n"
+    },
+    {
+      "name": "measure-type-err",
+      "repro": "let m (n : int) : int = n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
+      "err_msg": null,
       "is_po_err": false,
       "solution": "let m (n : int) : Ordinal.t = Ordinal.of_int n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
       "explanation": "Termination measures (`[@@measure ...]`) expects a function that returns an ordinal value (`Ordinal.t`). Consider using functions like `Ordinal.of_int` to obtain Ordinal.t."
+    },
+    {
+      "name": "nested-measure",
+      "repro": "let build_fib (f : int list) (i : int) (n : int) : int list =\n  let non_rec_irrelevant_f x = x + 1\n  in\n  let rec helper curr_f curr_i =\n    if curr_i > n then\n      curr_f\n    else\n      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with\n      | (Some prev1, Some prev2) ->\n          let new_f = curr_f @ [prev1 + prev2] in\n          helper new_f (curr_i + 1)\n      | _ -> curr_f\n  [@@measure Ordinal.of_int (n - curr_i)]\n  in\n  helper f i\n",
+      "err_msg": null,
+      "is_po_err": true,
+      "solution": null,
+      "explanation": "A `[@@measure ...]` attribute should be attached to a top-level recursive function. When attached to a nested `let rec`, the measure is misplaced \u2014 lift the recursive function (and its measure) to the top level.\n"
+    },
+    {
+      "name": "nested-rec",
+      "repro": "let build_fib (f : int list) (i : int) (n : int) : int list =\n  let non_rec_irrelevant_f x = x + 1\n  in\n  let rec helper curr_f curr_i =\n    if curr_i > n then\n      curr_f\n    else\n      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with\n      | (Some prev1, Some prev2) ->\n          let new_f = curr_f @ [prev1 + prev2] in\n          helper new_f (curr_i + 1)\n      | _ -> curr_f\n  in\n  helper f i\n",
+      "err_msg": null,
+      "is_po_err": true,
+      "solution": null,
+      "explanation": "Recursive functions (`let rec`) nested inside another definition make termination proofs harder, since a measure attribute cannot be attached to the inner binding. Lift the inner `let rec` to a top-level definition and pass any captured arguments explicitly.\n"
     },
     {
       "name": "unknown-id-ocaml-stdlib-array",
@@ -205,7 +233,7 @@
       },
       "is_po_err": false,
       "solution": "(* Use a parameter to track state *)\nlet counter (count : int) : int =\n  count + 1\n",
-      "solution_2": "(* Use recursion for stateful computation *)\nlet rec count_up_to (n : int) (current : int) : int =\n  if current >= n then\n    current\n  else\n    count_up_to n (current + 1)\n",
+      "solution_2": "(* Use recursion for stateful computation *)\nlet rec count_up_to (n : int) (current : int) : int =\n  if current >= n then\n    current\n  else\n    count_up_to n (current + 1)\n[@@measure Ordinal.of_int (n - current)]",
       "solution_3": "(* Return the new state explicitly. *)\nlet increment (count : int) : int =\n  count + 1\n\nlet counter () : int =\n  let count = 0 in\n  let count = increment count in\n  count\n",
       "explanation": null
     },

@@ -1,0 +1,6 @@
+(* Implement custom recursive function. *)
+let rec sum_pairs (l1 : int list) (l2 : int list) : int =
+  match l1, l2 with
+  | [], [] -> 0
+  | x :: xs, y :: ys -> x + y + sum_pairs xs ys
+  | _, _ -> 0

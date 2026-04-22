@@ -1,0 +1,7 @@
+(* Use recursion for stateful computation *)
+let rec count_up_to (n : int) (current : int) : int =
+  if current >= n then
+    current
+  else
+    count_up_to n (current + 1)
+[@@measure Ordinal.of_int (n - current)]

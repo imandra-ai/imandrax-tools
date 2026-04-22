@@ -1,0 +1,5 @@
+let divide (x : int) (y : int) : int =
+  if y = 0 then
+    failwith "Division by zero"
+  else
+    x / y

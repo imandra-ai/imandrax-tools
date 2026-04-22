@@ -1,0 +1,5 @@
+(* Use List.map2 to create pairs first, then fold. *)
+let sum_pairs (l1 : int list) (l2 : int list) : int =
+  match List.map2 (fun x y -> (x, y)) l1 l2 with
+  | Error _ -> 0
+  | Ok pairs -> List.fold_left (fun acc (x, y) -> acc + x + y) 0 pairs

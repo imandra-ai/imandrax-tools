@@ -1,8 +1,0 @@
-(rule
- (mode (promote (until-clean)))
- (deps (:in repro.iml))
- (target eval_res.json)
- (action
-  (with-stdout-to
-   %{target}
-   (run iml-eval-corpus-imx-eval %{in}))))

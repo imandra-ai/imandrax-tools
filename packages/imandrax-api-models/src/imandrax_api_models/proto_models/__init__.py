@@ -2,7 +2,7 @@ from imandrax_api.lib import RegionStr
 
 from .api import ArtifactListResult, ArtifactZip
 from .artmsg import Art, StorageEntry
-from .error import Error, ErrorKind, ErrorMessage
+from .error import Error, ErrorKind, ErrorKindParsingError, ErrorMessage
 from .locs import Location, Position
 from .session import Session, SessionCreate, SessionOpen
 from .simple_api import (
@@ -50,6 +50,7 @@ __all__ = [
     'Empty',
     'Error',
     'ErrorKind',
+    'ErrorKindParsingError',
     'ErrorMessage',
     'EvalOutput',
     'EvalRes',

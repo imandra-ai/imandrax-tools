@@ -11,3 +11,42 @@ Usage:
 from . import api_models, goal_state, iml_query
 
 __all__ = ('api_models', 'goal_state', 'iml_query')
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from imandrax_api_models import Task
+    from imandrax_api_models.client import ImandraXClient
+
+
+def try_get_goal_state(c: ImandraXClient, task: Task) -> str | None:
+    """
+    Attempt to fetch the goal state from a task's po_res artifact.
+
+    Returns the formatted goal state string, or None if unavailable.
+    """
+    from tempfile import NamedTemporaryFile
+
+    from imandrax_api_models import ArtifactZip
+
+    from imandrax_tools.goal_state import (
+        GoalStateCounterModel,
+        GoalStateProved,
+        format_goal_state_from_zip,
+    )
+
+    art_list_res: list[str] = c.list_artifacts(task).kinds
+    if 'po_res' not in art_list_res:
+        return None
+
+    try:
+        po_res_art_zip: ArtifactZip = c.get_artifact_zip(task, kind='po_res')
+        with NamedTemporaryFile(mode='w+b', suffix='.zip') as f:
+            f.write(po_res_art_zip.art_zip)
+            f.flush()
+            goal_state_s = format_goal_state_from_zip(f.name)
+        return goal_state_s
+    except (GoalStateCounterModel, GoalStateProved):
+        raise
+    except Exception:
+        return None
