@@ -35,7 +35,7 @@ def discover_categories() -> list[Path]:
 
 
 def load_query_module(category: Path) -> ModuleType:
-    """Import `<category>/query/__main__.py` as a standalone module."""
+    """Import `<category>/query` as a standalone module."""
     mod_name = f"_corpus_query_{category.name.replace('-', '_')}"
     if mod_name in sys.modules:
         return sys.modules[mod_name]

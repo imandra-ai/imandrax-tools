@@ -1,7 +1,7 @@
 """
 Shared Protocol for corpus query modules.
 
-Every `<category>/query/__main__.py` must expose three module-level names at
+Every `<category>/query` must expose three module-level names at
 the bottom of the file (aliases are fine):
 
     RULE: BaseRule                        # the singleton rule instance
