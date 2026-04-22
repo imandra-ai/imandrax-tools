@@ -5,7 +5,7 @@ import re
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes
-from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
+from iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
 from pydantic import computed_field
 
 IDENTIFIER: str = "Option.map2"
@@ -95,10 +95,3 @@ def check_unknown_id_ocaml_stdlib(
 RULE = UNKNOWN_ID_RULE
 Diag = UnknownIdOCamlStdlibDiag
 check = check_unknown_id_ocaml_stdlib
-
-
-# %%
-if __name__ == "__main__":
-    from imandrax_tools.iml_eval_corpus.cli import main_from_check
-
-    main_from_check(check_unknown_id_ocaml_stdlib)

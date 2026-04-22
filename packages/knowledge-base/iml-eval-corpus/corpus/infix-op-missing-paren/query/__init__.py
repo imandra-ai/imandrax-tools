@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import ClassVar, Self
 
 from imandrax_api_models import ErrorKind, EvalRes
-from iml_query.queries import BaseCapture
-from iml_query.tree_sitter_utils import run_query, unwrap_bytes
 from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Severity
 from imandrax_tools.iml_eval_corpus.cst import range_to_loc
+from iml_query.queries import BaseCapture
+from iml_query.tree_sitter_utils import run_query, unwrap_bytes
 from pydantic import computed_field
 from tree_sitter import Node
 
@@ -111,10 +111,3 @@ def check_infix_op_missing_paren(
 RULE = INFIX_OP_MISSING_PAREN_RULE
 Diag = InfixOpMissingParenDiag
 check = check_infix_op_missing_paren
-
-
-# %%
-if __name__ == "__main__":
-    from imandrax_tools.iml_eval_corpus.cli import main_from_check
-
-    main_from_check(check_infix_op_missing_paren)

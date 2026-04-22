@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import ClassVar
 
 from imandrax_api_models import EvalRes
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Severity
+from imandrax_tools.iml_eval_corpus.cst import range_to_loc
 from iml_query.processing.base import resolve_nesting_definitions
 from iml_query.queries import (
     VALUE_DEFINITION_QUERY_SRC,
@@ -16,8 +18,6 @@ from iml_query.tree_sitter_utils import (
     run_queries,
     unwrap_bytes,
 )
-from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Severity
-from imandrax_tools.iml_eval_corpus.cst import range_to_loc
 from pydantic import computed_field
 
 CURR_DIR = Path(__file__).parent
@@ -97,10 +97,3 @@ def check_nested_rec(iml: str, eval_res: EvalRes) -> NestedRecursiveFunctionDiag
 RULE = NESTED_RECURSIVE_FUNCTION_RULE
 Diag = NestedRecursiveFunctionDiag
 check = check_nested_rec
-
-
-# %%
-if __name__ == "__main__":
-    from imandrax_tools.iml_eval_corpus.cli import main_from_check
-
-    main_from_check(check_nested_rec)
