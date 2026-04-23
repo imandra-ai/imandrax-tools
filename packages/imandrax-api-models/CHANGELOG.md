@@ -4,10 +4,13 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
-## [19.3.0] - 2026-04-2
+## [19.3.1] - 2026-04-23
+
+- Add missing `pyyaml` dependency
+
+## [19.3.0] - 2026-04-23
 
 - Context utils improvements
-
 
 ## [19.2.0] - 2026-04-22
 
