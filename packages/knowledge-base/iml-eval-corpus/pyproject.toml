@@ -8,10 +8,12 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "imandrax-api-models>=19.1.0",
     "imandrax-tools>=0.2.0",
-    "iml-query>=0.8.0",
     "typer>=0.24.1",
+    # listed so [tool.uv.sources] editable overrides flow through in dev
+    # (these are also transitive via imandrax-tools)
+    "iml-query>=0.8.0",
+    "imandrax-api-models>=19.1.0",
 ]
 
 [project.scripts]
@@ -38,6 +40,9 @@ venvPath = "."
 venv = ".venv"
 pythonVersion = "3.12"
 
+
+[tool.ty.environment]
+python = '.venv'
 
 [tool.ty.rules]
 missing-argument = "ignore"

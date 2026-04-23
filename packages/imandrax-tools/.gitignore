@@ -1,2 +1,5 @@
 target/
 *.so
+
+# Synced at release time from knowledge-base/iml-eval-corpus/corpus; source of truth lives there.
+src/imandrax_tools/iml_eval_corpus/corpus/

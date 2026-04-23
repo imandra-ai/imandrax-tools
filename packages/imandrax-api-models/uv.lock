@@ -545,12 +545,13 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "19.2.0"
+version = "19.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
+    { name = "pyyaml" },
 ]
 
 [package.optional-dependencies]
@@ -577,6 +578,7 @@ requires-dist = [
     { name = "imandrax-api", extras = ["async"], specifier = ">=0.19" },
     { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
     { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 provides-extras = ["client"]
 

@@ -21,60 +21,57 @@ from imandrax_api_models import (
 from imandrax_api_models.yaml_utils import ImandraXAPIModelDumper
 
 
-def format_code_snippet_with_error(
+def format_code_snippet_with_loc(
     src: str,
     start_pos: tuple[int, int],
     end_pos: tuple[int, int],
-    message: str,
     context_line: int = 2,
 ):
-    """Format a code snippet with highlighted error range."""
+    r"""
+    Format a code snippet with a highlighted span.
+
+    `start_pos`/`end_pos` are 1-indexed `(line, col)`; `end_col` is exclusive.
+
+    Single-line spans get a caret underline. Multi-line spans get a rustc-style
+    frame in an extra gutter column: `/` on the start line, `|` through the
+    middle, `\` on the end line.
+    """
     lines = src.split('\n')
     start_line, start_col = start_pos
     end_line, end_col = end_pos
 
-    # Determine visible range
     visible_start = max(0, start_line - context_line - 1)
     visible_end = min(len(lines), end_line + context_line)
 
+    line_no_width = len(str(visible_end))
+    gutter_pad = ' ' * line_no_width
+    is_multiline = end_line > start_line
+
     output: list[str] = []
-    output.append(f'Error: {message}')
-    output.append('')
-
-    # Calculate max line number width for alignment
-    max_line_no = visible_end
-    line_no_width = len(str(max_line_no))
-
     for i in range(visible_start, visible_end):
         line_no = i + 1
+        line = lines[i]
+        in_span = start_line <= line_no <= end_line
 
-        # Mark lines within error range
-        if start_line <= line_no <= end_line:
-            marker = '*'
+        if is_multiline:
+            if not in_span:
+                frame = '  '
+            elif line_no == start_line:
+                frame = '/ '
+            else:
+                # `|` carries through middle and end lines; the end is marked by
+                # a `|____^` underscore row below.
+                frame = '| '
+            output.append(f'{line_no:{line_no_width}} | {frame}{line}')
+            if in_span and line_no == end_line:
+                underscores = '_' * max(1, end_col - 1)
+                output.append(f'{gutter_pad} | |{underscores}^')
         else:
-            marker = ' '
-
-        output.append(f'{marker} {line_no:{line_no_width}} | {lines[i]}')
-
-        # Add underline/pointer - padding is marker(1) + space(1) + line_no_width + space(1)
-        underline_prefix = ' ' * (2 + line_no_width)
-
-        # Add underline/pointer
-        if line_no == start_line == end_line:
-            # Single line error
-            underline = ' ' * start_col + '^' * (end_col - start_col)
-            output.append(f'{underline_prefix} | {underline}')
-        elif line_no == start_line:
-            # Start of multi-line error
-            underline = ' ' * start_col + '^' + '~' * (len(lines[i]) - start_col)
-            output.append(f'{underline_prefix} | {underline}')
-        elif line_no == end_line:
-            # End of multi-line error
-            underline = '~' * end_col
-            output.append(f'{underline_prefix} | {underline}')
-        elif start_line < line_no < end_line:
-            # Middle of multi-line error
-            output.append(f'{underline_prefix} | {"~" * len(lines[i])}')
+            output.append(f'{line_no:{line_no_width}} | {line}')
+            if line_no == start_line:
+                caret_width = max(1, end_col - start_col)
+                underline = ' ' * (start_col - 1) + '^' * caret_width
+                output.append(f'{gutter_pad} | {underline}')
 
     return '\n'.join(output)
 
@@ -96,12 +93,11 @@ def format_error_msg(
         stop = cast(Position, stop)
         loc_str = f'Lines: {start.line}:{start.col}-{stop.line}:{stop.col}'
 
+        error_src = f'Error: {error_msg.msg}\n'
         if iml_src is not None:
             start_pos = (start.line, start.col)
             end_pos = (stop.line, stop.col)
-            error_src = format_code_snippet_with_error(
-                iml_src, start_pos, end_pos, error_msg.msg
-            )
+            error_src = format_code_snippet_with_loc(iml_src, start_pos, end_pos)
     else:
         # No location information
         error_src = error_msg.msg
@@ -118,7 +114,9 @@ def format_error_msg(
 
 
 def format_error(
-    error: Error, iml_src: str | None = None, max_stack_depth: int = 3
+    error: Error,
+    iml_src: str | None = None,
+    max_stack_depth: int = 3,
 ) -> str:
     err_kind = error.kind
     top_msg: str | None = None
@@ -215,12 +213,25 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
 
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
-    if not eval_res.has_errors:
-        # Check additional error in message (internal errors)
-        errs_in_eval_msg: list[str] = [
-            msg for msg in eval_res.messages if 'error' in msg.lower()
-        ]
-        if len(errs_in_eval_msg) == 0:
+    # Check additional error in message (internal errors)
+    errs_in_eval_msg: list[str] = [
+        msg for msg in eval_res.messages if 'error' in msg.lower()
+    ]
+    has_structured_err = eval_res.has_errors
+    has_err_in_eval_msg = len(errs_in_eval_msg) > 0
+    match (has_structured_err, has_err_in_eval_msg):
+        case True, _:
+            s = ''
+            s += 'Evaluation errors:\n'
+            s += cast(str, format_eval_res_errors(eval_res, iml_src))
+            return s
+        case False, True:
+            s = 'ImandraX internal error'
+            # Extract error details from the first error message
+            if errs_in_eval_msg:
+                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
+            return s
+        case False, False:
             s = 'Eval success!'
             if eval_res.eval_results:
                 s += '\n'
@@ -230,18 +241,6 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
                 s += f'- success: {success}\n'
                 s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
             return s
-        else:
-            s = 'ImandraX internal error'
-            # Extract error details from the first error message
-            if errs_in_eval_msg:
-                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
-            return s
-
-    else:
-        s = ''
-        s += 'Evaluation errors:\n\n'
-        s += cast(str, format_eval_res_errors(eval_res, iml_src))
-        return s
 
 
 # ====================

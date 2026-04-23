@@ -128,72 +128,71 @@ summary:
 region_groups:
 - !RegionGroup
   label_path: '1'
-  weight: 2
   constraints:
   - x <= 0
   introduced_constraint: x <= 0
+  weight: 2
   n_children_regions: 2
   n_descendant_regions: 2
   children:
   - !RegionGroup
     label_path: '1.1'
-    weight: 1
     constraints:
     - x <= 0
     - y <= 0
     introduced_constraint: y <= 0
+    weight: 1
+    n_children_regions: 0
+    n_descendant_regions: 0
     invariant: '6'
     example_input:
       x: '0'
       y: '0'
     example_output: '6'
-    n_children_regions: 0
-    n_descendant_regions: 0
   - !RegionGroup
     label_path: 1.1.2
-    weight: 1
     constraints:
     - x <= 0
     - y <= 0
     - y >= 1
     introduced_constraint: y >= 1
+    weight: 1
+    n_children_regions: 0
+    n_descendant_regions: 0
     invariant: '5'
     example_input:
       x: '0'
       y: '1'
     example_output: '5'
-    n_children_regions: 0
-    n_descendant_regions: 0
 - !RegionGroup
   label_path: 1.2.1.1
-  weight: 1
   constraints:
   - x <= 0
   - y <= 0
   - x >= 1
   - y >= (-10)
   introduced_constraint: y >= (-10)
+  weight: 1
+  n_children_regions: 0
+  n_descendant_regions: 0
   invariant: '4'
   example_input:
     x: '1'
     y: '0'
   example_output: '4'
-  n_children_regions: 0
-  n_descendant_regions: 0
 - !RegionGroup
   label_path: 1.2.3
-  weight: 2
   constraints:
   - x <= 0
   - y <= 0
   - y >= 1
   introduced_constraint: y >= 1
+  weight: 2
   n_children_regions: 2
   n_descendant_regions: 2
   children:
   - !RegionGroup
     label_path: 1.2.3.1.1
-    weight: 1
     constraints:
     - x <= 0
     - y <= 0
@@ -201,16 +200,16 @@ region_groups:
     - x <= y
     - x >= 1
     introduced_constraint: x >= 1
+    weight: 1
+    n_children_regions: 0
+    n_descendant_regions: 0
     invariant: '2'
     example_input:
       x: '1'
       y: '1'
     example_output: '2'
-    n_children_regions: 0
-    n_descendant_regions: 0
   - !RegionGroup
     label_path: 1.2.3.1.2.1
-    weight: 1
     constraints:
     - x <= 0
     - y <= 0
@@ -219,16 +218,16 @@ region_groups:
     - x >= 1
     - not (x <= y)
     introduced_constraint: not (x <= y)
+    weight: 1
+    n_children_regions: 0
+    n_descendant_regions: 0
     invariant: '1'
     example_input:
       x: '2'
       y: '1'
     example_output: '1'
-    n_children_regions: 0
-    n_descendant_regions: 0
 - !RegionGroup
   label_path: 1.2.3.4.1
-  weight: 1
   constraints:
   - x <= 0
   - y <= 0
@@ -236,13 +235,14 @@ region_groups:
   - x >= 1
   - y <= (-11)
   introduced_constraint: y <= (-11)
+  weight: 1
+  n_children_regions: 0
+  n_descendant_regions: 0
   invariant: '3'
   example_input:
     x: '1'
     y: (-11)
   example_output: '3'
-  n_children_regions: 0
-  n_descendant_regions: 0
 """)
 
     assert (hdr.dumper_func()(hdr_dict_flat)) == snapshot("""\
