@@ -25,6 +25,7 @@ codegen = [
 
 [dependency-groups]
 dev = [
+    "inline-snapshot>=0.32.6",
     "pytest>=9.0.1",
 ]
 
@@ -97,3 +98,6 @@ reportUnnecessaryIsInstance = false
 reportUnnecessaryTypeIgnoreComment = true
 reportUnusedImport = "none"
 reportUnusedExpression = false
+
+[tool.inline-snapshot]
+format-command="uvx ruff check --fix-only --stdin-filename {filename} | uvx ruff format --stdin-filename {filename}"
