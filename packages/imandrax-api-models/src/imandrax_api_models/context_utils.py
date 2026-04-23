@@ -118,7 +118,9 @@ def format_error_msg(
 
 
 def format_error(
-    error: Error, iml_src: str | None = None, max_stack_depth: int = 3
+    error: Error,
+    iml_src: str | None = None,
+    max_stack_depth: int = 3,
 ) -> str:
     err_kind = error.kind
     top_msg: str | None = None
