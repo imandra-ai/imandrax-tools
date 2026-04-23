@@ -378,16 +378,17 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "19.3.0"
+version = "19.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
+    { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a1/f8/00b6ea3c2410a497c516c263818ad5f0b42fb70a4b8f82f3a2485870788c/imandrax_api_models-19.3.0.tar.gz", hash = "sha256:46bda396479746a7371e3ce44fd692172c53949b0f76861a4f821581f5b03cb5", size = 21591, upload-time = "2026-04-23T13:07:05.141Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/19/3dc51bdb86eb45ce650ff388cf93264ad3a901c0469c45e0a0dfeac1b582/imandrax_api_models-19.3.1.tar.gz", hash = "sha256:587d75d1c2f7417cf8bd9f8802a1685200521e2d529d41f33cfcae9df664a16d", size = 21589, upload-time = "2026-04-23T13:33:45.174Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/cd/631b56a7500003980dd2e91255e55f9211c3a0f9f5f6d3b5d28737f18cd4/imandrax_api_models-19.3.0-py3-none-any.whl", hash = "sha256:02905e6ee35372a3bb60c9a7dad9233bb879553d0edf03e7c0c74ac5b53346ed", size = 27611, upload-time = "2026-04-23T13:07:03.669Z" },
+    { url = "https://files.pythonhosted.org/packages/55/9a/5303355be20759744c86a7857a02995be2356601d0c900e84b0e347e9fef/imandrax_api_models-19.3.1-py3-none-any.whl", hash = "sha256:73c9b4a6eb8c044aa6102624d98d79b0663e175fa47f77058bf08039911d7a6f", size = 27623, upload-time = "2026-04-23T13:33:43.862Z" },
 ]
 
 [package.optional-dependencies]
@@ -445,10 +446,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "imandrax-api-models", specifier = "==19.3.0" },
-    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = "==19.3.0" },
-    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = "==19.0.0" },
-    { name = "iml-query", specifier = "==0.9.0" },
+    { name = "imandrax-api-models", specifier = ">=19.3.1" },
+    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = ">=19.3.1" },
+    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = ">=19.0.0" },
+    { name = "iml-query", specifier = ">=0.9.0" },
     { name = "pydantic", specifier = ">=2" },
     { name = "structlog", specifier = ">=24" },
     { name = "tree-sitter", specifier = ">=0.23" },

@@ -26,10 +26,10 @@ PACKAGES := iml-query imandrax-api-models imandrax-codegen
 
 .PHONY: bump-sub-packages
 bump-sub-packages:  ## Bump subpacakges
-	uv add --no-sync "iml-query==$(call get-pypi-latest-ver,iml-query)"
-	uv add --no-sync "imandrax-api-models==$(call get-pypi-latest-ver,imandrax-api-models)"
-	uv add --no-sync "imandrax-api-models[client]==$(call get-pypi-latest-ver,imandrax-api-models)" --optional extended-client
-	uv add --no-sync "imandrax-codegen==$(call get-pypi-latest-ver,imandrax-codegen)" --optional codegen
+	uv add --no-sync "iml-query>=$(call get-pypi-latest-ver,iml-query)"
+	uv add --no-sync "imandrax-api-models>=$(call get-pypi-latest-ver,imandrax-api-models)"
+	uv add --no-sync "imandrax-api-models[client]>=$(call get-pypi-latest-ver,imandrax-api-models)" --optional extended-client
+	uv add --no-sync "imandrax-codegen>=$(call get-pypi-latest-ver,imandrax-codegen)" --optional codegen
 	uv sync --all-extras
 
 CORPUS_SRC := ../knowledge-base/iml-eval-corpus/corpus/
