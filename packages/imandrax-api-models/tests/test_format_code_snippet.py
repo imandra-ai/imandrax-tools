@@ -13,11 +13,11 @@ def calculate(a, b):
     res = format_code_snippet_with_loc(code, (3, 13), (3, 14))
     assert res == snapshot(
         """\
-  1 | def calculate(a, b):
-  2 |     total = a + b
-* 3 |     result = x + total
-    |              ^
-  4 |     return result\
+1 | def calculate(a, b):
+2 |     total = a + b
+3 |     result = x + total
+  |             ^
+4 |     return result\
 """
     )
 
@@ -37,15 +37,13 @@ def calculate(a, b):
     )
     assert res == snapshot(
         """\
-  1 | def calculate(a, b):
-* 2 |     if a > 0:
-    |     ^~~~~~~~~~
-* 3 |         result = a + b
-    | ~~~~~~~~~~~~~~~~~~~~~~
-* 4 |         return result
-    | ~~~~~~~~~~~~~~~~~
-  5 |     else:
-  6 |         return 0\
+1 |   def calculate(a, b):
+2 | /     if a > 0:
+3 | |         result = a + b
+4 | |         return result
+  | |________________^
+5 |       else:
+6 |           return 0\
 """
     )
 
@@ -62,10 +60,10 @@ def foo():
         (1, 21),
     )
     assert res == snapshot("""\
-* 1 | import unknown_module
-    |        ^^^^^^^^^^^^^^
-  2 | def foo():
-  3 |     pass\
+1 | import unknown_module
+  |       ^^^^^^^^^^^^^^
+2 | def foo():
+3 |     pass\
 """)
 
 
@@ -81,10 +79,10 @@ def foo():
         (3, 20),
     )
     assert res == snapshot("""\
-  1 | def foo():
-  2 |     x = 1
-* 3 |     return undefined
-    |            ^^^^^^^^^\
+1 | def foo():
+2 |     x = 1
+3 |     return undefined
+  |           ^^^^^^^^^\
 """)
 
 
@@ -100,10 +98,10 @@ invalid syntax here"""
         (3, 7),
     )
     assert res == snapshot("""\
-  1 | def calculate():
-  2 |     return 42
-* 3 | invalid syntax here
-    | ^^^^^^^\
+1 | def calculate():
+2 |     return 42
+3 | invalid syntax here
+  | ^^^^^^^\
 """)
 
 
@@ -122,8 +120,8 @@ line5"""
         context_line=0,
     )
     assert res == snapshot("""\
-* 3 | line3 with error
-    |       ^^^^\
+3 | line3 with error
+  |      ^^^^\
 """)
 
 
@@ -139,9 +137,9 @@ def foo():
         context_line=10,
     )
     assert res == snapshot("""\
-  1 | def foo():
-* 2 |     return x
-    |            ^\
+1 | def foo():
+2 |     return x
+  |           ^\
 """)
 
 
@@ -158,11 +156,9 @@ def broken():
         (4, 7),
     )
     assert res == snapshot("""\
-  1 | def broken():
-* 2 |     start
-    |     ^~~~~~
-* 3 | \n\
-    | \n\
-* 4 |     end
-    | ~~~~~~~\
+1 |   def broken():
+2 | /     start
+3 | | \n\
+4 | |     end
+  | |______^\
 """)

@@ -27,13 +27,14 @@ def format_code_snippet_with_loc(
     end_pos: tuple[int, int],
     context_line: int = 2,
 ):
-    """Format a code snippet with a highlighted span.
+    r"""
+    Format a code snippet with a highlighted span.
 
     `start_pos`/`end_pos` are 1-indexed `(line, col)`; `end_col` is exclusive.
 
     Single-line spans get a caret underline. Multi-line spans get a rustc-style
     frame in an extra gutter column: `/` on the start line, `|` through the
-    middle, `\\` on the end line.
+    middle, `\` on the end line.
     """
     lines = src.split('\n')
     start_line, start_col = start_pos
