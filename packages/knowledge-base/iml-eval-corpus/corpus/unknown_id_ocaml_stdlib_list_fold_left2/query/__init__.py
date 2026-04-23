@@ -5,13 +5,7 @@ import re
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes
-from imandrax_tools.iml_eval_corpus.common import (
-    BaseDiag,
-    BaseRule,
-    Loc,
-    NoLoc,
-    Severity,
-)
+from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
 from pydantic import computed_field
 
 IDENTIFIER: str = "List.fold_left2"
@@ -85,8 +79,8 @@ def check_unknown_id_ocaml_stdlib(
             loc = Loc(
                 start_byte=0,
                 end_byte=0,
-                start_point=(s.line - 1, s.col - 1),
-                end_point=(e.line - 1, e.col - 1),
+                start_point=(s.line, s.col),
+                end_point=(e.line, e.col),
             )
         else:
             loc = NoLoc(reason="error message has no location")
