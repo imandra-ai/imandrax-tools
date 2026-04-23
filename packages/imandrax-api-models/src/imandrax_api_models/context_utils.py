@@ -222,7 +222,7 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     match (has_structured_err, has_err_in_eval_msg):
         case True, _:
             s = ''
-            s += 'Evaluation errors:\n\n'
+            s += 'Evaluation errors:\n'
             s += cast(str, format_eval_res_errors(eval_res, iml_src))
             return s
         case False, True:
