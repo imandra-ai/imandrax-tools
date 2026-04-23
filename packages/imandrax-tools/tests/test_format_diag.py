@@ -31,6 +31,7 @@ let build_fib (f : int list) (i : int) (n : int) : int list =
 
 let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
 """
+"""A piece of IML that contains multiple diagnostics"""
 
 
 # def test_get_eval_res():
@@ -101,17 +102,18 @@ def test_multidiags():
     assert len(diags) == 3
     s = format_diagnostics(diags, IML)
     assert s == snapshot("""\
-1. infix-op-missing-paren: `land :` is an infix operator. When used in let-binding, it needs to be enclosed in parentheses.
-E.g. `let ( land ) = <new-definition>`
-location: 17:5
+1. infix-op-missing-paren: Infix operator missing parenthesis
+->loc:17:5-17:11
 15 |   helper f i
 16 | \n\
 17 | let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
    |     ^^^^^^
 18 | \n\
+help: `land :` is an infix operator. When used in let-binding, it needs to be enclosed in parentheses.
+E.g. `let ( land ) = <new-definition>`
 
-2. nested-measure-attribute: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be attached to a top-level function instead of nested function `helper`.
-location: 4:3
+2. nested-measure-attribute: Nested measure attribute
+->loc:4:3-13:42
  2 |     let non_rec_irrelevant_f x = x + 1
  3 |     in
  4 | /   let rec helper curr_f curr_i =
@@ -127,9 +129,10 @@ location: 4:3
    | |_________________________________________^
 14 |     in
 15 |     helper f i
+help: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be attached to a top-level function instead of nested function `helper`.
 
-3. nested-recursive-function: Recursive function `helper` nested in `build_fib` might cause proof-obligation difficulty.
-location: 4:3
+3. nested-recursive-function: Nested recursive function
+->loc:4:3-13:42
  2 |     let non_rec_irrelevant_f x = x + 1
  3 |     in
  4 | /   let rec helper curr_f curr_i =
@@ -145,5 +148,6 @@ location: 4:3
    | |_________________________________________^
 14 |     in
 15 |     helper f i
+help: Recursive function `helper` nested in `build_fib` might cause proof-obligation difficulty.
 
 """)

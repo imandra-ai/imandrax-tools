@@ -7,6 +7,7 @@ from enum import Enum
 from typing import ClassVar, Protocol
 
 from imandrax_api_models import EvalRes
+from imandrax_api_models.context_utils import format_code_snippet_with_loc
 from pydantic import BaseModel, computed_field
 
 
@@ -54,11 +55,19 @@ class BaseDiag(BaseModel):
     def message(self) -> str:
         pass
 
-    def format_error_message(self) -> str:
+    def format(self, code: str | None = None) -> str:
         s = ''
-        s += f'{self.rule.id}: {self.message}\n'
+        s += f'{self.rule.id}: {self.rule.description}\n'
         if isinstance(self.loc, Loc):
-            s += f'location: {self.loc.start_point[0]}:{self.loc.start_point[1]}\n'
+            loc = self.loc
+            s += (
+                f'->loc:{loc.start_point[0]}:{loc.start_point[1]}'
+                f'-{loc.end_point[0]}:{loc.end_point[1]}\n'
+            )
+            if code is not None:
+                s += format_code_snippet_with_loc(code, loc.start_point, loc.end_point)
+                s += '\n'
+                s += f'help: {self.message}'
         return s
 
 
