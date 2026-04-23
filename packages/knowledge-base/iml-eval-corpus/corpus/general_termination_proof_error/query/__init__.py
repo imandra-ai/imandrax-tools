@@ -82,7 +82,7 @@ def _po_has_termination_counter_sat(eval_res: EvalRes) -> bool:
     tactic_evals = [
         e
         for e in eval_res.po_errors
-        if ErrorKind.from_proto_kind_ext(e.kind) == ErrorKind.TACTIC_EVAL_ERR
+        if ErrorKind.from_proto_kind_exn(e.kind) == ErrorKind.TACTIC_EVAL_ERR
         and e.msg is not None
         and "counter-satisfiable" in e.msg.msg.lower()
     ]

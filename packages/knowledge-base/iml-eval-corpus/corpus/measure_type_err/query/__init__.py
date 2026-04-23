@@ -84,7 +84,7 @@ def check_measure_type_err(iml: str, eval_res: EvalRes) -> MeasureTypeErrDiag | 
     type_errs = [
         e
         for e in eval_res.errors
-        if ErrorKind.from_proto_kind_ext(e.kind) == ErrorKind.TYPE_ERR
+        if ErrorKind.from_proto_kind_exn(e.kind) == ErrorKind.TYPE_ERR
     ]
     if not type_errs:
         return None

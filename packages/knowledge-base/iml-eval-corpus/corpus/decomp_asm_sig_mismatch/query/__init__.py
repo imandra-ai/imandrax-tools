@@ -66,7 +66,7 @@ def check_decomp_asm_mismatch(
     for msg in eval_res.messages:
         try:
             if (
-                ErrorKind.from_proto_kind_ext(msg) == ErrorKind.TACTIC_EVAL_ERR
+                ErrorKind.from_proto_kind_exn(msg) == ErrorKind.TACTIC_EVAL_ERR
                 and "Inject_asm" in msg
             ):
                 has_tactic_eval_err_with_inject_asm = True

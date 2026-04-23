@@ -63,7 +63,7 @@ def check_unknown_id_ocaml_stdlib(
     """
     _ = iml  # unused: the error message is sufficient.
     for err in eval_res.errors:
-        if ErrorKind.from_proto_kind_ext(err.kind) != ErrorKind.TYPE_ERR:
+        if ErrorKind.from_proto_kind_exn(err.kind) != ErrorKind.TYPE_ERR:
             continue
         if err.msg is None:
             continue
