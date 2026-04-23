@@ -215,12 +215,25 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
 
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
-    if not eval_res.has_errors:
-        # Check additional error in message (internal errors)
-        errs_in_eval_msg: list[str] = [
-            msg for msg in eval_res.messages if 'error' in msg.lower()
-        ]
-        if len(errs_in_eval_msg) == 0:
+    # Check additional error in message (internal errors)
+    errs_in_eval_msg: list[str] = [
+        msg for msg in eval_res.messages if 'error' in msg.lower()
+    ]
+    has_structured_err = eval_res.has_errors
+    has_err_in_eval_msg = len(errs_in_eval_msg) > 0
+    match (has_structured_err, has_err_in_eval_msg):
+        case True, _:
+            s = ''
+            s += 'Evaluation errors:\n\n'
+            s += cast(str, format_eval_res_errors(eval_res, iml_src))
+            return s
+        case False, True:
+            s = 'ImandraX internal error'
+            # Extract error details from the first error message
+            if errs_in_eval_msg:
+                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
+            return s
+        case False, False:
             s = 'Eval success!'
             if eval_res.eval_results:
                 s += '\n'
@@ -230,18 +243,6 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
                 s += f'- success: {success}\n'
                 s += f'- value as ocaml: {eval_result.value_as_ocaml}\n'
             return s
-        else:
-            s = 'ImandraX internal error'
-            # Extract error details from the first error message
-            if errs_in_eval_msg:
-                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
-            return s
-
-    else:
-        s = ''
-        s += 'Evaluation errors:\n\n'
-        s += cast(str, format_eval_res_errors(eval_res, iml_src))
-        return s
 
 
 # ====================
