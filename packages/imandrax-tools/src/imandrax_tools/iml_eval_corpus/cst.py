@@ -45,8 +45,8 @@ def range_to_loc(r: Range) -> Loc:
     return Loc(
         start_byte=r.start_byte,
         end_byte=r.end_byte,
-        start_point=(r.start_point[0], r.start_point[1]),
-        end_point=(r.end_point[0], r.end_point[1]),
+        start_point=(r.start_point[0] + 1, r.start_point[1] + 1),
+        end_point=(r.end_point[0] + 1, r.end_point[1] + 1),
     )
 
 
@@ -159,8 +159,14 @@ def _captures_to_top_defs(
         loc = Loc(
             start_byte=top_def_node.start_byte,
             end_byte=top_def_node.end_byte,
-            start_point=(top_def_node.start_point[0], top_def_node.start_point[1]),
-            end_point=(top_def_node.end_point[0], top_def_node.end_point[1]),
+            start_point=(
+                top_def_node.start_point[0] + 1,
+                top_def_node.start_point[1] + 1,
+            ),
+            end_point=(
+                top_def_node.end_point[0] + 1,
+                top_def_node.end_point[1] + 1,
+            ),
         )
 
         top_defs.append(

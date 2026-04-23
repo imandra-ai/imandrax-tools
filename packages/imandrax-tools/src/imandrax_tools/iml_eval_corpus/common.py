@@ -13,7 +13,11 @@ from pydantic import BaseModel, computed_field
 class Loc(BaseModel):
     start_byte: int
     end_byte: int
-    start_point: tuple[int, int]
+    start_point: tuple[
+        int, int
+    ]  # (line, col), 1-indexed — matches imandrax-api's `Position` convention.
+    # Note tree-sitter `Range.start_point`/`end_point` are 0-indexed; convert when
+    # constructing a `Loc` from tree-sitter.
     end_point: tuple[int, int]
 
 
