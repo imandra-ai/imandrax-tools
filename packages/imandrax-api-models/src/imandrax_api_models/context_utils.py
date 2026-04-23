@@ -27,51 +27,47 @@ def format_code_snippet_with_loc(
     end_pos: tuple[int, int],
     context_line: int = 2,
 ):
-    """Format a code snippet with highlighted error range."""
+    """Format a code snippet with a highlighted span.
+
+    `start_pos`/`end_pos` are 1-indexed `(line, col)`; `end_col` is exclusive.
+
+    Single-line spans get a caret underline. Multi-line spans get a rustc-style
+    frame in an extra gutter column: `/` on the start line, `|` through the
+    middle, `\\` on the end line.
+    """
     lines = src.split('\n')
     start_line, start_col = start_pos
     end_line, end_col = end_pos
 
-    # Determine visible range
     visible_start = max(0, start_line - context_line - 1)
     visible_end = min(len(lines), end_line + context_line)
 
+    line_no_width = len(str(visible_end))
+    gutter_pad = ' ' * line_no_width
+    is_multiline = end_line > start_line
+
     output: list[str] = []
-
-    # Calculate max line number width for alignment
-    max_line_no = visible_end
-    line_no_width = len(str(max_line_no))
-
     for i in range(visible_start, visible_end):
         line_no = i + 1
+        line = lines[i]
+        in_span = start_line <= line_no <= end_line
 
-        # Mark lines within error range
-        if start_line <= line_no <= end_line:
-            marker = '*'
+        if is_multiline:
+            if not in_span:
+                frame = '  '
+            elif line_no == start_line:
+                frame = '/ '
+            elif line_no == end_line:
+                frame = '\\ '
+            else:
+                frame = '| '
+            output.append(f'{line_no:{line_no_width}} | {frame}{line}')
         else:
-            marker = ' '
-
-        output.append(f'{marker} {line_no:{line_no_width}} | {lines[i]}')
-
-        # Add underline/pointer - padding is marker(1) + space(1) + line_no_width + space(1)
-        underline_prefix = ' ' * (2 + line_no_width)
-
-        # Add underline/pointer
-        if line_no == start_line == end_line:
-            # Single line error
-            underline = ' ' * start_col + '^' * (end_col - start_col)
-            output.append(f'{underline_prefix} | {underline}')
-        elif line_no == start_line:
-            # Start of multi-line error
-            underline = ' ' * start_col + '^' + '~' * (len(lines[i]) - start_col)
-            output.append(f'{underline_prefix} | {underline}')
-        elif line_no == end_line:
-            # End of multi-line error
-            underline = '~' * end_col
-            output.append(f'{underline_prefix} | {underline}')
-        elif start_line < line_no < end_line:
-            # Middle of multi-line error
-            output.append(f'{underline_prefix} | {"~" * len(lines[i])}')
+            output.append(f'{line_no:{line_no_width}} | {line}')
+            if line_no == start_line:
+                caret_width = max(1, end_col - start_col)
+                underline = ' ' * (start_col - 1) + '^' * caret_width
+                output.append(f'{gutter_pad} | {underline}')
 
     return '\n'.join(output)
 
