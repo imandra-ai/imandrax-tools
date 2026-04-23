@@ -21,11 +21,10 @@ from imandrax_api_models import (
 from imandrax_api_models.yaml_utils import ImandraXAPIModelDumper
 
 
-def format_code_snippet_with_error(
+def format_code_snippet_with_loc(
     src: str,
     start_pos: tuple[int, int],
     end_pos: tuple[int, int],
-    message: str,
     context_line: int = 2,
 ):
     """Format a code snippet with highlighted error range."""
@@ -38,8 +37,6 @@ def format_code_snippet_with_error(
     visible_end = min(len(lines), end_line + context_line)
 
     output: list[str] = []
-    output.append(f'Error: {message}')
-    output.append('')
 
     # Calculate max line number width for alignment
     max_line_no = visible_end
@@ -96,12 +93,11 @@ def format_error_msg(
         stop = cast(Position, stop)
         loc_str = f'Lines: {start.line}:{start.col}-{stop.line}:{stop.col}'
 
+        error_src = f'Error: {error_msg.msg}\n'
         if iml_src is not None:
             start_pos = (start.line, start.col)
             end_pos = (stop.line, stop.col)
-            error_src = format_code_snippet_with_error(
-                iml_src, start_pos, end_pos, error_msg.msg
-            )
+            error_src = format_code_snippet_with_loc(iml_src, start_pos, end_pos)
     else:
         # No location information
         error_src = error_msg.msg

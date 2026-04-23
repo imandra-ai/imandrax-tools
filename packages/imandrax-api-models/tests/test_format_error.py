@@ -1,6 +1,6 @@
 from inline_snapshot import snapshot
 
-from imandrax_api_models.context_utils import format_code_snippet_with_error
+from imandrax_api_models.context_utils import format_code_snippet_with_loc
 
 
 def test_single_line_error():
@@ -10,13 +10,9 @@ def calculate(a, b):
     result = x + total
     return result"""
 
-    res = format_code_snippet_with_error(
-        code, (3, 13), (3, 14), "undefined variable 'x'"
-    )
+    res = format_code_snippet_with_loc(code, (3, 13), (3, 14))
     assert res == snapshot(
         """\
-Error: undefined variable 'x'
-
   1 | def calculate(a, b):
   2 |     total = a + b
 * 3 |     result = x + total
@@ -34,16 +30,13 @@ def calculate(a, b):
         return result
     else:
         return 0"""
-    res = format_code_snippet_with_error(
+    res = format_code_snippet_with_loc(
         code,
         (2, 4),
         (4, 17),
-        'unreachable code detected',
     )
     assert res == snapshot(
         """\
-Error: unreachable code detected
-
   1 | def calculate(a, b):
 * 2 |     if a > 0:
     |     ^~~~~~~~~~
@@ -63,10 +56,12 @@ def test_error_at_first_line():
 import unknown_module
 def foo():
     pass"""
-    res = format_code_snippet_with_error(code, (1, 7), (1, 21), 'module not found')
+    res = format_code_snippet_with_loc(
+        code,
+        (1, 7),
+        (1, 21),
+    )
     assert res == snapshot("""\
-Error: module not found
-
 * 1 | import unknown_module
     |        ^^^^^^^^^^^^^^
   2 | def foo():
@@ -80,10 +75,12 @@ def test_error_at_last_line():
 def foo():
     x = 1
     return undefined"""
-    res = format_code_snippet_with_error(code, (3, 11), (3, 20), 'undefined variable')
+    res = format_code_snippet_with_loc(
+        code,
+        (3, 11),
+        (3, 20),
+    )
     assert res == snapshot("""\
-Error: undefined variable
-
   1 | def foo():
   2 |     x = 1
 * 3 |     return undefined
@@ -97,10 +94,12 @@ def test_error_at_column_zero():
 def calculate():
     return 42
 invalid syntax here"""
-    res = format_code_snippet_with_error(code, (3, 0), (3, 7), 'invalid syntax')
+    res = format_code_snippet_with_loc(
+        code,
+        (3, 0),
+        (3, 7),
+    )
     assert res == snapshot("""\
-Error: invalid syntax
-
   1 | def calculate():
   2 |     return 42
 * 3 | invalid syntax here
@@ -116,12 +115,13 @@ line2
 line3 with error
 line4
 line5"""
-    res = format_code_snippet_with_error(
-        code, (3, 6), (3, 10), 'syntax error', context_line=0
+    res = format_code_snippet_with_loc(
+        code,
+        (3, 6),
+        (3, 10),
+        context_line=0,
     )
     assert res == snapshot("""\
-Error: syntax error
-
 * 3 | line3 with error
     |       ^^^^\
 """)
@@ -132,12 +132,13 @@ def test_error_with_large_context():
     code = """\
 def foo():
     return x"""
-    res = format_code_snippet_with_error(
-        code, (2, 11), (2, 12), 'undefined variable', context_line=10
+    res = format_code_snippet_with_loc(
+        code,
+        (2, 11),
+        (2, 12),
+        context_line=10,
     )
     assert res == snapshot("""\
-Error: undefined variable
-
   1 | def foo():
 * 2 |     return x
     |            ^\
@@ -151,10 +152,12 @@ def broken():
     start
 
     end"""
-    res = format_code_snippet_with_error(code, (2, 4), (4, 7), 'incomplete block')
+    res = format_code_snippet_with_loc(
+        code,
+        (2, 4),
+        (4, 7),
+    )
     assert res == snapshot("""\
-Error: incomplete block
-
   1 | def broken():
 * 2 |     start
     |     ^~~~~~
