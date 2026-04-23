@@ -23,6 +23,11 @@ codegen = [
     "imandrax-codegen==19.0.0",
 ]
 
+[tool.uv.sources]
+# imandrax-codegen = { path = "../imandrax-codegen", editable = true }
+imandrax-api-models = { path = "../imandrax-api-models", editable = true }
+iml-query = { path = "../iml-query", editable = true }
+
 [dependency-groups]
 dev = [
     "inline-snapshot>=0.32.6",

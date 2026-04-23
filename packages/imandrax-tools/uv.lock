@@ -379,20 +379,38 @@ async = [
 [[package]]
 name = "imandrax-api-models"
 version = "19.2.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/b8/310c44fa997acfc4305199c085bb0febf4a2322b3c043d424c4100021aca/imandrax_api_models-19.2.0.tar.gz", hash = "sha256:9542ebf14c9009fbe6e3fc695408d379811a0a5c051291804847ab87550a6160", size = 21448, upload-time = "2026-04-22T10:32:48.205Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/84/6a8937a16c1c0e327651b6acf6991e1c22e0aa044fdcfe0f7f0faaeed96d/imandrax_api_models-19.2.0-py3-none-any.whl", hash = "sha256:8967b207df5264c504a45fb04864524ae625a57cb02f501b17d276fcd2b5ebcf", size = 27484, upload-time = "2026-04-22T10:32:46.974Z" },
-]
 
 [package.optional-dependencies]
 client = [
     { name = "iml-query" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.19" },
+    { name = "iml-query", marker = "extra == 'client'", specifier = ">=0.5.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+]
+provides-extras = ["client"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "inline-snapshot", extras = ["dirty-equals"], specifier = ">=0.31.1" },
+    { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "jupytext", specifier = ">=1.19.1" },
+    { name = "marimo", specifier = ">=0.23.0" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-retry", specifier = ">=1.7.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
@@ -439,15 +457,16 @@ extended-client = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "inline-snapshot" },
     { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "imandrax-api-models", specifier = "==19.2.0" },
-    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", specifier = "==19.2.0" },
+    { name = "imandrax-api-models", editable = "../imandrax-api-models" },
+    { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", editable = "../imandrax-api-models" },
     { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = "==19.0.0" },
-    { name = "iml-query", specifier = "==0.9.0" },
+    { name = "iml-query", editable = "../iml-query" },
     { name = "pydantic", specifier = ">=2" },
     { name = "structlog", specifier = ">=24" },
     { name = "tree-sitter", specifier = ">=0.23" },
@@ -455,12 +474,15 @@ requires-dist = [
 provides-extras = ["extended-client", "codegen"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.1" }]
+dev = [
+    { name = "inline-snapshot", specifier = ">=0.32.6" },
+    { name = "pytest", specifier = ">=9.0.1" },
+]
 
 [[package]]
 name = "iml-query"
 version = "0.9.0"
-source = { registry = "https://pypi.org/simple" }
+source = { editable = "../iml-query" }
 dependencies = [
     { name = "devtools" },
     { name = "rich" },
@@ -469,9 +491,25 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-iml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9f/a4/8aaf702c0a90c6617b651240d9c32ac2c3616c1db43c8c24bef418f2da73/iml_query-0.9.0.tar.gz", hash = "sha256:590fc04a1c7286ef9cf7bd565d824e185edfd14a8469a2f2371609cef66c65a3", size = 103353, upload-time = "2026-04-22T12:37:38.492Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/9f/5ca39c726329881688eb1b40ebdf4f4a7491310e3c9c00ddf7818014dbc2/iml_query-0.9.0-py3-none-any.whl", hash = "sha256:3a3074dcb8c31de88df8eceae47d7d76621f6e029d7942941556b204ff862aeb", size = 20401, upload-time = "2026-04-22T12:37:37.344Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "rich", specifier = ">=14.1.0" },
+    { name = "sexpdata", specifier = ">=1.0.2" },
+    { name = "structlog", specifier = ">=25.4.0" },
+    { name = "tree-sitter", specifier = ">=0.25.1" },
+    { name = "tree-sitter-iml", specifier = ">=0.26" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.17.2.1" },
+    { name = "inline-snapshot", specifier = ">=0.28.0" },
+    { name = "ipykernel", specifier = ">=6.30.1" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=8.4.2" },
 ]
 
 [[package]]
@@ -481,6 +519,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
+]
+
+[[package]]
+name = "inline-snapshot"
+version = "0.32.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asttokens" },
+    { name = "executing" },
+    { name = "pytest" },
+    { name = "rich" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ee/df/d831f0312478b4feb7c3195291071dd13f130176fcdcae2d6d2a2d5fda1d/inline_snapshot-0.32.6.tar.gz", hash = "sha256:224a96eeb86c4b2831d274239d3468dc0b7819264f608f595b2f9d01f79a6e38", size = 2627401, upload-time = "2026-04-10T05:46:22.922Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f8/c7/8b54418a67ef2b10771a82d03e2b6b69016e5bfb0527fd491884a890e1d6/inline_snapshot-0.32.6-py3-none-any.whl", hash = "sha256:1f8fb6353dff0aa824e00eecf17d53d7d08d36f2167752756ec8ea73f39d7e15", size = 85157, upload-time = "2026-04-10T05:46:21.402Z" },
 ]
 
 [[package]]
