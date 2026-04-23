@@ -83,7 +83,7 @@ class ErrorKind(str, Enum):
     DEBOUNCED = 'Debounced'
 
     @classmethod
-    def from_proto_kind(cls, proto_kind: str) -> Self:
+    def from_proto_kind_exn(cls, proto_kind: str) -> Self:
         kinds = re.findall(r'\{ Kind.name = "(.+)" \}', proto_kind)
         if len(kinds) != 1:
             raise ErrorKindParsingError('Unable to parse kind')

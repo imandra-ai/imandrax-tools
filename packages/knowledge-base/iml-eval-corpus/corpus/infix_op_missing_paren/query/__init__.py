@@ -91,7 +91,7 @@ def check_infix_op_missing_paren(
     first_err = eval_res.errors[0] if eval_res.errors else None
     if first_err is None:
         return None
-    if ErrorKind.from_proto_kind(first_err.kind) != ErrorKind.SYNTAX_ERR:
+    if ErrorKind.from_proto_kind_ext(first_err.kind) != ErrorKind.SYNTAX_ERR:
         return None
 
     capture = InfixOpMissingParenCapture.from_code(iml)

@@ -5,7 +5,13 @@ import re
 from typing import ClassVar
 
 from imandrax_api_models import ErrorKind, EvalRes
-from imandrax_tools.iml_eval_corpus.common import BaseDiag, BaseRule, Loc, NoLoc, Severity
+from imandrax_tools.iml_eval_corpus.common import (
+    BaseDiag,
+    BaseRule,
+    Loc,
+    NoLoc,
+    Severity,
+)
 from pydantic import computed_field
 
 IDENTIFIER: str = "Array.make"
@@ -63,7 +69,7 @@ def check_unknown_id_ocaml_stdlib(
     """
     _ = iml  # unused: the error message is sufficient.
     for err in eval_res.errors:
-        if ErrorKind.from_proto_kind(err.kind) != ErrorKind.TYPE_ERR:
+        if ErrorKind.from_proto_kind_ext(err.kind) != ErrorKind.TYPE_ERR:
             continue
         if err.msg is None:
             continue

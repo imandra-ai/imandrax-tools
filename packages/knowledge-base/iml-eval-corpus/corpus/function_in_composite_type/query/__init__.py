@@ -94,7 +94,7 @@ def check_function_in_composite_type(
     val_errs = [
         e
         for e in eval_res.errors
-        if ErrorKind.from_proto_kind(e.kind) == ErrorKind.VALIDATION_ERROR
+        if ErrorKind.from_proto_kind_ext(e.kind) == ErrorKind.VALIDATION_ERROR
     ]
     if not val_errs:
         return None
