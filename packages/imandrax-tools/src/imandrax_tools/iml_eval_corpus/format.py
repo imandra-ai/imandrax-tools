@@ -7,7 +7,7 @@ from .common import BaseDiag, NoLoc
 def format_diagnostics(diags: list[BaseDiag], code: str | None) -> str:
     s = ''
     for i, diag in enumerate(diags, 1):
-        s = f'{i}. '
+        s += f'{i}. '
         s += diag.format_error_message()
         if code is not None and not isinstance(diag.loc, NoLoc):
             loc = diag.loc
