@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "19.2.0"
+version = "19.3.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [

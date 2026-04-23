@@ -4,6 +4,11 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.3.0] - 2026-04-2
+
+- Context utils improvements
+
+
 ## [19.2.0] - 2026-04-22
 
 - Region decomp icicle jupyter widget
