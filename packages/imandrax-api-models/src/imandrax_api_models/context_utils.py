@@ -57,11 +57,14 @@ def format_code_snippet_with_loc(
                 frame = '  '
             elif line_no == start_line:
                 frame = '/ '
-            elif line_no == end_line:
-                frame = '\\ '
             else:
+                # `|` carries through middle and end lines; the end is marked by
+                # a `|____^` underscore row below.
                 frame = '| '
             output.append(f'{line_no:{line_no_width}} | {frame}{line}')
+            if in_span and line_no == end_line:
+                underscores = '_' * max(1, end_col - 1)
+                output.append(f'{gutter_pad} | |{underscores}^')
         else:
             output.append(f'{line_no:{line_no_width}} | {line}')
             if line_no == start_line:
