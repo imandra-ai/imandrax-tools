@@ -12,5 +12,5 @@ def format_diagnostics(diags: list[BaseDiag], code: str | None) -> str:
         if code is not None and not isinstance(diag.loc, NoLoc):
             loc = diag.loc
             s += format_code_snippet_with_loc(code, loc.start_point, loc.end_point)
-        s += '\n'
+        s += '\n\n'
     return s

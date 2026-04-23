@@ -74,14 +74,14 @@ def test_multidiags():
                 loc=Loc(
                     start_byte=467,
                     end_byte=473,
-                    start_point=(16, 4),
-                    end_point=(16, 10),
+                    start_point=(17, 5),
+                    end_point=(17, 11),
                 ),
                 op='land :',
             ),
             NestedMeasureDiag(
                 loc=Loc(
-                    start_byte=106, end_byte=443, start_point=(3, 2), end_point=(12, 41)
+                    start_byte=106, end_byte=443, start_point=(4, 3), end_point=(13, 42)
                 ),
                 function_name='helper',
                 measure='[@@measure Ordinal.of_int (n - curr_i)]',
@@ -90,7 +90,7 @@ def test_multidiags():
             ),
             NestedRecursiveFunctionDiag(
                 loc=Loc(
-                    start_byte=106, end_byte=443, start_point=(3, 2), end_point=(12, 41)
+                    start_byte=106, end_byte=443, start_point=(4, 3), end_point=(13, 42)
                 ),
                 function_name='helper',
                 top_function_name='build_fib',
@@ -103,47 +103,46 @@ def test_multidiags():
     assert s == snapshot("""\
 1. infix-op-missing-paren: `land :` is an infix operator. When used in let-binding, it needs to be enclosed in parentheses.
 E.g. `let ( land ) = <new-definition>`
-location: 16:4
+location: 17:5
+  15 |   helper f i
+  16 | \n\
+* 17 | let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
+     |      ^^^^^^
+  18 | \n\
+
+2. nested-measure-attribute: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be attached to a top-level function instead of nested function `helper`.
+location: 4:3
+   2 |   let non_rec_irrelevant_f x = x + 1
+   3 |   in
+*  4 |   let rec helper curr_f curr_i =
+     |    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*  5 |     if curr_i > n then
+     | ~~~~~~~~~~~~~~~~~~~~~~
+*  6 |       curr_f
+     | ~~~~~~~~~~~~
+*  7 |     else
+     | ~~~~~~~~
+*  8 |       match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*  9 |       | (Some prev1, Some prev2) ->
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* 10 |           let new_f = curr_f @ [prev1 + prev2] in
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* 11 |           helper new_f (curr_i + 1)
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* 12 |       | _ -> curr_f
+     | ~~~~~~~~~~~~~~~~~~~
+* 13 |   [@@measure Ordinal.of_int (n - curr_i)]
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   14 |   in
   15 |   helper f i
-* 16 | \n\
-     |     ^^^^^^
-  17 | let land : int -> int -> int = fun (x : int) (y : int) -> 0 [@@opaque]
-  18 | \n\
-2. nested-measure-attribute: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be attached to a top-level function instead of nested function `helper`.
-location: 3:2
-   1 | let build_fib (f : int list) (i : int) (n : int) : int list =
-   2 |   let non_rec_irrelevant_f x = x + 1
-*  3 |   in
-     |   ^~~
-*  4 |   let rec helper curr_f curr_i =
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*  5 |     if curr_i > n then
-     | ~~~~~~~~~~~~~~~~~~~~~~
-*  6 |       curr_f
-     | ~~~~~~~~~~~~
-*  7 |     else
-     | ~~~~~~~~
-*  8 |       match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*  9 |       | (Some prev1, Some prev2) ->
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* 10 |           let new_f = curr_f @ [prev1 + prev2] in
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* 11 |           helper new_f (curr_i + 1)
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* 12 |       | _ -> curr_f
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  13 |   [@@measure Ordinal.of_int (n - curr_i)]
-  14 |   in
+
 3. nested-recursive-function: Recursive function `helper` nested in `build_fib` might cause proof-obligation difficulty.
-location: 3:2
-   1 | let build_fib (f : int list) (i : int) (n : int) : int list =
+location: 4:3
    2 |   let non_rec_irrelevant_f x = x + 1
-*  3 |   in
-     |   ^~~
+   3 |   in
 *  4 |   let rec helper curr_f curr_i =
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     |    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *  5 |     if curr_i > n then
      | ~~~~~~~~~~~~~~~~~~~~~~
 *  6 |       curr_f
@@ -159,7 +158,10 @@ location: 3:2
 * 11 |           helper new_f (curr_i + 1)
      | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * 12 |       | _ -> curr_f
-     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  13 |   [@@measure Ordinal.of_int (n - curr_i)]
+     | ~~~~~~~~~~~~~~~~~~~
+* 13 |   [@@measure Ordinal.of_int (n - curr_i)]
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   14 |   in
+  15 |   helper f i
+
 """)
