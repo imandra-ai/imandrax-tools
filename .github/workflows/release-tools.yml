@@ -76,6 +76,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
+      - name: Sync corpus
+        run: make sync-corpus
+        working-directory: packages/imandrax-tools
+
       - name: Build wheel (${{ matrix.artifact-suffix }})
         uses: PyO3/maturin-action@v1
         with:
@@ -94,6 +98,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: Sync corpus
+        run: make sync-corpus
+        working-directory: packages/imandrax-tools
 
       - name: Build sdist
         uses: PyO3/maturin-action@v1
