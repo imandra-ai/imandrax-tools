@@ -41,6 +41,12 @@ build-backend = "maturin"
 [tool.maturin]
 python-source = "src"
 module-name = "imandrax_tools.goal_state._goal_state"
+include = [
+    { path = "src/imandrax_tools/iml_eval_corpus/corpus/**/*", format = ["sdist", "wheel"] },
+]
+exclude = [
+    { path = "src/imandrax_tools/iml_eval_corpus/corpus/**/__pycache__/**", format = ["sdist", "wheel"] },
+]
 
 # Development tools
 # ====================
