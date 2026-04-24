@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 iml-eval-corpus-imx-eval = "iml_eval_corpus.imx_eval:main"
+kb-diag = "iml_eval_corpus.check_all_cli:main"
 
 [tool.uv.sources]
 iml-query = { path = "../../iml-query", editable = true }
