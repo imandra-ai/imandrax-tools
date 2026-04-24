@@ -10,18 +10,21 @@ Usage:
 
 from __future__ import annotations
 
-from . import api_models, goal_state, iml_query
-
-__all__ = ('api_models', 'goal_state', 'iml_query')
-
 from typing import TYPE_CHECKING
+
+import structlog
+
+from . import api_models, goal_state, iml_query
 
 if TYPE_CHECKING:
     from imandrax_api_models import Task
     from imandrax_api_models.client import ImandraXClient
 
+__all__ = ('api_models', 'goal_state', 'iml_query')
+logger = structlog.get_logger(__name__)
 
-def try_get_goal_state(c: ImandraXClient, task: Task) -> str | None:
+
+def get_goal_state_opt(c: ImandraXClient, task: Task) -> str | None:
     """
     Attempt to fetch the goal state from a task's po_res artifact.
 
@@ -48,7 +51,8 @@ def try_get_goal_state(c: ImandraXClient, task: Task) -> str | None:
             f.flush()
             goal_state_s = format_goal_state_from_zip(f.name)
         return goal_state_s
-    except (GoalStateCounterModel, GoalStateProved):
-        raise
-    except Exception:
+    except (GoalStateCounterModel, GoalStateProved) as e:
+        logger.info(f'Goal state error: {e!r}')
         return None
+    except Exception:
+        raise
