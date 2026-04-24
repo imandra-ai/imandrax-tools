@@ -1,0 +1,8 @@
+let g (_fuel : int) (_xs : int list) : int list = []
+
+let rec f (fuel : int) (xs : int list) : int list =
+  if fuel <= 0 then []
+  else List.flat_map (fun x -> f (fuel - 1) [x]) xs
+[@@measure Ordinal.of_int fuel]
+
+let g2 (_fuel : int) (_xs : int list) : int list = []

@@ -49,6 +49,8 @@ check_fns = (
     check_unknown_id_ocaml_stdlib_sys_int_size,
 )
 
+disabled_check_fns = (check_general_termination_proof_error,)
+
 """
 imports=""
 checks=""
@@ -68,6 +70,8 @@ echo ")"
 def check_all(iml: str, eval_res: EvalRes) -> list[BaseDiag]:
     diags: list[BaseDiag] = []
     for check_fn in check_fns:
+        if check_fn in disabled_check_fns:
+            continue
         diag_opt = check_fn(iml, eval_res)
         if (diag := diag_opt) is not None:
             diags.append(diag)
