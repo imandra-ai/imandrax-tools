@@ -122,6 +122,7 @@ def resolve(
     def loop(
         file_path: Path,
         state: _ResolveState,
+        name_override: str | None = None,
     ) -> _ResolveState | IMLImportResolutionError:
         file_path = file_path.resolve()
         result, visited, in_progress = state
@@ -135,7 +136,7 @@ def resolve(
 
         iml_src = file_path.read_text()
         imports = parse_imports(iml_src)
-        module_name = _module_name_from_path(file_path)
+        module_name = name_override or _module_name_from_path(file_path)
 
         base_dir = file_path.parent
 
@@ -151,7 +152,13 @@ def resolve(
             if not dep_path.exists():
                 return IMLModuleNotFoundError(imp_path)
 
-            inner = loop(dep_path, (result, visited, in_progress))
+            dep_name: str | None = None
+            if imp.import_name is not None:
+                dep_name = str(
+                    unwrap_bytes(imp.import_name.text), encoding='utf-8'
+                )
+
+            inner = loop(dep_path, (result, visited, in_progress), dep_name)
             if isinstance(inner, IMLImportResolutionError):
                 return inner
             result, visited, in_progress = inner
