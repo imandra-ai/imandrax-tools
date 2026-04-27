@@ -160,3 +160,19 @@ eval y
 theorem eval_y = y = 2
 
 """)
+
+    def test_alias(self):
+        modules = resolve(DATA_DIR / 'alias' / 'main.iml')
+        assert not isinstance(modules, Exception)
+        result = mk_monolith_iml(modules)
+        assert result == snapshot("""\
+module Base = struct
+  (* Intentional illegal module name *)
+  type a = string
+end
+
+open Base
+
+type b = a
+
+""")

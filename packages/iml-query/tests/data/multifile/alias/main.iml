@@ -1,0 +1,5 @@
+[@@@import Base, "0base.iml"]
+
+open Base
+
+type b = a
