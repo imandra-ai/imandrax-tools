@@ -1,24 +1,42 @@
+#
+#   Imandra Inc.
+#
+#   codelogician/commands/cmd_eval.py
+#
+# pyright: strict
+# pyright: reportMissingTypeStubs=false
 import sys
 from pathlib import Path
+from typing import Annotated
 
+import structlog
+import typer
+
+from iml_query.multifile import gather_modules
 from iml_query.tree_sitter_utils import (
     fmt_node,
     get_parser,
     run_query,
 )
 
+logger = structlog.getLogger(__name__)
 
-def main():
-    usage = f'{__name__} file.iml --query ts-query.scm'
-    iml: str | None = None
-    ts_query: str | None = None
-    match sys.argv:
-        case [_, iml_p]:
-            iml = Path(iml_p).read_text()
-        case [_, iml_p, '--query', ts_query]:
-            iml = Path(iml_p).read_text()
-        case _:
-            raise ValueError(usage)
+app = typer.Typer(no_args_is_help=True)
+
+
+@app.command()
+def gather_module(path: Annotated[Path, typer.Argument()]) -> None:
+    """Read IML code from a file or stdin."""
+    iml = gather_modules(path)
+    typer.echo(iml)
+
+
+@app.command()
+def query(
+    path: Annotated[Path, typer.Argument()],
+    ts_query: Annotated[str | None, typer.Option()] = None,
+):
+    iml = path.read_text() if path.name != '-' else sys.stdin.read()
 
     parser = get_parser()
     tree = parser.parse(bytes(iml, 'utf8'))
@@ -31,4 +49,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app()
