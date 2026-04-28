@@ -57,7 +57,7 @@ class BaseDiag(BaseModel):
 
     def format(self, code: str | None = None) -> str:
         s = ''
-        s += f'{self.rule.id}: {self.rule.description}\n'
+        s += f'{self.rule.id}({self.rule.severity.name}): {self.rule.description}\n'
         if isinstance(self.loc, Loc):
             loc = self.loc
             s += (
