@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.10.0 - 2026.04-27
+
+- support import module name alias syntax, e.g. `[@@@import Legal, "0illegal.iml"]`
+
 ## v0.9.0 - 2026.04-22
 
 - enhance node pretty-print utils
