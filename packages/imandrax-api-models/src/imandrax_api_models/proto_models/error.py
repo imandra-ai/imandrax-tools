@@ -38,7 +38,7 @@ class ErrorKind(str, Enum):
     SYNTAX_UNSUGAR_ERR = 'SyntaxUnsugarErr'
     TACTIC_EVAL_ERR = 'TacticEvalErr'
     TERM_INVALID_SHAPE = 'TermInvalidShape'
-    TERM_MODEL_FIERR = 'TermModelFIErr'
+    TERM_MODEL_FI_ERR = 'TermModelFIErr'
     THREAD_FUT_FAILURE = 'ThreadFutFailure'
     THREAD_TIMER_FAILURE = 'ThreadTimerFailure'
     TY_INFER_INTERNAL_ERROR = 'TyInferInternalError'
@@ -63,12 +63,12 @@ class ErrorKind(str, Enum):
     LSP_ERROR = 'LspError'
     INTERRUPTED = 'Interrupted'
     REDIS_ERROR = 'RedisError'
-    CIRDECL_NOT_FOUND_IN_STORAGE = 'CIRDeclNotFoundInStorage'
+    CIR_DECL_NOT_FOUND_IN_STORAGE = 'CIRDeclNotFoundInStorage'
     SERIALIZATION_ERROR = 'SerializationError'
     DESERIALIZATION_ERROR = 'DeserializationError'
     DEBUG_MODE = 'DebugMode'
     IMPORT_ERROR = 'ImportError'
-    GENERIC_IOERROR = 'GenericIOError'
+    GENERIC_IO_ERROR = 'GenericIOError'
     DUNE_ERROR = 'DuneError'
     RPC_ERROR = 'RpcError'
     RPC_DESER_ERROR = 'RpcDeserError'
@@ -81,6 +81,7 @@ class ErrorKind(str, Enum):
     VERSION_MISMATCH_ERROR = 'VersionMismatchError'
     OH_NO_ERROR = 'OhNoError'
     DEBOUNCED = 'Debounced'
+    FILE_NOT_FOUND = 'FileNotFound'
 
     @classmethod
     def from_proto_kind_exn(cls, proto_kind: str) -> Self:
