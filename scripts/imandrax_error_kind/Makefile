@@ -13,5 +13,5 @@ help:  ## Show this help (usage: make help)
 
 
 .PHONY: update-cache
-update-cache:  ## update-cache
-	UNTRUSTING=1 uv run pytest main.py --inline-snapshot=update
+update-cache:  ## update imandrax error kind snapshot
+	UNTRUSTING=1 uv run pytest main.py --inline-snapshot=fix
