@@ -54,7 +54,7 @@ class OpaqueAttrOnTypeCapture(BaseCapture):
 class OpaqueAttrOnTypeRule(BaseRule):
     id: ClassVar[str] = "opaque-attr-on-type"
     description: ClassVar[str] = "`[@@opaque]` attribute attached to a type declaration"
-    severity: ClassVar[Severity] = Severity.Error
+    severity: ClassVar[Severity] = Severity.Warning
 
 
 OPAQUE_ATTR_ON_TYPE_RULE = OpaqueAttrOnTypeRule()
@@ -72,8 +72,7 @@ class OpaqueAttrOnTypeDiag(BaseDiag):
         return (
             f"`[@@opaque]` cannot be attached to type `{self.type_name}`. "
             "The attribute is only valid on value bindings (e.g. "
-            "`let f : t -> t = () [@@opaque]`). Drop it from the type "
-            "declaration."
+            "`let f : t -> t = () [@@opaque]`)."
         )
 
 
@@ -91,7 +90,7 @@ def check_opaque_attr_on_type(
     - the source contains a `type` declaration with an `[@@opaque]` item
       attribute attached to its binding.
 
-    Rule-based; eval output is not consulted.
+    eval output is not consulted.
     """
     del eval_res
 
