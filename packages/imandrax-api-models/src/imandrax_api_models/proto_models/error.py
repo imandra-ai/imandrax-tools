@@ -16,72 +16,90 @@ class ErrorKindParsingError(Exception):
 
 # from https://github.com/imandra-ai/imandrax-api/blob/1a4abb4eb59d9545c6f0af9698956437b5b5dcb8/src/internal/error_data/imandrax_errors.ml
 class ErrorKind(str, Enum):
-    APPLIED_SYMBOL_TYPE_ERR = 'AppliedSymbolTypeErr'
-    CONFIG_ERROR = 'ConfigError'
-    CPTR_GET_OTHER_ERR = 'CptrGetOtherErr'
-    CPTR_NOT_FOUND_IN_STORAGE = 'CptrNotFoundInStorage'
-    GENERIC_USER_ERROR = 'GenericUserError'
-    INVALID_FUN_DEFINITION = 'InvalidFunDefinition'
-    INVALID_QIDENT = 'InvalidQident'
-    INVALID_TYPE_ALIAS = 'InvalidTypeAlias'
-    INVALID_TYPE_DEFINITION = 'InvalidTypeDefinition'
-    INVALID_CNAME = 'InvalidCname'
-    LEVAL_ERROR = 'LevalError'
-    LOWER_CIR_ERROR = 'LowerCirError'
-    LOWER_MIR_ERROR = 'LowerMirError'
-    LOWER_RIR_ERROR = 'LowerRirError'
-    PARSER_NOT_REGISTERED = 'ParserNotRegistered'
-    PATMATCH_ERROR = 'PatmatchError'
-    SYN_TERM_CREATE_ERROR = 'SynTermCreateError'
-    SYNTAX_ATTRIBUTE_ERR = 'SyntaxAttributeErr'
-    SYNTAX_ERR = 'SyntaxErr'
-    SYNTAX_UNSUGAR_ERR = 'SyntaxUnsugarErr'
-    TACTIC_EVAL_ERR = 'TacticEvalErr'
-    TERM_INVALID_SHAPE = 'TermInvalidShape'
-    TERM_MODEL_FI_ERR = 'TermModelFIErr'
-    THREAD_FUT_FAILURE = 'ThreadFutFailure'
-    THREAD_TIMER_FAILURE = 'ThreadTimerFailure'
-    TY_INFER_INTERNAL_ERROR = 'TyInferInternalError'
-    TYPE_ARITY_MISMATCH = 'TypeArityMismatch'
-    TYPE_CYCLE_DETECTED = 'TypeCycleDetected'
-    TYPE_ERR = 'TypeErr'
-    TYPE_VAR_ALREADY_BOUND = 'TypeVarAlreadyBound'
-    TYPED_SYMBOL_NON_GROUND = 'TypedSymbolNonGround'
-    UID_CONTENT_ADDRESSING_NAME_MISMATCH = 'UidContentAddressingNameMismatch'
-    UID_CONTENT_ADDRESSING_NOT_TEMPORARY = 'UidContentAddressingNotTemporary'
-    UID_NOT_CONTENT_ADDRESSED = 'UidNotContentAddressed'
-    UNKNOWN_BUILTIN_SYMBOL_FOR_UID = 'UnknownBuiltinSymbolForUid'
-    UNKNOWN_TYPE_DEFINITION = 'UnknownTypeDefinition'
-    INTERACTIVE_PROOF_ERR = 'InteractiveProofErr'
-    PROOF_DESER_ERROR = 'ProofDeserError'
-    PROOF_CHECK_ERROR = 'ProofCheckError'
-    INVALID_ANCHOR = 'InvalidAnchor'
-    INDUCT_SCHEMA_ERROR = 'InductSchemaError'
-    UNSUPPORTED = 'Unsupported'
-    LOWER_FOL_ERROR = 'LowerFolError'
-    VALIDATION_ERROR = 'ValidationError'
-    LSP_ERROR = 'LspError'
-    INTERRUPTED = 'Interrupted'
-    REDIS_ERROR = 'RedisError'
-    CIR_DECL_NOT_FOUND_IN_STORAGE = 'CIRDeclNotFoundInStorage'
-    SERIALIZATION_ERROR = 'SerializationError'
-    DESERIALIZATION_ERROR = 'DeserializationError'
-    DEBUG_MODE = 'DebugMode'
-    IMPORT_ERROR = 'ImportError'
-    GENERIC_IO_ERROR = 'GenericIOError'
-    DUNE_ERROR = 'DuneError'
-    RPC_ERROR = 'RpcError'
-    RPC_DESER_ERROR = 'RpcDeserError'
-    RPC_NETWORK_ERROR = 'RpcNetworkError'
-    RPC_TIMEOUT = 'RpcTimeout'
-    AUTH_ERROR = 'AuthError'
-    FILE_EXISTS = 'FileExists'
-    DIRECTORY_CREATION_ERROR = 'DirectoryCreationError'
-    DECOMP_ERROR = 'DecompError'
-    VERSION_MISMATCH_ERROR = 'VersionMismatchError'
-    OH_NO_ERROR = 'OhNoError'
-    DEBOUNCED = 'Debounced'
-    FILE_NOT_FOUND = 'FileNotFound'
+    APPLIED_SYMBOL_TYPE_ERR = 'AppliedSymbolTypeErr'  # AppliedSymbol could not be created because of a type mismatch
+    CONFIG_ERROR = 'ConfigError'  # Error in CLI arguments or configuration
+    CPTR_GET_OTHER_ERR = 'CptrGetOtherErr'  # Other error in `Cptr.get`
+    CPTR_NOT_FOUND_IN_STORAGE = (
+        'CptrNotFoundInStorage'  # Data for a `cptr` was not found in persistent storage
+    )
+    GENERIC_USER_ERROR = 'GenericUserError'  # user error
+    INVALID_FUN_DEFINITION = 'InvalidFunDefinition'  # Function definition is not valid
+    INVALID_QIDENT = 'InvalidQident'  # invalid qualified identifier
+    INVALID_TYPE_ALIAS = 'InvalidTypeAlias'  # Type alias is not well-formed
+    INVALID_TYPE_DEFINITION = 'InvalidTypeDefinition'  # Type definition is not valid
+    INVALID_CNAME = 'InvalidCname'  # Not a valid Cname
+    LEVAL_ERROR = 'LevalError'  # Error in lightweight evaluation
+    LOWER_CIR_ERROR = 'LowerCirError'  # Error in lowering typingtree to CIR
+    LOWER_MIR_ERROR = 'LowerMirError'  # Error in lowering CIR to MIR
+    LOWER_RIR_ERROR = 'LowerRirError'  # Error in lowering MIR to RIR
+    PARSER_NOT_REGISTERED = (
+        'ParserNotRegistered'  # Parser for this syntax was not registered
+    )
+    PATMATCH_ERROR = 'PatmatchError'  # Error in pattern matching compilation
+    SYN_TERM_CREATE_ERROR = 'SynTermCreateError'  # Error when creating a Syn_term
+    SYNTAX_ATTRIBUTE_ERR = 'SyntaxAttributeErr'  # error in parsing attributes
+    SYNTAX_ERR = 'SyntaxErr'  # syntax error
+    SYNTAX_UNSUGAR_ERR = 'SyntaxUnsugarErr'  # error in unsugaring OCaml syntax
+    TACTIC_EVAL_ERR = 'TacticEvalErr'  # error when evaluating a tactic term
+    TERM_INVALID_SHAPE = (
+        'TermInvalidShape'  # Term has an invalid shape for this operation
+    )
+    TERM_MODEL_FI_ERR = 'TermModelFIErr'  # Error during creation of a FI (function interpretation) in TermModel
+    THREAD_FUT_FAILURE = 'ThreadFutFailure'  # Failure in future
+    THREAD_TIMER_FAILURE = 'ThreadTimerFailure'  # Failure in timer
+    TY_INFER_INTERNAL_ERROR = 'TyInferInternalError'  # internal error in type inference
+    TYPE_ARITY_MISMATCH = (
+        'TypeArityMismatch'  # number of parameters does not match expected arity
+    )
+    TYPE_CYCLE_DETECTED = 'TypeCycleDetected'  # Type variable occurs inside the type is is about to be bound to
+    TYPE_ERR = 'TypeErr'  # type error
+    TYPE_VAR_ALREADY_BOUND = 'TypeVarAlreadyBound'  # Type variable is already bound
+    TYPED_SYMBOL_NON_GROUND = (
+        'TypedSymbolNonGround'  # Type cannot be turned into a nullary type schema
+    )
+    UID_CONTENT_ADDRESSING_NAME_MISMATCH = 'UidContentAddressingNameMismatch'  # Uid has a different name than the Cname.t it should become
+    UID_CONTENT_ADDRESSING_NOT_TEMPORARY = 'UidContentAddressingNotTemporary'  # Uid was not created as a temporary to be turned into a Cname.t
+    UID_NOT_CONTENT_ADDRESSED = 'UidNotContentAddressed'  # Uid is not a Cname
+    UNKNOWN_BUILTIN_SYMBOL_FOR_UID = (
+        'UnknownBuiltinSymbolForUid'  # No builtin symbol are know for this Uid
+    )
+    UNKNOWN_TYPE_DEFINITION = (
+        'UnknownTypeDefinition'  # Type definition could not be found
+    )
+    INTERACTIVE_PROOF_ERR = 'InteractiveProofErr'  # Error in interactive proof
+    PROOF_DESER_ERROR = 'ProofDeserError'  # Error when deserializing a proof
+    PROOF_CHECK_ERROR = 'ProofCheckError'  # Error during proof checking
+    INVALID_ANCHOR = 'InvalidAnchor'  # Error when parsing an anchor
+    INDUCT_SCHEMA_ERROR = (
+        'InductSchemaError'  # Error when generating an induction schema
+    )
+    UNSUPPORTED = 'Unsupported'  # Unsupported feature
+    LOWER_FOL_ERROR = 'LowerFolError'  # Error in lowering RIR to FOL
+    VALIDATION_ERROR = 'ValidationError'  # Error while validating a definition
+    LSP_ERROR = 'LspError'  # Error in LSP server
+    INTERRUPTED = 'Interrupted'  # Computation was interrupted
+    REDIS_ERROR = 'RedisError'  # Redis error
+    CIR_DECL_NOT_FOUND_IN_STORAGE = 'CIRDeclNotFoundInStorage'  # CIR storage error
+    SERIALIZATION_ERROR = 'SerializationError'  # Error during serialization
+    DESERIALIZATION_ERROR = 'DeserializationError'  # Error during deserialization
+    DEBUG_MODE = 'DebugMode'  # Feature disabled/inactive for debug reasons
+    IMPORT_ERROR = 'ImportError'  # Import failed
+    GENERIC_IO_ERROR = 'GenericIOError'  # Generic IO error
+    DUNE_ERROR = 'DuneError'  # Error related to handling of dune projects
+    RPC_ERROR = 'RpcError'  # Error in RPC
+    RPC_DESER_ERROR = 'RpcDeserError'  # Deserialization error in RPC
+    RPC_NETWORK_ERROR = 'RpcNetworkError'  # Network error in RPC
+    RPC_TIMEOUT = 'RpcTimeout'  # Timeout in RPC
+    AUTH_ERROR = 'AuthError'  # Authentication error
+    FILE_EXISTS = 'FileExists'  # File already exists
+    DIRECTORY_CREATION_ERROR = (
+        'DirectoryCreationError'  # Error while creating directory
+    )
+    DECOMP_ERROR = 'DecompError'  # Error during decomposition
+    VERSION_MISMATCH_ERROR = 'VersionMismatchError'  # Versions do not match
+    OH_NO_ERROR = 'OhNoError'  # Oh no 😰
+    DEBOUNCED = 'Debounced'  # Task has been cancelled due to debouncing
+    FILE_NOT_FOUND = 'FileNotFound'  # A file could not be found
 
     @classmethod
     def from_proto_kind_exn(cls, proto_kind: str) -> Self:

@@ -26,8 +26,10 @@ def load_data() -> list[dict[str, str]]:
 
 def main() -> None:
     upper_snake_name_lst_by_row = []
+    descriptions = []
     for item in load_data():
         camel_name = item["name"]
+        descriptions.append(item.get("description", ""))
         upper_snake_name_lst = []
         buf = ""
         for i, c in enumerate(camel_name):
@@ -45,7 +47,7 @@ def main() -> None:
             elif c.isupper() and prev.isupper() and nxt.islower():
                 split = True
             if split:
-                upper_snake_name_lst.append(buf.upper())
+                upper_snake_name_lst.append(buf)
                 logger.info(
                     "appending to upper_snake_name_lst",
                     buf=buf,
@@ -54,12 +56,16 @@ def main() -> None:
                 buf = c
             else:
                 buf += c
-        upper_snake_name_lst.append(buf.upper())
+        upper_snake_name_lst.append(buf)
         logger.info(f"{camel_name} -> {upper_snake_name_lst}")
         upper_snake_name_lst_by_row.append(upper_snake_name_lst)
+
     logger.info("done", len=len(upper_snake_name_lst_by_row))
-    for name_lst in upper_snake_name_lst_by_row:
+    for name_lst, description in zip(upper_snake_name_lst_by_row, descriptions):
         s = f"{'_'.join(map(str.upper, name_lst))} = '{''.join(name_lst)}'"
+        if description:
+            one_line = " ".join(description.split())
+            s += f"  # {one_line}"
         print(" " * 4 + s)
 
 
