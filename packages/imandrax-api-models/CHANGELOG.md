@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.4.0] - 2026-04-29
+- Update error kind enum
+- BREAKING CHANGE: change error kind enum value from single string of error name to a tuple of (error_name, description).
+
 ## [19.3.1] - 2026-04-23
 
 - Add missing `pyyaml` dependency
