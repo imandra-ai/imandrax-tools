@@ -531,7 +531,7 @@ dev = [
 
 [[package]]
 name = "imandrax-tools"
-version = "19.0.1"
+version = "19.0.2"
 source = { editable = "../../imandrax-tools" }
 dependencies = [
     { name = "imandrax-api-models" },
@@ -592,7 +592,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.9.0"
+version = "0.10.0"
 source = { editable = "../../iml-query" }
 dependencies = [
     { name = "devtools" },
@@ -621,6 +621,7 @@ dev = [
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "pdbpp", specifier = ">=0.11.7" },
     { name = "pytest", specifier = ">=8.4.2" },
+    { name = "typer", specifier = ">=0.25.0" },
 ]
 
 [[package]]
