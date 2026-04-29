@@ -21,3 +21,6 @@ Also see dune rules which attaches to `runtest` alias for validating the directo
 3. Use dune to generate `eval_res.json`, which should contains the expected (po-)error(s)
 4. Add a new `query/__init__.py` file, which should satisfies sigature of `QueryModule`
 5. Add `solution*.iml` files, `explanation.md`, and other supporting files
+
+
+`%{workspace_root}/packages/iml-query/src/iml_query/cli.py` has a CLI tool that can be used to see treesitter parsed tree of an IML file. (try run `iml-query <path/to/repro.iml>`)
