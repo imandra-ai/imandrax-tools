@@ -1,8 +1,3 @@
-#
-#   Imandra Inc.
-#
-#   codelogician/commands/cmd_eval.py
-#
 # pyright: strict
 # pyright: reportMissingTypeStubs=false
 import sys
