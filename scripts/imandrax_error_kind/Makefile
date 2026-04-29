@@ -15,3 +15,7 @@ help:  ## Show this help (usage: make help)
 .PHONY: update-cache
 update-cache:  ## update imandrax error kind snapshot
 	UNTRUSTING=1 uv run pytest main.py --inline-snapshot=fix
+
+.PHONY: gen-error-kind-enum-body
+gen-error-kind-enum-body:  ## Generate class body of ErrorKind enum from error kind JSON data
+	@uv run --script main.py | LOG_LEVEL=WARNING uv run --script class-of-error-kind-json.py
