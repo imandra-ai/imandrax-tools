@@ -61,16 +61,18 @@ def main() -> None:
         upper_snake_name_lst_by_row.append(upper_snake_name_lst)
 
     logger.info("done", len=len(upper_snake_name_lst_by_row))
-    for name_lst, description in zip(upper_snake_name_lst_by_row, descriptions):
-        # s = f"{'_'.join(map(str.upper, name_lst))} = '{''.join(name_lst)}'"
-        # one_line = " ".join(description.split())
-        # s += f"  # {one_line}"
-        # print(" " * 4 + s)
 
+    print("# --- enum members ---")
+    for name_lst in upper_snake_name_lst_by_row:
         enum_name = "_".join(map(str.upper, name_lst))
-        enum_value_fst = f"'{''.join(name_lst)}'"
-        enum_value_snd = f"'{description}'"
-        print(" " * 4 + f"{enum_name} = ({enum_value_fst}, {enum_value_snd})")
+        proto_name = f"'{''.join(name_lst)}'"
+        print(" " * 4 + f"{enum_name} = {proto_name}")
+
+    print()
+    print("# --- description map entries ---")
+    for name_lst, description in zip(upper_snake_name_lst_by_row, descriptions):
+        enum_name = "_".join(map(str.upper, name_lst))
+        print(" " * 4 + f"ErrorKind.{enum_name}: '{description}',")
 
 
 if __name__ == "__main__":
