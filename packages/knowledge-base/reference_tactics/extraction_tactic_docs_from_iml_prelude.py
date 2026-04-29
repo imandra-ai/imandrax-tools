@@ -174,7 +174,7 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
         paragraphs = re.split(r"\n\s*\n", doc)
 
         for para in paragraphs:
-            notation_names_in_para: set[str] = set()
+            notation_names_in_para: list[str] = []
             patterns_in_para: dict[str, list[str]] = {}
 
             # Find double-bracket patterns [[%...]]
@@ -182,7 +182,8 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
                 notation_name = match.group(1)
                 args = match.group(2)
                 pattern = f"[%{notation_name}{args}]"
-                notation_names_in_para.add(notation_name)
+                if notation_name not in notation_names_in_para:
+                    notation_names_in_para.append(notation_name)
                 if notation_name not in patterns_in_para:
                     patterns_in_para[notation_name] = []
                 if pattern not in patterns_in_para[notation_name]:
@@ -193,7 +194,8 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
                 notation_name = match.group(1)
                 args = match.group(2)
                 pattern = f"[%{notation_name}{args}]"
-                notation_names_in_para.add(notation_name)
+                if notation_name not in notation_names_in_para:
+                    notation_names_in_para.append(notation_name)
                 if notation_name not in patterns_in_para:
                     patterns_in_para[notation_name] = []
                 if pattern not in patterns_in_para[notation_name]:
@@ -377,7 +379,7 @@ def str_representer(dumper: yaml.Dumper, data: str):
 yaml.add_representer(str, str_representer)
 
 
-def main(output_path: Path, prelude_path: Path | None = None):
+def main(output_path: Path, prelude_path: Path | None = None, verbose: bool = False):
     if prelude_path is None:
         prelude_path = Path(__file__).parent / "prelude.iml"
     content = prelude_path.read_text()
@@ -398,14 +400,15 @@ def main(output_path: Path, prelude_path: Path | None = None):
     # print(f"Found {len(tactics)} tactics:\n")
     # print("-" * 80)
 
-    for i, tac in enumerate(tactics, 1):
-        print(f"{i}. `{tac['name']}`")
-        # print(f"Tactic ID: {tac['tac_id']}")
-        print(f"- Signature: `{tac['signature']}`")
-        if tac["documentation"]:
-            print(f"- Doc: {tac['documentation_md']}")
-        print()
-        # print("-" * 80)
+    if verbose:
+        for i, tac in enumerate(tactics, 1):
+            print(f"{i}. `{tac['name']}`")
+            # print(f"Tactic ID: {tac['tac_id']}")
+            print(f"- Signature: `{tac['signature']}`")
+            if tac["documentation"]:
+                print(f"- Doc: {tac['documentation_md']}")
+            print()
+            # print("-" * 80)
 
     # Print notations
     # total_notations = sum(len(n["notations"]) for n in notations.values())
@@ -435,7 +438,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("prelude", nargs="?", type=Path, help="Path to prelude.iml")
     parser.add_argument("-o", "--output", type=Path, help="Output YAML path")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Print each tactic to stdout"
+    )
     args = parser.parse_args()
 
     output_path = args.output or Path(__file__).parent / "tactics.yaml"
-    main(output_path, prelude_path=args.prelude)
+    main(output_path, prelude_path=args.prelude, verbose=args.verbose)
