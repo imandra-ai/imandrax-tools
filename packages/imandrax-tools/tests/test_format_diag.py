@@ -102,7 +102,7 @@ def test_multidiags():
     assert len(diags) == 3
     s = format_diagnostics(diags, IML)
     assert s == snapshot("""\
-1. infix-op-missing-paren: Infix operator missing parenthesis
+1. infix-op-missing-paren(error): Infix operator missing parenthesis
 ->loc:17:5-17:11
 15 |   helper f i
 16 | \n\
@@ -112,7 +112,7 @@ def test_multidiags():
 help: `land :` is an infix operator. When used in let-binding, it needs to be enclosed in parentheses.
 E.g. `let ( land ) = <new-definition>`
 
-2. nested-measure-attribute: Nested measure attribute
+2. nested-measure-attribute(warning): Nested measure attribute
 ->loc:4:3-13:42
  2 |     let non_rec_irrelevant_f x = x + 1
  3 |     in
@@ -131,7 +131,7 @@ E.g. `let ( land ) = <new-definition>`
 15 |     helper f i
 help: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be attached to a top-level function instead of nested function `helper`.
 
-3. nested-recursive-function: Nested recursive function
+3. nested-recursive-function(warning): Nested recursive function
 ->loc:4:3-13:42
  2 |     let non_rec_irrelevant_f x = x + 1
  3 |     in
