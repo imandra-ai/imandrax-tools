@@ -21,6 +21,7 @@ client = [
 tracing = [
     "opentelemetry-api>=1.27",
     "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.41.1",
 ]
 
 [project.scripts]
