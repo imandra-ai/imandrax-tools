@@ -91,6 +91,9 @@ def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
     """
     try:
         from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
         from opentelemetry.sdk.resources import (
             Resource,
         )
@@ -104,11 +107,18 @@ def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
     except ImportError:
         return False
 
+    import os
+
+    def make_exporter() -> ConsoleSpanExporter | OTLPSpanExporter:
+        if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
+            return OTLPSpanExporter()  # reads endpoint from env automatically
+        return ConsoleSpanExporter()  # fallback for local dev
+
     current = trace.get_tracer_provider()
     if isinstance(current, TracerProvider):
         return True
 
     provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
-    provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+    provider.add_span_processor(BatchSpanProcessor(make_exporter()))
     trace.set_tracer_provider(provider)
     return True
