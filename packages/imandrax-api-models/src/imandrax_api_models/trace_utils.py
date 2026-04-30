@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 # Soft-import OpenTelemetry: when installed, each API call becomes a span;
 # when not, the structlog debug logging still works.
@@ -26,7 +26,9 @@ def summarize(name: str, value: Any) -> Any:
             }
         return value
     if isinstance(value, list):
-        return {'len': len(value), 'items': value[:8]}
+        value = cast(list[Any], value)
+        items = cast(list[Any], value[:8])  # ty: ignore[redundant-cast]
+        return {'len': len(value), 'items': items}
     return value
 
 
