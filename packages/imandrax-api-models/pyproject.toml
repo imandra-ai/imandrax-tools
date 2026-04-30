@@ -18,6 +18,10 @@ dependencies = [
 client = [
     "iml-query>=0.5.0",
 ]
+tracing = [
+    "opentelemetry-api>=1.27",
+    "opentelemetry-sdk>=1.27",
+]
 
 [project.scripts]
 imandrax = "imandrax_api_models.extended_cli.app:app"
