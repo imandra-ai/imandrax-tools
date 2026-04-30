@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## v0.10.1 - 2026.04-29
+- improve dev CLI
+
 ## v0.10.0 - 2026.04-27
 
 - support import module name alias syntax, e.g. `[@@@import Legal, "0illegal.iml"]`

@@ -6,7 +6,7 @@
 (dirs :standard _unknown_id_ocaml_stdlib)
 
 (rule
- (mode (promote (until-clean)))
+ (mode promote)
  (target dune.flat_mirror.inc)
  (deps
   (:script _unknown_id_ocaml_stdlib/gen_dune_flat_mirror_inc.py)

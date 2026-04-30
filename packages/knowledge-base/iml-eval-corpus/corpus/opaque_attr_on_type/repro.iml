@@ -1,0 +1,4 @@
+type t [@@opaque]
+
+
+type tt = t

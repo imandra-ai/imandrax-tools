@@ -109,6 +109,7 @@ let all : t list =
   make "VersionMismatchError" "Versions do not match";
   make "OhNoError" "Oh no 😰";
   make "Debounced" "Task has been cancelled due to debouncing";
+  make "FileNotFound" "A file could not be found";
   ]
   [@ocamlformat "disable"]
 """)
