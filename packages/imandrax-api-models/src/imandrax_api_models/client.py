@@ -48,7 +48,13 @@ from imandrax_api_models.proto_models.task import Task
 if TYPE_CHECKING:
 
     class AsyncClient:
-        def __init__(self, url: str, auth_token: str, timeout: float) -> None: ...
+        def __init__(
+            self,
+            url: str,
+            auth_token: str,
+            timeout: float,
+            session_id: str | None = None,
+        ) -> None: ...
         async def eval_src(self, src: str, timeout: float | None = None) -> EvalRes: ...
         async def typecheck(
             self, src: str, timeout: float | None = None
@@ -469,6 +475,7 @@ class ImandraXAsyncClient(AsyncClient):
 
 
 def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
+    """Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV)"""
     if url := os.getenv('IMANDRAX_URL'):
         return url
 
@@ -495,6 +502,7 @@ def get_imandrax_api_key() -> str | None:
 def get_imandrax_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
+    session_id: str | None = None,
 ) -> ImandraXClient:
     url = _get_imandrax_url(env)
     if not url:
@@ -503,11 +511,18 @@ def get_imandrax_client(
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
     imandrax_api_key = auth_token or get_imandrax_api_key()
-
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
-    client = ImandraXClient(url=url, auth_token=imandrax_api_key, timeout=300)
+
+    session_id = session_id or os.getenv('IMANDRAX_SESSION_ID')
+
+    client = ImandraXClient(
+        url=url,
+        auth_token=imandrax_api_key,
+        timeout=300,
+        session_id=session_id,
+    )
     logger.info('imandrax_client_initialized', url=url)
     return client
 
@@ -515,6 +530,7 @@ def get_imandrax_client(
 def get_imandrax_async_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
+    session_id: str | None = None,
 ) -> ImandraXAsyncClient:
     url = _get_imandrax_url(env)
     if not url:
@@ -523,10 +539,17 @@ def get_imandrax_async_client(
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
     imandrax_api_key = auth_token or get_imandrax_api_key()
-
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
-    client = ImandraXAsyncClient(url=url, auth_token=imandrax_api_key, timeout=300)
+
+    session_id = session_id or os.getenv('IMANDRAX_SESSION_ID')
+
+    client = ImandraXAsyncClient(
+        url=url,
+        auth_token=imandrax_api_key,
+        timeout=300,
+        session_id=session_id,
+    )
     logger.info('imandrax_client_initialized', url=url)
     return client
