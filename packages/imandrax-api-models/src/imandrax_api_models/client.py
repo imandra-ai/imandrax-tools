@@ -5,7 +5,7 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self
+from typing import Any, Literal, Self
 
 import imandrax_api
 import structlog
@@ -33,6 +33,7 @@ For regular API client without Pydantic model validation, use `imandrax-api` ins
 """
     raise ImportError(msg)
 
+
 from imandrax_api_models import (
     DecomposeRes,
     EvalRes,
@@ -44,77 +45,6 @@ from imandrax_api_models import (
 )
 from imandrax_api_models.proto_models.api import ArtifactListResult, ArtifactZip
 from imandrax_api_models.proto_models.task import Task
-
-if TYPE_CHECKING:
-
-    class AsyncClient:
-        def __init__(
-            self,
-            url: str,
-            auth_token: str,
-            timeout: float,
-            session_id: str | None = None,
-        ) -> None: ...
-        async def eval_src(self, src: str, timeout: float | None = None) -> EvalRes: ...
-        async def typecheck(
-            self, src: str, timeout: float | None = None
-        ) -> TypecheckRes: ...
-        async def decompose(
-            self,
-            name: str,
-            assuming: str | None = None,
-            basis: list[str] | None = None,
-            rule_specs: list[str] | None = None,
-            prune: bool | None = True,
-            ctx_simp: bool | None = None,
-            lift_bool: Any | None = None,
-            timeout: float | None = None,
-            str: bool | None = True,
-        ) -> DecomposeRes: ...
-        async def verify_src(
-            self,
-            src: str,
-            hints: str | None = None,
-            timeout: float | None = None,
-        ) -> VerifyRes: ...
-        async def instance_src(
-            self,
-            src: str,
-            hints: str | None = None,
-            timeout: float | None = None,
-        ) -> InstanceRes: ...
-        async def qcheck_src(
-            self,
-            src: str,
-            hints: str | None = None,
-            timeout: float | None = None,
-        ) -> QCheckRes: ...
-        async def qcheck_name(
-            self,
-            name: str,
-            hints: str | None = None,
-            timeout: float | None = None,
-        ) -> QCheckRes: ...
-        async def get_decls(
-            self,
-            names: list[str],
-            timeout: float | None = None,
-        ) -> GetDeclsRes: ...
-        async def list_artifacts(
-            self,
-            task: Any,
-            timeout: float | None = None,
-        ) -> ArtifactListResult: ...
-        async def get_artifact_zip(
-            self,
-            task: Any,
-            kind: str,
-            timeout: float | None = None,
-        ) -> ArtifactZip: ...
-        async def __aenter__(self) -> Self: ...
-        async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None: ...
-else:
-    from imandrax_api import AsyncClient
 
 logger = structlog.get_logger(__name__)
 
@@ -321,10 +251,10 @@ class ImandraXClient(imandrax_api.Client):
             return self.eval_src(src=iml, timeout=timeout)
 
 
-class ImandraXAsyncClient(AsyncClient):
+class ImandraXAsyncClient(imandrax_api.AsyncClient):
     """Extended async client with Pydantic model validation."""
 
-    async def eval_src(
+    async def eval_src(  # type: ignore[override]
         self,
         src: str,
         timeout: float | None = None,
@@ -333,7 +263,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().eval_src(src=src, timeout=timeout)
         return EvalRes.model_validate(res)
 
-    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:
+    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override]
         """
         Typecheck IML code.
 
@@ -353,7 +283,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().typecheck(src=src, timeout=timeout)
         return TypecheckRes.model_validate(res)
 
-    async def decompose(
+    async def decompose(  # type: ignore[override]
         self,
         name: str,
         assuming: str | None = None,
@@ -391,7 +321,7 @@ class ImandraXAsyncClient(AsyncClient):
             )
         return DecomposeRes.model_validate(res)
 
-    async def verify_src(
+    async def verify_src(  # type: ignore[override]
         self,
         src: str,
         hints: str | None = None,
@@ -401,7 +331,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
-    async def instance_src(
+    async def instance_src(  # type: ignore[override]
         self,
         src: str,
         hints: str | None = None,
@@ -411,7 +341,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
-    async def get_decls(
+    async def get_decls(  # type: ignore[override]
         self,
         names: list[str],
         timeout: float | None = None,
@@ -420,7 +350,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
-    async def list_artifacts(
+    async def list_artifacts(  # type: ignore[override]
         self,
         task: Task,
         timeout: float | None = None,
@@ -429,7 +359,7 @@ class ImandraXAsyncClient(AsyncClient):
             res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
-    async def get_artifact_zip(
+    async def get_artifact_zip(  # type: ignore[override]
         self,
         task: Task,
         kind: str,
