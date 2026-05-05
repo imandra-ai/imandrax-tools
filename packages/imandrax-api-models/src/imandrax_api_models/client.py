@@ -474,8 +474,12 @@ class ImandraXAsyncClient(AsyncClient):
 # ====================
 
 
-def _get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
-    """Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV)"""
+def get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
+    """
+    Get the ImandraX URL from the environment variable or default config location.
+
+    Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV)
+    """
     if url := os.getenv('IMANDRAX_URL'):
         return url
 
@@ -504,7 +508,7 @@ def get_imandrax_client(
     env: Literal['dev', 'prod'] | None = None,
     session_id: str | None = None,
 ) -> ImandraXClient:
-    url = _get_imandrax_url(env)
+    url = get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
@@ -515,15 +519,13 @@ def get_imandrax_client(
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
 
-    session_id = session_id or os.getenv('IMANDRAX_SESSION_ID')
-
     client = ImandraXClient(
         url=url,
         auth_token=imandrax_api_key,
         timeout=300,
         session_id=session_id,
     )
-    logger.info('imandrax_client_initialized', url=url)
+    logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
 
 
@@ -532,7 +534,7 @@ def get_imandrax_async_client(
     env: Literal['dev', 'prod'] | None = None,
     session_id: str | None = None,
 ) -> ImandraXAsyncClient:
-    url = _get_imandrax_url(env)
+    url = get_imandrax_url(env)
     if not url:
         raise ValueError('IMANDRAX_URL is not set')
 
@@ -543,13 +545,11 @@ def get_imandrax_async_client(
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
 
-    session_id = session_id or os.getenv('IMANDRAX_SESSION_ID')
-
     client = ImandraXAsyncClient(
         url=url,
         auth_token=imandrax_api_key,
         timeout=300,
         session_id=session_id,
     )
-    logger.info('imandrax_client_initialized', url=url)
+    logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
