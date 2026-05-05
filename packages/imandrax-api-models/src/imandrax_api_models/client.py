@@ -474,16 +474,29 @@ class ImandraXAsyncClient(AsyncClient):
 # ====================
 
 
+def _get_deployment_from_default_config() -> str | None:
+    config_path = Path.home() / '.config' / 'imandrax' / 'config.toml'
+    if config_path.exists():
+        import tomllib
+
+        deployment = tomllib.loads(config_path.read_text())
+        return deployment.get('net', {}).get('deployment')
+
+
 def get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
     """
     Get the ImandraX URL from the environment variable or default config location.
 
-    Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV)
+    Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV) > default config
     """
     if url := os.getenv('IMANDRAX_URL'):
         return url
 
-    env_ = env or os.getenv('IMANDRAX_ENV', 'prod')
+    env_ = (
+        env
+        or os.getenv('IMANDRAX_ENV', 'prod')
+        or _get_deployment_from_default_config()
+    )
     if env_ == 'dev':
         url = imandrax_api.url_dev
     elif env_ == 'prod':
