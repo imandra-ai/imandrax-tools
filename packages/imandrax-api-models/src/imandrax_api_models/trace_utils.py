@@ -82,3 +82,53 @@ def set_span_attrs(span: Any, fields: dict[str, Any]) -> None:
         else:
             # dicts/lists — stringify for span attribute
             span.set_attribute(f'imandrax.{k}', repr(s))
+
+
+def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
+    """
+    Set up an OTel TracerProvider that exports spans to stderr.
+
+    Returns True if OTel SDK is installed and configured, False otherwise.
+    Safe to call multiple times — subsequent calls are no-ops if a provider
+    is already set.
+    """
+    try:
+        from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+        from opentelemetry.sdk.resources import (
+            Resource,
+        )
+        from opentelemetry.sdk.trace import (
+            TracerProvider,
+        )
+        from opentelemetry.sdk.trace.export import (
+            BatchSpanProcessor,
+            ConsoleSpanExporter,
+        )
+    except ImportError:
+        return False
+
+    import os
+
+    def make_exporter() -> ConsoleSpanExporter | OTLPSpanExporter:
+        if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
+            return OTLPSpanExporter()  # reads endpoint from env automatically
+        return ConsoleSpanExporter()  # fallback for local dev
+
+    current = trace.get_tracer_provider()
+    if isinstance(current, TracerProvider):
+        return True
+
+    provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
+    provider.add_span_processor(BatchSpanProcessor(make_exporter()))
+
+    from .trace_utils import make_session_id_span_processor
+
+    session_proc = make_session_id_span_processor()
+    if session_proc is not None:
+        provider.add_span_processor(session_proc)
+
+    trace.set_tracer_provider(provider)
+    return True
