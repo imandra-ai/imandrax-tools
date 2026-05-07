@@ -12,6 +12,7 @@ import structlog
 
 from .trace_utils import (
     otel_trace as _otel_trace,
+    session_id_var as _session_id_var,
     set_span_attrs,
     summarize,
     tracer as _tracer,
@@ -224,9 +225,15 @@ class ImandraXClient(imandrax_api.Client):
 
     def __enter__(self) -> Self:  # type: ignore[override]
         super().__enter__()
+        sid = getattr(getattr(self, '_sesh', None), 'id', None)
+        self._session_id_token = _session_id_var.set(sid)
         return self
 
     def __exit__(self, *_: Any) -> None:
+        token = getattr(self, '_session_id_token', None)
+        if token is not None:
+            _session_id_var.reset(token)
+            self._session_id_token = None
         super().__exit__()
 
     def eval_model(
@@ -373,9 +380,17 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
 
     async def __aenter__(self, *_: Any) -> Self:
         await super().__aenter__()
+        sid = getattr(getattr(self, '_sesh', None), 'id', None) or getattr(
+            self, '_session_id', None
+        )
+        self._session_id_token = _session_id_var.set(sid)
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        token = getattr(self, '_session_id_token', None)
+        if token is not None:
+            _session_id_var.reset(token)
+            self._session_id_token = None
         await super().__aexit__(exc_type, exc_val, exc_tb)
 
     async def eval_model(

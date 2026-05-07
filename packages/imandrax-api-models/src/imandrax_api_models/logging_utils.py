@@ -120,5 +120,12 @@ def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
 
     provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
     provider.add_span_processor(BatchSpanProcessor(make_exporter()))
+
+    from .trace_utils import make_session_id_span_processor
+
+    session_proc = make_session_id_span_processor()
+    if session_proc is not None:
+        provider.add_span_processor(session_proc)
+
     trace.set_tracer_provider(provider)
     return True
