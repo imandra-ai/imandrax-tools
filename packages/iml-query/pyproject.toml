@@ -1,7 +1,7 @@
 [project]
 name = "iml-query"
 version = "0.10.1"
-description = "Add your description here"
+description = "Tree-sitter based utility for parsing, querying, and manipulating IML (Imandra Model Language)."
 readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }

@@ -1,7 +1,7 @@
 [project]
 name = "imandrax-tools"
 version = "19.0.3"
-description = "Add your description here"
+description = "Umbralla package bundling imandrax-api-models and iml-query. Also provides miscellaneous utilities (goal state formatting, rec knowledge base)."
 readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }
