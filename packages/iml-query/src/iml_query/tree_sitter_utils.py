@@ -55,10 +55,8 @@ def run_query(
     """
     Run a Tree-sitter query on the given code or node.
 
-    Return:
-        A list of tuples where
-            - 0: the first element is the pattern index
-            - 1: the second element is a dictionary that maps capture names to nodes.
+    Returns:
+        A list of tuples where the first element is the pattern index and the second element is a dictionary that maps capture names to nodes.
 
     """
     if isinstance(query, str):
@@ -153,9 +151,9 @@ def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
     Get nesting relationship between two nodes.
 
     Returns:
-         -1: nested_node is not contained within top_level_node
-         0: nested_node is the same as top_level_node
-         n > 0: nested_node is nested within top_level_node at level n
+         -1 if nested_node is not contained within top_level_node else\
+         0 if nested_node is the same as top_level_node else\
+         n > 0 if nested_node is nested within top_level_node at level n
 
     """
     if nested_node == top_level_node:

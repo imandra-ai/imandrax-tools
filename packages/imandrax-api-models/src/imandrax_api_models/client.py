@@ -295,13 +295,15 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         No eval_src is needed before typecheck.
 
         Example:
-            >>> iml_code = '''\
+            ```
+            >>> iml_code = '''
             ... let f x = x + 1
             ...
             ... let g x = f x + 1
             ... '''
             >>> await client.typecheck(iml_code)
             TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
+            ```
 
         """
         with self._trace('typecheck', src=src, timeout=timeout):

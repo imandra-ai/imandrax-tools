@@ -2,4 +2,4 @@
 
 Umbralla package bundling imandrax-api-models and iml-query. Also provides miscellaneous utilities (goal state formatting, rec knowledge base).
 
-See the [API Reference](reference.md) for the auto-generated module docs.
+- [API Reference](reference.md)

@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-iml-query = "iml_query.cli:app"
+iml-query = "iml_query._cli:app"
 
 [tool.uv.sources]
 

@@ -7,4 +7,4 @@ This site provides automatically generated documentation for CodeLogician / Iman
 - **[codelogician-skill](codelogician-skill/index.md)**: Agent skill for CodeLogician / ImandraX.
 - **[imandrax-tools](imandrax-tools/index.md)**: Umbralla package bundling imandrax-api-models and iml-query. Also provides miscellaneous utilities (goal state formatting, rec knowledge base).
 
-Refer to [codelogician.dev](codelogician.dev) and [imandrax.dev](imandrax.dev) for more information.
+Refer to [codelogician.dev](https://codelogician.dev) and [imandrax.dev](https://imandrax.dev) for more information.

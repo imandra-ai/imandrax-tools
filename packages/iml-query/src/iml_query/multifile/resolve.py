@@ -59,7 +59,7 @@ class IMLModule:
         Module content with imports, VGs, and decomps stripped.
 
         Assumption: the importing module does not care about VGs or decomps
-            in the imported module.
+        in the imported module.
         """
         tree = get_parser().parse(bytes(self.src, 'utf-8'))
         # strip imports
