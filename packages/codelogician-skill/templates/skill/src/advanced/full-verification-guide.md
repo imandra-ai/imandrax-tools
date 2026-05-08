@@ -98,7 +98,7 @@ lemma foo x y = x > 0 && y > 0 ==> x + y > 0 [@@by intros @> auto]
 
 ### `simp` / `simplify`
 
-Apply [simplification](Verification%20-%20Simplification.md) to the goal. There are several variants:
+Apply simplification to the goal. There are several variants:
 
 - `simp` - Quick and simple simplifier, always returns 1 goal
 - `simplify ()` - Full waterfall simplifier with all active rules
