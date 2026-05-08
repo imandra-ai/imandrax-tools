@@ -83,10 +83,12 @@ nav:
       - iml-query/index.md
       - API Reference: iml-query/reference.md
   - codelogician-skill:
-      - codelogician-skill/SKILL.md
-      - Syntax (IML): codelogician-skill/iml-syntax.md
-      - Imports: codelogician-skill/import-syntax.md
-      - CLI: codelogician-skill/codelogician-cli.md
-      - Region decomposition: codelogician-skill/region-decomp-intro.md
-      - Verify & instance: codelogician-skill/verification-with-verify-and-instance.md
-      - Unit testing: codelogician-skill/unit-testing.md
+      - codelogician-skill/index.md
+      - Contents:
+          - Overview (SKILL.md): codelogician-skill/contents/SKILL.md
+          - Syntax (IML): codelogician-skill/contents/iml-syntax.md
+          - Imports: codelogician-skill/contents/import-syntax.md
+          - CLI: codelogician-skill/contents/codelogician-cli.md
+          - Region decomposition: codelogician-skill/contents/region-decomp-intro.md
+          - Verify & instance: codelogician-skill/contents/verification-with-verify-and-instance.md
+          - Unit testing: codelogician-skill/contents/unit-testing.md

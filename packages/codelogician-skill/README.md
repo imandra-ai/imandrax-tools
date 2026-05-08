@@ -1,6 +1,6 @@
 # codelogician-skill
 
-CodeLogician [agent skill](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) for working with IML/ImandraX.
+CodeLogician [agent skill](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) for working with IML / ImandraX.
 
 ## Installation
 

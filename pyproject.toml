@@ -27,4 +27,5 @@ docs = [
     "mkdocs-section-index>=0.3",
     "imandrax-api-models",
     "iml-query",
+    "imandrax-tools",
 ]
