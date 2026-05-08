@@ -39,6 +39,7 @@ plugins:
   - gen-files:
       scripts:
         - docs/gen_skill_pages.py
+  - literate-nav
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -84,14 +85,7 @@ nav:
       - API Reference: iml-query/reference.md
   - codelogician-skill:
       - codelogician-skill/index.md
-      - Contents:
-          - SKILL.md: codelogician-skill/contents/SKILL.md
-          - Syntax (IML): codelogician-skill/contents/iml-syntax.md
-          - Imports: codelogician-skill/contents/import-syntax.md
-          - CLI: codelogician-skill/contents/codelogician-cli.md
-          - Region decomposition: codelogician-skill/contents/region-decomp-intro.md
-          - Verify & instance: codelogician-skill/contents/verification-with-verify-and-instance.md
-          - Unit testing: codelogician-skill/contents/unit-testing.md
+      - Contents: codelogician-skill/contents/
   - imandrax-tools:
       - imandrax-tools/index.md
       - API Reference: imandrax-tools/reference.md
