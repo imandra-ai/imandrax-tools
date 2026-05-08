@@ -1,5 +1,4 @@
-site_name: imandrax-tools
-site_description: Documentation for imandrax-api-models, iml-query, and the codelogician skill.
+site_name: Codelogician / ImandraX Agent Harness
 repo_url: https://github.com/imandra-ai/imandrax-tools
 edit_uri: edit/main/docs/
 
@@ -10,6 +9,8 @@ exclude_docs: |
 
 theme:
   name: material
+  logo: assets/logo.webp
+  favicon: assets/logo.webp
   features:
     - navigation.tabs
     - navigation.sections
