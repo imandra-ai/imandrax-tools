@@ -19,7 +19,10 @@ sync:
 
 # Serve the docs site locally with live reload.
 docs-serve port='8765':
-    {{mkdocs}} serve -w . -a 127.0.0.1:{{port}}
+    {{mkdocs}} serve -a 127.0.0.1:{{port}}
+
+docs-serve-watch port='8765' watch-path='.':
+    {{mkdocs}} serve -w {{watch-path}} -a 127.0.0.1:{{port}}
 
 # Build the static docs site into ./site.
 docs-build:
