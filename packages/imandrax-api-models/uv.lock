@@ -603,7 +603,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "19.4.1"
+version = "19.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
