@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import os
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from opentelemetry.sdk.trace import SpanProcessor
 
 # Soft-import OpenTelemetry: when installed, each API call becomes a span;
 # when not, the structlog debug logging still works.
@@ -90,5 +93,33 @@ def configure_otel_export(service_name: str = 'imandrax-api-client') -> bool:
 
     provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
     provider.add_span_processor(BatchSpanProcessor(make_exporter()))
+    bag_proc = _make_baggage_span_processor()
+    if bag_proc is not None:
+        provider.add_span_processor(bag_proc)
     trace.set_tracer_provider(provider)
     return True
+
+
+def _make_baggage_span_processor() -> SpanProcessor | None:
+    """Copy every OTel baggage entry onto each starting span as an attribute."""
+    try:
+        from opentelemetry import baggage
+        from opentelemetry.sdk.trace import SpanProcessor
+    except ImportError:
+        return None
+
+    class BaggageSpanProcessor(SpanProcessor):
+        def on_start(self, span: Any, parent_context: Any = None) -> None:
+            for k, v in baggage.get_all(parent_context).items():
+                span.set_attribute(k, str(v))
+
+        def on_end(self, span: Any) -> None:
+            pass
+
+        def shutdown(self) -> None:
+            pass
+
+        def force_flush(self, timeout_millis: int = 30000) -> bool:
+            return True
+
+    return BaggageSpanProcessor()
