@@ -153,7 +153,7 @@ def get_nesting_relationship(nested_node: Node, top_level_node: Node) -> int:
     Get nesting relationship between two nodes.
 
     Returns:
-        -1: nested_node is not contained within top_level_node
+         -1: nested_node is not contained within top_level_node
          0: nested_node is the same as top_level_node
          n > 0: nested_node is nested within top_level_node at level n
 
