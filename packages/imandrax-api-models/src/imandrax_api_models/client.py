@@ -5,14 +5,13 @@ import time
 from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Any, Literal
 
 import imandrax_api
 import structlog
 
 from .trace_utils import (
     otel_trace as _otel_trace,
-    session_id_var as _session_id_var,
     set_span_attrs,
     summarize,
     tracer,
@@ -51,10 +50,19 @@ logger = structlog.get_logger(__name__)
 
 
 @contextmanager
-def _trace_call(op: str, **fields: Any) -> Iterator[None]:
-    """Log + (optional) OTel span around an API call."""
+def _trace_call(
+    op: str, *, session_id: str | None = None, **fields: Any
+) -> Iterator[None]:
+    """
+    Log + (optional) OTel span around an API call.
+
+    `session_id` is tagged onto the span as `imandrax.session.id` so traces can
+    be grouped per server-side session in the UI.
+    """
     summarized = {k: summarize(k, v) for k, v in fields.items()}
     log = logger.bind(op=op, **summarized)
+    if session_id is not None:
+        log = log.bind(session_id=session_id)
     log.debug('imandrax_api_call_start')
     span_cm = (
         tracer.start_as_current_span(f'imandrax.{op}')
@@ -63,6 +71,8 @@ def _trace_call(op: str, **fields: Any) -> Iterator[None]:
     )
     t0 = time.perf_counter()
     with span_cm as span:
+        if span is not None and session_id is not None:
+            span.set_attribute('imandrax.session.id', session_id)
         set_span_attrs(span, fields)
         try:
             yield
@@ -84,15 +94,31 @@ def _trace_call(op: str, **fields: Any) -> Iterator[None]:
 # ====================
 
 
+def _client_session_id(client: Any) -> str | None:
+    """
+    Best-effort fetch of the server-side session id from a client.
+
+    `Client._sesh` is set in `__init__` for the sync client and in `__aenter__`
+    for the async client (where session creation is an async RPC). `_session_id`
+    is the resume-case fallback for async pre-`__aenter__`.
+    """
+    return getattr(getattr(client, '_sesh', None), 'id', None) or getattr(
+        client, '_session_id', None
+    )
+
+
 class ImandraXClient(imandrax_api.Client):
     """Extended sync client with Pydantic model validation."""
+
+    def _trace(self, op: str, **fields: Any) -> Any:
+        return _trace_call(op, session_id=_client_session_id(self), **fields)
 
     def eval_src(  # type: ignore[override]
         self,
         src: str,
         timeout: float | None = None,
     ) -> EvalRes:
-        with _trace_call('eval_src', src=src, timeout=timeout):
+        with self._trace('eval_src', src=src, timeout=timeout):
             res = super().eval_src(src=src, timeout=timeout)
         return EvalRes.model_validate(res)
 
@@ -112,7 +138,7 @@ class ImandraXClient(imandrax_api.Client):
             TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
 
         """
-        with _trace_call('typecheck', src=src, timeout=timeout):
+        with self._trace('typecheck', src=src, timeout=timeout):
             res = super().typecheck(src=src, timeout=timeout)
         return TypecheckRes.model_validate(res)
 
@@ -133,7 +159,7 @@ class ImandraXClient(imandrax_api.Client):
         if rule_specs is None:
             rule_specs = []
 
-        with _trace_call(
+        with self._trace(
             'decompose',
             name=name,
             assuming=assuming,
@@ -159,7 +185,7 @@ class ImandraXClient(imandrax_api.Client):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> VerifyRes:
-        with _trace_call('verify_src', src=src, hints=hints, timeout=timeout):
+        with self._trace('verify_src', src=src, hints=hints, timeout=timeout):
             res = super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
@@ -169,7 +195,7 @@ class ImandraXClient(imandrax_api.Client):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> InstanceRes:
-        with _trace_call('instance_src', src=src, hints=hints, timeout=timeout):
+        with self._trace('instance_src', src=src, hints=hints, timeout=timeout):
             res = super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
@@ -179,7 +205,7 @@ class ImandraXClient(imandrax_api.Client):
         seed: int | None = None,
         timeout: float | None = None,
     ) -> QCheckRes:
-        with _trace_call('qcheck_src', src=src, seed=seed, timeout=timeout):
+        with self._trace('qcheck_src', src=src, seed=seed, timeout=timeout):
             res = super().qcheck_src(src=src, seed=seed, timeout=timeout)
         return QCheckRes.model_validate(res)
 
@@ -189,7 +215,7 @@ class ImandraXClient(imandrax_api.Client):
         seed: int | None = None,
         timeout: float | None = None,
     ) -> QCheckRes:
-        with _trace_call('qcheck_name', name=name, seed=seed, timeout=timeout):
+        with self._trace('qcheck_name', name=name, seed=seed, timeout=timeout):
             res = super().qcheck_name(name=name, seed=seed, timeout=timeout)
         return QCheckRes.model_validate(res)
 
@@ -198,7 +224,7 @@ class ImandraXClient(imandrax_api.Client):
         names: list[str],
         timeout: float | None = None,
     ) -> GetDeclsRes:
-        with _trace_call('get_decls', names=names, timeout=timeout):
+        with self._trace('get_decls', names=names, timeout=timeout):
             res = super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
@@ -207,7 +233,7 @@ class ImandraXClient(imandrax_api.Client):
         task: Task,
         timeout: float | None = None,
     ) -> ArtifactListResult:
-        with _trace_call('list_artifacts', timeout=timeout):
+        with self._trace('list_artifacts', timeout=timeout):
             res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
@@ -217,24 +243,11 @@ class ImandraXClient(imandrax_api.Client):
         kind: str,
         timeout: float | None = None,
     ) -> ArtifactZip:
-        with _trace_call('get_artifact_zip', kind=kind, timeout=timeout):
+        with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
         return ArtifactZip.model_validate(res)
-
-    def __enter__(self) -> Self:  # type: ignore[override]
-        super().__enter__()
-        sid = getattr(getattr(self, '_sesh', None), 'id', None)
-        self._session_id_token = _session_id_var.set(sid)
-        return self
-
-    def __exit__(self, *_: Any) -> None:
-        token = getattr(self, '_session_id_token', None)
-        if token is not None:
-            _session_id_var.reset(token)
-            self._session_id_token = None
-        super().__exit__()
 
     def eval_model(
         self,
@@ -244,7 +257,7 @@ class ImandraXClient(imandrax_api.Client):
         with_decomps: bool = False,
     ) -> EvalRes:
         """Eval without VGs and decomps."""
-        with _trace_call(
+        with self._trace(
             'eval_model', src=src, with_vgs=with_vgs, with_decomps=with_decomps
         ):
             iml = src
@@ -261,12 +274,15 @@ class ImandraXClient(imandrax_api.Client):
 class ImandraXAsyncClient(imandrax_api.AsyncClient):
     """Extended async client with Pydantic model validation."""
 
+    def _trace(self, op: str, **fields: Any) -> Any:
+        return _trace_call(op, session_id=_client_session_id(self), **fields)
+
     async def eval_src(  # type: ignore[override]
         self,
         src: str,
         timeout: float | None = None,
     ) -> EvalRes:
-        with _trace_call('eval_src', src=src, timeout=timeout):
+        with self._trace('eval_src', src=src, timeout=timeout):
             res = await super().eval_src(src=src, timeout=timeout)
         return EvalRes.model_validate(res)
 
@@ -286,7 +302,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
 
         """
-        with _trace_call('typecheck', src=src, timeout=timeout):
+        with self._trace('typecheck', src=src, timeout=timeout):
             res = await super().typecheck(src=src, timeout=timeout)
         return TypecheckRes.model_validate(res)
 
@@ -307,7 +323,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         if rule_specs is None:
             rule_specs = []
 
-        with _trace_call(
+        with self._trace(
             'decompose',
             name=name,
             assuming=assuming,
@@ -334,7 +350,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> VerifyRes:
-        with _trace_call('verify_src', src=src, hints=hints, timeout=timeout):
+        with self._trace('verify_src', src=src, hints=hints, timeout=timeout):
             res = await super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
@@ -344,7 +360,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> InstanceRes:
-        with _trace_call('instance_src', src=src, hints=hints, timeout=timeout):
+        with self._trace('instance_src', src=src, hints=hints, timeout=timeout):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
@@ -353,7 +369,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         names: list[str],
         timeout: float | None = None,
     ) -> GetDeclsRes:
-        with _trace_call('get_decls', names=names, timeout=timeout):
+        with self._trace('get_decls', names=names, timeout=timeout):
             res = await super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
@@ -362,7 +378,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         task: Task,
         timeout: float | None = None,
     ) -> ArtifactListResult:
-        with _trace_call('list_artifacts', timeout=timeout):
+        with self._trace('list_artifacts', timeout=timeout):
             res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
@@ -372,26 +388,11 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         kind: str,
         timeout: float | None = None,
     ) -> ArtifactZip:
-        with _trace_call('get_artifact_zip', kind=kind, timeout=timeout):
+        with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = await super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
         return ArtifactZip.model_validate(res)
-
-    async def __aenter__(self, *_: Any) -> Self:
-        await super().__aenter__()
-        sid = getattr(getattr(self, '_sesh', None), 'id', None) or getattr(
-            self, '_session_id', None
-        )
-        self._session_id_token = _session_id_var.set(sid)
-        return self
-
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        token = getattr(self, '_session_id_token', None)
-        if token is not None:
-            _session_id_var.reset(token)
-            self._session_id_token = None
-        await super().__aexit__(exc_type, exc_val, exc_tb)
 
     async def eval_model(
         self,
@@ -401,7 +402,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         with_decomps: bool = False,
     ) -> EvalRes:
         """Eval without VGs and decomps."""
-        with _trace_call(
+        with self._trace(
             'eval_model', src=src, with_vgs=with_vgs, with_decomps=with_decomps
         ):
             iml = src

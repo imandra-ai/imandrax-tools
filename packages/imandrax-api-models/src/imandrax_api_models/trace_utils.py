@@ -1,11 +1,7 @@
 from __future__ import annotations
 
 import os
-from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, cast
-
-if TYPE_CHECKING:
-    from opentelemetry.sdk.trace import SpanProcessor
+from typing import Any, cast
 
 # Soft-import OpenTelemetry: when installed, each API call becomes a span;
 # when not, the structlog debug logging still works.
@@ -18,48 +14,6 @@ try:
     tracer = otel_trace.get_tracer('imandrax_api_models.client')
 except ImportError:
     pass
-
-
-# Session id propagation
-# ----------------------
-session_id_var: ContextVar[str | None] = ContextVar('imandrax_session_id', default=None)
-"""
-Set by the client on enter, read by the SessionIdSpanProcessor (registered in
-logging_utils.configure_otel_console) so every span emitted while a client is
-active is tagged with `imandrax.session.id`.
-"""
-
-
-def make_session_id_span_processor() -> SpanProcessor | None:
-    """
-    Build a SpanProcessor that tags every started span with the active session id.
-
-    Returns None if the OTel SDK is not installed.
-    """
-    try:
-        from opentelemetry.sdk.trace import SpanProcessor
-    except ImportError:
-        return None
-
-    class SessionIdSpanProcessor(SpanProcessor):
-        def on_start(self, span: Any, parent_context: Any = None) -> None:
-            sid = session_id_var.get()
-            if sid is not None:
-                span.set_attribute('imandrax.session.id', sid)
-
-        def on_end(self, span: Any) -> None:
-            pass
-
-        def shutdown(self) -> None:
-            pass
-
-        def force_flush(self, timeout_millis: int = 30000) -> bool:
-            return True
-
-    return SessionIdSpanProcessor()
-
-
-# ## EOS
 
 _SRC_PREVIEW_LEN = 200
 
@@ -124,6 +78,7 @@ def configure_otel_export(service_name: str = 'imandrax-api-client') -> bool:
         return False
 
     def make_exporter() -> ConsoleSpanExporter | OTLPSpanExporter:
+        # For local Jaeger gRPC: OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
         if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
             return OTLPSpanExporter()  # reads endpoint from env automatically
         else:
@@ -135,10 +90,5 @@ def configure_otel_export(service_name: str = 'imandrax-api-client') -> bool:
 
     provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
     provider.add_span_processor(BatchSpanProcessor(make_exporter()))
-
-    session_proc = make_session_id_span_processor()
-    if session_proc is not None:
-        provider.add_span_processor(session_proc)
-
     trace.set_tracer_provider(provider)
     return True
