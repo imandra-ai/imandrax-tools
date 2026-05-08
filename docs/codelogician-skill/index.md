@@ -2,7 +2,7 @@
 
 CodeLogician [agent skill](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) for working with IML / ImandraX.
 
-See [Contents](./contents) for skill contents.
+See [Contents](./contents/SKILL.md) for skill contents.
 
 Installation:
 ```bash
