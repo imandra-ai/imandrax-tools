@@ -20,6 +20,33 @@ def add_logger_name(
     return event_dict
 
 
+def add_open_telemetry_spans(
+    _: Any, __: str, event_dict: structlog.types.EventDict
+) -> structlog.types.EventDict:
+    """
+    Enrich log events with the active OpenTelemetry span/trace IDs.
+
+    No-op when opentelemetry-api is not installed or no span is recording.
+    """
+    try:
+        from opentelemetry import trace
+    except ImportError:
+        return event_dict
+
+    span = trace.get_current_span()
+    if not span.is_recording():
+        return event_dict
+
+    ctx = span.get_span_context()
+    parent = getattr(span, 'parent', None)
+    event_dict['span'] = {
+        'span_id': format(ctx.span_id, '016x'),
+        'trace_id': format(ctx.trace_id, '032x'),
+        'parent_span_id': None if not parent else format(parent.span_id, '016x'),
+    }
+    return event_dict
+
+
 def configure_logging(
     min_level: Literal[
         'debug',
@@ -41,6 +68,7 @@ def configure_logging(
             add_logger_name,
             structlog.contextvars.merge_contextvars,
             structlog.processors.add_log_level,
+            add_open_telemetry_spans,
             structlog.processors.StackInfoRenderer(),
             structlog.dev.set_exc_info,
             structlog.processors.TimeStamper(fmt='%m-%d %H:%M:%S', utc=False),

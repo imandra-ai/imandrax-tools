@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [19.5.0] - 2026-05-08
+- Add tracing for extended client
+
 ## [19.4.1] - 2026-04-29
 - Restore old error kind init interface; put description in a sibling description for
   attribute access

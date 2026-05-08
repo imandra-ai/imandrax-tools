@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "19.4.1"
+version = "19.5.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -17,6 +17,11 @@ dependencies = [
 [project.optional-dependencies]
 client = [
     "iml-query>=0.5.0",
+]
+tracing = [
+    "opentelemetry-api>=1.27",
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.41.1",
 ]
 
 [project.scripts]
