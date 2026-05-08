@@ -15,7 +15,7 @@ from .trace_utils import (
     session_id_var as _session_id_var,
     set_span_attrs,
     summarize,
-    tracer as _tracer,
+    tracer,
 )
 
 try:
@@ -57,8 +57,8 @@ def _trace_call(op: str, **fields: Any) -> Iterator[None]:
     log = logger.bind(op=op, **summarized)
     log.debug('imandrax_api_call_start')
     span_cm = (
-        _tracer.start_as_current_span(f'imandrax.{op}')
-        if _tracer is not None
+        tracer.start_as_current_span(f'imandrax.{op}')
+        if tracer is not None
         else nullcontext()
     )
     t0 = time.perf_counter()

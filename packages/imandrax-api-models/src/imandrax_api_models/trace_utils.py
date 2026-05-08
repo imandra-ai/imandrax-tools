@@ -1,5 +1,11 @@
+from __future__ import annotations
+
+import os
 from contextvars import ContextVar
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from opentelemetry.sdk.trace import SpanProcessor
 
 # Soft-import OpenTelemetry: when installed, each API call becomes a span;
 # when not, the structlog debug logging still works.
@@ -16,13 +22,15 @@ except ImportError:
 
 # Session id propagation
 # ----------------------
-# Set by the client on enter, read by the SessionIdSpanProcessor (registered in
-# logging_utils.configure_otel_console) so every span emitted while a client is
-# active is tagged with `imandrax.session.id`.
 session_id_var: ContextVar[str | None] = ContextVar('imandrax_session_id', default=None)
+"""
+Set by the client on enter, read by the SessionIdSpanProcessor (registered in
+logging_utils.configure_otel_console) so every span emitted while a client is
+active is tagged with `imandrax.session.id`.
+"""
 
 
-def make_session_id_span_processor() -> Any:
+def make_session_id_span_processor() -> SpanProcessor | None:
     """
     Build a SpanProcessor that tags every started span with the active session id.
 
@@ -84,13 +92,18 @@ def set_span_attrs(span: Any, fields: dict[str, Any]) -> None:
             span.set_attribute(f'imandrax.{k}', repr(s))
 
 
-def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
+def configure_otel_export(service_name: str = 'imandrax-api-client') -> bool:
     """
     Set up an OTel TracerProvider that exports spans to stderr.
 
-    Returns True if OTel SDK is installed and configured, False otherwise.
-    Safe to call multiple times — subsequent calls are no-ops if a provider
-    is already set.
+    If OTEL_EXPORTER_OTLP_ENDPOINT is set, exports to that endpoint via gRPC;
+    otherwise, exports to stderr (console).
+
+    Idempotent: subsequent calls are no-ops if a provider is already set.
+
+    Returns:
+       bool: True if OTel SDK is installed and configured, False otherwise.
+
     """
     try:
         from opentelemetry import trace
@@ -110,12 +123,11 @@ def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
     except ImportError:
         return False
 
-    import os
-
     def make_exporter() -> ConsoleSpanExporter | OTLPSpanExporter:
         if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
             return OTLPSpanExporter()  # reads endpoint from env automatically
-        return ConsoleSpanExporter()  # fallback for local dev
+        else:
+            return ConsoleSpanExporter()
 
     current = trace.get_tracer_provider()
     if isinstance(current, TracerProvider):
@@ -123,8 +135,6 @@ def configure_otel_console(service_name: str = 'imandrax-api-client') -> bool:
 
     provider = TracerProvider(resource=Resource.create({'service.name': service_name}))
     provider.add_span_processor(BatchSpanProcessor(make_exporter()))
-
-    from .trace_utils import make_session_id_span_processor
 
     session_proc = make_session_id_span_processor()
     if session_proc is not None:
