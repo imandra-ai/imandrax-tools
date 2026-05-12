@@ -1,7 +1,7 @@
 [project]
 name = "imandrax-api-models"
 version = "19.5.0"
-description = "Add your description here"
+description = "Pydantic model definitions for imandrax-api. Also provides a client wrapper with built-in validation and utility methods."
 readme = "README.md"
 authors = [
     { name = "hongyu", email = "hongyu@imandra.ai" }

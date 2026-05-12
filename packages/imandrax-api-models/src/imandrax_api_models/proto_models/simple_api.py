@@ -95,10 +95,14 @@ class DecomposeRes(DecomposeResProto):
         """
         Format region strings as test cases.
 
-        Eg: [
+        Example:
+        ```
+        [
             {"args": {"x": "1", "y": "2"}, "expected_output": "3"},
             {"args": {"x": "3", "y": "4"}, "expected_output": "7"},
-        ].
+        ]
+        ```
+
         """
         if not self.regions_str:
             return []

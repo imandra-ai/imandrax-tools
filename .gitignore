@@ -20,3 +20,6 @@ tmp.*
 tmp
 
 .scripts/
+
+
+site/
