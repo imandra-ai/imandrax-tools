@@ -100,6 +100,51 @@ def configure_otel_export(service_name: str = 'imandrax-api-client') -> bool:
     return True
 
 
+def configure_otel_logs(service_name: str = 'imandrax-api-client') -> bool:
+    """
+    Set up an OTel LoggerProvider that exports log records (Otel to logging bridge).
+
+    If OTEL_EXPORTER_OTLP_ENDPOINT is set, exports to that endpoint via gRPC;
+    otherwise, exports to stderr (console).
+
+    Idempotent: subsequent calls are no-ops if a LoggerProvider has already
+    been installed by a previous invocation.
+
+    Returns:
+       bool: True if OTel logs SDK is installed and configured, False otherwise.
+
+    """
+    try:
+        from opentelemetry._logs import get_logger_provider, set_logger_provider
+        from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
+            OTLPLogExporter,
+        )
+        from opentelemetry.sdk._logs import LoggerProvider
+        from opentelemetry.sdk._logs.export import (
+            BatchLogRecordProcessor,
+            ConsoleLogRecordExporter,
+        )
+        from opentelemetry.sdk.resources import Resource
+    except ImportError:
+        return False
+
+    # The default no-op provider isn't a LoggerProvider instance, so identity
+    # via type check tells us whether we've already installed our SDK provider.
+    current = get_logger_provider()
+    if isinstance(current, LoggerProvider):
+        return True
+
+    def make_exporter() -> ConsoleLogRecordExporter | OTLPLogExporter:
+        if os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'):
+            return OTLPLogExporter()
+        return ConsoleLogRecordExporter()
+
+    provider = LoggerProvider(resource=Resource.create({'service.name': service_name}))
+    provider.add_log_record_processor(BatchLogRecordProcessor(make_exporter()))
+    set_logger_provider(provider)
+    return True
+
+
 def _make_baggage_span_processor() -> SpanProcessor | None:
     """Copy every OTel baggage entry onto each starting span as an attribute."""
     try:
