@@ -1,4 +1,12 @@
 def icicle_widget_html(widget_id: str, data_json: str) -> str:
+    """
+    Emit the HTML for an icicle widget.
+
+    Args:
+        widget_id (str): widget ID, most likely a UUID.
+        data_json (str): serialized JSON data from RegionGroup.
+
+    """
     return f"""\
 <div id="{widget_id}" style="display:flex; font-family:monospace; font-size:13px; border:1px solid #ccc; border-radius:4px; overflow:hidden; height:500px;">
   <div id="{widget_id}-chart" style="flex:3; min-width:0; overflow:auto;"></div>
@@ -72,29 +80,34 @@ def icicle_widget_html(widget_id: str, data_json: str) -> str:
       .attr("x", 3).attr("y", y)
       .attr("fill", "#000")
       .style("font-size", fontSize)
+      .style("pointer-events", "none")
       .text("[" + (d.data.label_path || "") + "]");
     y += lineH;
 
-    // Label: introduced_constraint (line 2)
-    if (h >= y && d.data.introduced_constraint) {{
-      g.append("text")
-        .attr("clip-path", clipId)
-        .attr("x", 3).attr("y", y)
-        .attr("fill", "#000")
-        .style("font-size", fontSize)
-        .text("cst: " + d.data.introduced_constraint);
-      y += lineH;
-    }}
+    // if (false) {{
+        // Label: introduced_constraint (line 2)
+        if (h >= y && d.data.introduced_constraint) {{
+        g.append("text")
+            .attr("clip-path", clipId)
+            .attr("x", 3).attr("y", y)
+            .attr("fill", "#000")
+            .style("font-size", fontSize)
+            .style("pointer-events", "none")
+            .text("cst: " + d.data.introduced_constraint);
+        y += lineH;
+        }}
 
-    // Label: invariant (line 3)
-    if (h >= y && d.data.invariant) {{
-      g.append("text")
-        .attr("clip-path", clipId)
-        .attr("x", 3).attr("y", y)
-        .attr("fill", "#333")
-        .style("font-size", fontSize)
-        .text("inv: " + d.data.invariant);
-    }}
+        // Label: invariant (line 3)
+        if (h >= y && d.data.invariant) {{
+        g.append("text")
+            .attr("clip-path", clipId)
+            .attr("x", 3).attr("y", y)
+            .attr("fill", "#333")
+            .style("font-size", fontSize)
+            .style("pointer-events", "none")
+            .text("inv: " + d.data.invariant);
+        }}
+    // }}
   }});
 
   // Detail panel
