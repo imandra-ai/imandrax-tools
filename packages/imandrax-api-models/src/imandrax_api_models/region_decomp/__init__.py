@@ -73,10 +73,14 @@ class HumDecomposeRes:
             case ('Fail', _):
                 return None
             case ('Success', groups):
-                n_regions = sum([rg.n_regions() for rg in groups])
-                max_depth = _max_depth_of_groups(groups)
-
-                return {'n_regions': n_regions, 'max_depth': max_depth}
+                return {
+                    'n_regions': _count_leaf_regions(groups),
+                    # 'n_regions': sum(rg.n_regions() for rg in groups),
+                    # 'n_leaf_regions': _count_leaf_regions(groups),
+                    # 'max_depth': _max_tree_depth_of_groups(groups),
+                    # 'max_label_depth': _max_label_depth_of_groups(groups),
+                    # 'max_constraints_per_region': _max_constraints_per_region(groups),
+                }
 
     @staticmethod
     def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
@@ -161,7 +165,14 @@ class RegionGroup:
         return 1 + sum(c.n_regions() for c in self.children)
 
     def n_descendant_regions(self) -> int:
+        """Total descendant regions in this subtree, excluding self."""
         return self.n_regions() - 1
+
+    def n_leaf_regions(self) -> int:
+        """Total leaf regions in this subtree, including self if no children."""
+        if not self.children:
+            return 1
+        return sum(c.n_leaf_regions() for c in self.children)
 
     def to_dict(self) -> dict[str, Any]:
         """Core fields shared by all serialization formats."""
@@ -172,6 +183,7 @@ class RegionGroup:
             'weight': self.weight,
             'n_children_regions': len(self.children),
             'n_descendant_regions': self.n_descendant_regions(),
+            'n_leaf_regions': self.n_leaf_regions(),
         }
         if (r := self.region) is not None:
             d['invariant'] = r.invariant_str
@@ -240,7 +252,13 @@ def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGro
     return acc
 
 
-def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
+def _max_label_depth_of_groups(groups: list[RegionGroup]) -> int:
+    """
+    Max length of any label_path in the tree (index-chain depth).
+
+    Counts collapsed singleton levels since label_path is built before
+    singleton promotion in `_loop_group_regions`.
+    """
     init: int = 1
 
     def loop(groups: list[RegionGroup]):
@@ -252,6 +270,34 @@ def _max_depth_of_groups(groups: list[RegionGroup]) -> int:
 
     loop(groups)
     return init
+
+
+def _max_tree_depth_of_groups(groups: list[RegionGroup]) -> int:
+    """Max nesting depth of RegionGroup nodes (matches visual tree)."""
+
+    def depth(rg: RegionGroup) -> int:
+        return 1 + max((depth(c) for c in rg.children), default=0)
+
+    return max((depth(g) for g in groups), default=0)
+
+
+def _count_leaf_regions(groups: list[RegionGroup]) -> int:
+    """Count of nodes carrying a concrete RegionStr (region is not None)."""
+    total = 0
+    for g in groups:
+        if g.region is not None:
+            total += 1
+        total += _count_leaf_regions(g.children)
+    return total
+
+
+def _max_constraints_per_region(groups: list[RegionGroup]) -> int:
+    """Longest constraints list across all nodes."""
+
+    def walk(rg: RegionGroup) -> int:
+        return max(len(rg.constraints), *(walk(c) for c in rg.children), 0)
+
+    return max((walk(g) for g in groups), default=0)
 
 
 class RegionGroupSummarizer(Protocol):

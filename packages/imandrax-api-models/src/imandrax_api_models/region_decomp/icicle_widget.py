@@ -125,9 +125,10 @@ def icicle_widget_html(widget_id: str, data_json: str) -> str:
     html += `<b>All constraints:</b><ol style="margin:4px 0;padding-left:20px">`;
     (d.constraints || []).forEach(c => {{ html += `<li><code>${{esc(c)}}</code></li>`; }});
     html += `</ol>`;
-    html += `<b>Weight:</b> ${{d.weight}}<br>`;
-    html += `<b>Children:</b> ${{d.n_children_regions}}<br>`;
-    html += `<b>Descendants:</b> ${{d.n_descendant_regions}}<br><br>`;
+    html += `<br>`;
+    html += `<b>Leaf Regions:</b> ${{d.n_leaf_regions}}<br>`;
+    html += `<b>Direct Children:</b> ${{d.n_children_regions}}<br>`;
+    html += `<b>Descendants:</b> ${{d.n_descendant_regions}}<br>`;
     if (d.invariant != null) {{
       html += `<b>Invariant:</b><pre style="white-space:pre-wrap;background:#eee;padding:6px;border-radius:3px">${{esc(d.invariant)}}</pre>`;
     }}
@@ -140,6 +141,7 @@ def icicle_widget_html(widget_id: str, data_json: str) -> str:
     if (d.example_output != null) {{
       html += `<b>Model eval:</b><pre style="white-space:pre-wrap;background:#eee;padding:6px;border-radius:3px">${{esc(d.example_output)}}</pre>`;
     }}
+    html += `<b>Weight:</b> ${{d.weight}}<br>`;
     detailEl.innerHTML = html;
   }}
 }})();
