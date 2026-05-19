@@ -7,6 +7,8 @@ Pipeline:
 3. decomp top application capture -> decomp request
 """
 
+from __future__ import annotations
+
 from typing import Any, Required, TypedDict, cast
 
 from tree_sitter import Node, Range, Tree
@@ -53,7 +55,7 @@ class DecompParsingError(Exception):
 # optional bool str = 9;
 
 
-class _Top(TypedDict, total=False):
+class Top(TypedDict, total=False):
     assuming: str | None
     basis: list[str] | None
     rule_specs: list[str] | None
@@ -62,17 +64,31 @@ class _Top(TypedDict, total=False):
     lift_bool: str | None
 
 
-class DecompReqArgs(TypedDict, total=False):
-    name: Required[str]
-    assuming: str | None
-    basis: list[str] | None
-    rule_specs: list[str] | None
-    prune: bool | None
-    ctx_simp: bool | None
-    lift_bool: str | None
+class Merge(TypedDict):
+    m: Decomp
+    d1: LazyRet
 
 
-def _top_of_ts_node(node: Node) -> _Top:
+Decomp = Top | Merge
+
+
+class LazyRet(TypedDict):
+    """Represents a lazy result that can be computed to `ret = (Decomp.t, string) result`."""
+
+    m: Decomp
+    identifier: str
+
+
+
+def apply_decomp(d: Decomp, identifier: str) -> LazyRet:
+    return LazyRet(m=d, identifier=identifier)
+
+
+def merge(lhs: Decomp, rhs: LazyRet) -> Decomp:
+    return Merge(m=lhs, d1=rhs)
+
+
+def _top_of_appl_expr_node(node: Node) -> Top:
     """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
@@ -190,14 +206,26 @@ def _top_of_ts_node(node: Node) -> _Top:
             case _:
                 assert 'False', 'Never'
 
-    return _Top(**res)
+    return Top(**res)
 
 
-def iml_of_top(req: _Top) -> str:
+def mk_id(identifier_name: str) -> str:
+    return f'[%id {identifier_name}]'
+
+def iml_of_decomp(d: Decomp) -> str:
+    match d:
+        case Top():
+            return iml_of_top(d)
+        case Merge(m, d1):
+            return f"{iml_of_decomp(m)} << {iml_of_decomp(d1)}"
+
+
+def iml_of_lazy_ret(ret: LazyRet) -> str:
+    return f"{iml_of_top(ret['m']) {mk_id(ret['identifier'])}}"
+
+
+def iml_of_top(req: Top) -> str:
     """Convert a decomp request to a top application source string."""
-
-    def mk_id(identifier_name: str) -> str:
-        return f'[%id {identifier_name}]'
 
     labels: list[str] = []
 
@@ -242,9 +270,13 @@ def iml_of_top(req: _Top) -> str:
     return f'top {" ".join(labels) + " "}()'
 
 
-def _decomp_attribute_payload_to_decomp_req_labels(
+# High-level (higher than top appl expr) ops
+# ====================
+
+
+def _top_of_decomp_attr_payload(
     node: Node,
-) -> _Top:
+) -> Top:
     """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
@@ -252,7 +284,17 @@ def _decomp_attribute_payload_to_decomp_req_labels(
     if expect_appl.type != 'application_expression':
         raise NotImplementedError('Composition operators are not supported yet')
 
-    return _top_of_ts_node(expect_appl)
+    return _top_of_appl_expr_node(expect_appl)
+
+
+class DecompReqArgs(TypedDict, total=False):
+    name: Required[str]
+    assuming: str | None
+    basis: list[str] | None
+    rule_specs: list[str] | None
+    prune: bool | None
+    ctx_simp: bool | None
+    lift_bool: str | None
 
 
 def decomp_capture_to_req(
@@ -260,15 +302,9 @@ def decomp_capture_to_req(
 ) -> tuple[DecompReqArgs, Range]:
     req: dict[str, Any] = {}
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
-    req_labels = _decomp_attribute_payload_to_decomp_req_labels(
-        capture.decomp_payload
-    )
+    req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
     req |= req_labels  # ty: ignore[unsupported-operator]
     return (cast(DecompReqArgs, req), capture.decomp_attr.range)
-
-
-# High-level (higher than decomp expr) ops
-# ====================
 
 
 def _remove_decomp_reqs(
