@@ -429,3 +429,37 @@ def insert_decomp_req(
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
+
+
+# Experimental
+# ====================
+
+
+class DecompReqArgs_(TypedDict, total=False):
+    """Composite decomp. Will replace `DecompReqArgs` in the future."""
+
+    name: Required[str]
+    decomp: Required[Decomp]
+
+
+def insert_decomp_req_(
+    iml: str,
+    tree: Tree,
+    req: DecompReqArgs_,
+) -> tuple[str, Tree]:
+    func_def_node = find_func_definition(tree, req['name'])
+    if func_def_node is None:
+        raise ValueError(f'Function {req["name"]} not found in syntax tree')
+
+    func_def_end_row = func_def_node.end_point[0]
+
+    decomp_appl_text = iml_of_decomp(req['decomp'])
+    to_insert = f'[@@decomp {decomp_appl_text}]'
+
+    new_iml, new_tree = insert_lines(
+        iml,
+        tree,
+        lines=[to_insert],
+        insert_after=func_def_end_row,
+    )
+    return new_iml, new_tree
