@@ -296,21 +296,25 @@ def iml_of_lazy_ret(ret: LazyRet) -> str:
 
 
 def iml_of_top(top: Top) -> str:
-    """Convert a decomp request to a top application source string."""
+    """
+    Convert a decomp request to a top application source string.
+
+    Unset fields (None) are skipped
+    """
     labels: list[str] = []
 
     if top.assuming is not None:
         labels.append(f'~assuming:{mk_id(top.assuming)}')
 
-    if top.basis:
-        items_str = ' ; '.join(map(mk_id, top.basis))
+    if top.basis is not None:
+        items_str = '; '.join(map(mk_id, top.basis))
         labels.append(f'~basis:[{items_str}]')
 
-    if top.rule_specs:
-        items_str = ' ; '.join(map(mk_id, top.rule_specs))
+    if top.rule_specs is not None:
+        items_str = '; '.join(map(mk_id, top.rule_specs))
         labels.append(f'~rule_specs:[{items_str}]')
 
-    if top.prune is not None and top.prune:
+    if top.prune is not None:
         labels.append(f'~prune:{"true" if top.prune else "false"}')
 
     if top.ctx_simp is not None:
