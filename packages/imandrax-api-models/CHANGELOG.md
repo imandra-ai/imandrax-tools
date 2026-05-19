@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- Tighten integration between tracing and logging
+- Improve decomp widget
 
 ## [19.5.0] - 2026-05-08
 - Add tracing for extended client
