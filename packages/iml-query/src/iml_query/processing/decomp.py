@@ -32,7 +32,28 @@ class DecompParsingError(Exception):
     pass
 
 
-class _DecompTopLabels(TypedDict, total=False):
+# TODO: conform to proto definition
+#   // name of function to decompose
+# string name = 2;
+#
+# // name of side condition function
+# optional string assuming = 3;
+#
+# repeated string basis = 4;
+#
+# repeated string rule_specs = 5;
+#
+# bool prune = 6;
+#
+# optional bool ctx_simp = 7;
+#
+# optional LiftBool lift_bool = 8;
+#
+# // include result as string?
+# optional bool str = 9;
+
+
+class _Top(TypedDict, total=False):
     assuming: str | None
     basis: list[str] | None
     rule_specs: list[str] | None
@@ -51,7 +72,7 @@ class DecompReqArgs(TypedDict, total=False):
     lift_bool: str | None
 
 
-def top_application_to_decomp(node: Node) -> _DecompTopLabels:
+def _top_of_ts_node(node: Node) -> _Top:
     """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
@@ -169,10 +190,10 @@ def top_application_to_decomp(node: Node) -> _DecompTopLabels:
             case _:
                 assert 'False', 'Never'
 
-    return _DecompTopLabels(**res)
+    return _Top(**res)
 
 
-def decomp_req_to_top_appl_text(req: _DecompTopLabels) -> str:
+def iml_of_top(req: _Top) -> str:
     """Convert a decomp request to a top application source string."""
 
     def mk_id(identifier_name: str) -> str:
@@ -223,7 +244,7 @@ def decomp_req_to_top_appl_text(req: _DecompTopLabels) -> str:
 
 def _decomp_attribute_payload_to_decomp_req_labels(
     node: Node,
-) -> _DecompTopLabels:
+) -> _Top:
     """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
@@ -231,7 +252,7 @@ def _decomp_attribute_payload_to_decomp_req_labels(
     if expect_appl.type != 'application_expression':
         raise NotImplementedError('Composition operators are not supported yet')
 
-    return top_application_to_decomp(expect_appl)
+    return _top_of_ts_node(expect_appl)
 
 
 def decomp_capture_to_req(
@@ -296,7 +317,7 @@ def insert_decomp_req(
 
     func_def_end_row = func_def_node.end_point[0]
 
-    top_appl_text = decomp_req_to_top_appl_text(req)
+    top_appl_text = iml_of_top(req)
     to_insert = f'[@@decomp {top_appl_text}]'
 
     new_iml, new_tree = insert_lines(

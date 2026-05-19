@@ -6,7 +6,7 @@ from iml_query.processing import (
     insert_decomp_req,
     insert_verify_req,
 )
-from iml_query.processing.decomp import decomp_req_to_top_appl_text
+from iml_query.processing.decomp import iml_of_top
 from iml_query.processing.utils import find_func_definition
 from iml_query.queries import DECOMP_QUERY_SRC, VERIFY_QUERY_SRC
 from iml_query.tree_sitter_utils import (
@@ -71,7 +71,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
 
     # Decomp request to decomp attribute
     decomp_req_2 = decomp_reqs[1]
-    assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
+    assert iml_of_top(decomp_req_2) == snapshot(
         'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()'
     )
 
@@ -85,7 +85,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     )
 
     # Insert back decomp request using insert_lines
-    top_2 = decomp_req_to_top_appl_text(decomp_reqs[1])
+    top_2 = iml_of_top(decomp_reqs[1])
     lines = [f'[@@decomp {top_2}]']
 
     iml3, _tree3 = insert_lines(iml2, tree2, lines=lines, insert_after=5)
