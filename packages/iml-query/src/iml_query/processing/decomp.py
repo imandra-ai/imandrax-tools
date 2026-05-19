@@ -9,6 +9,7 @@ Pipeline:
 
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
 from typing import Any, Required, TypedDict, cast
 
 from tree_sitter import Node, Range, Tree
@@ -28,43 +29,112 @@ from .utils import find_func_definition
 # ====================
 
 
+# ::: Algebra reference
+# module Decomp = struct
+#   type t [@@builtin.decomp "ty.decomp"]
+
+#   type ret = (t, string) result
+
+#   type m = identifier -> ret [@@builtin.special "ty.decomp.m"]
+
+#   type refiner = t -> ret
+
+#   type lift_bool =
+#     | Default
+#     | Nested_equalities
+#     | Equalities
+#     | All
+
+#   let top :
+#       ?assuming:identifier ->
+#       ?basis:identifier list ->
+#       ?rule_specs:identifier list ->
+#       ?prune:bool ->
+#       ?ctx_simp:bool ->
+#       ?lift_bool:lift_bool ->
+#       unit ->
+#       m =
+#     ()
+#   [@@builtin.decomp "fn.decomp.top"]
+
+#   type style =
+#     | Additive
+#     | Multiplicative
+
+#   let enumerate_ : t -> refiner = () [@@builtin.decomp "fn.decomp.enumerate"]
+
+#   let enumerate_all_ : style -> t list -> refiner = ()
+#   [@@builtin.decomp "fn.decomp.enumerate_all"]
+
+#   let prune : refiner = () [@@builtin.decomp "fn.decomp.prune"]
+
+#   let merge_ : t -> refiner = () [@@builtin.decomp "fn.decomp.merge"]
+
+#   let compound_merge_ : t -> refiner = ()
+#   [@@builtin.decomp "fn.decomp.compound_merge"]
+
+#   let combine : refiner = () [@@builtin.decomp "fn.decomp.combine"]
+
+#   open Result
+
+#   let enumerate_all ~style des d0 =
+#     let rec lift = function
+#       | [] -> Ok []
+#       | Ok x :: xs ->
+#         let* l = lift xs in
+#         Ok (x :: l)
+#       | Error e :: _ -> Error e
+#     in
+#     let* l = lift des in
+#     enumerate_all_ style l d0
+#   [@@no_validate]
+
+#   let ( |>> ) (m : m) (f : refiner) : m =
+#    fun id ->
+#     let* d = m id in
+#     f d
+#   [@@macro]
+
+#   let enumerate d0 d1 =
+#     let* d0 = d0 in
+#     enumerate_ d0 d1
+#   [@@macro]
+
+#   let ( ~| ) (m : m) : m = m |>> combine [@@macro]
+
+#   let ( << ) (m : m) (d1 : ret) : m =
+#     m |>> fun d0 ->
+#     let* d1 = d1 in
+#     merge_ d0 d1
+#   [@@macro]
+
+#   let ( <|< ) (m : m) (d1 : ret) : m =
+#     m |>> fun d0 ->
+#     let* d1 = d1 in
+#     compound_merge_ d0 d1
+#   [@@macro]
+# end
+# :::
+
+
 class DecompParsingError(Exception):
     """Exception raised when parsing decomp fails."""
 
     pass
 
 
-# TODO: conform to proto definition
-#   // name of function to decompose
-# string name = 2;
-#
-# // name of side condition function
-# optional string assuming = 3;
-#
-# repeated string basis = 4;
-#
-# repeated string rule_specs = 5;
-#
-# bool prune = 6;
-#
-# optional bool ctx_simp = 7;
-#
-# optional LiftBool lift_bool = 8;
-#
-# // include result as string?
-# optional bool str = 9;
+@dataclass
+class Top:
+    assuming: str | None = None
+    basis: list[str] | None = None
+    rule_specs: list[str] | None = None
+    prune: bool | None = None
+    ctx_simp: bool | None = None
+    lift_bool: str | None = None
 
 
-class Top(TypedDict, total=False):
-    assuming: str | None
-    basis: list[str] | None
-    rule_specs: list[str] | None
-    prune: bool | None
-    ctx_simp: bool | None
-    lift_bool: str | None
-
-
-class Merge(TypedDict):
+@dataclass
+class Merge:
     m: Decomp
     d1: LazyRet
 
@@ -72,12 +142,12 @@ class Merge(TypedDict):
 Decomp = Top | Merge
 
 
-class LazyRet(TypedDict):
+@dataclass
+class LazyRet:
     """Represents a lazy result that can be computed to `ret = (Decomp.t, string) result`."""
 
     m: Decomp
     identifier: str
-
 
 
 def apply_decomp(d: Decomp, identifier: str) -> LazyRet:
@@ -212,62 +282,45 @@ def _top_of_appl_expr_node(node: Node) -> Top:
 def mk_id(identifier_name: str) -> str:
     return f'[%id {identifier_name}]'
 
+
 def iml_of_decomp(d: Decomp) -> str:
     match d:
         case Top():
             return iml_of_top(d)
-        case Merge(m, d1):
-            return f"{iml_of_decomp(m)} << {iml_of_decomp(d1)}"
+        case Merge(m=m, d1=d1):
+            return f'{iml_of_decomp(m)} << {iml_of_lazy_ret(d1)}'
 
 
 def iml_of_lazy_ret(ret: LazyRet) -> str:
-    return f"{iml_of_top(ret['m']) {mk_id(ret['identifier'])}}"
+    return f'{iml_of_decomp(ret.m)} {mk_id(ret.identifier)}'
 
 
-def iml_of_top(req: Top) -> str:
+def iml_of_top(top: Top) -> str:
     """Convert a decomp request to a top application source string."""
-
     labels: list[str] = []
 
-    # Handle assuming
-    assuming = req.get('assuming')
-    if assuming is not None:
-        labels.append(f'~assuming:{mk_id(assuming)}')
+    if top.assuming is not None:
+        labels.append(f'~assuming:{mk_id(top.assuming)}')
 
-    # Handle basis
-    basis = req.get('basis')
-    if basis is not None and len(basis) > 0:
-        s = '~basis:'
-        items_str = ' ; '.join(map(mk_id, basis))
-        s += f'[{items_str}]'
-        labels.append(s)
+    if top.basis:
+        items_str = ' ; '.join(map(mk_id, top.basis))
+        labels.append(f'~basis:[{items_str}]')
 
-    # Handle rule_specs
-    rule_specs = req.get('rule_specs')
-    if rule_specs is not None and len(rule_specs) > 0:
-        s = '~rule_specs:'
-        items_str = ' ; '.join(map(mk_id, rule_specs))
-        s += f'[{items_str}]'
-        labels.append(s)
+    if top.rule_specs:
+        items_str = ' ; '.join(map(mk_id, top.rule_specs))
+        labels.append(f'~rule_specs:[{items_str}]')
 
-    # Handle prune
-    prune = req.get('prune')
-    if prune is not None and prune:
-        labels.append(f'~prune:{"true" if prune else "false"}')
+    if top.prune is not None and top.prune:
+        labels.append(f'~prune:{"true" if top.prune else "false"}')
 
-    # Handle ctx_simp
-    ctx_simp = req.get('ctx_simp')
-    if ctx_simp is not None:
-        labels.append(f'~ctx_simp:{"true" if ctx_simp else "false"}')
+    if top.ctx_simp is not None:
+        labels.append(f'~ctx_simp:{"true" if top.ctx_simp else "false"}')
 
-    # Handle lift_bool
-    lift_bool = req.get('lift_bool')
-    if lift_bool is not None:
-        s = '~lift_bool:'
-        s += f'{lift_bool} ()'
-        labels.append(s)
+    if top.lift_bool is not None:
+        labels.append(f'~lift_bool:{top.lift_bool} ()')
 
-    return f'top {" ".join(labels) + " "}()'
+    label_text = ' '.join(labels)
+    return f'top {label_text} ()' if label_text else 'top ()'
 
 
 # High-level (higher than top appl expr) ops
@@ -303,7 +356,7 @@ def decomp_capture_to_req(
     req: dict[str, Any] = {}
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
-    req |= req_labels  # ty: ignore[unsupported-operator]
+    req |= {k: v for k, v in asdict(req_labels).items() if v is not None}
     return (cast(DecompReqArgs, req), capture.decomp_attr.range)
 
 
@@ -353,7 +406,16 @@ def insert_decomp_req(
 
     func_def_end_row = func_def_node.end_point[0]
 
-    top_appl_text = iml_of_top(req)
+    top_appl_text = iml_of_top(
+        Top(
+            assuming=req.get('assuming'),
+            basis=req.get('basis'),
+            rule_specs=req.get('rule_specs'),
+            prune=req.get('prune'),
+            ctx_simp=req.get('ctx_simp'),
+            lift_bool=req.get('lift_bool'),
+        )
+    )
     to_insert = f'[@@decomp {top_appl_text}]'
 
     new_iml, new_tree = insert_lines(
