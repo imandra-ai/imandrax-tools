@@ -22,6 +22,9 @@ from iml_query.tree_sitter_utils import (
 
 from .utils import find_func_definition
 
+# Decomp attr expr
+# ====================
+
 
 class DecompParsingError(Exception):
     """Exception raised when parsing decomp fails."""
@@ -29,7 +32,7 @@ class DecompParsingError(Exception):
     pass
 
 
-class DecompTopLabels(TypedDict, total=False):
+class _DecompTopLabels(TypedDict, total=False):
     assuming: str | None
     basis: list[str] | None
     rule_specs: list[str] | None
@@ -48,7 +51,7 @@ class DecompReqArgs(TypedDict, total=False):
     lift_bool: str | None
 
 
-def top_application_to_decomp(node: Node) -> DecompTopLabels:
+def top_application_to_decomp(node: Node) -> _DecompTopLabels:
     """Extract Decomp request from a `Decompose.top` application node."""
     assert node.type == 'application_expression'
 
@@ -166,10 +169,10 @@ def top_application_to_decomp(node: Node) -> DecompTopLabels:
             case _:
                 assert 'False', 'Never'
 
-    return DecompTopLabels(**res)
+    return _DecompTopLabels(**res)
 
 
-def decomp_req_to_top_appl_text(req: DecompTopLabels) -> str:
+def decomp_req_to_top_appl_text(req: _DecompTopLabels) -> str:
     """Convert a decomp request to a top application source string."""
 
     def mk_id(identifier_name: str) -> str:
@@ -218,9 +221,9 @@ def decomp_req_to_top_appl_text(req: DecompTopLabels) -> str:
     return f'top {" ".join(labels) + " "}()'
 
 
-def decomp_attribute_payload_to_decomp_req_labels(
+def _decomp_attribute_payload_to_decomp_req_labels(
     node: Node,
-) -> DecompTopLabels:
+) -> _DecompTopLabels:
     """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
@@ -236,11 +239,15 @@ def decomp_capture_to_req(
 ) -> tuple[DecompReqArgs, Range]:
     req: dict[str, Any] = {}
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
-    req_labels = decomp_attribute_payload_to_decomp_req_labels(
+    req_labels = _decomp_attribute_payload_to_decomp_req_labels(
         capture.decomp_payload
     )
-    req |= req_labels
+    req |= req_labels  # ty: ignore[unsupported-operator]
     return (cast(DecompReqArgs, req), capture.decomp_attr.range)
+
+
+# High-level (higher than decomp expr) ops
+# ====================
 
 
 def _remove_decomp_reqs(
