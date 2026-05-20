@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- Context utils: show unstructured message unconditionally
 - Tighten integration between tracing and logging
 - Improve decomp widget
 
