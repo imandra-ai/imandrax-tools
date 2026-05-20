@@ -10,6 +10,8 @@ Usage:
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import structlog
@@ -22,6 +24,10 @@ if TYPE_CHECKING:
 
 __all__ = ('api_models', 'goal_state', 'iml_query')
 logger = structlog.get_logger(__name__)
+
+FAILING_PO_RES_SAVE_PATH: Path | None = (
+    Path(p) if (p := os.getenv('FAILING_PO_RES_SAVE_PATH')) is not None else None
+)
 
 
 def get_goal_state_opt(c: ImandraXClient, task: Task) -> str | None:
@@ -44,8 +50,9 @@ def get_goal_state_opt(c: ImandraXClient, task: Task) -> str | None:
     if 'po_res' not in art_list_res:
         return None
 
+    po_res_art_zip: ArtifactZip | None = None
     try:
-        po_res_art_zip: ArtifactZip = c.get_artifact_zip(task, kind='po_res')
+        po_res_art_zip = c.get_artifact_zip(task, kind='po_res')
         with NamedTemporaryFile(mode='w+b', suffix='.zip') as f:
             f.write(po_res_art_zip.art_zip)
             f.flush()
@@ -53,6 +60,8 @@ def get_goal_state_opt(c: ImandraXClient, task: Task) -> str | None:
         return goal_state_s
     except (GoalStateCounterModel, GoalStateProved) as e:
         logger.info(f'Goal state error: {e!r}')
+        if FAILING_PO_RES_SAVE_PATH is not None and po_res_art_zip is not None:
+            FAILING_PO_RES_SAVE_PATH.write_bytes(po_res_art_zip.art_zip)
         return None
     except Exception:
         raise

@@ -212,6 +212,34 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
     return result
 
 
+def _format_eval_msg_errors(
+    errs_in_eval_msg: list[str],
+    max_msgs: int = 2,
+    max_len_per_msg: int = 300,
+) -> str:
+    """
+    Render extracted error string blurbs from `eval_res.messages`.
+
+    Up to `max_msgs` are shown, deduped by extracted text. Appends a
+    truncation hint if more were dropped.
+    """
+    seen: set[str] = set()
+    extracted: list[str] = []
+    for msg in errs_in_eval_msg:
+        e = _extract_internal_error(msg, max_len=max_len_per_msg)
+        if e in seen:
+            continue
+        seen.add(e)
+        extracted.append(e)
+
+    shown = extracted[:max_msgs]
+    s = '\n'.join(f'- {e}' for e in shown)
+    hidden = len(extracted) - len(shown)
+    if hidden > 0:
+        s += f'\n- ... ({hidden} more similar message(s) omitted; use --json for full output)'
+    return s
+
+
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
     # Check additional error in message (internal errors)
     errs_in_eval_msg: list[str] = [
@@ -224,12 +252,13 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
             s = ''
             s += 'Evaluation errors:\n'
             s += cast(str, format_eval_res_errors(eval_res, iml_src))
+            if has_err_in_eval_msg:
+                s += '\nAdditional unstructured context from eval messages:\n'
+                s += _format_eval_msg_errors(errs_in_eval_msg)
             return s
         case False, True:
-            s = 'ImandraX internal error'
-            # Extract error details from the first error message
-            if errs_in_eval_msg:
-                s += f'\n{_extract_internal_error(errs_in_eval_msg[0])}'
+            s = 'ImandraX internal error\n'
+            s += _format_eval_msg_errors(errs_in_eval_msg)
             return s
         case False, False:
             s = 'Eval success!'
