@@ -1,3 +1,30 @@
+from __future__ import annotations
+
+import json
+import uuid
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from imandrax_api_models.region_decomp import RegionGroup
+
+
+def mk_icicle_widget_html(groups: list[RegionGroup]) -> str:
+    root = {
+        'label_path': 'root',
+        'introduced_constraint': 'all regions',
+        'constraints': [],
+        'weight': sum(g.weight for g in groups),
+        'n_children_regions': len(groups),
+        'n_descendant_regions': sum(g.n_regions() for g in groups),
+        'children': [g.to_json_dict() for g in groups],
+    }
+    data_json = json.dumps(root)
+    widget_id = f'icicle-{uuid.uuid4().hex[:8]}'
+    from .icicle_widget import icicle_widget_html
+
+    return icicle_widget_html(widget_id, data_json)
+
+
 def icicle_widget_html(widget_id: str, data_json: str) -> str:
     """
     Emit the HTML for an icicle widget.
