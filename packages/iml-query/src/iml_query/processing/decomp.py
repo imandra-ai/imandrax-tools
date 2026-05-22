@@ -139,7 +139,13 @@ class Merge:
     d1: LazyRet
 
 
-Decomp = Top | Merge
+@dataclass
+class CompoundMerge:
+    m: Decomp
+    d1: LazyRet
+
+
+Decomp = Top | Merge | CompoundMerge
 
 
 @dataclass
@@ -289,6 +295,8 @@ def iml_of_decomp(d: Decomp) -> str:
             return iml_of_top(d)
         case Merge(m=m, d1=d1):
             return f'{iml_of_decomp(m)} << {iml_of_lazy_ret(d1)}'
+        case CompoundMerge(m=m, d1=d1):
+            return f'{iml_of_decomp(m)} <|< {iml_of_lazy_ret(d1)}'
 
 
 def iml_of_lazy_ret(ret: LazyRet) -> str:
