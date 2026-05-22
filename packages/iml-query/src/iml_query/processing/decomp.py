@@ -321,7 +321,7 @@ def iml_of_top(top: Top) -> str:
         labels.append(f'~ctx_simp:{"true" if top.ctx_simp else "false"}')
 
     if top.lift_bool is not None:
-        labels.append(f'~lift_bool:{top.lift_bool} ()')
+        labels.append(f'~lift_bool:{top.lift_bool}')
 
     label_text = ' '.join(labels)
     return f'top {label_text} ()' if label_text else 'top ()'
