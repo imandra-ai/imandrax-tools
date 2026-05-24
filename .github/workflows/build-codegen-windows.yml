@@ -1,0 +1,34 @@
+# $schema: https://json.schemastore.org/github-workflow.json
+name: build-codegen-windows
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - hy/support-windows-for-codegen  # TODO: remove after testing
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup OCaml
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.3.x
+          depext: true
+          depext-cygwinports: true
+
+      - name: Pin and install
+        run: |
+          opam pin add -n imandrax-api git+https://github.com/imandra-ai/imandrax-api.git#main
+          opam pin add -n imandra-proof-system git+https://github.com/imandra-ai/imandrax-api.git#main
+          opam install ./packages/imandrax-codegen --deps-only -y
+
+      - name: Build
+        run: opam exec -- dune build packages/imandrax-codegen/bin/parse.exe
+
+      - name: Upload to release
+        run: gh release upload codegen-binaries _build/default/packages/imandrax-codegen/bin/parse.exe#art_parse-windows-x86_64.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
