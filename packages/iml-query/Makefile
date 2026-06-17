@@ -37,7 +37,7 @@ write-example-trees:
 .PHONY: build
 build:  ## Build wheel and source distribution
 	rm -rf ./dist/iml_query-*
-	uv build --no-sources
+	uv build --no-sources -o dist/
 
 .PHONY: test-wheel
 test-wheel:  ## Run tests on wheel
