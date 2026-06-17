@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import itertools
-import json
-import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import partial, reduce
@@ -16,6 +14,8 @@ from imandrax_api.lib import RegionStr
 
 from imandrax_api_models.proto_models import DecomposeRes, Error
 from imandrax_api_models.yaml_utils import str_representer
+
+from .icicle_widget import mk_icicle_widget_html
 
 
 @dataclass
@@ -117,7 +117,7 @@ class HumDecomposeRes:
             case ('Fail', errs):
                 return f'<pre>{pformat(errs, indent=2)}</pre>'
             case ('Success', groups):
-                return _mk_icicle_widget_html(groups)
+                return mk_icicle_widget_html(groups)
 
 
 def hum_of_decomp_res(decomp_res: DecomposeRes) -> HumDecomposeRes:
@@ -496,27 +496,6 @@ def _loop_group_regions(
         groups=[], regions=regions, idx_path=idx_path, constraint_path=constraint_path
     )
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
-
-
-# Icicle Widget (Jupyter)
-# =======================
-
-
-def _mk_icicle_widget_html(groups: list[RegionGroup]) -> str:
-    root = {
-        'label_path': 'root',
-        'introduced_constraint': 'all regions',
-        'constraints': [],
-        'weight': sum(g.weight for g in groups),
-        'n_children_regions': len(groups),
-        'n_descendant_regions': sum(g.n_regions() for g in groups),
-        'children': [g.to_json_dict() for g in groups],
-    }
-    data_json = json.dumps(root)
-    widget_id = f'icicle-{uuid.uuid4().hex[:8]}'
-    from .icicle_widget import icicle_widget_html
-
-    return icicle_widget_html(widget_id, data_json)
 
 
 # YAML Dump

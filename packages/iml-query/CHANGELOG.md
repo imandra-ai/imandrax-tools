@@ -2,20 +2,24 @@
 
 ## Unreleased
 
-## v0.10.1 - 2026.04-29
+## v0.10.2 - 2026.06.17
+- initial decomp algebra support
+- FIX: decomp req to IML: excessive parenthesis for lift bool
+
+## v0.10.1 - 2026.04.29
 - improve dev CLI
 
-## v0.10.0 - 2026.04-27
+## v0.10.0 - 2026.04.27
 
 - support import module name alias syntax, e.g. `[@@@import Legal, "0illegal.iml"]`
 
-## v0.9.0 - 2026.04-22
+## v0.9.0 - 2026.04.22
 
 - enhance node pretty-print utils
 - various improments
 - minimum CLI for debug usage
 
-## v0.8.0 - 2026.03-23
+## v0.8.0 - 2026.03.23
 
 - add query for type declaration extraction
 

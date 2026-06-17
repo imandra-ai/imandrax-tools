@@ -29,3 +29,9 @@ docs = [
     "iml-query",
     "imandrax-tools",
 ]
+
+[tool.pyright]
+reportMissingTypeStubs = false
+
+[tool.ty.rules]
+invalid-return-type = "ignore"

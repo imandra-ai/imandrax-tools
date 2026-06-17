@@ -6,7 +6,7 @@ from iml_query.processing import (
     insert_decomp_req,
     insert_verify_req,
 )
-from iml_query.processing.decomp import decomp_req_to_top_appl_text
+from iml_query.processing.decomp import DecompReqArgs, Top, iml_of_top
 from iml_query.processing.utils import find_func_definition
 from iml_query.queries import DECOMP_QUERY_SRC, VERIFY_QUERY_SRC
 from iml_query.tree_sitter_utils import (
@@ -16,6 +16,17 @@ from iml_query.tree_sitter_utils import (
     mk_query,
     run_query,
 )
+
+
+def top_of_decomp_args(decomp_args: DecompReqArgs) -> Top:
+    return Top(
+        assuming=decomp_args.get('assuming'),
+        basis=decomp_args.get('basis'),
+        rule_specs=decomp_args.get('rule_specs'),
+        prune=decomp_args.get('prune'),
+        ctx_simp=decomp_args.get('ctx_simp'),
+        lift_bool=decomp_args.get('lift_bool'),
+    )
 
 
 def test_manipualtion_decomp():
@@ -71,8 +82,8 @@ if x = 1 || x = 2 then x + 1 else x - 1
 
     # Decomp request to decomp attribute
     decomp_req_2 = decomp_reqs[1]
-    assert decomp_req_to_top_appl_text(decomp_req_2) == snapshot(
-        'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()'
+    assert iml_of_top(top_of_decomp_args(decomp_req_2)) == snapshot(
+        'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch]; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default ()'
     )
 
     # %%
@@ -85,7 +96,7 @@ if x = 1 || x = 2 then x + 1 else x - 1
     )
 
     # Insert back decomp request using insert_lines
-    top_2 = decomp_req_to_top_appl_text(decomp_reqs[1])
+    top_2 = iml_of_top(top_of_decomp_args(decomp_reqs[1]))
     lines = [f'[@@decomp {top_2}]']
 
     iml3, _tree3 = insert_lines(iml2, tree2, lines=lines, insert_after=5)
@@ -97,7 +108,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch]; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default ()]
 
 
 let simple_branch3 x =
@@ -113,7 +124,7 @@ let simple_branch x =if x = 1 || x = 2 then x + 1 else x - 1
 let f x = x + 1
 
 let simple_branch2  = simple_branch
-[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch] ; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()]
+[@@decomp top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch]; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default ()]
 
 
 let simple_branch3 x =

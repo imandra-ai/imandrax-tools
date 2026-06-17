@@ -29,7 +29,7 @@ test:  ## Run tests
 .PHONY: build
 build:  ## Build
 	rm -rf ./dist/imandrax_api_models-*
-	uv build --no-sources
+	uv build --no-sources -o dist/
 
 .PHONY: test-wheel
 test-wheel:  ## Run tests on wheel
