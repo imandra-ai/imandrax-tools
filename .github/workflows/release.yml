@@ -86,7 +86,7 @@ jobs:
       - uses: astral-sh/setup-uv@v7
 
       - name: Build
-        run: uv build
+        run: uv build -o dist/
         working-directory: ${{ needs.validate.outputs.working-directory }}
 
       - name: Upload build
