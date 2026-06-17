@@ -1,89 +1,89 @@
-# CHANGELOG
+# Changelog
 
-## Unreleased
+## [Unreleased]
 
-## v0.10.2 - 2026.06.17
+## [0.10.2] - 2026-06-17
 - initial decomp algebra support
 - FIX: decomp req to IML: excessive parenthesis for lift bool
 
-## v0.10.1 - 2026.04.29
+## [0.10.1] - 2026-04-29
 - improve dev CLI
 
-## v0.10.0 - 2026.04.27
+## [0.10.0] - 2026-04-27
 
 - support import module name alias syntax, e.g. `[@@@import Legal, "0illegal.iml"]`
 
-## v0.9.0 - 2026.04.22
+## [0.9.0] - 2026-04-22
 
 - enhance node pretty-print utils
 - various improments
 - minimum CLI for debug usage
 
-## v0.8.0 - 2026.03.23
+## [0.8.0] - 2026-03-23
 
 - add query for type declaration extraction
 
-## v0.7.1 - 2026.02.27
+## [0.7.1] - 2026-02-27
 
 - fix: entry file should only strip imports
 
-## v0.7.0 - 2026.02.27
+## [0.7.0] - 2026-02-27
 
 - enhance import statement parsing
 - add multi-file import resolution
 - add top-level APIs for simplified manipulation
 
-## v0.6.0 - 2026.02.24
+## [0.6.0] - 2026-02-24
 
 - added
   - extract attributes attached to VGs
   - qcheck statement parsing
 
-## v0.5.2 - 2025.11.21
+## [0.5.2] - 2025-11-21
 
 - fixed:
   - use instance statement's expression when calculating range
 
-## v0.5.1 - 2025.11.21
+## [0.5.1] - 2025-11-21
 
 - fixed:
   - exclude item attribute when extracting VG source
 
-## v0.5.0 - 2025.11.21
+## [0.5.0] - 2025-11-21
 
 - improved documentations
 - changed:
   - nested measure detection is moved to private repo
   - VG / decomp requests extraction now contains location information
 
-## [v0.4.1] - 2025.11.14
+## [0.4.1] - 2025-11-14
 
 - fixed:
   - incorrect trailing newline insertion
 
-## [v0.4.0] - 2025.10.17
+## [0.4.0] - 2025-10-17
 
 - added:
   - a function to replace, add, or delete a definition
 - changed:
   - query for top level function, recursive function, and all regular functions are consolidated into one query
 
-## [v0.3.4] - 2025.10.13
+## [0.3.4] - 2025-10-13
 
 - fixed:
   - incorrect request insertion when IML code has no trailing newline at the end
 
-## [v0.3.3] - 2025.10.07
+## [0.3.3] - 2025-10-07
 
 - added:
   - detect nested recursive function
 
-## [v0.3.0] - 2025.09.26
+## [0.3.0] - 2025-09-26
 
 - multi-pattern query optimization
 - add types (dataclasses) for captures
 
-## [v0.2.0] - 2025.09.23
+## [0.2.0] - 2025-09-23
 
 - IML code manipulation
   - remove decomp / verify / instance requests from IML code
@@ -94,7 +94,7 @@
   - better test coverage
 - example script
 
-## [v0.1.0] - 2025.09.19
+## [0.1.0] - 2025-09-19
 
 - grammar
 - basic queries
