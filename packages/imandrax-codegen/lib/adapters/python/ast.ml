@@ -101,11 +101,6 @@ let empty_arguments () : arguments =
 (* Constructor APIs
 ==================== *)
 
-(* Type view constructor name to Python type name *)
-let ty_view_constr_name_mapping : (string * string) list =
-  [ "int", "int"; "bool", "bool"; "string", "str"; "real", "float" ]
-;;
-
 (* Create an assign statement from a target (LHS), an optional type annotation, and a value (RHS)
 
 Example:
@@ -215,10 +210,9 @@ let mk_generic_type_annot (name : string) (type_vars : string list) : expr =
 (** Create a dataclass definition statement from its name and rows of fields
 
 Args:
-  - name: The name of the dataclass
-  - base_type_vars: The type variables of the base dataclass
-  - rows :: (string * string) list
-    - (variable_name, type_name) pairs
+  @param name: The name of the dataclass
+  @param base_type_vars: The type variables of the base dataclass
+  @param rows: A list of (variable_name, type_name) pairs
 
 Example:
 - `Foo`, `[A, B]`, `x: int`, `y: str`: |
@@ -301,35 +295,6 @@ let mk_union_def (name : string) (member_types : expr list) : stmt =
   in
   Assign { targets = left_targets; value = right_value; type_comment = None }
 ;;
-
-(* AST for defining types corresponding to variant
-  - Each variant constructor is a dataclass with anonymous fields
-  - The variant is a union of the dataclasses
-
-  Args:
-    - variants: A list of variant constructor name, and types of its arguments
-
-  TODO: this should be deprecated
-*)
-(* let variant_dataclass (name : string) (variants : (string * string list) list) :
-    stmt list =
-  let (variant_names : string list) = List.map fst variants in
-  let (variant_types : expr list) = variant_names |> List.map mk_name_expr in
-  (* Define a single variant constructor as a dataclass *)
-  let def_variant_constructor_as_dataclass (variant : string * string list) :
-      stmt =
-    let name = fst variant in
-    let rows : (string * string list) list =
-      List.mapi
-        (fun i type_name -> ("arg" ^ string_of_int i, [ type_name ]))
-        (snd variant)
-    in
-    mk_dataclass_def name [] rows
-  in
-  let constructor_defs =
-    List.map def_variant_constructor_as_dataclass variants
-  in
-  constructor_defs @ [ mk_union_def name variant_types ] *)
 
 (** Create a defaultdict type annotation from its key and value types *)
 let mk_defaultdict_type_annotation (key_type : string) (value_type : string)
