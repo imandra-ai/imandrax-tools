@@ -1,6 +1,6 @@
 [project]
 name = "iml-query"
-version = "0.10.1"
+version = "0.10.2"
 description = "Tree-sitter based utility for parsing, querying, and manipulating IML (Imandra Model Language)."
 readme = "README.md"
 authors = [
