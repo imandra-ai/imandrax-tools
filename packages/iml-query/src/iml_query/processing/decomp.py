@@ -353,6 +353,8 @@ def _top_of_decomp_attr_payload(
 
 
 class DecompReqArgs(TypedDict, total=False):
+    """Decomp non-composite top expression + body function name."""
+
     name: Required[str]
     assuming: str | None
     basis: list[str] | None

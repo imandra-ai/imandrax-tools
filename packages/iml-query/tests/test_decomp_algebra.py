@@ -27,7 +27,7 @@ class TestIMLOfTop:
             lift_bool='Default',
         )
         assert iml_of_top(t) == snapshot(
-            'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch]; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default () ()'
+            'top ~assuming:[%id simple_branch] ~basis:[[%id simple_branch]; [%id f]] ~rule_specs:[[%id simple_branch]] ~prune:true ~ctx_simp:true ~lift_bool:Default ()'
         )
 
     def test_iml_of_top_only_prune(self):
