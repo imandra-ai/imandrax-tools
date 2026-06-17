@@ -113,7 +113,7 @@ class ImandraXClient(imandrax_api.Client):
     def _trace(self, op: str, **fields: Any) -> Any:
         return _trace_call(op, session_id=_client_session_id(self), **fields)
 
-    def eval_src(  # type: ignore[override]
+    def eval_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         timeout: float | None = None,
@@ -122,7 +122,11 @@ class ImandraXClient(imandrax_api.Client):
             res = super().eval_src(src=src, timeout=timeout)
         return EvalRes.model_validate(res)
 
-    def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override]
+    def typecheck(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        src: str,
+        timeout: float | None = None,
+    ) -> TypecheckRes:
         """
         Typecheck IML code.
 
@@ -144,7 +148,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().typecheck(src=src, timeout=timeout)
         return TypecheckRes.model_validate(res)
 
-    def decompose(  # type: ignore[override]
+    def decompose(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         name: str,
         assuming: str | None = None,
@@ -181,7 +185,7 @@ class ImandraXClient(imandrax_api.Client):
             )
         return DecomposeRes.model_validate(res)
 
-    def verify_src(  # type: ignore[override]
+    def verify_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         hints: str | None = None,
@@ -191,7 +195,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
-    def instance_src(  # type: ignore[override]
+    def instance_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         hints: str | None = None,
@@ -201,7 +205,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
-    def qcheck_src(  # type: ignore[override]
+    def qcheck_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         seed: int | None = None,
@@ -211,7 +215,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().qcheck_src(src=src, seed=seed, timeout=timeout)
         return QCheckRes.model_validate(res)
 
-    def qcheck_name(  # type: ignore[override]
+    def qcheck_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         name: str,
         seed: int | None = None,
@@ -221,7 +225,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().qcheck_name(name=name, seed=seed, timeout=timeout)
         return QCheckRes.model_validate(res)
 
-    def get_decls(  # type: ignore[override]
+    def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         names: list[str],
         timeout: float | None = None,
@@ -230,7 +234,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
-    def list_artifacts(  # type: ignore[override]
+    def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         timeout: float | None = None,
@@ -239,7 +243,7 @@ class ImandraXClient(imandrax_api.Client):
             res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
-    def get_artifact_zip(  # type: ignore[override]
+    def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
@@ -279,7 +283,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
     def _trace(self, op: str, **fields: Any) -> Any:
         return _trace_call(op, session_id=_client_session_id(self), **fields)
 
-    async def eval_src(  # type: ignore[override]
+    async def eval_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         timeout: float | None = None,
@@ -288,7 +292,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().eval_src(src=src, timeout=timeout)
         return EvalRes.model_validate(res)
 
-    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override]
+    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override] # ty: ignore[invalid-method-override]
         """
         Typecheck IML code.
 
@@ -310,7 +314,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().typecheck(src=src, timeout=timeout)
         return TypecheckRes.model_validate(res)
 
-    async def decompose(  # type: ignore[override]
+    async def decompose(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         name: str,
         assuming: str | None = None,
@@ -348,7 +352,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             )
         return DecomposeRes.model_validate(res)
 
-    async def verify_src(  # type: ignore[override]
+    async def verify_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         hints: str | None = None,
@@ -358,7 +362,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
-    async def instance_src(  # type: ignore[override]
+    async def instance_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         hints: str | None = None,
@@ -368,7 +372,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
-    async def get_decls(  # type: ignore[override]
+    async def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         names: list[str],
         timeout: float | None = None,
@@ -377,7 +381,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().get_decls(names=names, timeout=timeout)
         return GetDeclsRes.model_validate(res)
 
-    async def list_artifacts(  # type: ignore[override]
+    async def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         timeout: float | None = None,
@@ -386,7 +390,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
-    async def get_artifact_zip(  # type: ignore[override]
+    async def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
