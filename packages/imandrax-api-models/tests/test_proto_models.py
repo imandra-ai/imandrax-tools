@@ -17,9 +17,9 @@ from imandrax_api_models import (
     GetDeclsRes,
     InstanceRes,
     ModelType,
-    QCheckRes,
     Task,
     TaskKind,
+    TestRes,
     TypecheckRes,
     VerifyRes,
 )
@@ -282,17 +282,17 @@ def test_instance_src(c: Client):
     )
 
 
-def test_qcheck_src(c: Client):
+def test_test_src(c: Client):
     iml = """
     let f = fun x -> x + 1
 
     let g = fun x -> x + 2
     """
-    qcheck_src = 'fun x -> f (g x) - x > 3'
+    test_src = 'fun x -> f (g x) - x > 3'
     _ = c.eval_src(iml)
-    qcheck_res_msg = c.qcheck_src(qcheck_src)
-    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
-    assert qcheck_res.model_dump() == snapshot(
+    test_res_msg = c.qcheck_src(test_src)
+    test_res = TestRes.model_validate(test_res_msg)
+    assert test_res.model_dump() == snapshot(
         {
             'err': None,
             'counter_example': {
@@ -319,7 +319,7 @@ end
     )
 
 
-def test_qcheck_name(c: Client):
+def test_test_name(c: Client):
     iml = """
     let f = fun x -> x + 1
 
@@ -327,13 +327,13 @@ def test_qcheck_name(c: Client):
 
     let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
 
-    qcheck f_g_x_gte_3
+    test f_g_x_gte_3
     """
-    qcheck_name = 'f_g_x_gte_3'
+    test_name = 'f_g_x_gte_3'
     _ = c.eval_src(iml)
-    qcheck_res_msg = c.qcheck_src(qcheck_name)
-    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
-    assert qcheck_res.model_dump() == snapshot(
+    test_res_msg = c.test_name(test_name)
+    test_res = TestRes.model_validate(test_res_msg)
+    assert test_res.model_dump() == snapshot(
         {'err': None, 'counter_example': {'model': None}, 'errors': [], 'task': None}
     )
 
