@@ -215,13 +215,29 @@ class InstanceNameReq(BaseModel):
     hints: str | None = Field(default=None)
 
 
+class TestSrcReq(BaseModel):
+    session: Session | None = Field(default=None)
+    src: str = Field(description='source code')
+    seed: int = Field(description='random seed')
+
+
+class TestNameReq(BaseModel):
+    session: Session | None = Field(default=None)
+    name: str = Field(description='name of the predicate to analyze')
+    seed: int = Field(description='random seed')
+
+
 class QCheckSrcReq(BaseModel):
+    """Deprecated: use `TestSrcReq` instead."""
+
     session: Session | None = Field(default=None)
     src: str = Field(description='source code')
     seed: int = Field(description='random seed')
 
 
 class QCheckNameReq(BaseModel):
+    """Deprecated: use `TestNameReq` instead."""
+
     session: Session | None = Field(default=None)
     name: str = Field(description='name of the predicate to analyze')
     seed: int = Field(description='random seed')
@@ -233,6 +249,10 @@ class Proved(BaseModel):
 
 class Verified_upto(BaseModel):
     msg: str | None = Field(default=None)
+
+
+class Test_ok(BaseModel):
+    pass
 
 
 class Qcheck_ok(BaseModel):
@@ -273,13 +293,18 @@ class PO_Res(BaseModel):
     proof: Proved | None = Field(default=None)
     instance: CounterSat | None = Field(default=None)
     verified_upto: Verified_upto | None = Field(default=None)
-    qcheck_ok: Qcheck_ok | None = Field(default=None)
+    test_ok: Test_ok | None = Field(default=None)
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
     origin: Origin | None = Field(
         default=None, description='where did the task originate?'
     )
+
+    @property
+    def qcheck_ok(self) -> Test_ok | None:
+        """Deprecated: use `test_ok` instead."""
+        return self.test_ok
 
     @model_validator(mode='after')
     def one_of_res(self) -> Self:
@@ -291,14 +316,14 @@ class PO_Res(BaseModel):
                 self.proof,
                 self.instance,
                 self.verified_upto,
-                self.qcheck_ok,
+                self.test_ok,
             ]
             if r is not None
         )
         if sum_of_res != 1:
             raise ValueError(
-                'Exactly one of unknown, err, proof, instance, verified_upto must be '
-                'set'
+                'Exactly one of unknown, err, proof, instance, verified_upto, test_ok '
+                'must be set'
             )
         return self
 
@@ -369,13 +394,33 @@ class VerifyRes(BaseModel):
         return self
 
 
-class QCheckRes(BaseModel):
+class TestRes(BaseModel):
     # oneof res
     err: Empty | None = Field(default=None)
     counter_example: CounterSat | None = Field(default=None)
     # /oneof res
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
+
+    @property
+    def res_type(self) -> Literal['err', 'counter_example']:
+        if self.err is not None:
+            return 'err'
+        elif self.counter_example is not None:
+            return 'counter_example'
+        else:
+            self = cast(Never, self)
+            assert_never(self)
+
+    @property
+    def res(self) -> Empty | CounterSat:
+        if self.err is not None:
+            return self.err
+        elif self.counter_example is not None:
+            return self.counter_example
+        else:
+            self = cast(Never, self)
+            assert_never(self)
 
     @model_validator(mode='after')
     def one_of_res(self) -> Self:
