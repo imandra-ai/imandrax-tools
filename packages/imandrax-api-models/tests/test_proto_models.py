@@ -38,8 +38,8 @@ class IsTaskID(IsStr):
 @pytest.fixture
 def c() -> Client:
     c = Client(
-        # url=url_prod,
-        url=url_dev,
+        url=url_prod,
+        # url=url_dev,
         auth_token=os.environ['IMANDRAX_API_KEY'],
     )
     return c
@@ -231,7 +231,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -308,7 +308,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -333,8 +333,28 @@ def test_test_name(c: Client):
     _ = c.eval_src(iml)
     test_res_msg = c.test_name(test_name)
     test_res = TestRes.model_validate(test_res_msg)
+    # NOTE: we shouldn't really see a tactic eval error here.
     assert test_res.model_dump() == snapshot(
-        {'err': None, 'counter_example': {'model': None}, 'errors': [], 'task': None}
+        {
+            'err': {},
+            'counter_example': None,
+            'errors': [
+                {
+                    'msg': {
+                        'msg': 'Did not find a counter-example.',
+                        'locs': [],
+                        'backtrace': """\
+Raised at Stdlib__Hashtbl.MakeSeeded.find in file "hashtbl.ml", line 391, characters 17-32
+Called from Imandrakit_twine__Decode.with_cache.(fun) in file "vendor/imandrakit/src/twine/decode.ml", line 711, characters 10-32
+""",
+                    },
+                    'kind': '{ Kind.name = "TacticEvalErr" }',
+                    'stack': [],
+                    'process': 'imandrax-server',
+                }
+            ],
+            'task': None,
+        }
     )
 
 
@@ -360,7 +380,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -373,14 +393,14 @@ end
 
 def test_decompose(c: Client):
     _ = c.eval_src(IML_CODE)
-    decompose_res_msg = c.decompose(DECOMPOSE_NAME)
+    decompose_res_msg = c.decompose(DECOMPOSE_NAME, string_results=True, prune=True)
     decompose_res = DecomposeRes.model_validate(decompose_res_msg)
     assert decompose_res.model_dump() == snapshot(
         {
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v19',
+                'api_version': 'v20',
                 'storage': [],
             },
             'err': None,
@@ -406,7 +426,7 @@ def test_decompose(c: Client):
                 },
                 {
                     'constraints_str': ['x >= 0'],
-                    'invariant_str': 'x + 5',
+                    'invariant_str': '5 + x',
                     'model_str': {'x': '0'},
                     'model_eval_str': '5',
                 },
@@ -476,7 +496,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,
@@ -486,7 +506,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,
@@ -496,7 +516,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,

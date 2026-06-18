@@ -123,8 +123,7 @@ def test():
 
     assert (hdr.dumper_func()(hdr_dict_hierarchy)) == snapshot("""\
 summary:
-  n_regions: 8
-  max_depth: 6
+  n_regions: 6
 region_groups:
 - !RegionGroup
   label_path: '1'
@@ -134,6 +133,7 @@ region_groups:
   weight: 2
   n_children_regions: 2
   n_descendant_regions: 2
+  n_leaf_regions: 2
   children:
   - !RegionGroup
     label_path: '1.1'
@@ -144,6 +144,7 @@ region_groups:
     weight: 1
     n_children_regions: 0
     n_descendant_regions: 0
+    n_leaf_regions: 1
     invariant: '6'
     example_input:
       x: '0'
@@ -159,6 +160,7 @@ region_groups:
     weight: 1
     n_children_regions: 0
     n_descendant_regions: 0
+    n_leaf_regions: 1
     invariant: '5'
     example_input:
       x: '0'
@@ -175,6 +177,7 @@ region_groups:
   weight: 1
   n_children_regions: 0
   n_descendant_regions: 0
+  n_leaf_regions: 1
   invariant: '4'
   example_input:
     x: '1'
@@ -190,6 +193,7 @@ region_groups:
   weight: 2
   n_children_regions: 2
   n_descendant_regions: 2
+  n_leaf_regions: 2
   children:
   - !RegionGroup
     label_path: 1.2.3.1.1
@@ -203,6 +207,7 @@ region_groups:
     weight: 1
     n_children_regions: 0
     n_descendant_regions: 0
+    n_leaf_regions: 1
     invariant: '2'
     example_input:
       x: '1'
@@ -221,6 +226,7 @@ region_groups:
     weight: 1
     n_children_regions: 0
     n_descendant_regions: 0
+    n_leaf_regions: 1
     invariant: '1'
     example_input:
       x: '2'
@@ -238,6 +244,7 @@ region_groups:
   weight: 1
   n_children_regions: 0
   n_descendant_regions: 0
+  n_leaf_regions: 1
   invariant: '3'
   example_input:
     x: '1'
@@ -247,8 +254,7 @@ region_groups:
 
     assert (hdr.dumper_func()(hdr_dict_flat)) == snapshot("""\
 summary:
-  n_regions: 8
-  max_depth: 6
+  n_regions: 6
 region_groups:
 - id: '0'
   label_path: '1'
