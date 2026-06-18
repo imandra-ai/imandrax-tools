@@ -13,6 +13,7 @@ jobs:
       pkg-name: ${{ steps.validate.outputs.pkg-name }}
       version: ${{ steps.validate.outputs.version }}
       tag: ${{ steps.validate.outputs.tag }}
+      changelog: ${{ steps.validate.outputs.changelog }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -35,6 +36,19 @@ jobs:
           echo "pkg-name=$pkg_name" >> $GITHUB_OUTPUT
           echo "tag=$tag" >> $GITHUB_OUTPUT
 
+          # Find the previous release tag for THIS package, for the "Full
+          # Changelog" compare link appended to the release body. Tags for
+          # different packages are interleaved in this monorepo, so we must
+          # match the same package prefix rather than rely on whatever tag was
+          # pushed last (which would span the wrong package and date range).
+          prev_tag=$(
+            { git tag --list "${pkg_name}==*"; echo "$tag"; } \
+              | sort -V -u \
+              | grep -B1 -x "$tag" \
+              | head -n1
+          )
+          [ "$prev_tag" = "$tag" ] && prev_tag=""
+
           # Tag push: ensure the pushed git tag matches pyproject.toml version
           # Manual dispatch: ensure the expected tag exists on HEAD
           if [ "${{ github.event_name }}" = "push" ]; then
@@ -49,6 +63,22 @@ jobs:
               exit 1
             fi
           fi
+
+          # Build the release body from this version's CHANGELOG.md section,
+          # appending a same-package "Full Changelog" compare link.
+          compare_url=""
+          if [ -n "$prev_tag" ]; then
+            compare_url="${{ github.server_url }}/${{ github.repository }}/compare/${prev_tag}...${tag}"
+          fi
+          body=$("$GITHUB_WORKSPACE/scripts/release-notes.sh" \
+            --changelog CHANGELOG.md \
+            --version "$version" \
+            --compare-url "$compare_url")
+          {
+            echo "changelog<<__CL_EOF__"
+            printf '%s\n' "$body"
+            echo "__CL_EOF__"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: validate
@@ -188,4 +218,4 @@ jobs:
           tag_name: ${{ needs.validate.outputs.tag }}
           name: ${{ needs.validate.outputs.pkg-name }} ${{ needs.validate.outputs.version }}
           files: packages/imandrax-codegen/dist/*
-          generate_release_notes: true
+          body: ${{ needs.validate.outputs.changelog }}

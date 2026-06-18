@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Manually create a GitHub release for a package, mirroring the CI workflows:
+# the release body is the package's own CHANGELOG.md section for this version
+# (via release-notes.sh), not GitHub's auto-generated notes, which mix every
+# package in this monorepo's shared history.
+#
 # Usage: ./scripts/github-release.sh <working-directory>
 # Example: ./scripts/github-release.sh packages/imandrax-codegen
 
@@ -10,6 +15,7 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKING_DIR="$1"
 
 if [ ! -d "$WORKING_DIR" ]; then
@@ -35,11 +41,33 @@ if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
     exit 1
 fi
 
+# Find the previous release tag for THIS package, for the "Full Changelog"
+# compare link (same-package prefix, not whatever tag was pushed last).
+prev_tag=$(
+  { git tag --list "${package_name}==*"; echo "$tag"; } \
+    | sort -V -u \
+    | grep -B1 -x "$tag" \
+    | head -n1
+)
+[ "$prev_tag" = "$tag" ] && prev_tag=""
+
+compare_url=""
+if [ -n "$prev_tag" ]; then
+    repo_url=$(gh repo view --json url --jq .url)
+    compare_url="${repo_url}/compare/${prev_tag}...${tag}"
+fi
+
+# Build the release body from the package CHANGELOG.md section for this version.
+body=$("$SCRIPT_DIR/release-notes.sh" \
+  --changelog CHANGELOG.md \
+  --version "$version" \
+  --compare-url "$compare_url")
+
 echo ""
 echo "Creating GitHub release..."
 gh release create "$tag" \
   --title "$package_name $version" \
-  --generate-notes \
+  --notes "$body" \
   dist/*
 
 echo "✓ GitHub release created successfully!"
