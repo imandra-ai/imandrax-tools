@@ -8,374 +8,83 @@ Setup: Define helper function
   >    | fence
   > ); }
 
-function
-  $ run_test function.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
-
 function1
   $ run_test function1.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function2
   $ run_test function2.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function3
   $ run_test function3.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function4
   $ run_test function4.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function5
   $ run_test function5.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function6
   $ run_test function6.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 function7
   $ run_test function7.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 GADT_monomorphic
   $ run_test GADT_monomorphic.yaml
-  ```python
-  Error: Expected YAML mapping (object)
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 nested_generics
   $ run_test nested_generics.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class My_ty:
-      arg0: tagged[validated[maybe[identity[int]]]]
-  
-  
-  my_ty = My_ty
-  
-  ```
+  expected output
 
 real_and_option
   $ run_test real_and_option.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
-  @dataclass
-  class my_ty:
-      x: real
-      y: option[int]
-      z: int
-  
-  ```
+  expected output
 
 record_with_composite_type
   $ run_test record_with_composite_type.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
-  @dataclass
-  class shape:
-      circle: option[int]
-  
-  ```
+  expected output
 
 record
   $ run_test record.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class point:
-      x: int
-      y: int
-  
-  ```
+  expected output
 
 tuple_two_int
   $ run_test tuple_two_int.yaml
-  ```python
-  Error: Expected YAML mapping (object)
-  imandrax_codegen error: Input is empty
-  ```
+  expected output
 
 variant_poly_two_var
   $ run_test variant_poly_two_var.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeVar
-  
-  a = TypeVar('a')
-  b = TypeVar('b')
-  
-  
-  @dataclass
-  class Empty:
-      pass
-  
-  
-  @dataclass
-  class Single(Generic[a]):
-      arg0: a
-  
-  
-  @dataclass
-  class Pair(Generic[a, b]):
-      arg0: a
-      arg1: b
-  
-  
-  @dataclass
-  class Labeled(Generic[a, b]):
-      key: a
-      value: b
-  
-  
-  @dataclass
-  class Multi(Generic[a, b]):
-      arg0: list[a]
-      arg1: list[b]
-  
-  
-  container = Empty | Single[a] | Pair[a, b] | Labeled[a, b] | Multi[a, b]
-  
-  ```
+  expected output
 
 variant_poly
   $ run_test variant_poly.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeVar
-  
-  a = TypeVar('a')
-  
-  
-  @dataclass
-  class Point:
-      pass
-  
-  
-  @dataclass
-  class Circle(Generic[a]):
-      arg0: a
-  
-  
-  @dataclass
-  class Rectangle(Generic[a]):
-      arg0: a
-      arg1: a
-  
-  
-  @dataclass
-  class Triangle(Generic[a]):
-      a: a
-      b: a
-      c: a
-  
-  
-  shape_poly = Point | Circle[a] | Rectangle[a] | Triangle[a]
-  
-  ```
+  expected output
 
 variant_recursive
   $ run_test variant_recursive.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class Leaf:
-      arg0: int
-  
-  
-  @dataclass
-  class Node:
-      arg0: tree
-      arg1: tree
-  
-  
-  tree = Leaf | Node
-  
-  ```
+  expected output
 
 variant_simple
   $ run_test variant_simple.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class Red:
-      pass
-  
-  
-  @dataclass
-  class Green:
-      pass
-  
-  
-  @dataclass
-  class Blue:
-      pass
-  
-  
-  color = Red | Green | Blue
-  
-  ```
+  expected output
 
 variant_two
   $ run_test variant_two.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class Circle:
-      arg0: int
-  
-  
-  @dataclass
-  class Polygon:
-      arg0: rect
-  
-  
-  shape = Circle | Polygon
-  
-  ```
+  expected output
 
 variant_with_composite_payload
   $ run_test variant_with_composite_payload.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  from typing import Generic, TypeAlias, TypeVar
-  
-  T = TypeVar('T')
-  
-  
-  @dataclass
-  class Some(Generic[T]):
-      value: T
-  
-  
-  option: TypeAlias = Some[T] | None
-  
-  
-  @dataclass
-  class Circle:
-      arg0: option[int]
-  
-  
-  shape2 = Circle
-  
-  ```
+  expected output
 
 variant_with_payload
   $ run_test variant_with_payload.yaml
-  ```python
-  from __future__ import annotations
-  
-  from dataclasses import dataclass
-  
-  
-  @dataclass
-  class Point:
-      pass
-  
-  
-  @dataclass
-  class Circle:
-      arg0: int
-  
-  
-  @dataclass
-  class Rectangle:
-      arg0: int
-      arg1: int
-  
-  
-  @dataclass
-  class Triangle:
-      a: int
-      b: int
-      c: int
-  
-  
-  shape = Point | Circle | Rectangle | Triangle
-  
-  ```
+  expected output
 

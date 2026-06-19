@@ -6,8 +6,8 @@
    \n\
    \n- invariant: 1\
    \n- constraints:\
-   \n    - not (c = Blue)\
-   \n    - not (c = Green)\
+   \n    - c <> Blue\
+   \n    - c <> Green\
    \n"))
  (Feasible (name test_2) (f_name color_value)
   (f_args ((c (TBase color) (VConstruct (constructor Green) (args ())))))
@@ -18,7 +18,7 @@
    \n- invariant: 2\
    \n- constraints:\
    \n    - c = Green\
-   \n    - not (c = Blue)\
+   \n    - c <> Blue\
    \n"))
  (Feasible (name test_3) (f_name color_value)
   (f_args ((c (TBase color) (VConstruct (constructor Blue) (args ())))))

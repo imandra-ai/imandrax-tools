@@ -69,9 +69,9 @@
    \n\
    \n- invariant: 2\
    \n- constraints:\
-   \n    - not (Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c))\
    \n    - Is_a(Pair, c)\
    \n    - not Is_a(Empty, c)\
+   \n    - Real.of_int (Destruct(Pair, 0, c)) >. Destruct(Pair, 1, c)\
    \n"))
  (Feasible (name test_6) (f_name f)
   (f_args

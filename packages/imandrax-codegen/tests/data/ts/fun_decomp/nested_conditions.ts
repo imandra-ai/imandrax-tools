@@ -4,7 +4,7 @@ const tests = {
     expected: 0
   },
   "test_2": {
-    input: { y: 1, x: 0 },
+    input: { x: 0, y: 1 },
     expected: 1
   },
   "test_3": {

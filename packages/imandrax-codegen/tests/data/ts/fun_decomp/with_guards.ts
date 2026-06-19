@@ -8,15 +8,15 @@ const tests = {
     expected: 0
   },
   "test_3": {
-    input: { y: 1, x: 1 },
+    input: { x: 1, y: 1 },
     expected: 3
   },
   "test_4": {
-    input: { y: 2, x: 1 },
+    input: { x: 1, y: 2 },
     expected: 2
   },
   "test_5": {
-    input: { y: 1, x: 2 },
+    input: { x: 2, y: 1 },
     expected: 1
   }
 };

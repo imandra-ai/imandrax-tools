@@ -49,7 +49,7 @@ gen-fun-decomp-art:
 gen-decl-art:
 	uv run scripts/gen_decl_art
 
-copy-artifacts: copy-model copy-fun-decomp copy-decl  ## Copy artifacts to test data directories
+copy-artifacts: copy-art-model copy-art-fun-decomp copy-art-decl  ## Copy artifacts to test data directories
 
 .PHONY: copy-art-model
 copy-art-model:

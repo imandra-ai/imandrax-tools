@@ -6,6 +6,7 @@
   decomp_kwargs:
     name: f
     prune: true
+    string_results: true
 
 - name: primitive_int
   iml: |
@@ -16,6 +17,7 @@
   decomp_kwargs:
     name: classify_number
     prune: true
+    string_results: true
 
 - name: primitive_bool
   iml: |
@@ -26,6 +28,7 @@
   decomp_kwargs:
     name: bool_logic
     prune: true
+    string_results: true
 
 - name: primitive_real
   iml: |
@@ -37,6 +40,7 @@
   decomp_kwargs:
     name: classify_temp
     prune: true
+    string_results: true
 
 - name: composite_record
   iml: |
@@ -50,6 +54,7 @@
   decomp_kwargs:
     name: distance_category
     prune: true
+    string_results: true
 
 - name: composite_tuple
   iml: |
@@ -60,6 +65,7 @@
   decomp_kwargs:
     name: tuple_compare
     prune: true
+    string_results: true
 
 - name: variant_simple
   iml: |
@@ -73,6 +79,7 @@
   decomp_kwargs:
     name: color_value
     prune: true
+    string_results: true
 
 - name: variant_with_data
   iml: |
@@ -87,6 +94,7 @@
   decomp_kwargs:
     name: area
     prune: true
+    string_results: true
 
 - name: nested_conditions
   iml: |
@@ -100,6 +108,7 @@
   decomp_kwargs:
     name: nested_check
     prune: true
+    string_results: true
 
 - name: multiple_parameters
   iml: |
@@ -111,6 +120,7 @@
   decomp_kwargs:
     name: calculate
     prune: true
+    string_results: true
 
 - name: list_operations
   iml: |
@@ -122,6 +132,7 @@
   decomp_kwargs:
     name: list_check
     prune: true
+    string_results: true
 
 - name: option_type
   iml: |
@@ -132,6 +143,7 @@
   decomp_kwargs:
     name: option_value
     prune: true
+    string_results: true
 
 - name: with_basis
   iml: |
@@ -144,6 +156,7 @@
     name: compute
     prune: true
     basis: [helper]
+    string_results: true
 
 - name: complex_variant_record
   iml: |
@@ -161,6 +174,7 @@
   decomp_kwargs:
     name: process_user
     prune: true
+    string_results: true
 
 - name: with_guards
   iml: |
@@ -172,6 +186,7 @@
   decomp_kwargs:
     name: classify
     prune: true
+    string_results: true
 
 - name: variant_poly
   iml: |
@@ -191,6 +206,7 @@
   decomp_kwargs:
     name: f
     prune: true
+    string_results: true
 
 - name: infeasible_region_in_trivial_forall
   iml: |
@@ -201,3 +217,4 @@
   decomp_kwargs:
     name: check
     prune: true
+    string_results: true

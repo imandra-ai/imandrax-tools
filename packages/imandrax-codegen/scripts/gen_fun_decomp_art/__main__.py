@@ -84,6 +84,14 @@ for item in track(inputs):
     _eval_res = c.eval_src(iml)
     decomp_res = c.decompose(**decomp_kwargs)
 
+    if decomp_res.errors or not decomp_res.artifact.kind:
+        errors_str = '\n'.join(str(e) for e in decomp_res.errors)
+        raise RuntimeError(
+            f'decompose failed for {name!r}: '
+            f'no artifact returned (kind={decomp_res.artifact.kind!r}).\n'
+            f'{errors_str}'
+        )
+
     decomp_res_by_eg.append(proto_to_dict(decomp_res))
     regions = decode_artifact(
         data=decomp_res.artifact.data, kind=decomp_res.artifact.kind

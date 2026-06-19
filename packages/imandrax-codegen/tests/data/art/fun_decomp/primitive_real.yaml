@@ -8,6 +8,7 @@ iml: |
 decomp_kwargs:
   name: classify_temp
   prune: true
+  string_results: true
 regions:
 - model_str:
     temp: '0'
@@ -18,11 +19,11 @@ regions:
 decomp_res:
   artifact:
     kind: mir.fun_decomp
-    data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wayULDyY/L6AmBgYvH/AcACH+qmC6BiRHRlbXD8Yvf/BGP0/wr/GWL2/xRh9GBm8fT/OQEA/z6x+bREdHJ1ZWJKbW9kZWxfZXZhbP8CtER0cnVlYklpbnZhcmlhbnT/AbREdHJ1ZWH2t/JiS2NvbnN0cmFpbnRz/rRBMGJEdGVtcPhh97XyYkVtb2RlbPhk/0D/Lv8Z/rX4YkNzdHL2tv+KAWJEdGVtcPlh97XyYkVtb2RlbPhgsElta19zX2Jvb2yz+2JEYm9vbPfDAvj/CLYBsPJj8voCtvRiSm1vZGVsX2V2YWz9tE8VZTE3N2JiMzUtOGE4OC00NzMwLWFmNDQtMjA1YjQzMmM5OTIzYkJpZP8bZP9s/1n/L/xh/zlk8/89/v/cAWH4Yv+DAv+gAmH3XxGBerX40dzdUMOU1FG/yfIkTvRfm5wJyNeOBbbxOjVERmNNY2xhc3NpZnlfdGVtcP8hAYb/A7LzYk1jbGFzc2lmeV90ZW1w/wFj/wL/P/9KBg==
-    api_version: v18
+    data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wayULDyY/L6AmBgYvH/AcACH/qZAqBiRHRlbXD8Yvf/BGP0/wr/GWL2/xRh9GBm8fT/OQEA/z6x+bREdHJ1ZWJKbW9kZWxfZXZhbP8CtER0cnVlYklpbnZhcmlhbnT/AbREdHJ1ZWH2t/JiS2NvbnN0cmFpbnRz/rRBMGJEdGVtcPhh97XyYkVtb2RlbPhk/0D/Lv8Z/rX4YkNzdHL2tv+KAWJEdGVtcPlh97XyYkVtb2RlbPhgsElta19zX2Jvb2yz+2JEYm9vbPfDAvj/CLYBsPJj8voCtvRiSm1vZGVsX2V2YWz9tE8VNjg1MzM2NGUtNDI1Ni00MDQxLTg4NjItN2U4Y2JlNzY3NzVjYkJpZP8bZP9s/1n/L/xh/zlk8/89/v/cAWH4Yv+DAv+gAmH3XxGBerX40dzdUMOU1FG/yfIkTvRfm5wJyNeOBbbxOjVERmNNY2xhc3NpZnlfdGVtcP8hAYb/A7LzYk1jbGFzc2lmeV90ZW1w/wFj/wL/P/9KBg==
+    api_version: v20
     storage: []
   task:
     id:
-      id: task:decomp:xzCc_XznPv0qhO9O_o920vlIPiiaJuggOY_KPztcheg=
+      id: task:decomp:YaAxQlNJ7lMd8aOK847J9JWJrNv5Om_9iBDJ9VBp150=
     kind: TASK_DECOMP
   errors: []

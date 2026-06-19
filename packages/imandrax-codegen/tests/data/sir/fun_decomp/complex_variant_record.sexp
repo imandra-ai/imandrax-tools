@@ -11,7 +11,7 @@
    \n\
    \n- invariant: (-1)\
    \n- constraints:\
-   \n    - not (u.active = Active)\
+   \n    - u.active <> Active\
    \n"))
  (Feasible (name test_2) (f_name process_user)
   (f_args

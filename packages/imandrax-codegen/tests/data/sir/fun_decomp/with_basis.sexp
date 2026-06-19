@@ -4,7 +4,7 @@
   (docstr
     "test_1\
    \n\
-   \n- invariant: helper (~- x)\
+   \n- invariant: helper ((-1) * x)\
    \n- constraints:\
    \n    - x <= 0\
    \n"))
