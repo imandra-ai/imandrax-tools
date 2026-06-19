@@ -123,7 +123,11 @@ class HumDecomposeRes:
 def hum_of_decomp_res(decomp_res: DecomposeRes) -> HumDecomposeRes:
     if decomp_res.err is None:
         regions = decomp_res.regions_str
-        assert regions is not None
+        if regions is None:
+            raise ValueError(
+                'DecomposeRes has no `regions_str`; humanizing regions requires '
+                'the decomposition to be requested with `string_results=True`.'
+            )
         groups = group_regions(regions)
         return HumDecomposeRes.mk_success(groups)
 

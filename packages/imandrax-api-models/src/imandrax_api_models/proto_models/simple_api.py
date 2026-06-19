@@ -82,9 +82,15 @@ class DecomposeRes(DecomposeResProto):
             return self
         else:
             assert self.artifact is not None, 'artifact must be present when no errors'
-            regions_str = get_region_str_from_decomp_artifact(
-                data=self.artifact.data, kind=self.artifact.kind
-            )
+            # Region string-representations are only embedded in the artifact
+            # meta when the decomposition was requested with
+            # `string_results=True` (since v20).
+            try:
+                regions_str = get_region_str_from_decomp_artifact(
+                    data=self.artifact.data, kind=self.artifact.kind
+                )
+            except AssertionError:
+                return self
             return self.model_copy(update={'regions_str': regions_str})
 
     def __repr__(self) -> str:
