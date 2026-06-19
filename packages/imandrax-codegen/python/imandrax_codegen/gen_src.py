@@ -143,7 +143,18 @@ def gen_test_cases(
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
     #  Decomp
-    decomp_res: DecomposeRes = c.decompose(decomp_name, **other_decomp_kwargs)
+    # Since v20:
+    # - `prune=True` is required to get concrete sample points: only pruned
+    #   (feasibility-checked) regions carry a witness `model`/`model_eval`.
+    #   Without it every region is reported as "feasibility unknown" and no test
+    #   case is generated.
+    # - `string_results=True` is required: the artifact parser (`art-parse`)
+    #   relies on the region string-representations being embedded in the meta.
+    decomp_kwargs: dict[str, Any] = other_decomp_kwargs | {
+        'prune': True,
+        'string_results': True,
+    }
+    decomp_res: DecomposeRes = c.decompose(decomp_name, **decomp_kwargs)
     decomp_art = decomp_res.artifact
     assert decomp_art, 'No artifact returned from decompose'
 
