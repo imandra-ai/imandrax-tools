@@ -11,6 +11,9 @@ from iml_query.processing import (
     insert_instance_req,
 )
 from iml_query.processing.base import find_nested_rec
+from iml_query.processing.test import (
+    test_capture_to_req as capture_to_test_req,
+)
 from iml_query.processing.vg import (
     instance_capture_to_req,
     verify_capture_to_req,
@@ -18,9 +21,11 @@ from iml_query.processing.vg import (
 from iml_query.queries import (
     EVAL_QUERY_SRC,
     INSTANCE_QUERY_SRC,
+    TEST_QUERY_SRC,
     VERIFY_QUERY_SRC,
     EvalCapture,
     InstanceCapture,
+    TestCapture,
     VerifyCapture,
 )
 from iml_query.tree_sitter_utils import (
@@ -100,6 +105,45 @@ instance (
 fun x y ->
     x + y > 0 &&
     x * y < 100\
+""",
+            },
+        ]
+    )
+
+
+def test_test_node_to_req():
+    """Test test_capture_to_req with test statements."""
+    iml = """\
+test (fun x -> x > 0 ==> double x > x)
+
+test double_non_negative_is_increasing [@@by foo]
+
+test (
+  fun xs ys i ->
+    let a, _ = (fulcrum_inner xs ys i) in a >= i
+)
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+    matches = run_query(mk_query(TEST_QUERY_SRC), node=tree.root_node)
+
+    req_and_ranges = [
+        capture_to_test_req(TestCapture.from_ts_capture(capture))
+        for _, capture in matches
+    ]
+    reqs = [req for req, _range in req_and_ranges]
+    assert reqs == snapshot(
+        [
+            {'hints': None, 'src': 'fun x -> x > 0 ==> double x > x'},
+            {
+                'hints': '[@@by foo]',
+                'src': 'double_non_negative_is_increasing',
+            },
+            {
+                'hints': None,
+                'src': """\
+fun xs ys i ->
+    let a, _ = (fulcrum_inner xs ys i) in a >= i\
 """,
             },
         ]
@@ -283,6 +327,7 @@ instance positive_predicate\
                 {'hints': None, 'src': 'fun x -> x > 0'},
                 {'hints': None, 'src': 'positive_predicate'},
             ],
+            'test_req': [],
             'decompose_req': [
                 {'name': 'simple_branch'},
                 {
