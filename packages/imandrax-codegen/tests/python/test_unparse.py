@@ -70,7 +70,7 @@ def test_1():
 
     - invariant: "positive"
     - constraints:
-        - not (p.x + p.y = 0)
+        - p.x + p.y <> 0
         - p.x + p.y >= 1
     """
     result: str = distance_category(p=point(x=0, y=1))
@@ -116,10 +116,10 @@ def test_nested_conditions():
 def test_1():
     """test_1
 
-    - invariant: ~- x + y
+    - invariant: (-1) * x + (-1) * y
     - constraints:
-        - x <= 0
         - y <= 0
+        - x <= 0
     """
     result: int = nested_check(x=0, y=0)
     expected: int = 0
@@ -129,7 +129,7 @@ def test_1():
 def test_2():
     """test_2
 
-    - invariant: y - x
+    - invariant: y + (-1) * x
     - constraints:
         - y >= 1
         - x <= 0
@@ -142,10 +142,10 @@ def test_2():
 def test_3():
     """test_3
 
-    - invariant: x - y
+    - invariant: x + (-1) * y
     - constraints:
-        - x >= 1
         - y <= 0
+        - x >= 1
     """
     result: int = nested_check(x=1, y=0)
     expected: int = 1
@@ -157,8 +157,8 @@ def test_4():
 
     - invariant: x + y
     - constraints:
-        - x >= 1
         - y >= 1
+        - x >= 1
     """
     result: int = nested_check(x=1, y=1)
     expected: int = 2
@@ -254,7 +254,7 @@ def test_1():
 
     - invariant: (-1)
     - constraints:
-        - not (u.active = Active)
+        - u.active <> Active
     """
     result: int = process_user(u=user(id=0, active=Inactive()))
     expected: int = -1
@@ -301,10 +301,10 @@ def test_composite_tuple():
 def test_1():
     """test_1
 
-    - invariant: _x_1_25.1 - _x_1_25.0
+    - invariant: _x_1_25.1 + (-1) * _x_1_25.0
     - constraints:
+        - _x_1_25.0 <> _x_1_25.1
         - _x_1_25.0 <= _x_1_25.1
-        - not (_x_1_25.0 = _x_1_25.1)
     """
     result: int = tuple_compare(_x_1_25=(0, 1))
     expected: int = 1
@@ -327,9 +327,9 @@ def test_2():
 def test_3():
     """test_3
 
-    - invariant: _x_1_25.0 - _x_1_25.1
+    - invariant: _x_1_25.0 + (-1) * _x_1_25.1
     - constraints:
-        - not (_x_1_25.0 <= _x_1_25.1)
+        - _x_1_25.0 > _x_1_25.1
     """
     result: int = tuple_compare(_x_1_25=(0, -1))
     expected: int = 1
@@ -350,7 +350,7 @@ def test_with_basis():
 def test_1():
     """test_1
 
-    - invariant: helper (~- x)
+    - invariant: helper ((-1) * x)
     - constraints:
         - x <= 0
     """
@@ -410,9 +410,9 @@ def test_1():
 
     - invariant: 0
     - constraints:
+        - a <> b
+        - b <> c
         - a <= b
-        - not (a = b)
-        - not (b = c)
     """
     result: int = calculate(a=0, b=1, c=2)
     expected: int = 0
@@ -422,11 +422,11 @@ def test_1():
 def test_2():
     """test_2
 
-    - invariant: b * a
+    - invariant: a * b
     - constraints:
         - b = c
+        - a <> b
         - a <= b
-        - not (a = b)
     """
     result: int = calculate(a=0, b=1, c=1)
     expected: int = 0
@@ -451,10 +451,10 @@ def test_4():
 
     - invariant: 0
     - constraints:
-        - not (a <= b)
+        - a <> b
+        - b <> c
+        - a > b
         - b <= c
-        - not (a = b)
-        - not (b = c)
     """
     result: int = calculate(a=1, b=0, c=1)
     expected: int = 0
@@ -464,12 +464,12 @@ def test_4():
 def test_5():
     """test_5
 
-    - invariant: b * a
+    - invariant: a * b
     - constraints:
-        - not (a <= b)
         - b = c
+        - a <> b
+        - a > b
         - b <= c
-        - not (a = b)
     """
     result: int = calculate(a=0, b=-1, c=-1)
     expected: int = 0
@@ -481,8 +481,8 @@ def test_6():
 
     - invariant: a + b + c
     - constraints:
-        - not (a <= b)
-        - not (b <= c)
+        - a > b
+        - b > c
     """
     result: int = calculate(a=1, b=0, c=-1)
     expected: int = 0
@@ -528,8 +528,8 @@ def test_1():
 
     - invariant: 1
     - constraints:
-        - not (c = Blue)
-        - not (c = Green)
+        - c <> Blue
+        - c <> Green
     """
     result: int = color_value(c=Red())
     expected: int = 1
@@ -542,7 +542,7 @@ def test_2():
     - invariant: 2
     - constraints:
         - c = Green
-        - not (c = Blue)
+        - c <> Blue
     """
     result: int = color_value(c=Green())
     expected: int = 2
@@ -589,7 +589,7 @@ option: TypeAlias = Some[T] | None
 def test_1():
     """test_1
 
-    - invariant: ~- Option.get opt
+    - invariant: (-1) * Option.get opt
     - constraints:
         - not Is_a(None, opt)
         - Option.get opt <= 0
@@ -638,7 +638,7 @@ def test_basic():
 def test_1():
     """test_1
 
-    - invariant: x + 2
+    - invariant: 2 + x
     - constraints:
         - x >= 1
     """
@@ -763,8 +763,8 @@ def test_3():
 
     - invariant: 3
     - constraints:
-        - x <= y
         - y <= x
+        - x <= y
         - x >= 1
         - y >= 1
     """
@@ -778,7 +778,7 @@ def test_4():
 
     - invariant: 2
     - constraints:
-        - not (y <= x)
+        - y > x
         - x <= y
         - x >= 1
         - y >= 1
@@ -793,7 +793,7 @@ def test_5():
 
     - invariant: 1
     - constraints:
-        - not (x <= y)
+        - x > y
         - x >= 1
         - y >= 1
     """
@@ -872,7 +872,7 @@ def test_1():
 
     - invariant: 1
     - constraints:
-        - not (x = 0)
+        - x <> 0
         - x >= 1
     """
     result: int = classify_number(x=1)

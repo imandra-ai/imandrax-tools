@@ -12,7 +12,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "imandrax-api-models>=20,<21",
     "imandrax-api[async]>=0.20,<0.21",
-    "iml-query>=0.8",
+    "iml-query>=0.11",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
@@ -33,7 +33,7 @@ dev = [
 package = true
 
 [tool.uv.sources]
-# iml-query = { path = "../iml-query", editable = true }
+iml-query = { path = "../iml-query", editable = true }
 imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
 
