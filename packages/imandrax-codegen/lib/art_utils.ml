@@ -178,13 +178,13 @@ let%expect_test _ =
     applied_symbol;
   [%expect
     {|
-    Applied symbol: { sym.id = w/69277;
-                      args = [{ view = (Var a/69276);
+    Applied symbol: { sym.id = w/32364;
+                      args = [{ view = (Var a/32363);
                                 generation = 1 }];
                       ty =
                         { view =
                             (Constr
-                              (list,[{ view = (Var a/69276);
+                              (list,[{ view = (Var a/32363);
                                        generation = 1 }]));
                           generation = 1 } }
     |}];
@@ -235,7 +235,7 @@ let%expect_test _ =
     applied_symbol;
   [%expect
     {|
-    Applied symbol: { sym.id = w/69260;
+    Applied symbol: { sym.id = w/32347;
                       args = [];
                       ty =
                         { view =
@@ -296,14 +296,14 @@ let%expect_test _ =
     applied_symbol;
   [%expect
     {|
-    Applied symbol: { sym.id = w/69694;
-                      args = [{ view = (Var a/69693);
+    Applied symbol: { sym.id = w/32755;
+                      args = [{ view = (Var a/32754);
                                 generation = 5 }];
                       ty =
                         { view =
                             (Constr
                               (Map.t,
-                               [{ view = (Var a/69693);
+                               [{ view = (Var a/32754);
                                   generation = 5 };
                                 { view = (Constr (bool,[]));
                                   generation = 5 }]));
