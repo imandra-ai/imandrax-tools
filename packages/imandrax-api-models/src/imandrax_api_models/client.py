@@ -154,17 +154,12 @@ class ImandraXClient(imandrax_api.Client):
         assuming: str | None = None,
         basis: list[str] | None = None,
         rule_specs: list[str] | None = None,
-        prune: bool | None = True,
+        prune: bool | None = None,
         ctx_simp: bool | None = None,
         lift_bool: Any | None = None,
         timeout: float | None = None,
-        str: bool | None = True,
+        string_results: bool | None = None,
     ) -> DecomposeRes:
-        if basis is None:
-            basis = []
-        if rule_specs is None:
-            rule_specs = []
-
         with self._trace(
             'decompose',
             name=name,
@@ -181,7 +176,7 @@ class ImandraXClient(imandrax_api.Client):
                 ctx_simp=ctx_simp,
                 lift_bool=lift_bool,
                 timeout=timeout,
-                string_results=str,
+                string_results=string_results,
             )
         return DecomposeRes.model_validate(res)
 
@@ -320,17 +315,12 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         assuming: str | None = None,
         basis: list[str] | None = None,
         rule_specs: list[str] | None = None,
-        prune: bool | None = True,
+        prune: bool | None = None,
         ctx_simp: bool | None = None,
         lift_bool: Any | None = None,
         timeout: float | None = None,
-        str: bool | None = True,
+        string_results: bool | None = None,
     ) -> DecomposeRes:
-        if basis is None:
-            basis = []
-        if rule_specs is None:
-            rule_specs = []
-
         with self._trace(
             'decompose',
             name=name,
@@ -348,7 +338,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 ctx_simp=ctx_simp,
                 lift_bool=lift_bool,
                 timeout=timeout,
-                string_results=str,
+                string_results=string_results,
             )
         return DecomposeRes.model_validate(res)
 
