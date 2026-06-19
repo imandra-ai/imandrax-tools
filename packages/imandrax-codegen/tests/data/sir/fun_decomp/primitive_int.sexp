@@ -6,7 +6,7 @@
    \n\
    \n- invariant: 1\
    \n- constraints:\
-   \n    - not (x = 0)\
+   \n    - x <> 0\
    \n    - x >= 1\
    \n"))
  (Feasible (name test_2) (f_name classify_number)

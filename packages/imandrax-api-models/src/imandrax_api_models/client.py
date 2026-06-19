@@ -39,7 +39,7 @@ from imandrax_api_models import (
     EvalRes,
     GetDeclsRes,
     InstanceRes,
-    QCheckRes,
+    TestRes,
     TypecheckRes,
     VerifyRes,
 )
@@ -154,17 +154,12 @@ class ImandraXClient(imandrax_api.Client):
         assuming: str | None = None,
         basis: list[str] | None = None,
         rule_specs: list[str] | None = None,
-        prune: bool | None = True,
+        prune: bool | None = None,
         ctx_simp: bool | None = None,
         lift_bool: Any | None = None,
         timeout: float | None = None,
-        str: bool | None = True,
+        string_results: bool | None = None,
     ) -> DecomposeRes:
-        if basis is None:
-            basis = []
-        if rule_specs is None:
-            rule_specs = []
-
         with self._trace(
             'decompose',
             name=name,
@@ -181,7 +176,7 @@ class ImandraXClient(imandrax_api.Client):
                 ctx_simp=ctx_simp,
                 lift_bool=lift_bool,
                 timeout=timeout,
-                str=str,
+                string_results=string_results,
             )
         return DecomposeRes.model_validate(res)
 
@@ -205,25 +200,25 @@ class ImandraXClient(imandrax_api.Client):
             res = super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
-    def qcheck_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
+    def test_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         seed: int | None = None,
         timeout: float | None = None,
-    ) -> QCheckRes:
-        with self._trace('qcheck_src', src=src, seed=seed, timeout=timeout):
-            res = super().qcheck_src(src=src, seed=seed, timeout=timeout)
-        return QCheckRes.model_validate(res)
+    ) -> TestRes:
+        with self._trace('test_src', src=src, seed=seed, timeout=timeout):
+            res = super().test_src(src=src, seed=seed, timeout=timeout)
+        return TestRes.model_validate(res)
 
-    def qcheck_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
+    def test_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         name: str,
         seed: int | None = None,
         timeout: float | None = None,
-    ) -> QCheckRes:
-        with self._trace('qcheck_name', name=name, seed=seed, timeout=timeout):
-            res = super().qcheck_name(name=name, seed=seed, timeout=timeout)
-        return QCheckRes.model_validate(res)
+    ) -> TestRes:
+        with self._trace('test_name', name=name, seed=seed, timeout=timeout):
+            res = super().test_name(name=name, seed=seed, timeout=timeout)
+        return TestRes.model_validate(res)
 
     def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
@@ -320,17 +315,12 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         assuming: str | None = None,
         basis: list[str] | None = None,
         rule_specs: list[str] | None = None,
-        prune: bool | None = True,
+        prune: bool | None = None,
         ctx_simp: bool | None = None,
         lift_bool: Any | None = None,
         timeout: float | None = None,
-        str: bool | None = True,
+        string_results: bool | None = None,
     ) -> DecomposeRes:
-        if basis is None:
-            basis = []
-        if rule_specs is None:
-            rule_specs = []
-
         with self._trace(
             'decompose',
             name=name,
@@ -348,7 +338,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 ctx_simp=ctx_simp,
                 lift_bool=lift_bool,
                 timeout=timeout,
-                str=str,
+                string_results=string_results,
             )
         return DecomposeRes.model_validate(res)
 
@@ -371,6 +361,31 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         with self._trace('instance_src', src=src, hints=hints, timeout=timeout):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
+
+    async def test_src(
+        self,
+        src: str,
+        seed: int | None = None,
+        timeout: float | None = None,
+    ) -> TestRes:
+        # TODO: the upstream async client only exposes the deprecated `qcheck_src`
+        # wrapper, which calls the server-side `qcheck_src` rpc (an alias of
+        # `test_src`) and returns a `TestRes`.
+        with self._trace('test_src', src=src, seed=seed, timeout=timeout):
+            res = await super().qcheck_src(src=src, seed=seed, timeout=timeout)
+        return TestRes.model_validate(res)
+
+    async def test_name(
+        self,
+        name: str,
+        seed: int | None = None,
+        timeout: float | None = None,
+    ) -> TestRes:
+        # TODO: see `test_src` above re: the upstream async client only exposing
+        # the deprecated `qcheck_name` wrapper.
+        with self._trace('test_name', name=name, seed=seed, timeout=timeout):
+            res = await super().qcheck_name(name=name, seed=seed, timeout=timeout)
+        return TestRes.model_validate(res)
 
     async def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,

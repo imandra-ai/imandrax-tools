@@ -16,6 +16,6 @@ get_decls_res:
     artifact:
       kind: mir.decl
       data: YF8Rb3EDduPBruW2iDiWhTH6G72f6NMLBDYAG4+DMIPHYutjQ1JlZP8XAIb4svJiQ1JlZPZk9gL/KAJgXxG3eOJ39zpVDm8ez2hhdSMWBu1MEknT5jSba4yGqBdb/2NFR3JlZW7/GQCG+rLyYkVHcmVlbvhk+AL/LAJgXxFdznd9zB+YjLasQYtMrnMVlF+nD6/mboBeFEuvPi1vNmNEQmx1Zf8YAIb5svJiREJsdWX3ZPcC/yoCY/9z/zb6sPZgXxEXhI8MTawqXGAsK+4jKAnde73+toBFmbk1eUVZt0Y0X2NFY29sb3L/GQGG+rLyYkVjb2xvcvhl+P8r/y8CArH4AQ==
-      api_version: v18
+      api_version: v20
       storage: []
   not_found: []

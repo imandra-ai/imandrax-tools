@@ -6,10 +6,10 @@
   (docstr
     "test_1\
    \n\
-   \n- invariant: _x_1_25.1 - _x_1_25.0\
+   \n- invariant: _x_1_25.1 + (-1) * _x_1_25.0\
    \n- constraints:\
+   \n    - _x_1_25.0 <> _x_1_25.1\
    \n    - _x_1_25.0 <= _x_1_25.1\
-   \n    - not (_x_1_25.0 = _x_1_25.1)\
    \n"))
  (Feasible (name test_2) (f_name tuple_compare)
   (f_args
@@ -32,7 +32,7 @@
   (docstr
     "test_3\
    \n\
-   \n- invariant: _x_1_25.0 - _x_1_25.1\
+   \n- invariant: _x_1_25.0 + (-1) * _x_1_25.1\
    \n- constraints:\
-   \n    - not (_x_1_25.0 <= _x_1_25.1)\
+   \n    - _x_1_25.0 > _x_1_25.1\
    \n")))

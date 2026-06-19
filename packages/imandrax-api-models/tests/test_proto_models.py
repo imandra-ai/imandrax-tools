@@ -17,9 +17,9 @@ from imandrax_api_models import (
     GetDeclsRes,
     InstanceRes,
     ModelType,
-    QCheckRes,
     Task,
     TaskKind,
+    TestRes,
     TypecheckRes,
     VerifyRes,
 )
@@ -38,8 +38,8 @@ class IsTaskID(IsStr):
 @pytest.fixture
 def c() -> Client:
     c = Client(
-        # url=url_prod,
-        url=url_dev,
+        url=url_prod,
+        # url=url_dev,
         auth_token=os.environ['IMANDRAX_API_KEY'],
     )
     return c
@@ -231,7 +231,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -282,17 +282,17 @@ def test_instance_src(c: Client):
     )
 
 
-def test_qcheck_src(c: Client):
+def test_test_src(c: Client):
     iml = """
     let f = fun x -> x + 1
 
     let g = fun x -> x + 2
     """
-    qcheck_src = 'fun x -> f (g x) - x > 3'
+    test_src = 'fun x -> f (g x) - x > 3'
     _ = c.eval_src(iml)
-    qcheck_res_msg = c.qcheck_src(qcheck_src)
-    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
-    assert qcheck_res.model_dump() == snapshot(
+    test_res_msg = c.qcheck_src(test_src)
+    test_res = TestRes.model_validate(test_res_msg)
+    assert test_res.model_dump() == snapshot(
         {
             'err': None,
             'counter_example': {
@@ -308,7 +308,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -319,7 +319,7 @@ end
     )
 
 
-def test_qcheck_name(c: Client):
+def test_test_name(c: Client):
     iml = """
     let f = fun x -> x + 1
 
@@ -327,14 +327,34 @@ def test_qcheck_name(c: Client):
 
     let f_g_x_gte_3 = fun x -> f (g x) - x >= 3
 
-    qcheck f_g_x_gte_3
+    test f_g_x_gte_3
     """
-    qcheck_name = 'f_g_x_gte_3'
+    test_name = 'f_g_x_gte_3'
     _ = c.eval_src(iml)
-    qcheck_res_msg = c.qcheck_src(qcheck_name)
-    qcheck_res = QCheckRes.model_validate(qcheck_res_msg)
-    assert qcheck_res.model_dump() == snapshot(
-        {'err': None, 'counter_example': {'model': None}, 'errors': [], 'task': None}
+    test_res_msg = c.test_name(test_name)
+    test_res = TestRes.model_validate(test_res_msg)
+    # NOTE: we shouldn't really see a tactic eval error here.
+    assert test_res.model_dump() == snapshot(
+        {
+            'err': {},
+            'counter_example': None,
+            'errors': [
+                {
+                    'msg': {
+                        'msg': 'Did not find a counter-example.',
+                        'locs': [],
+                        'backtrace': """\
+Raised at Stdlib__Hashtbl.MakeSeeded.find in file "hashtbl.ml", line 391, characters 17-32
+Called from Imandrakit_twine__Decode.with_cache.(fun) in file "vendor/imandrakit/src/twine/decode.ml", line 711, characters 10-32
+""",
+                    },
+                    'kind': '{ Kind.name = "TacticEvalErr" }',
+                    'stack': [],
+                    'process': 'imandrax-server',
+                }
+            ],
+            'task': None,
+        }
     )
 
 
@@ -360,7 +380,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                 }
@@ -373,14 +393,14 @@ end
 
 def test_decompose(c: Client):
     _ = c.eval_src(IML_CODE)
-    decompose_res_msg = c.decompose(DECOMPOSE_NAME)
+    decompose_res_msg = c.decompose(DECOMPOSE_NAME, string_results=True, prune=True)
     decompose_res = DecomposeRes.model_validate(decompose_res_msg)
     assert decompose_res.model_dump() == snapshot(
         {
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v19',
+                'api_version': 'v20',
                 'storage': [],
             },
             'err': None,
@@ -406,7 +426,7 @@ def test_decompose(c: Client):
                 },
                 {
                     'constraints_str': ['x >= 0'],
-                    'invariant_str': 'x + 5',
+                    'invariant_str': '5 + x',
                     'model_str': {'x': '0'},
                     'model_eval_str': '5',
                 },
@@ -476,7 +496,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,
@@ -486,7 +506,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,
@@ -496,7 +516,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v19',
+                        'api_version': 'v20',
                         'storage': [],
                     },
                     'str': None,

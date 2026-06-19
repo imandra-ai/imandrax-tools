@@ -88,7 +88,7 @@ let%expect_test "nested_conditions" =
         expected: 0
       },
       "test_2": {
-        input: { y: 1, x: 0 },
+        input: { x: 0, y: 1 },
         expected: 1
       },
       "test_3": {
@@ -302,15 +302,15 @@ let%expect_test "with_guards" =
         expected: 0
       },
       "test_3": {
-        input: { y: 1, x: 1 },
+        input: { x: 1, y: 1 },
         expected: 3
       },
       "test_4": {
-        input: { y: 2, x: 1 },
+        input: { x: 1, y: 2 },
         expected: 2
       },
       "test_5": {
-        input: { y: 1, x: 2 },
+        input: { x: 2, y: 1 },
         expected: 1
       }
     };
@@ -357,27 +357,27 @@ let%expect_test "multiple_parameters" =
     {|
     const tests = {
       "test_1": {
-        input: { b: 1, c: 2, a: 0 },
+        input: { a: 0, b: 1, c: 2 },
         expected: 0
       },
       "test_2": {
-        input: { a: 0, c: 1, b: 1 },
+        input: { a: 0, b: 1, c: 1 },
         expected: 0
       },
       "test_3": {
-        input: { b: 0, a: 0, c: 0 },
+        input: { a: 0, b: 0, c: 0 },
         expected: 0
       },
       "test_4": {
-        input: { b: 0, a: 1, c: 1 },
+        input: { a: 1, b: 0, c: 1 },
         expected: 0
       },
       "test_5": {
-        input: { a: 0, c: -1, b: -1 },
+        input: { a: 0, b: -1, c: -1 },
         expected: 0
       },
       "test_6": {
-        input: { a: 1, c: -1, b: 0 },
+        input: { a: 1, b: 0, c: -1 },
         expected: 0
       }
     };

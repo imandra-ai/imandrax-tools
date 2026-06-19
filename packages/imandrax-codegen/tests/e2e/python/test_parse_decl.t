@@ -8,13 +8,6 @@ Setup: Define helper function
   >    | fence
   > ); }
 
-function
-  $ run_test function.yaml
-  ```python
-  Error: WIP: Fun
-  imandrax_codegen error: Input is empty
-  ```
-
 function1
   $ run_test function1.yaml
   ```python

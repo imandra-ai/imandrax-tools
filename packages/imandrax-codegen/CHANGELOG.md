@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.0.0] - 2026-06-19
+
+- Bump imandrax-api version to v0.20
+
 ## [19.0.0] - 2026-03-25
 
 - imandrax-api update: qcheck

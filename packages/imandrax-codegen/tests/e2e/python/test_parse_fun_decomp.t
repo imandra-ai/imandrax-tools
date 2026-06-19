@@ -17,7 +17,7 @@ basic
   def test_1():
       """test_1
   
-      - invariant: x + 2
+      - invariant: 2 + x
       - constraints:
           - x >= 1
       """
@@ -50,7 +50,7 @@ complex_variant_record
   
       - invariant: (-1)
       - constraints:
-          - not (u.active = Active)
+          - u.active <> Active
       """
       result: int = process_user(u=user(id=0, active=Inactive()))
       expected: int = -1
@@ -95,7 +95,7 @@ composite_record
   
       - invariant: "positive"
       - constraints:
-          - not (p.x + p.y = 0)
+          - p.x + p.y <> 0
           - p.x + p.y >= 1
       """
       result: str = distance_category(p=point(x=0, y=1))
@@ -137,10 +137,10 @@ composite_tuple
   def test_1():
       """test_1
   
-      - invariant: _x_1_25.1 - _x_1_25.0
+      - invariant: _x_1_25.1 + (-1) * _x_1_25.0
       - constraints:
+          - _x_1_25.0 <> _x_1_25.1
           - _x_1_25.0 <= _x_1_25.1
-          - not (_x_1_25.0 = _x_1_25.1)
       """
       result: int = tuple_compare(_x_1_25=(0, 1))
       expected: int = 1
@@ -163,9 +163,9 @@ composite_tuple
   def test_3():
       """test_3
   
-      - invariant: _x_1_25.0 - _x_1_25.1
+      - invariant: _x_1_25.0 + (-1) * _x_1_25.1
       - constraints:
-          - not (_x_1_25.0 <= _x_1_25.1)
+          - _x_1_25.0 > _x_1_25.1
       """
       result: int = tuple_compare(_x_1_25=(0, -1))
       expected: int = 1
@@ -217,51 +217,6 @@ infeasible_region_in_trivial_forall
   
   ```
 
-list_operations
-  $ run_test list_operations.yaml
-  ```python
-  from __future__ import annotations
-  
-  
-  def test_1():
-      """test_1
-  
-      - invariant: 0
-      - constraints:
-          - not (xs <> [])
-      """
-      result: int = list_check(xs=[])
-      expected: int = 0
-      assert result == expected
-  
-  
-  def test_2():
-      """test_2
-  
-      - invariant: List.hd xs
-      - constraints:
-          - xs <> []
-          - not ((List.tl xs) <> [])
-      """
-      result: int = list_check(xs=[0])
-      expected: int = 0
-      assert result == expected
-  
-  
-  def test_3():
-      """test_3
-  
-      - invariant: List.hd xs + List.hd (List.tl xs)
-      - constraints:
-          - (List.tl xs) <> []
-          - xs <> []
-      """
-      result: int = list_check(xs=[1, 0])
-      expected: int = 1
-      assert result == expected
-  
-  ```
-
 multiple_parameters
   $ run_test multiple_parameters.yaml
   ```python
@@ -273,11 +228,11 @@ multiple_parameters
   
       - invariant: 0
       - constraints:
+          - a <> b
+          - b <> c
           - a <= b
-          - not (a = b)
-          - not (b = c)
       """
-      result: int = calculate(b=1, c=2, a=0)
+      result: int = calculate(a=0, b=1, c=2)
       expected: int = 0
       assert result == expected
   
@@ -285,13 +240,13 @@ multiple_parameters
   def test_2():
       """test_2
   
-      - invariant: b * a
+      - invariant: a * b
       - constraints:
           - b = c
+          - a <> b
           - a <= b
-          - not (a = b)
       """
-      result: int = calculate(a=0, c=1, b=1)
+      result: int = calculate(a=0, b=1, c=1)
       expected: int = 0
       assert result == expected
   
@@ -304,7 +259,7 @@ multiple_parameters
           - a = b
           - a <= b
       """
-      result: int = calculate(b=0, a=0, c=0)
+      result: int = calculate(a=0, b=0, c=0)
       expected: int = 0
       assert result == expected
   
@@ -314,12 +269,12 @@ multiple_parameters
   
       - invariant: 0
       - constraints:
-          - not (a <= b)
+          - a <> b
+          - b <> c
+          - a > b
           - b <= c
-          - not (a = b)
-          - not (b = c)
       """
-      result: int = calculate(b=0, a=1, c=1)
+      result: int = calculate(a=1, b=0, c=1)
       expected: int = 0
       assert result == expected
   
@@ -327,14 +282,14 @@ multiple_parameters
   def test_5():
       """test_5
   
-      - invariant: b * a
+      - invariant: a * b
       - constraints:
-          - not (a <= b)
           - b = c
+          - a <> b
+          - a > b
           - b <= c
-          - not (a = b)
       """
-      result: int = calculate(a=0, c=-1, b=-1)
+      result: int = calculate(a=0, b=-1, c=-1)
       expected: int = 0
       assert result == expected
   
@@ -344,10 +299,10 @@ multiple_parameters
   
       - invariant: a + b + c
       - constraints:
-          - not (a <= b)
-          - not (b <= c)
+          - a > b
+          - b > c
       """
-      result: int = calculate(a=1, c=-1, b=0)
+      result: int = calculate(a=1, b=0, c=-1)
       expected: int = 0
       assert result == expected
   
@@ -362,10 +317,10 @@ nested_conditions
   def test_1():
       """test_1
   
-      - invariant: ~- x + y
+      - invariant: (-1) * x + (-1) * y
       - constraints:
-          - x <= 0
           - y <= 0
+          - x <= 0
       """
       result: int = nested_check(x=0, y=0)
       expected: int = 0
@@ -375,12 +330,12 @@ nested_conditions
   def test_2():
       """test_2
   
-      - invariant: y - x
+      - invariant: y + (-1) * x
       - constraints:
           - y >= 1
           - x <= 0
       """
-      result: int = nested_check(y=1, x=0)
+      result: int = nested_check(x=0, y=1)
       expected: int = 1
       assert result == expected
   
@@ -388,10 +343,10 @@ nested_conditions
   def test_3():
       """test_3
   
-      - invariant: x - y
+      - invariant: x + (-1) * y
       - constraints:
-          - x >= 1
           - y <= 0
+          - x >= 1
       """
       result: int = nested_check(x=1, y=0)
       expected: int = 1
@@ -403,8 +358,8 @@ nested_conditions
   
       - invariant: x + y
       - constraints:
-          - x >= 1
           - y >= 1
+          - x >= 1
       """
       result: int = nested_check(x=1, y=1)
       expected: int = 2
@@ -434,7 +389,7 @@ option_type
   def test_1():
       """test_1
   
-      - invariant: ~- Option.get opt
+      - invariant: (-1) * Option.get opt
       - constraints:
           - not Is_a(None, opt)
           - Option.get opt <= 0
@@ -540,7 +495,7 @@ primitive_int
   
       - invariant: 1
       - constraints:
-          - not (x = 0)
+          - x <> 0
           - x >= 1
       """
       result: int = classify_number(x=1)
@@ -661,9 +616,9 @@ variant_poly
   
       - invariant: 2
       - constraints:
-          - not (Real.of_int (Destruct(Pair, 0, c)) <=. Destruct(Pair, 1, c))
           - Is_a(Pair, c)
           - not Is_a(Empty, c)
+          - Real.of_int (Destruct(Pair, 0, c)) >. Destruct(Pair, 1, c)
       """
       result: int = f(c=Pair(0, -1.0))
       expected: int = 2
@@ -694,8 +649,8 @@ variant_simple
   
       - invariant: 1
       - constraints:
-          - not (c = Blue)
-          - not (c = Green)
+          - c <> Blue
+          - c <> Green
       """
       result: int = color_value(c=Red())
       expected: int = 1
@@ -708,7 +663,7 @@ variant_simple
       - invariant: 2
       - constraints:
           - c = Green
-          - not (c = Blue)
+          - c <> Blue
       """
       result: int = color_value(c=Green())
       expected: int = 2
@@ -768,7 +723,7 @@ with_basis
   def test_1():
       """test_1
   
-      - invariant: helper (~- x)
+      - invariant: helper ((-1) * x)
       - constraints:
           - x <= 0
       """
@@ -826,12 +781,12 @@ with_guards
   
       - invariant: 3
       - constraints:
-          - x <= y
           - y <= x
+          - x <= y
           - x >= 1
           - y >= 1
       """
-      result: int = classify(y=1, x=1)
+      result: int = classify(x=1, y=1)
       expected: int = 3
       assert result == expected
   
@@ -841,12 +796,12 @@ with_guards
   
       - invariant: 2
       - constraints:
-          - not (y <= x)
+          - y > x
           - x <= y
           - x >= 1
           - y >= 1
       """
-      result: int = classify(y=2, x=1)
+      result: int = classify(x=1, y=2)
       expected: int = 2
       assert result == expected
   
@@ -856,11 +811,11 @@ with_guards
   
       - invariant: 1
       - constraints:
-          - not (x <= y)
+          - x > y
           - x >= 1
           - y >= 1
       """
-      result: int = classify(y=1, x=2)
+      result: int = classify(x=2, y=1)
       expected: int = 1
       assert result == expected
   

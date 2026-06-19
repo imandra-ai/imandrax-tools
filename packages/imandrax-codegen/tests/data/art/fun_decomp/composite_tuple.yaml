@@ -7,14 +7,15 @@ iml: |
 decomp_kwargs:
   name: tuple_compare
   prune: true
+  string_results: true
 regions:
 - model_str:
     _x_1_25: (0, 1)
   model_eval_str: '1'
-  invariant_str: _x_1_25.1 - _x_1_25.0
+  invariant_str: _x_1_25.1 + (-1) * _x_1_25.0
   constraints_str:
+  - _x_1_25.0 <> _x_1_25.1
   - _x_1_25.0 <= _x_1_25.1
-  - not (_x_1_25.0 = _x_1_25.1)
 - model_str:
     _x_1_25: (0, 0)
   model_eval_str: '0'
@@ -25,17 +26,17 @@ regions:
 - model_str:
     _x_1_25: (0, (-1))
   model_eval_str: '1'
-  invariant_str: _x_1_25.0 - _x_1_25.1
+  invariant_str: _x_1_25.0 + (-1) * _x_1_25.1
   constraints_str:
-  - not (_x_1_25.0 <= _x_1_25.1)
+  - _x_1_25.0 > _x_1_25.1
 decomp_res:
   artifact:
     kind: mir.fun_decomp
-    data: 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
-    api_version: v18
+    data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wZi9fay87JQsPJj8v8AArJYAgAAAAAAAACw+mPy/xECYv8H97j0Y/L/FAJgYGLx/xvAAh+nmgKgYkdfeF8xXzI1/wBi+/8IY/T/Dv83Yvb/GWH0YGbx9P9fAQD/ZLH5tEExYkptb2RlbF9ldmFs/rRPDV94XzFfMjUuMSArICgtMSkgKiBfeF8xXzI1LjBiSWludmFyaWFudP8atE8HX3hfMV8yNS4wIDw+IF94XzFfMjUuMbRPB194XzFfMjUuMCA8PSBfeF8xXzI1LjFi/yP/DLf1Yktjb25zdHJhaW50c/60RigwLCAxKWJHX3hfMV8yNf8BYfu18mJFbW9kZWz4ZP+QAf9n/yP/ALX6YkNzdHL2tv/eAWJHX3hfMV8yNfxh+rXyYkVtb2RlbPi2/4MCYkptb2RlbF9ldmFs/wC0TxVkMjJlY2Q4OC1jYmI0LTQ4ZmUtYjA5Mi1kNTgwZDc4NDhjZTJiQmlk/xtk/1D/Ov8w/GL/rQL/5AKz92Py/+sCAsoCEfhj9P/9AgKyWAMAAAAAAAAAsPpj8v+PAwLKAhD/FWP1/5oDAmL/AvjBAwL/pQP/qAPBAwL/rgP+YGBi8fqwSG1rX2lfbXVss/piQSr0YvT/BWP0/wv/FLT2Y/L/GgLCAvb/LWP1/98DAmL/WfhgYGLx/zCwSG1rX2lfYWRks/piQSv0YvT/BmP0/wz/SrT2Y/L/UALCAvb/HmP1/5UEAmCwSW1rX3NfYm9vbLP7YkRib29s98MC+P8IYv+MAf+sAcEDAv+9BP8CwQMC/8UE/WH/ygTAAh8FoGJBYfew9MEDAvT/HsEDAvr5Yf8CYvP5sEZta19uZXGz+GJCPD71YvX/BGP0/yX/LrT2Y/L/NALCAvb/SWP1/1ICYv/sAf+MAmBgYvH/TLBHbWtfaV9sZbP5YkI8PfVi9f8GY/T/DP9mtPZj8v9sAsIC9v8hY/X/igECYv8v+GT0/68B/+UC//cEYGBi/9AF/9MFuPdj8v/gBQJgYGLx/+gFYv+4Bfhj9f3/8wVi9v8KYfRgZvH0/xwBAP8hsfm0QTBiSm1vZGVsX2V2YWz+tEEwYklpbnZhcmlhbnT9tE8GX3hfMV8yNS4wID0gX3hfMV8yNS4xtE8HX3hfMV8yNS4wIDw9IF94XzFfMjUuMWL/Iv8Mt/ViS2NvbnN0cmFpbnRz/rRGKDAsIDApYkdfeF8xXzI1/wFh+7XyYkVtb2RlbPhk/3L/ZP8i/rX4YkNzdHL2tv+vAWJHX3hfMV8yNfxh+rXyYkVtb2RlbPi2/7EHYkptb2RlbF9ldmFs/wC0TxUyNzczNTk4NC04ZmY5LTRmM2ItOTc0MS01ZGE1ZmNkMTU4OGNiQmlk/xtk/1D/Ov8w/GL/3gT//gRh/40IYf+vA2L0/6gDsEVta19lcbP3YkE99GL0/wRj9P8Q/9wDtPdj8v/jAwLCAvf/J2P1/4IEAmL2//ACZPX/vQj/Qf+yAmBgYv/ICP+8Bbj3Y/L/2AgCYGBi8f/gCGL/sAj4Y/X9/+sIYvb/CmH0YGbx9P8cAQD/IbH5tEExYkptb2RlbF9ldmFs/rRPDV94XzFfMjUuMCArICgtMSkgKiBfeF8xXzI1LjFiSWludmFyaWFudP8atE8GX3hfMV8yNS4wID4gX3hfMV8yNS4xYf8Jt/NiS2NvbnN0cmFpbnRz/rRJKDAsICgtMSkpYkdfeF8xXzI1/wRh+7XyYkVtb2RlbPhk/3f/Tf8l/rX4YkNzdHL2tv+0AWJHX3hfMV8yNfxh+rXyYkVtb2RlbPi2/50KYkptb2RlbF9ldmFs/wC0TxUxNWMxNDFjNi1kZWI3LTQwZmItYWE3Ni05MDMwN2MxYmMwYTRiQmlk/xtk/1D/Ov8w/GL/5gf/+wfCAv+oB/tj9v+RCwJi/+4H+cIC/4MH+WP2/6ILAmL//wf/nwhgYGLx/98GsEdta19pX2d0s/liQT70YvT/BmP0/wz/+Qa092Py/4AHAsIC9/8jY/X/nwcCYfZk8v81/13/0wJj/40G/5cD/wBi/7oL//ELYfdfEb3n8kFUJY1a192GUreQhpp2IdIAynuqX+Y8wHErhqnZY010dXBsZV9jb21wYXJl/yEBhv8DsvNiTXR1cGxlX2NvbXBhcmX/AWP/Av8//1EG
+    api_version: v20
     storage: []
   task:
     id:
-      id: task:decomp:MBlSqk4KZm9rr0R9SXy8yXpuBPVAKKDnuBpZVMfL6NI=
+      id: task:decomp:JPhhq33XkWGGPvTFxHEHce5vmecCNduO-CrTWI7oZ1w=
     kind: TASK_DECOMP
   errors: []

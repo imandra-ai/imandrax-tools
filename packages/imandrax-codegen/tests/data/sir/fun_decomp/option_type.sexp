@@ -6,7 +6,7 @@
   (docstr
     "test_1\
    \n\
-   \n- invariant: ~- Option.get opt\
+   \n- invariant: (-1) * Option.get opt\
    \n- constraints:\
    \n    - not Is_a(None, opt)\
    \n    - Option.get opt <= 0\

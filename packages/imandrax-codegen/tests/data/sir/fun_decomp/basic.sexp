@@ -4,7 +4,7 @@
   (docstr
     "test_1\
    \n\
-   \n- invariant: x + 2\
+   \n- invariant: 2 + x\
    \n- constraints:\
    \n    - x >= 1\
    \n"))

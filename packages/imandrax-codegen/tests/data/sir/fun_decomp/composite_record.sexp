@@ -9,7 +9,7 @@
    \n\
    \n- invariant: \"positive\"\
    \n- constraints:\
-   \n    - not (p.x + p.y = 0)\
+   \n    - p.x + p.y <> 0\
    \n    - p.x + p.y >= 1\
    \n"))
  (Feasible (name test_2) (f_name distance_category)

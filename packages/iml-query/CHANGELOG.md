@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-19
+- support `test <expr>` syntax (tree-sitter-iml >=0.27): query, capture, and processing support (`extract_test_reqs`, `insert_test_req`, `get_test_reqs`, `test_req` in `iml_outline`)
+- BREAKING: remove deprecated `qcheck` support (`QCHECK_QUERY_SRC`, `QCheckCapture`); `qcheck` has been renamed to `test`
+
 ## [0.10.2] - 2026-06-17
 - initial decomp algebra support
 - FIX: decomp req to IML: excessive parenthesis for lift bool

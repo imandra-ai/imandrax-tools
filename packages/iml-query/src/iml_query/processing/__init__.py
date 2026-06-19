@@ -18,6 +18,11 @@ from iml_query.tree_sitter_utils import (
 
 from .base import Nesting, resolve_nesting_definitions
 from .decomp import DecompReqArgs, extract_decomp_reqs, insert_decomp_req
+from .test import (
+    TestReqArgs,
+    extract_test_reqs,
+    insert_test_req,
+)
 from .update_top_def import update_top_definition
 from .vg import (
     VerifyReqArgs,
@@ -33,10 +38,12 @@ __all__ = [
     'update_top_definition',
     'extract_verify_reqs',
     'extract_instance_reqs',
+    'extract_test_reqs',
     'extract_decomp_reqs',
     'extract_type_decl_names',
     'insert_verify_req',
     'insert_instance_req',
+    'insert_test_req',
     'insert_decomp_req',
     'iml_outline',
     'eval_capture_to_src',
@@ -48,6 +55,7 @@ def iml_outline(iml: str) -> dict[str, Any]:
     tree = get_parser().parse(bytes(iml, encoding='utf8'))
     outline['verify_req'] = extract_verify_reqs(iml, tree)[2]
     outline['instance_req'] = extract_instance_reqs(iml, tree)[2]
+    outline['test_req'] = extract_test_reqs(iml, tree)[2]
     outline['decompose_req'] = extract_decomp_reqs(iml, tree)[2]
     outline['opaque_function'] = extract_opaque_function_names(iml)
     return outline
@@ -125,6 +133,12 @@ def get_verify_reqs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
 def get_instance_reqs(iml: str) -> tuple[str, list[VerifyReqArgs], list[Range]]:
     tree = get_parser().parse(bytes(iml, encoding='utf8'))
     res = extract_instance_reqs(iml, tree)
+    return res[0], res[2], res[3]
+
+
+def get_test_reqs(iml: str) -> tuple[str, list[TestReqArgs], list[Range]]:
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    res = extract_test_reqs(iml, tree)
     return res[0], res[2], res[3]
 
 

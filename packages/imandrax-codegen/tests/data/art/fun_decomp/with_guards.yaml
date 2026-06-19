@@ -8,6 +8,7 @@ iml: |
 decomp_kwargs:
   name: classify
   prune: true
+  string_results: true
 regions:
 - model_str:
     x: '0'
@@ -25,42 +26,42 @@ regions:
   - x >= 1
   - y <= 0
 - model_str:
-    y: '1'
     x: '1'
+    y: '1'
   model_eval_str: '3'
   invariant_str: '3'
   constraints_str:
-  - x <= y
   - y <= x
+  - x <= y
   - x >= 1
   - y >= 1
 - model_str:
-    y: '2'
     x: '1'
+    y: '2'
   model_eval_str: '2'
   invariant_str: '2'
   constraints_str:
-  - not (y <= x)
+  - y > x
   - x <= y
   - x >= 1
   - y >= 1
 - model_str:
-    y: '1'
     x: '2'
+    y: '1'
   model_eval_str: '1'
   invariant_str: '1'
   constraints_str:
-  - not (x <= y)
+  - x > y
   - x >= 1
   - y >= 1
 decomp_res:
   artifact:
     kind: mir.fun_decomp
-    data: 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
-    api_version: v18
+    data: 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
+    api_version: v20
     storage: []
   task:
     id:
-      id: task:decomp:VEEN0ToSAEnyShvMdpgTDcAVo5y_pnon8lJ6j3ZwT8s=
+      id: task:decomp:G7MiZJ9dEBD-bq9yA8kSehVPBI4QXKx6-VeXMpHz_0w=
     kind: TASK_DECOMP
   errors: []

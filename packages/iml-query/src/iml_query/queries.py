@@ -68,18 +68,24 @@ class InstanceCapture(BaseCapture):
     instance_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
-QCHECK_QUERY_SRC = r"""
-(qcheck_statement
-    "qcheck" .
-    _ @qcheck_expr
-) @qcheck_statement
+TEST_QUERY_SRC = r"""
+(test_statement
+    ; `.` means "immediately followed by"
+    "test" .
+    ; `(_)` captures whatever named node
+    (_) @test_expr
+    (item_attribute)? @test_attr
+) @test_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
-class QCheckCapture(BaseCapture):
-    qcheck_statement: Node  # the entire `qcheck` statement
-    qcheck_expr: Node  # the expression right after `qcheck`
+class TestCapture(BaseCapture):
+    __test__ = False
+
+    test_statement: Node  # the entire `test` statement
+    test_expr: Node  # the expression after `test`, excluding item attributes
+    test_attr: Node | None = None  # e.g. `[@@by ...]`
 
 
 AXIOM_QUERY_SRC = r"""
