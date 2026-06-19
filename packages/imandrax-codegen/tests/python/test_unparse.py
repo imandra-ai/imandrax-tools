@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml
 from imandrax_codegen.gen_src import Lang, gen_test_cases
 from imandrax_codegen.unparse import join_code_parts
@@ -166,6 +167,8 @@ def test_4():
 ''')
 
 
+# Upstream bug
+@pytest.mark.skip
 def test_list_operations():
     file_path = DATA_DIR / 'list_operations.yaml'
     input_data = read_test_input(file_path)
