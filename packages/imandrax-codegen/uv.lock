@@ -423,7 +423,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.0.0"
+version = "20.0.1"
 source = { editable = "../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
@@ -460,7 +460,7 @@ dev = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "20.0.0"
+version = "20.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },

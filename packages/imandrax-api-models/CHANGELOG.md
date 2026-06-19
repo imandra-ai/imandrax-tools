@@ -3,12 +3,15 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
-- Context utils: show unstructured message unconditionally
-- Tighten integration between tracing and logging
-- Improve decomp widget
+
+## [20.0.1] - 2026-06-19
+- FIX: decomp artifact should not fail when stringified results are not requested
 
 ## [20.0.0] - 2026-06-19
 - Bump imandrax-api version to v0.20: support `test <expr>`-related endpoints
+- Context utils: show unstructured message unconditionally
+- Tighten integration between tracing and logging
+- Improve decomp widget
 
 ## [19.5.0] - 2026-05-08
 - Add tracing for extended client

@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.0.1] - 2026-06-19
+- FIX: sample needs explicit prune and string_results arg since v20
+
 ## [20.0.0] - 2026-06-19
 
 - Bump imandrax-api version to v0.20
