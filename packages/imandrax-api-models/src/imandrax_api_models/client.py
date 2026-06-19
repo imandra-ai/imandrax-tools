@@ -21,6 +21,7 @@ try:
     from iml_query.processing import (
         extract_decomp_reqs,
         extract_instance_reqs,
+        extract_test_reqs,
         extract_verify_reqs,
     )
     from iml_query.tree_sitter_utils import get_parser
@@ -256,10 +257,15 @@ class ImandraXClient(imandrax_api.Client):
         timeout: float | None = None,
         with_vgs: bool = False,
         with_decomps: bool = False,
+        with_tests: bool = False,
     ) -> EvalRes:
-        """Eval without VGs and decomps."""
+        """Eval without VGs, decomps, and tests."""
         with self._trace(
-            'eval_model', src=src, with_vgs=with_vgs, with_decomps=with_decomps
+            'eval_model',
+            src=src,
+            with_vgs=with_vgs,
+            with_tests=with_tests,
+            with_decomps=with_decomps,
         ):
             iml = src
             tree = get_parser().parse(iml.encode('utf-8'))
@@ -268,7 +274,8 @@ class ImandraXClient(imandrax_api.Client):
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
                 iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
-
+            if not with_tests:
+                iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
             return self.eval_src(src=iml, timeout=timeout)
 
 
@@ -423,10 +430,15 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         timeout: float | None = None,
         with_vgs: bool = False,
         with_decomps: bool = False,
+        with_tests: bool = False,
     ) -> EvalRes:
-        """Eval without VGs and decomps."""
+        """Eval without VGs, decomps, and tests."""
         with self._trace(
-            'eval_model', src=src, with_vgs=with_vgs, with_decomps=with_decomps
+            'eval_model',
+            src=src,
+            with_vgs=with_vgs,
+            with_decomps=with_decomps,
+            with_tests=with_tests,
         ):
             iml = src
             tree = get_parser().parse(iml.encode('utf-8'))
@@ -435,6 +447,8 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
                 iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
+            if not with_tests:
+                iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
 
             return await self.eval_src(src=iml, timeout=timeout)
 
