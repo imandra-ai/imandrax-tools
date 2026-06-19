@@ -24,7 +24,7 @@ codegen = [
 ]
 
 [tool.uv.sources]
-# imandrax-codegen = { path = "../imandrax-codegen", editable = true }
+imandrax-codegen = { path = "../imandrax-codegen", editable = true }
 # imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # iml-query = { path = "../iml-query", editable = true }
 

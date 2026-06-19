@@ -694,7 +694,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.19.0.1"
+version = "0.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -702,7 +702,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/86/85/ccb91461b55544f8ead99c4e937c3428f45f57473749220fc5bb034e03a1/imandrax_api-0.19.0.1-py3-none-any.whl", hash = "sha256:0f4043039c79c6ca82c41e89b655062981d8093d0eaeecaa4e0e24af392bc411", size = 64032, upload-time = "2026-04-01T16:21:18.489Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/44/1d2d859667c8232acc1a9139a103b78f1ddee01e4f46e38c67bc1011e2b7/imandrax_api-0.20-py3-none-any.whl", hash = "sha256:020bd1e903cf2d16ce04bffda1b2c5478e251a00a76be4e8ea3ee00bf3e8ffe1", size = 70752, upload-time = "2026-06-17T10:16:20.758Z" },
 ]
 
 [package.optional-dependencies]
@@ -712,7 +712,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "19.5.0"
+version = "20.0.0"
 source = { editable = "packages/imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
@@ -747,7 +747,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.19" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20" },
     { name = "iml-query", marker = "extra == 'client'", editable = "packages/iml-query" },
     { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.27" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'tracing'", specifier = ">=1.41.1" },
@@ -772,8 +772,8 @@ dev = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "19.0.0"
-source = { registry = "https://pypi.org/simple" }
+version = "20.0.0"
+source = { editable = "packages/imandrax-codegen" }
 dependencies = [
     { name = "devtools" },
     { name = "dotenv" },
@@ -786,10 +786,25 @@ dependencies = [
     { name = "ruff" },
     { name = "typer" },
 ]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/db/a7f95a9955e6d635462de0f19902f6e8c07641629cfff64fdad056626039/imandrax_codegen-19.0.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:9ba9a0b9e8bbb922cdb3d10cb3e0dd7fda52053f7b0cd49b1b2824f716586cbb", size = 3951290, upload-time = "2026-03-25T20:03:35.422Z" },
-    { url = "https://files.pythonhosted.org/packages/81/a2/e398aa4ec4ea843b4b67ca68cebec8e0d285776a12b9945e501be5161f63/imandrax_codegen-19.0.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:0f0d99764874684ac3f84d1cd85cbcd02e02bd1921a1c4d88cd689ef236be4f9", size = 6715066, upload-time = "2026-03-25T20:03:37.641Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/cf/1c24756e049c6c28c5b18abe920cf766e76e19b28d1810fccc8657658a15/imandrax_codegen-19.0.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:5a3034d5fc618954e2362a0925af0e7f0a52cc145b9a173e2e0a4bb19785fe2d", size = 5833773, upload-time = "2026-03-25T20:03:39.505Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20,<0.21" },
+    { name = "imandrax-api-models", specifier = ">=20,<21" },
+    { name = "iml-query", specifier = ">=0.8" },
+    { name = "pydantic", specifier = ">=2.12.3" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "rich", specifier = ">=14.2.0" },
+    { name = "ruff", specifier = ">=0.14.3" },
+    { name = "typer", specifier = ">=0.21.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "inline-snapshot", specifier = ">=0.31.1" },
+    { name = "ipykernel", specifier = ">=7.0.1" },
 ]
 
 [[package]]
@@ -822,7 +837,7 @@ dev = [
 requires-dist = [
     { name = "imandrax-api-models", editable = "packages/imandrax-api-models" },
     { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", editable = "packages/imandrax-api-models" },
-    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = ">=19.0.0" },
+    { name = "imandrax-codegen", marker = "extra == 'codegen'", editable = "packages/imandrax-codegen" },
     { name = "iml-query", editable = "packages/iml-query" },
     { name = "pydantic", specifier = ">=2" },
     { name = "structlog", specifier = ">=24" },
