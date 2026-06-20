@@ -8,7 +8,7 @@ from imandrax_tools import goal_state
 TEST_DATA = Path(__file__).parent / 'test_data'
 PO_RES_ZIP = TEST_DATA / 'po_res_art.zip'
 
-EXPECTED = '1 subgoal -\n ⊢ List.length (x @ y) = List.length x + List.length y\n\n'
+EXPECTED = '1 subgoal -\n ⊢ length (x append y) = length x + length y\n\n'
 
 
 def test_format_goal_state_from_zip() -> None:

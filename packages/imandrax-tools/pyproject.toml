@@ -35,18 +35,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["maturin>=1.5,<2.0"]
-build-backend = "maturin"
-
-[tool.maturin]
-python-source = "src"
-module-name = "imandrax_tools.goal_state._goal_state"
-include = [
-    { path = "src/imandrax_tools/iml_eval_corpus/corpus/**/*", format = ["sdist", "wheel"] },
-]
-exclude = [
-    { path = "src/imandrax_tools/iml_eval_corpus/corpus/**/__pycache__/**", format = ["sdist", "wheel"] },
-]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
 
 # Development tools
 # ====================
