@@ -34,12 +34,12 @@ class Text:
 
 @dataclass(slots=True, frozen=True)
 class Line:
-    pass
+    """Potential line break; flattened to a single space when the group fits."""
 
 
 @dataclass(slots=True, frozen=True)
 class LineBreak:
-    pass
+    """Potential line break; flattened to the empty string when the group fits."""
 
 
 @dataclass(slots=True, frozen=True)
@@ -56,6 +56,8 @@ class Nest:
 
 @dataclass(slots=True, frozen=True)
 class Group:
+    """Try to lay out the inner doc flat; fall back to vertical if it doesn't fit."""
+
     doc: Doc
 
 
