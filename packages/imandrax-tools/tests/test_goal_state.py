@@ -1,3 +1,6 @@
+from io import BytesIO
+from zipfile import ZipFile
+
 import imandrax_api.lib as xtype
 import pytest
 from inline_snapshot import snapshot
@@ -57,7 +60,9 @@ theorem powerset_len xs =
 """
 
 
-def po_res_of_twine(twine_data: bytes) -> xtype.Tasks_PO_res_Shallow:
+def po_res_of_art_zip(art_zip: bytes) -> xtype.Tasks_PO_res_Shallow:
+    with ZipFile(BytesIO(art_zip)) as f:
+        twine_data = f.read('data.twine')
     decoder = xtype.twine.Decoder(twine_data)
     return xtype.Tasks_PO_res_Shallow_of_twine(d=decoder, off=decoder.entrypoint())
 
@@ -73,15 +78,25 @@ def po_res_list() -> list[xtype.Tasks_PO_res_Shallow]:
     eval_res = c.eval_src(IML)
     po_tasks = [t for t in eval_res.tasks if t.kind == TaskKind.TASK_CHECK_PO]
     po_res_zips = [c.get_artifact_zip(task, kind='po_res') for task in po_tasks]
-    return [po_res_of_twine(zip.art_zip) for zip in po_res_zips]
+    return [po_res_of_art_zip(zip.art_zip) for zip in po_res_zips]
 
 
 def test_goal_state_pp(po_res_list: list[xtype.Tasks_PO_res_Shallow]):
-    snapshots = []
+    snapshots: list[str] = []
     for i, po_res in enumerate(po_res_list):
         match goal_state_doc_of_po_res(po_res):
             case ('left', doc):
                 snapshots.append(Pp.pretty(88, doc))
             case ('right', msg):
-                raise AssertionError(f'Expected goal state, got: {msg=} for {i=}')
-    assert snapshots == snapshot(snapshots)
+                snapshots.append(f'No goal state for {i=}; got: {msg=}')
+    assert snapshots == snapshot(
+        [
+            '1 subgoal- ⊢length (x append y) = length x + length y',
+            "No goal state for i=1; got: msg='Proof found'",
+            "No goal state for i=2; got: msg='Proof found'",
+            "No goal state for i=3; got: msg='Proof found'",
+            "No goal state for i=4; got: msg='Proof found'",
+            "No goal state for i=5; got: msg='Proof found'",
+            "No goal state for i=6; got: msg='Proof found'",
+        ]
+    )
