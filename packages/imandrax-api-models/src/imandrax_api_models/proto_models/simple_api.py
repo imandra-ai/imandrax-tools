@@ -307,11 +307,6 @@ class PO_Res(BaseModel):
         default=None, description='where did the task originate?'
     )
 
-    @property
-    def qcheck_ok(self) -> Test_ok | None:
-        """Deprecated: use `test_ok` instead."""
-        return self.test_ok
-
     @model_validator(mode='after')
     def one_of_res(self) -> Self:
         sum_of_res = sum(

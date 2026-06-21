@@ -73,6 +73,9 @@ def format_code_snippet_with_loc(
     return '\n'.join(output)
 
 
+# ====================
+
+
 def format_error_msg(
     error_msg: ErrorMessage,
     iml_src: str | None = None,
@@ -139,21 +142,19 @@ def format_error(
     return s
 
 
-def format_eval_res_errors(
-    eval_res: EvalRes,
+def format_errors(
+    non_po_errors: list[Error],
+    po_errors: list[Error],
     iml_src: str | None = None,
     max_errors: int = 3,
 ) -> str | None:
-    if not eval_res.errors and not eval_res.po_errors:
-        return None
-
     # If non-PO error exist, ignore PO errors
     is_po_error: bool = False
-    if len(eval_res.errors) > 0:
-        errs = eval_res.errors[:max_errors]
+    if len(non_po_errors) > 0:
+        errs = non_po_errors[:max_errors]
     else:
         is_po_error = True
-        errs = eval_res.po_errors[:max_errors]
+        errs = po_errors[:max_errors]
 
     err_strs: list[str] = [format_error(err, iml_src) for err in errs]
 
@@ -209,7 +210,7 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
     return result
 
 
-def _format_eval_msg_errors(
+def _format_unstructured_msg_errors(
     errs_in_eval_msg: list[str],
     max_msgs: int = 2,
     max_len_per_msg: int = 300,
@@ -248,14 +249,14 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
         case True, _:
             s = ''
             s += 'Evaluation errors:\n'
-            s += cast(str, format_eval_res_errors(eval_res, iml_src))
+            s += cast(str, format_errors(eval_res.errors, eval_res.po_errors, iml_src))
             if has_err_in_eval_msg:
                 s += '\nAdditional unstructured context from eval messages:\n'
-                s += _format_eval_msg_errors(errs_in_eval_msg)
+                s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, True:
             s = 'ImandraX internal error\n'
-            s += _format_eval_msg_errors(errs_in_eval_msg)
+            s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, False:
             s = 'Eval success!'
