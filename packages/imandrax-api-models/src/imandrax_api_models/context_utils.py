@@ -166,7 +166,7 @@ def format_errors(
 
     res = ''
     if is_po_error:
-        res += 'Proof obligation errors (including termination proving errors):\n'
+        res += 'Proof obligation errors (inc. termination proving):\n'
     for i, err_str in enumerate(err_strs, 1):
         res += add_tag(err_str, i)
         res += '\n'
@@ -260,7 +260,7 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
             s += 'Evaluation errors:\n'
             s += cast(str, format_errors(eval_res.errors, eval_res.po_errors, iml_src))
             if has_err_in_eval_msg:
-                s += '\nAdditional unstructured context from eval messages:\n'
+                s += '\nAdditional unstructured errors:\n'
                 s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, True:
