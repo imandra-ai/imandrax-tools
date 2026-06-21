@@ -174,7 +174,16 @@ def format_errors(
 
 
 def format_eval_output(eval_output: EvalOutput) -> str:
-    raise NotImplementedError()
+    buf = ''
+    if not eval_output.success or len(eval_output.errors) > 0:
+        buf += 'Eval failed:\n'
+        for err in eval_output.errors[:1]:
+            buf += format_error(err)
+        buf += '\n'
+    else:
+        buf += 'Eval Output:\n'
+        buf += f'value_as_ocaml: {eval_output.value_as_ocaml!r}\n'
+    return buf
 
 
 def _extract_internal_error(msg: str, max_len: int = 300) -> str:
@@ -213,7 +222,7 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
 def _format_unstructured_msg_errors(
     errs_in_eval_msg: list[str],
     max_msgs: int = 2,
-    max_len_per_msg: int = 300,
+    max_len_per_msg: int = 500,
 ) -> str:
     """
     Render extracted error string blurbs from `eval_res.messages`.
@@ -234,7 +243,7 @@ def _format_unstructured_msg_errors(
     s = '\n'.join(f'- {e}' for e in shown)
     hidden = len(extracted) - len(shown)
     if hidden > 0:
-        s += f'\n- ... ({hidden} more similar message(s) omitted; use --json for full output)'
+        s += f'\n- ... ({hidden} more similar message(s) omitted)'
     return s
 
 
@@ -255,7 +264,7 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
                 s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, True:
-            s = 'ImandraX internal error\n'
+            s = 'ImandraX internal error:\n'
             s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, False:
