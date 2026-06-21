@@ -28,7 +28,7 @@ def doc_of_subgoals(ok: bool, subgoals: list[Sequent]) -> Doc:
     if not subgoals:
         return Pp.text('∎') if ok else Pp.text('No subgoals reported after error.')
     k = len(subgoals)
-    title = Pp.text(f'{k} subgoal{"s" if k > 1 else ""}')
+    title = Pp.text(f'{k} subgoal{"s" if k > 1 else ""}\n')
     subgoal_docs: list[Doc] = [
         Pp.concat(Pp.text('- '), doc_of_sequent(sg)) for sg in subgoals
     ]
