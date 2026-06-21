@@ -809,7 +809,7 @@ dev = [
 
 [[package]]
 name = "imandrax-tools"
-version = "20.0.0"
+version = "20.1.0"
 source = { editable = "packages/imandrax-tools" }
 dependencies = [
     { name = "imandrax-api-models" },
