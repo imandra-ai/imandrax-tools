@@ -87,3 +87,28 @@ def goal_state_doc_of_po_res(
             return right('Proof found')
         case xtype.Tasks_PO_res_success_Test_ok():
             return right('Test ok')
+
+
+# Serde helper
+# ====================
+
+
+def po_res_of_art_zip(art_zip: bytes) -> xtype.Tasks_PO_res_Shallow:
+    from tempfile import NamedTemporaryFile
+
+    with NamedTemporaryFile() as f:
+        f.write(art_zip)
+        f.seek(0)
+        art: xtype.Artifact = xtype.read_artifact_zip(f.name)
+    assert isinstance(art, xtype.Tasks_PO_res_shallow_poly), (
+        'ZIP artifact is not a PO res shallow'
+    )
+    return art
+
+
+def show_goal_state_zip(art_zip: bytes) -> str | None:
+    match goal_state_doc_of_po_res(po_res_of_art_zip(art_zip)):
+        case ('left', doc):
+            return Pp.pretty(88, doc)
+        case ('right', _):
+            return None

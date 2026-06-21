@@ -1,12 +1,9 @@
-from io import BytesIO
-from zipfile import ZipFile
-
 import imandrax_api.lib as xtype
 import pytest
 from inline_snapshot import snapshot
 
 import imandrax_tools.pp.pretty as Pp
-from imandrax_tools.pp.goal_state import goal_state_doc_of_po_res
+from imandrax_tools.pp.goal_state import goal_state_doc_of_po_res, po_res_of_art_zip
 
 IML = """\
 (* Number of subsets of a (finite) set in Imandra, rep'd as lists.
@@ -58,13 +55,6 @@ theorem powerset_len xs =
   List.length (powerset xs) = pow 2 (List.length xs)
 [@@by auto] *)
 """
-
-
-def po_res_of_art_zip(art_zip: bytes) -> xtype.Tasks_PO_res_Shallow:
-    with ZipFile(BytesIO(art_zip)) as f:
-        twine_data = f.read('data.twine')
-    decoder = xtype.twine.Decoder(twine_data)
-    return xtype.Tasks_PO_res_Shallow_of_twine(d=decoder, off=decoder.entrypoint())
 
 
 @pytest.fixture
