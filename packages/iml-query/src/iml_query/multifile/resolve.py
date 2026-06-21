@@ -190,24 +190,31 @@ class Library:
         self.modules = modules
 
     @classmethod
-    def from_entry(cls, entry_path: Path) -> Self:
+    def from_entry_path(cls, entry_path: Path) -> Self:
         """Create a library from an entry file."""
         result = resolve(entry_path)
         if isinstance(result, IMLImportResolutionError):
             raise result
         return cls(modules=result)
 
-    def to_monolith(self) -> str:
+    def to_monolith(self) -> tuple[str, str]:
         """Generate a monolith IML file from the library."""
         return mk_monolith_iml(self.modules)
 
 
-def mk_monolith_iml(modules: list[IMLModule]) -> str:
+def mk_monolith_iml(modules: list[IMLModule]) -> tuple[str, str]:
     """
     Generate a monolith IML file from topologically sorted modules.
 
     Each dependency module is wrapped in `module Name = struct ... end`.
     The entry module (last in list) is emitted unwrapped.
+
+    Args:
+        modules: List of topologically sorted IML modules. Must be non-empty.
+
+    Returns:
+        A tuple of (monolith IML string, entry module source without imports).
+
     """
     parts: list[str] = []
 
@@ -228,4 +235,4 @@ def mk_monolith_iml(modules: list[IMLModule]) -> str:
             )
             parts.append(f'module {mod.name} = struct\n{indented}\nend')
 
-    return '\n\n'.join(parts) + '\n'
+    return '\n\n'.join(parts[:-1]), parts[-1]
