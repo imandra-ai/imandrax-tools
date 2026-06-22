@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.0.3] - 2026-06-22
+- FEAT(client): fine-grained session management
+
 ## [20.0.2] - 2026-06-22
 - Context utils improvements
 
