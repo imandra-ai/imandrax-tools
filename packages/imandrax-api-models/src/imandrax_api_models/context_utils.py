@@ -1,10 +1,8 @@
 """Utility functions for formatting ImandraX models to LLM context."""
 
-from pathlib import Path
-from typing import Any, Final, cast
+from typing import Any, cast
 
 import yaml
-from imandrax_api.bindings import api_pb2
 
 from imandrax_api_models import (
     DecomposeRes,
@@ -14,7 +12,6 @@ from imandrax_api_models import (
     EvalRes,
     InstanceRes,
     Location,
-    PO_Res,
     Position,
     VerifyRes,
 )
@@ -74,6 +71,9 @@ def format_code_snippet_with_loc(
                 output.append(f'{gutter_pad} | {underline}')
 
     return '\n'.join(output)
+
+
+# ====================
 
 
 def format_error_msg(
@@ -142,21 +142,19 @@ def format_error(
     return s
 
 
-def format_eval_res_errors(
-    eval_res: EvalRes,
+def format_errors(
+    non_po_errors: list[Error],
+    po_errors: list[Error],
     iml_src: str | None = None,
     max_errors: int = 3,
 ) -> str | None:
-    if not eval_res.errors and not eval_res.po_errors:
-        return None
-
     # If non-PO error exist, ignore PO errors
     is_po_error: bool = False
-    if len(eval_res.errors) > 0:
-        errs = eval_res.errors[:max_errors]
+    if len(non_po_errors) > 0:
+        errs = non_po_errors[:max_errors]
     else:
         is_po_error = True
-        errs = eval_res.po_errors[:max_errors]
+        errs = po_errors[:max_errors]
 
     err_strs: list[str] = [format_error(err, iml_src) for err in errs]
 
@@ -168,7 +166,7 @@ def format_eval_res_errors(
 
     res = ''
     if is_po_error:
-        res += 'Proof obligation errors (including termination proving errors):\n'
+        res += 'Proof obligation errors (inc. termination proving):\n'
     for i, err_str in enumerate(err_strs, 1):
         res += add_tag(err_str, i)
         res += '\n'
@@ -176,7 +174,16 @@ def format_eval_res_errors(
 
 
 def format_eval_output(eval_output: EvalOutput) -> str:
-    raise NotImplementedError()
+    buf = ''
+    if not eval_output.success or len(eval_output.errors) > 0:
+        buf += 'Eval failed:\n'
+        for err in eval_output.errors[:1]:
+            buf += format_error(err)
+        buf += '\n'
+    else:
+        buf += 'Eval Output:\n'
+        buf += f'value_as_ocaml: {eval_output.value_as_ocaml!r}\n'
+    return buf
 
 
 def _extract_internal_error(msg: str, max_len: int = 300) -> str:
@@ -212,10 +219,10 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
     return result
 
 
-def _format_eval_msg_errors(
+def _format_unstructured_msg_errors(
     errs_in_eval_msg: list[str],
     max_msgs: int = 2,
-    max_len_per_msg: int = 300,
+    max_len_per_msg: int = 500,
 ) -> str:
     """
     Render extracted error string blurbs from `eval_res.messages`.
@@ -236,7 +243,7 @@ def _format_eval_msg_errors(
     s = '\n'.join(f'- {e}' for e in shown)
     hidden = len(extracted) - len(shown)
     if hidden > 0:
-        s += f'\n- ... ({hidden} more similar message(s) omitted; use --json for full output)'
+        s += f'\n- ... ({hidden} more similar message(s) omitted)'
     return s
 
 
@@ -251,14 +258,14 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
         case True, _:
             s = ''
             s += 'Evaluation errors:\n'
-            s += cast(str, format_eval_res_errors(eval_res, iml_src))
+            s += cast(str, format_errors(eval_res.errors, eval_res.po_errors, iml_src))
             if has_err_in_eval_msg:
-                s += '\nAdditional unstructured context from eval messages:\n'
-                s += _format_eval_msg_errors(errs_in_eval_msg)
+                s += '\nAdditional unstructured errors:\n'
+                s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, True:
-            s = 'ImandraX internal error\n'
-            s += _format_eval_msg_errors(errs_in_eval_msg)
+            s = 'ImandraX internal error:\n'
+            s += _format_unstructured_msg_errors(errs_in_eval_msg)
             return s
         case False, False:
             s = 'Eval success!'
@@ -300,7 +307,7 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
     res = vg_res.res
     res_type = vg_res.res_type
 
-    data = {res_type: res.model_dump()}
+    data: dict[str, Any] = {res_type: res.model_dump()}
     data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
 
@@ -310,52 +317,3 @@ def format_decomp_res(decomp_res: DecomposeRes) -> str:
 
     data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
-
-
-# PP Goal State
-# ====================
-
-
-def format_goal_state(po_res: PO_Res) -> str:
-    raise NotImplementedError()
-
-
-def get_goal_state_pp_bin_path() -> Path:
-    curr_dir = Path(__file__).parent
-    WORKSPACE_DIR: Final[Path] = curr_dir.parent.parent.parent.parent
-    GOAL_STATE_PP_BIN_PATH: Final[Path] = (
-        WORKSPACE_DIR.parent
-        / 'imandrax'
-        / '_build'
-        / 'default'
-        / 'src/pp-goal-state/bin/pp_goal_state.exe'
-    )
-    return GOAL_STATE_PP_BIN_PATH
-
-
-def pp_goal_state(po_res_zip: Path | bytes | api_pb2.ArtifactZip) -> str:
-    import subprocess
-    import tempfile
-
-    GOAL_STATE_PP_BIN_PATH = get_goal_state_pp_bin_path()
-
-    match po_res_zip:
-        case Path():
-            out = subprocess.run(
-                [
-                    f'{str(GOAL_STATE_PP_BIN_PATH)}',
-                    f'{str(po_res_zip)}',
-                ],
-                capture_output=True,
-            )
-            if out.returncode != 0:
-                raise RuntimeError(f'pp_goal_state failed: {out.stderr.decode()}')
-            return out.stdout.decode()
-        case bytes():
-            # Write temp zip file
-            with tempfile.NamedTemporaryFile(suffix='.zip') as tmp:
-                tmp.write_bytes(po_res_zip)
-                tmp.flush()
-                return pp_goal_state(Path(tmp.name))
-        case api_pb2.ArtifactZip():
-            return pp_goal_state(po_res_zip.art_zip)

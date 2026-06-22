@@ -27,7 +27,7 @@ __all__ = (
 )
 
 
-def gather_modules(entry_path: Path) -> str:
+def gather_modules(entry_path: Path) -> tuple[str, str]:
     """Resolve all modules starting from an entry file and generate a monolith."""
-    lib = Library.from_entry(entry_path)
+    lib = Library.from_entry_path(entry_path)
     return lib.to_monolith()

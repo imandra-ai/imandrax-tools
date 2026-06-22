@@ -308,9 +308,24 @@ class PO_Res(BaseModel):
     )
 
     @property
-    def qcheck_ok(self) -> Test_ok | None:
-        """Deprecated: use `test_ok` instead."""
-        return self.test_ok
+    def res_type(
+        self,
+    ) -> Literal['unknown', 'err', 'proof', 'instance', 'verified_upto', 'test_ok']:
+        if self.unknown is not None:
+            return 'unknown'
+        elif self.err is not None:
+            return 'err'
+        elif self.proof is not None:
+            return 'proof'
+        elif self.instance is not None:
+            return 'instance'
+        elif self.verified_upto is not None:
+            return 'verified_upto'
+        elif self.test_ok is not None:
+            return 'test_ok'
+        else:
+            self = cast(Never, self)
+            assert_never(self)
 
     @model_validator(mode='after')
     def one_of_res(self) -> Self:

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-06-21
+- FEAT!: for multi-modular collection, dependencies and entry module are returned in separate
+
 ## [0.11.0] - 2026-06-19
 - support `test <expr>` syntax (tree-sitter-iml >=0.27): query, capture, and processing support (`extract_test_reqs`, `insert_test_req`, `get_test_reqs`, `test_req` in `iml_outline`)
 - BREAKING: remove deprecated `qcheck` support (`QCHECK_QUERY_SRC`, `QCheckCapture`); `qcheck` has been renamed to `test`

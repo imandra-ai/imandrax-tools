@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.0.2] - 2026-06-22
+- Context utils improvements
+
 ## [20.0.1] - 2026-06-19
 - FIX: decomp artifact should not fail when stringified results are not requested
 

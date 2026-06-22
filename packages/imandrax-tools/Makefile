@@ -54,7 +54,7 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 .PHONY: build
 build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*
-	uv build --no-sources
+	uv build --no-sources -o dist/
 
 .PHONY: test-wheel
 test-wheel:  ## Test wheel

@@ -78,35 +78,45 @@ verify (fun x -> x = x)
             f.write(iml.encode())
             f.flush()
             gathered = gather_modules(Path(f.name))
-        assert gathered == snapshot("""\
+        assert gathered == snapshot(
+            (
+                '',
+                """\
 let x = 1
 
 verify (fun x -> x = x)
-
-""")
+""",
+            )
+        )
 
     def test_same_level(self):
         modules = resolve(DATA_DIR / 'same_level' / 'main.iml')
         assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
-        assert result == snapshot("""\
+        assert result == snapshot(
+            (
+                """\
 module Helpers = struct
   let double (x : int) : int = x * 2
 
   let triple (x : int) : int = x * 3
-end
-
+end\
+""",
+                """\
 let six : int = Helpers.double 3
 
 let nine : int = Helpers.triple 3
-
-""")
+""",
+            )
+        )
 
     def test_nested_levels(self):
         modules = resolve(DATA_DIR / 'nested_levels' / 'main.iml')
         assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
-        assert result == snapshot("""\
+        assert result == snapshot(
+            (
+                """\
 module Utils = struct
   let add (x : int) (y : int) : int = x + y
 end
@@ -114,17 +124,19 @@ end
 module Core = struct
   let sum_three (a : int) (b : int) (c : int) : int =
     Utils.add (Utils.add a b) c
-end
-
-let result : int = Core.sum_three 1 2 3
-
-""")
+end\
+""",
+                'let result : int = Core.sum_three 1 2 3\n',
+            )
+        )
 
     def test_diamond_deps(self):
         modules = resolve(DATA_DIR / 'diamond_deps' / 'main.iml')
         assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
-        assert result == snapshot("""\
+        assert result == snapshot(
+            (
+                """\
 module Base = struct
   let zero : int = 0
 
@@ -137,42 +149,50 @@ end
 
 module Right = struct
   let right_val : int = Base.zero
-end
-
-let result : int = Left.left_val + Right.right_val
-
-""")
+end\
+""",
+                'let result : int = Left.left_val + Right.right_val\n',
+            )
+        )
 
     def test_with_vgs(self):
         modules = resolve(DATA_DIR / 'with_vg' / 'main.iml')
         assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
-        assert result == snapshot("""\
+        assert result == snapshot(
+            (
+                """\
 module Base = struct
   let x = 1
   let f x = x + 1
-end
-
+end\
+""",
+                """\
 let y = Base.f 1
 
 eval y
 
 theorem eval_y = y = 2
-
-""")
+""",
+            )
+        )
 
     def test_alias(self):
         modules = resolve(DATA_DIR / 'alias' / 'main.iml')
         assert not isinstance(modules, Exception)
         result = mk_monolith_iml(modules)
-        assert result == snapshot("""\
+        assert result == snapshot(
+            (
+                """\
 module Base = struct
   (* Intentional illegal module name *)
   type a = string
-end
-
+end\
+""",
+                """\
 open Base
 
 type b = a
-
-""")
+""",
+            )
+        )
