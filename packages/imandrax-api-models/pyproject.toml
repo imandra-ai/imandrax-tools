@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "20.0.3"
+version = "20.0.4"
 description = "Pydantic model definitions for imandrax-api. Also provides a client wrapper with built-in validation and utility methods."
 readme = "README.md"
 authors = [
@@ -9,14 +9,14 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
-    "imandrax-api[async]>=0.20",
+    "imandrax-api[async]>=0.20.2",
     "pydantic>=2.12.4",
     "pyyaml>=6.0.3",
 ]
 
 [project.optional-dependencies]
 client = [
-    "iml-query>=0.5.0",
+    "iml-query>=0.12.0",
 ]
 tracing = [
     "opentelemetry-api>=1.27",

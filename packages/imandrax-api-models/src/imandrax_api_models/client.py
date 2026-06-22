@@ -396,29 +396,24 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
-    async def test_src(
+    async def test_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         seed: int | None = None,
         timeout: float | None = None,
     ) -> TestRes:
-        # TODO: the upstream async client only exposes the deprecated `qcheck_src`
-        # wrapper, which calls the server-side `qcheck_src` rpc (an alias of
-        # `test_src`) and returns a `TestRes`.
         with self._trace('test_src', src=src, seed=seed, timeout=timeout):
-            res = await super().qcheck_src(src=src, seed=seed, timeout=timeout)
+            res = await super().test_src(src=src, seed=seed, timeout=timeout)
         return TestRes.model_validate(res)
 
-    async def test_name(
+    async def test_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         name: str,
         seed: int | None = None,
         timeout: float | None = None,
     ) -> TestRes:
-        # TODO: see `test_src` above re: the upstream async client only exposing
-        # the deprecated `qcheck_name` wrapper.
         with self._trace('test_name', name=name, seed=seed, timeout=timeout):
-            res = await super().qcheck_name(name=name, seed=seed, timeout=timeout)
+            res = await super().test_name(name=name, seed=seed, timeout=timeout)
         return TestRes.model_validate(res)
 
     async def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
