@@ -503,6 +503,7 @@ def get_imandrax_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
     session_id: str | None = None,
+    create_if_not_found: bool = False,
 ) -> ImandraXClient:
     url = get_imandrax_url(env)
     if not url:
@@ -520,6 +521,7 @@ def get_imandrax_client(
         auth_token=imandrax_api_key,
         timeout=300,
         session_id=session_id,
+        create_if_not_found=create_if_not_found,
     )
     logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
@@ -529,6 +531,7 @@ def get_imandrax_async_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
     session_id: str | None = None,
+    create_if_not_found: bool = False,
 ) -> ImandraXAsyncClient:
     url = get_imandrax_url(env)
     if not url:
@@ -546,6 +549,7 @@ def get_imandrax_async_client(
         auth_token=imandrax_api_key,
         timeout=300,
         session_id=session_id,
+        create_if_not_found=create_if_not_found,
     )
     logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
