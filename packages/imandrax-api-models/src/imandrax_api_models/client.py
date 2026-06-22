@@ -251,6 +251,9 @@ class ImandraXClient(imandrax_api.Client):
             )
         return ArtifactZip.model_validate(res)
 
+    # Additional methods
+    # ====================
+
     def eval_model(
         self,
         src: str,
@@ -277,6 +280,30 @@ class ImandraXClient(imandrax_api.Client):
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
             return self.eval_src(src=iml, timeout=timeout)
+
+    @property
+    def session_id(self) -> str | None:
+        """Id of the server-side session this client is bound to, if any."""
+        sesh = getattr(self, '_sesh', None)
+        return sesh.id if sesh is not None else None
+
+    def detach(self) -> str:
+        """
+        Close the local HTTP transport but leave the server session alive.
+
+        Unlike `__exit__`, this does not issue `end_session`.
+        After `detach` the client is closed and must not be used for further RPCs.
+
+        Returns:
+            str | None: current session id
+
+        """
+        sid = self.session_id
+        if sid is None:
+            raise RuntimeError('cannot detach a client with no session')
+        self._closed = True
+        self._session.close()
+        return sid
 
 
 class ImandraXAsyncClient(imandrax_api.AsyncClient):
@@ -424,6 +451,9 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             )
         return ArtifactZip.model_validate(res)
 
+    # Additional methods
+    # ====================
+
     async def eval_model(
         self,
         src: str,
@@ -451,6 +481,29 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
 
             return await self.eval_src(src=iml, timeout=timeout)
+
+    @property
+    def session_id(self) -> str | None:
+        """Id of the server-side session this client is bound to, if any."""
+        return self._session_id
+
+    async def detach(self) -> str:
+        """
+        Close the local HTTP transport but leave the server session alive.
+
+        Unlike `__exit__`, this does not issue `end_session`.
+        After `detach` the client is closed and must not be used for further RPCs.
+
+        Returns:
+            str: current session id
+
+        """
+        sid = self._session_id
+        if sid is None:
+            raise RuntimeError('cannot detach a client with no session')
+        self._closed = True
+        await self._session.close()
+        return sid
 
 
 # Helpers for creating client
@@ -553,3 +606,65 @@ def get_imandrax_async_client(
     )
     logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
+
+
+def _end_session(
+    session_id: str,
+    *,
+    url: str = imandrax_api.url_prod,
+    server_path_prefix: str = '/api/v1',
+    auth_token: str | None = None,
+    api_key: str | None = None,
+    timeout: int = 30,
+) -> None:
+    """
+    End a server-side session by id, without opening it first.
+
+    A regular `Client(session_id=...)` would issue an `open_session` RPC on
+    construction, which can be wasteful (and fails on an already-dead session)
+    when only discarding a cached/stale id is needed.
+
+    Errors propagate as `TwirpServerException` (e.g. the session is already
+    gone); callers wanting best-effort cleanup should catch them.
+    """
+    import requests
+    from imandrax_api.bindings import session_pb2, simple_api_twirp
+    from imandrax_api.client._common import mk_context
+
+    sess = requests.Session()
+    token = api_key or auth_token
+    if token:
+        sess.headers['Authorization'] = f'Bearer {token}'
+    try:
+        client = simple_api_twirp.SimpleClient(
+            url,
+            timeout=timeout,
+            server_path_prefix=server_path_prefix,
+            session=sess,
+        )
+        client.end_session(
+            ctx=mk_context(),
+            request=session_pb2.Session(id=session_id),
+            timeout=None,
+        )
+    finally:
+        sess.close()
+
+
+def end_session(
+    session_id: str,
+    auth_token: str | None = None,
+    env: Literal['dev', 'prod'] | None = None,
+) -> None:
+    """
+    End a server-side session by id, resolving url/key like `get_imandrax_client`.
+
+    Errors propagate as `TwirpServerException`; callers wanting best-effort cleanup should catch.
+    """
+    url = get_imandrax_url(env)
+    if not url:
+        raise ValueError('IMANDRAX_URL is not set')
+    imandrax_api_key = auth_token or get_imandrax_api_key()
+    if not imandrax_api_key:
+        raise ValueError('IMANDRAX_API_KEY is None')
+    imandrax_api.end_session(session_id, url=url, auth_token=imandrax_api_key)
