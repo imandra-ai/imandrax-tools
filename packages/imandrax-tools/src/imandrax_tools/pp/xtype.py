@@ -32,11 +32,14 @@ def _is_scalar(v: Any) -> bool:
     return v is None or isinstance(v, (bool, int, float, str, bytes))
 
 
-def _bytes2doc(b: bytes, limit: int = 64) -> Doc:
-    if len(b) <= limit:
+def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
+    if limit is None or limit == 0:
+        return Pp.text(f'<{len(b)} bytes>')
+    elif limit < 0 or len(b) <= limit:
         return Pp.text(repr(b))
-    head = b[:limit]
-    return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
+    else:
+        head = b[:limit]
+        return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
 
 
 def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
@@ -70,9 +73,9 @@ def value2doc(v: Any) -> Doc:
             return _scalar2doc(v)
         # Collections
         case list():
-            return Pp.list_doc(v)
+            return Pp.list_doc([value2doc(i) for i in v])
         case tuple():
-            return Pp.tupled(v)
+            return Pp.tupled([value2doc(i) for i in v])
         case set() | frozenset():
             return Pp.python_enclose(
                 Pp.text('{'), Pp.text('}'), sorted((value2doc(i) for i in v), key=repr)
@@ -87,3 +90,7 @@ def value2doc(v: Any) -> Doc:
         case _:
             raise NotImplementedError
             # return Pp.text(repr(v))
+
+
+def show_value(v: Any) -> str:
+    return Pp.pretty(88, value2doc(v))
