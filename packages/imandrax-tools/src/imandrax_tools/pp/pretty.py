@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import reduce
-from typing import Literal
+from typing import Literal, assert_never
 
 PYTHON_INDENT = 2
 
@@ -62,6 +62,12 @@ class Group:
 
 
 @dataclass(slots=True, frozen=True)
+class FlatAlt:
+    default: Doc  # Used when the enclosing group breaks
+    flat: Doc  # Used when the enclosing group is flat
+
+
+@dataclass(slots=True, frozen=True)
 class Prefix:
     """
     Like `Nest`, but the indent unit is an arbitrary string, not N spaces.
@@ -74,14 +80,16 @@ class Prefix:
     doc: Doc
 
 
-type Doc = Nil | Text | Line | LineBreak | Concat | Nest | Group | Prefix
+type Doc = Nil | Text | Line | LineBreak | Concat | Nest | Group | FlatAlt | Prefix
 
 # Smart constructors
 # ==================
 
 nil: Doc = Nil()
 line: Doc = Line()
+"""Potential line break; flattened to a single space when the group fits."""
 linebreak: Doc = LineBreak()
+"""Potential line break; flattened to the empty string when the group fits."""
 
 
 def text(s: str) -> Doc:
@@ -98,6 +106,10 @@ def nest(i: int, doc: Doc) -> Doc:
 
 def group(doc: Doc) -> Doc:
     return Group(doc)
+
+
+def flat_alt(default: Doc, flat: Doc) -> Doc:
+    return FlatAlt(default, flat)
 
 
 def prefix(p: str, doc: Doc) -> Doc:
@@ -144,6 +156,8 @@ def _fits(remaining: int, doc: Doc) -> bool:
                 stack.append(left)
             case Nest(_, inner) | Group(inner) | Prefix(_, inner):
                 stack.append(inner)
+            case FlatAlt(_, flat):
+                stack.append(flat)
     return rem >= 0
 
 
@@ -178,6 +192,9 @@ def _best(width: int, doc: Doc) -> list[SimpleToken]:
                 stack.append((pfx, mode, left))
             case Nest(i, inner):
                 stack.append((pfx + ' ' * i, mode, inner))
+            case FlatAlt(default, flat):
+                chosen = flat if mode == FLAT else default
+                stack.append((pfx, mode, chosen))
             case Prefix(p, inner):
                 stack.append((pfx + p, mode, inner))
             case Group(inner):
@@ -186,6 +203,8 @@ def _best(width: int, doc: Doc) -> list[SimpleToken]:
                 else:
                     m: Mode = FLAT if _fits(width - col, inner) else BREAK
                     stack.append((pfx, m, inner))
+            case _:
+                assert_never(d)
     return result
 
 
@@ -204,7 +223,7 @@ def pretty(width: int, doc: Doc) -> str:
     return _layout(_best(width, doc))
 
 
-# Public API — combinators
+# Public API -- combinators
 # ========================
 
 
@@ -295,7 +314,9 @@ def enclose_sep(ldelim: Doc, rdelim: Doc, sep: Doc, docs: list[Doc]) -> Doc:
     return group(concat(body, rdelim))
 
 
-def _python_enclose(ldelim: Doc, rdelim: Doc, docs: list[Doc]) -> Doc:
+def _python_enclose(
+    ldelim: Doc, rdelim: Doc, docs: list[Doc], trailing_comma: bool = True
+) -> Doc:
     """
     Python-style layout: one line if it fits, else each item on its own line.
 
@@ -310,7 +331,8 @@ def _python_enclose(ldelim: Doc, rdelim: Doc, docs: list[Doc]) -> Doc:
         return concat(ldelim, rdelim)
     sep = concat(text(','), line)
     body = punctuate(sep, docs)
-    inner = nest(PYTHON_INDENT, concat(linebreak, body))
+    tcomma = flat_alt(text(','), nil) if trailing_comma else nil
+    inner = nest(PYTHON_INDENT, hcat(linebreak, body, tcomma))
     return group(hcat(ldelim, inner, linebreak, rdelim))
 
 
