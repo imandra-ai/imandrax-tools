@@ -1,16 +1,22 @@
 """
-Pretty-printers for proof-obligation tasks and results.
+PO printers.
 
-`po_task2doc` / `po_res2doc` render the structured `Tasks_PO_task_Mir` and
-`Tasks_PO_res_Shallow` objects into compact, readable `Doc`s, eliding the
-noisy fields that dominate the default Python `repr` (the serialized `db`,
-the `report` archive, the `from_` pointer and the tactic tree).
+`value2doc` is a generic structural renderer over the decoded dataclass tree:
 
-`goal_state.py` covers the goal-state view of the error case; this module is
-the whole-object view. The two are intentionally independent.
+  * `Mir_Term`                      -> `term2doc`   (IML syntax)
+  * `Common_Applied_symbol_t_poly`  -> `sym2doc`    (short symbol name)
+  * `Uid`                           -> name (+ a compact tag for non-persistent
+                                       views, so the discriminator is not lost)
+  * dataclasses                     -> `ClassName` header + one line per field
+  * lists / tuples / sets           -> inline `[a, b]` when every element is
+                                       scalar, else a bullet list
+  * scalars                         -> rendered directly
 """
 
 from __future__ import annotations
+
+from dataclasses import fields, is_dataclass
+from typing import Any, assert_never
 
 import imandrax_api.lib as xtype
 
@@ -20,234 +26,139 @@ from .term_formatter import sym2doc, term2doc
 
 type PO_task = xtype.Tasks_PO_task_Mir
 type PO_res = xtype.Tasks_PO_res_Shallow
-type Sequent = xtype.Common_Sequent_t_poly[xtype.Mir_Term]
-type Model = xtype.Common_Model_t_poly[xtype.Mir_Term, xtype.Mir_Type]
-type ModelFi = xtype.Common_Model_fi[xtype.Mir_Term, xtype.Mir_Type]
-type AppliedSym = xtype.Common_Applied_symbol_t_poly[xtype.Mir_Type]
 
 
 # Layout helpers
 # ==============
 #
-# A "record" is a header line followed by indented field lines, e.g.
-#
-#     PO res
-#       res: Instance
-#       time: 0.04s
-#
-# These are deliberately *not* wrapped in groups: the top-level render mode is
-# BREAK, so every `Pp.line` stays a real newline (term2doc still groups its own
-# subtrees, which flatten locally as usual).
+# A "record" is a header line followed by indented field lines. These are
+# deliberately *not* wrapped in groups: the top-level render mode is BREAK, so
+# every `Pp.line` stays a real newline. `nest` is additive through the tree, so
+# nested records indent correctly regardless of horizontal position. (term2doc
+# still groups its own subtrees, which flatten locally as usual.)
 
 
-def _record(header: Doc, fields: list[Doc]) -> Doc:
-    """`header` followed by `fields`, each on its own line, indented by 2."""
-    if not fields:
-        return header
-    return Pp.hcat(header, Pp.nest(2, Pp.hcat(Pp.line, Pp.vsep(fields))))
+# def _record(header: Doc, fields_: list[Doc]) -> Doc:
+#     if not fields_:
+#         return header
+#     return Pp.hcat(header, Pp.nest(2, Pp.hcat(Pp.line, Pp.vsep(fields_))))
 
 
-def _inline(label: str, value: Doc) -> Doc:
-    """`label: value` on one (logical) line."""
-    return Pp.hcat(Pp.text(f'{label}: '), value)
+# def _inline(label: str, value: Doc) -> Doc:
+#     """`label: value` -- the value continues on the same line."""
+#     return Pp.hcat(Pp.text(f'{label}: '), value)
 
 
-def _block(label: str, body: Doc) -> Doc:
-    """`label:` header with `body` indented underneath."""
-    return _record(Pp.text(f'{label}:'), [body])
+# def _block(label: str, body: Doc) -> Doc:
+#     """`label:` header with `body` indented underneath."""
+#     return _record(Pp.text(f'{label}:'), [body])
 
 
-# Sequents
-# ========
+# def _bullets(docs: list[Doc]) -> Doc:
+#     """One `- item` per line; continuation lines of each item indent under it."""
+#     return Pp.vsep([Pp.hcat(Pp.text('- '), Pp.nest(2, d)) for d in docs])
 
 
-def _labeled_term2doc(labeled: tuple[None | str, xtype.Mir_Term]) -> Doc:
-    label, term = labeled
-    if label is not None:
-        return Pp.hcat(Pp.text(f'{label}: '), term2doc(term))
-    return term2doc(term)
+# Generic structural renderer
+# ===========================
 
 
-def _sequent2doc(sg: Sequent) -> Doc:
-    hyps = Pp.punctuate(Pp.text(', '), [_labeled_term2doc(h) for h in sg.hyps])
-    concls = Pp.punctuate(Pp.text(', '), [_labeled_term2doc(c) for c in sg.concls])
-    return Pp.group(Pp.hcat(hyps, Pp.text(' ⊢ '), concls))
+def _is_scalar(v: Any) -> bool:
+    return v is None or isinstance(v, (bool, int, float, str, bytes))
 
 
-def _subgoals2doc(subgoals: list[Sequent]) -> Doc:
-    if not subgoals:
-        return Pp.text('∎')
-    return Pp.vsep([Pp.hcat(Pp.text('- '), _sequent2doc(sg)) for sg in subgoals])
+# def _is_inline(v: Any) -> bool:
+#     """Whether `v` renders on a single (logical) line, so it can follow `label: `."""
+#     if isinstance(v, (xtype.Mir_Term, xtype.Common_Applied_symbol_t_poly, xtype.Uid)):
+#         return True
+#     if _is_scalar(v):
+#         return True
+#     if isinstance(v, xtype.Ca_store_Ca_ptr_Raw):
+#         return True
+#     if isinstance(v, (list, tuple, set, frozenset)):
+#         return all(_is_inline(x) for x in v)
+#     return False
 
 
-# Models
-# ======
+def _bytes2doc(b: bytes, limit: int = 64) -> Doc:
+    if len(b) <= limit:
+        return Pp.text(repr(b))
+    head = b[:limit]
+    return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
 
 
-def _fi2doc(sym: AppliedSym, fi: ModelFi) -> Doc:
-    cases: list[Doc] = []
-    for args, result in fi.fi_cases:
-        args_doc = (
-            Pp.punctuate(Pp.text(', '), [term2doc(a) for a in args])
-            if args
-            else Pp.text('_')
-        )
-        cases.append(
-            Pp.hcat(Pp.text('| '), args_doc, Pp.text(' -> '), term2doc(result))
-        )
-    cases.append(Pp.hcat(Pp.text('| _ -> '), term2doc(fi.fi_else)))
-    return _record(Pp.hcat(sym2doc(sym), Pp.text(':')), [Pp.vsep(cases)])
-
-
-def model2doc(model: Model) -> Doc:
-    """Render a model's constants (`name = value`) and functions (case tables)."""
-    rows: list[Doc] = []
-    for sym, term in model.consts:
-        rows.append(Pp.hcat(sym2doc(sym), Pp.text(' = '), term2doc(term)))
-    for sym, fi in model.funs:
-        rows.append(_fi2doc(sym, fi))
-    if not rows:
-        return Pp.text('(empty model)')
-    return Pp.vsep(rows)
-
-
-# Errors
-# ======
-
-
-def _error2doc(err: xtype.Error_Error_core) -> Doc:
-    return Pp.text(f'[{err.kind.name}] {err.msg.msg}')
-
-
-# Result
-# ======
-
-
-def _res2doc(
-    res: xtype.Tasks_PO_res_success[xtype.Mir_Term, xtype.Mir_Type]
-    | xtype.Tasks_PO_res_error[xtype.Mir_Term, xtype.Mir_Type],
-) -> Doc:
-    match res:
-        # Success cases
-        case xtype.Tasks_PO_res_success_Proof():
-            return Pp.text('Proof')
-        case xtype.Tasks_PO_res_success_Instance(arg=inst):
-            return _record(
-                Pp.text('Instance'), [_block('model', model2doc(inst.model))]
-            )
-        case xtype.Tasks_PO_res_success_Verified_upto(arg=vu):
-            steps = vu.upto.arg if isinstance(vu.upto, xtype.Upto_N_steps) else '?'
-            return Pp.text(f'Verified up to {steps} steps')
-        case xtype.Tasks_PO_res_success_Test_ok():
-            return Pp.text('Test ok')
-        # Error cases
-        case xtype.Tasks_PO_res_error_No_proof(arg=np):
-            if np.counter_model is not None:
-                return _record(
-                    Pp.text('Counter-model'),
-                    [_block('model', model2doc(np.counter_model))],
-                )
-            return _record(
-                Pp.text('No proof'),
-                [_block('subgoals', _subgoals2doc(list(np.subgoals)))],
-            )
-        case xtype.Tasks_PO_res_error_Unsat(arg=unsat):
-            return _record(Pp.text('Unsat'), [_inline('err', _error2doc(unsat.err))])
-        case xtype.Tasks_PO_res_error_Invalid_model(args=(err, model)):
-            return _record(
-                Pp.text('Invalid model'),
-                [_inline('err', _error2doc(err)), _block('model', model2doc(model))],
-            )
-        case xtype.Tasks_PO_res_error_Error(arg=err):
-            return _record(Pp.text('Error'), [_inline('err', _error2doc(err))])
-    return Pp.text(repr(res))
-
-
-# Sub-results
-# ===========
-
-
-def _sub_res2doc(sub: xtype.Tasks_PO_res_sub_res[xtype.Mir_Term]) -> Doc:
-    fields: list[Doc] = [_inline('goal', _sequent2doc(sub.goal))]
-    if sub.sub_goals:
-        k = len(sub.sub_goals)
-        fields.append(Pp.text(f'sub_goals: {k} subgoal{"s" if k > 1 else ""}'))
-    head = Pp.text(f'- res: {sub.res}' if sub.res is not None else '-')
-    return _record(head, fields)
-
-
-# Top-level
-# =========
-
-
-def _verify_kind_name(vk: xtype.Common_Verify_kind | None) -> str | None:
-    match vk:
-        case xtype.Common_Verify_kind_K_verify():
-            return 'verify'
-        case xtype.Common_Verify_kind_K_instance():
-            return 'instance'
-        case xtype.Common_Verify_kind_K_test():
-            return 'test'
+def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
+    match v:
         case None:
-            return None
+            return Pp.text('None')
+        case bool():
+            return Pp.text('true' if v else 'false')
+        case int() | float():
+            return Pp.text(str(v))
+        case str():
+            return Pp.text(v)
+        case bytes():
+            return _bytes2doc(v)
+        case _:
+            assert_never(v)
 
 
-def po_task2doc(task: PO_task) -> Doc:
-    """Render a `Tasks_PO_task_Mir`, eliding the serialized db and tactic tree."""
-    po = task.po
-    fields: list[Doc] = []
-    if po.descr:
-        fields.append(_inline('descr', Pp.text(po.descr)))
-    kind = _verify_kind_name(po.verify_kind)
-    if kind is not None:
-        fields.append(_inline('kind', Pp.text(kind)))
+# def _seq2doc(xs: list[Any] | tuple[Any, ...], opener: str, closer: str) -> Doc:
+#     items = list(xs)
+#     if not items:
+#         return Pp.text(f'{opener}{closer}')
+#     if all(_is_inline(x) for x in items):
+#         return Pp.python_enclose(
+#             Pp.text(opener), Pp.text(closer), [value2doc(x) for x in items]
+#         )
+#     return _bullets([value2doc(x) for x in items])
 
-    binders, goal_term = po.goal
-    if binders:
-        names = ', '.join(v.id.name for v in binders)
-        fields.append(_inline('vars', Pp.text(names)))
-    fields.append(_block('goal', Pp.group(Pp.hcat(Pp.text('⊢ '), term2doc(goal_term)))))
 
-    if po.named_hypotheses:
-        hyps = Pp.vsep(
-            [
-                Pp.hcat(Pp.text(f'{name}: '), term2doc(t))
-                for name, t in po.named_hypotheses
-            ]
+# def _record2doc(v: Any) -> Doc:
+#     name = type(v).__name__
+#     flds = fields(v)
+#     if not flds:
+#         return Pp.text(name)
+#     rows = [_field2doc(f.name, getattr(v, f.name)) for f in flds]
+#     return _record(Pp.text(name), rows)
+
+
+# def _field2doc(name: str, v: Any) -> Doc:
+#     return _inline(name, value2doc(v)) if _is_inline(v) else _block(name, value2doc(v))
+
+
+def value2doc(v: Any) -> Doc:
+    # Semantic dispatch for the types with dedicated pretty-printers
+    if isinstance(v, xtype.Mir_Term):
+        return term2doc(v)
+    if isinstance(v, xtype.Common_Applied_symbol_t_poly):
+        return sym2doc(v)
+    if isinstance(v, xtype.Uid):
+        return Pp.text(v.name)
+    # Content-addressed pointer: just a key string
+    if isinstance(v, xtype.Ca_store_Ca_ptr_Raw):
+        return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
+    # Scalars
+    if _is_scalar(v):
+        return _scalar2doc(v)
+    # Collections
+    if isinstance(v, list):
+        return Pp.list_doc(v)
+    if isinstance(v, tuple):
+        return Pp.tupled(v)
+    if isinstance(v, (set, frozenset)):
+        # return _seq2doc(sorted(v, key=repr), '{', '}')
+        return Pp.python_enclose(
+            Pp.text('{'), Pp.text('}'), sorted((value2doc(i) for i in v), key=repr)
         )
-        fields.append(_block('hypotheses', hyps))
-
-    if po.timeout is not None:
-        fields.append(_inline('timeout', Pp.text(str(po.timeout))))
-    if isinstance(po.upto, xtype.Upto_N_steps):
-        fields.append(_inline('upto', Pp.text(f'{po.upto.arg} steps')))
-
-    return _record(Pp.text(f'PO task: {task.from_sym}'), fields)
-
-
-def po_res2doc(po_res: PO_res) -> Doc:
-    """Render a `Tasks_PO_res_Shallow`, eliding the from_ pointer and report archive."""
-    fields: list[Doc] = [_inline('res', _res2doc(po_res.res))]
-    # NOTE: `stats.time_s` currently decodes to garbage from the shallow po_res
-    # artifact (e.g. 2.01e+208) -- an upstream `Statistics_of_twine` bug. Disabled
-    # until that is fixed; re-enable once the decoded value is trustworthy.
-    if False:
-        fields.append(_inline('time', Pp.text(f'{po_res.stats.time_s:.4g}s')))
-
-    flat_sub = [s for group in po_res.sub_res for s in group]
-    if flat_sub:
-        fields.append(_block('sub_res', Pp.vsep([_sub_res2doc(s) for s in flat_sub])))
-
-    return _record(Pp.text('PO res'), fields)
-
-
-# String entry points
-# ====================
-
-
-def prettify_po_task(task: PO_task, width: int = 88) -> str:
-    return Pp.pretty(width, po_task2doc(task))
-
-
-def prettify_po_res(po_res: PO_res, width: int = 88) -> str:
-    return Pp.pretty(width, po_res2doc(po_res))
+    if isinstance(v, dict):
+        # rows = [_field2doc(str(k), val) for k, val in v.items()]
+        # return _record(Pp.text('{}'), rows) if rows else Pp.text('{}')
+        return Pp.python_dict([(value2doc(k), value2doc(v)) for k, v in v.items()])
+    # Dataclasses (the bulk of the tree)
+    if is_dataclass(v) and not isinstance(v, type):
+        return Pp.python_obj(
+            v.__class__.__name__,
+            [(f.name, value2doc(getattr(v, f.name))) for f in fields(v)],
+        )
+    return Pp.text(repr(v))
