@@ -15,7 +15,7 @@ PO printers.
 
 from __future__ import annotations
 
-from dataclasses import fields, is_dataclass
+from dataclasses import dataclass, fields, is_dataclass
 from typing import Any, assert_never
 
 import imandrax_api.lib as xtype
@@ -26,6 +26,11 @@ from .term_formatter import sym2doc, term2doc
 
 type PO_task = xtype.Tasks_PO_task_Mir
 type PO_res = xtype.Tasks_PO_res_Shallow
+
+
+@dataclass
+class PrinterConfig:
+    bytes_limit: int | None = None
 
 
 def _is_scalar(v: Any) -> bool:
@@ -58,39 +63,53 @@ def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
             assert_never(v)
 
 
-def value2doc(v: Any) -> Doc:
-    # Semantic dispatch for the types with dedicated pretty-printers
-    match v:
-        case xtype.Mir_Term():
-            return term2doc(v)
-        case xtype.Common_Applied_symbol_t_poly():
-            return sym2doc(v)
-        case xtype.Uid():
-            return Pp.text(v.name)
-        case xtype.Ca_store_Ca_ptr_Raw():
-            return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
-        case _ if _is_scalar(v):
-            return _scalar2doc(v)
-        # Collections
-        case list():
-            return Pp.list_doc([value2doc(i) for i in v])
-        case tuple():
-            return Pp.tupled([value2doc(i) for i in v])
-        case set() | frozenset():
-            return Pp.python_enclose(
-                Pp.text('{'), Pp.text('}'), sorted((value2doc(i) for i in v), key=repr)
-            )
-        case dict():
-            return Pp.python_dict([(value2doc(k), value2doc(v)) for k, v in v.items()])
-        case _ if is_dataclass(v) and not isinstance(v, type):
-            return Pp.python_obj(
-                v.__class__.__name__,
-                [(f.name, value2doc(getattr(v, f.name))) for f in fields(v)],
-            )
-        case _:
-            raise NotImplementedError
-            # return Pp.text(repr(v))
+class Printer:
+    config: PrinterConfig
+
+    def __init__(self, config: PrinterConfig):
+        self.config = config
+
+    def bytes2doc(self, v: bytes) -> Doc:
+        return _bytes2doc(v, self.config.bytes_limit)
+
+    def value2doc(self, v: Any) -> Doc:
+        # Semantic dispatch for the types with dedicated pretty-printers
+        match v:
+            case xtype.Mir_Term():
+                return term2doc(v)
+            case xtype.Common_Applied_symbol_t_poly():
+                return sym2doc(v)
+            case xtype.Uid():
+                return Pp.text(v.name)
+            case xtype.Ca_store_Ca_ptr_Raw():
+                return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
+            case _ if _is_scalar(v):
+                return _scalar2doc(v)
+            # Collections
+            case list():
+                return Pp.list_doc([self.value2doc(i) for i in v])
+            case tuple():
+                return Pp.tupled([self.value2doc(i) for i in v])
+            case set() | frozenset():
+                return Pp.python_enclose(
+                    Pp.text('{'),
+                    Pp.text('}'),
+                    sorted((self.value2doc(i) for i in v), key=repr),
+                )
+            case dict():
+                return Pp.python_dict(
+                    [(self.value2doc(k), self.value2doc(v)) for k, v in v.items()]
+                )
+            case _ if is_dataclass(v) and not isinstance(v, type):
+                return Pp.python_obj(
+                    v.__class__.__name__,
+                    [(f.name, self.value2doc(getattr(v, f.name))) for f in fields(v)],
+                )
+            case _:
+                raise NotImplementedError
+                # return Pp.text(repr(v))
 
 
 def show_value(v: Any) -> str:
-    return Pp.pretty(88, value2doc(v))
+    printer = Printer(PrinterConfig())
+    return Pp.pretty(88, printer.value2doc(v))
