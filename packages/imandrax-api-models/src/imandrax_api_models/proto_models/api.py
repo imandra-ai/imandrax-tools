@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+from enum import Enum
 from io import BytesIO
 from zipfile import ZipFile
 
@@ -11,6 +12,34 @@ from imandrax_api.lib import Artifact as XtypesArtifact, read_artifact_data
 from pydantic import Field, field_validator
 
 from ..proto_utils import BaseModel
+from .artmsg import Art
+from .error import Error
+from .task import Task
+
+
+class CodeSnippet(BaseModel):
+    code: str
+    task_filter: list[str] = Field(
+        description=(
+            'Regular expression for verification tasks to be '
+            'started during evaluation. The default is to start '
+            'all tasks, but e.g. task_filter="*xyz*" would start '
+            "only tasks pertaining to top-level definitions with 'xyz'"
+            ' in their name.'
+        ),
+    )
+
+
+class EvalResult(Enum):
+    EVAL_OK = 'EVAL_OK'
+    EVAL_ERRORS = 'EVAL_ERRORS'
+
+
+class CodeSnippetEvalResult(BaseModel):
+    res: EvalResult
+    duration_s: float
+    tasks: list[Task] = Field(description='Tasks produced in the evaluation.')
+    errors: list[Error] = Field(description='Errors occurring during evaluation.')
 
 
 class ArtifactListResult(BaseModel):
@@ -19,6 +48,10 @@ class ArtifactListResult(BaseModel):
     kinds: list[str] = Field(
         default_factory=list, description='Available artifact kinds'
     )
+
+
+class Artifact(BaseModel):
+    art: Art = Field(description='Requested artifact')
 
 
 class ArtifactZip(BaseModel):
