@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.0.5] - 2026-06-24
+- FIX(yaml_utils): register representer for subclass
+
 ## [20.0.4] - 2026-06-22
 - Bump imandrax-api: fixes
 
