@@ -12,6 +12,7 @@ Ported from [imandrax-vscode/src/goal-state/term-formatter.ts@7275010ec14d821b2f
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
 from typing import Literal, assert_never
@@ -232,7 +233,7 @@ def hcat(*docs: Doc) -> Doc:
     return reduce(concat, docs, nil)
 
 
-def punctuate(sep: Doc, docs: list[Doc]) -> Doc:
+def punctuate(sep: Doc, docs: Iterable[Doc]) -> Doc:
     """Concatenate documents with `sep` between each pair."""
     if not docs:
         return nil
@@ -243,17 +244,17 @@ def punctuate(sep: Doc, docs: list[Doc]) -> Doc:
     return acc
 
 
-def hsep(docs: list[Doc]) -> Doc:
+def hsep(docs: Iterable[Doc]) -> Doc:
     """Lay out documents separated by spaces (never breaks)."""
     return punctuate(text(' '), docs)
 
 
-def vsep(docs: list[Doc]) -> Doc:
+def vsep(docs: Iterable[Doc]) -> Doc:
     """Lay out documents separated by `line` (spaces or newlines)."""
     return punctuate(line, docs)
 
 
-def fill(docs: list[Doc]) -> Doc:
+def fill(docs: Iterable[Doc]) -> Doc:
     """Try to fill a line; break only when necessary."""
     return punctuate(group(line), docs)
 
@@ -314,8 +315,11 @@ def enclose_sep(ldelim: Doc, rdelim: Doc, sep: Doc, docs: list[Doc]) -> Doc:
     return group(concat(body, rdelim))
 
 
-def _python_enclose(
-    ldelim: Doc, rdelim: Doc, docs: list[Doc], trailing_comma: bool = True
+def python_enclose(
+    ldelim: Doc,
+    rdelim: Doc,
+    docs: Iterable[Doc],
+    trailing_comma: bool = True,
 ) -> Doc:
     """
     Python-style layout: one line if it fits, else each item on its own line.
@@ -336,20 +340,34 @@ def _python_enclose(
     return group(hcat(ldelim, inner, linebreak, rdelim))
 
 
+def python_dict_entry(k: Doc, v: Doc) -> Doc:
+    return hcat(k, text(': '), v)
+
+
+def python_dict(entries: list[tuple[Doc, Doc]]) -> Doc:
+    items = [python_dict_entry(k, v) for k, v in entries]
+    return python_enclose(text('{'), text('}'), items)
+
+
+def python_obj(name: str, fields: list[tuple[str, Doc]]) -> Doc:
+    parts = [concat(text(f'{k=}'), v) for k, v in fields]
+    return python_enclose(text(f'{name}('), text(')'), parts)
+
+
 def list_doc(docs: list[Doc]) -> Doc:
     """Python-style list: `[a, b, c]` flat or one-per-line broken."""
-    return _python_enclose(text('['), text(']'), docs)
+    return python_enclose(text('['), text(']'), docs)
 
 
-def tupled(docs: list[Doc]) -> Doc:
+def tupled(docs: list[Doc] | tuple[Doc, ...]) -> Doc:
     """Python-style tuple: `(a, b, c)` flat or one-per-line broken."""
-    return _python_enclose(text('('), text(')'), docs)
+    return python_enclose(text('('), text(')'), list(docs))
 
 
 def assoc_list(docs: list[tuple[str, Doc]]) -> Doc:
     """Python-style dict: `{k: v, ...}` flat or one-per-line broken."""
     items: list[Doc] = [concat(concat(text(k), text(': ')), v) for (k, v) in docs]
-    return _python_enclose(text('{'), text('}'), items)
+    return python_enclose(text('{'), text('}'), items)
 
 
 # Helpers
