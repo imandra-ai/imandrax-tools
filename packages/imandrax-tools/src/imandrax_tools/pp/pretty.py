@@ -350,7 +350,7 @@ def python_dict(entries: list[tuple[Doc, Doc]]) -> Doc:
 
 
 def python_obj(name: str, fields: list[tuple[str, Doc]]) -> Doc:
-    parts = [concat(text(f'{k=}'), v) for k, v in fields]
+    parts = [concat(text(f'{k}='), v) for k, v in fields]
     return python_enclose(text(f'{name}('), text(')'), parts)
 
 
