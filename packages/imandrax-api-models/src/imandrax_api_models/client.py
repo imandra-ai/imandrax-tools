@@ -311,17 +311,16 @@ class ImandraXClient(imandrax_api.Client):
         self,
         task: Task,
         kind: str,
-        timeout: float | None = None,
     ) -> Artifact:
         # TODO: upstream
         from imandrax_api.bindings import api_pb2
 
-        with self._trace('get_artifact', kind=kind, timeout=timeout):
-            timeout = timeout or super()._timeout
-            res = super()._api_client.get_artifact(
+        task_id = task.to_proto().id
+
+        with self._trace('get_artifact', kind=kind):
+            res = self._api_client.get_artifact(
                 ctx=super().mk_context(),
-                request=api_pb2.ArtifactGetQuery(task_id=task.id, kind=kind),
-                timeout=timeout,
+                request=api_pb2.ArtifactGetQuery(task_id=task_id, kind=kind),
             )
         return Artifact.model_validate(res)
 
