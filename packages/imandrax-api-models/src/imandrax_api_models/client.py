@@ -44,7 +44,12 @@ from imandrax_api_models import (
     TypecheckRes,
     VerifyRes,
 )
-from imandrax_api_models.proto_models.api import ArtifactListResult, ArtifactZip
+from imandrax_api_models.proto_models.api import (
+    Artifact,
+    ArtifactListResult,
+    ArtifactZip,
+    CodeSnippetEvalResult,
+)
 from imandrax_api_models.proto_models.task import Task
 
 logger = structlog.get_logger(__name__)
@@ -238,6 +243,87 @@ class ImandraXClient(imandrax_api.Client):
         with self._trace('list_artifacts', timeout=timeout):
             res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
+
+    def eval_code_snippet(
+        self,
+        code: str,
+        task_filter: list[str] | None = None,
+        timeout: float | None = None,
+    ) -> CodeSnippetEvalResult:
+        # TODO: upstream
+        from imandrax_api.bindings import api_pb2
+
+        with self._trace(
+            'eval_code_snippet', code=code, task_filter=task_filter, timeout=timeout
+        ):
+            timeout = timeout or super()._timeout
+            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
+            res = super()._api_client.eval_code_snippet(
+                ctx=super().mk_context(),
+                request=req,
+                timeout=timeout,
+            )
+        return CodeSnippetEvalResult.model_validate(res)
+
+    def parse_term(
+        self,
+        code: str,
+        task_filter: list[str] | None = None,
+        timeout: float | None = None,
+    ) -> Artifact:
+        # TODO: upstream
+        from imandrax_api.bindings import api_pb2
+
+        with self._trace(
+            'parse_term', code=code, task_filter=task_filter, timeout=timeout
+        ):
+            timeout = timeout or super()._timeout
+            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
+            res = super()._api_client.parse_term(
+                ctx=super().mk_context(),
+                request=req,
+                timeout=timeout,
+            )
+        return Artifact.model_validate(res)
+
+    def parse_type(
+        self,
+        code: str,
+        task_filter: list[str] | None = None,
+        timeout: float | None = None,
+    ) -> Artifact:
+        # TODO: upstream
+        from imandrax_api.bindings import api_pb2
+
+        with self._trace(
+            'parse_type', code=code, task_filter=task_filter, timeout=timeout
+        ):
+            timeout = timeout or super()._timeout
+            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
+            res = super()._api_client.parse_type(
+                ctx=super().mk_context(),
+                request=req,
+                timeout=timeout,
+            )
+        return Artifact.model_validate(res)
+
+    def get_artifact(
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> Artifact:
+        # TODO: upstream
+        from imandrax_api.bindings import api_pb2
+
+        with self._trace('get_artifact', kind=kind, timeout=timeout):
+            timeout = timeout or super()._timeout
+            res = super()._api_client.get_artifact(
+                ctx=super().mk_context(),
+                request=api_pb2.ArtifactGetQuery(task_id=task.id, kind=kind),
+                timeout=timeout,
+            )
+        return Artifact.model_validate(res)
 
     def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
