@@ -99,26 +99,6 @@ def Goal2doc(v: Goal, ty2doc: Callable[[xtype.Mir_Type], Doc]) -> Doc:
     return python_obj('Goal', [(None, python_quote(goal_doc, single_quote=False))])
 
 
-# def _is_scalar(v: Any) -> bool:
-#     return v is None or isinstance(v, (bool, int, float, str, bytes))
-
-
-# def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
-#     match v:
-#         case None:
-#             return Pp.text('None')
-#         case bool():
-#             return Pp.text('True' if v else 'False')
-#         case int() | float():
-#             return Pp.text(str(v))
-#         case str():
-#             return Pp.text(v)
-#         case bytes():
-#             return _bytes2doc(v)
-#         case _:
-#             assert_never(v)
-
-
 class Printer:
     """
     General printer for imandrax-api deserialized values.
@@ -185,32 +165,6 @@ class Printer:
     ) -> Doc:
         proof_found = v.arg
         return self.value2doc(proof_found)
-
-    # def Tasks_PO_res_proof_found2doc(self, v: xtype.Tasks_PO_res_proof_found) -> Doc:
-    #     return self.dataclass2doc(v, with_name='ProofFound')
-
-    # def Proof_Proof_term2doc(
-    #     self, v: xtype.Proof_Proof_term_t_poly[xtype.Mir_Term_term, xtype.Mir_Type]
-    # ) -> Doc:
-    #     return self.dataclass2doc(v, with_name='ProofTerm')
-    # name = 'ProofTerm'
-    # id = self.value2doc(v.id)
-    # concl: Doc = Sequent2doc(v.concl)
-    # view = self.value2doc(v.view)
-    # return Pp.python_obj(
-    #     name,
-    #     [
-    #         ('id', id),
-    #         ('concl', concl),
-    #         ('view', view),
-    #     ],
-    # )
-
-    # def Anchor2doc(self, v: xtype.Anchor) -> Doc:
-    #     match v:
-    #         case Anchor_Named
-
-    # def PO_res2doc(self, v: PO_res) -> Doc:
 
     # --------------------
 
@@ -325,12 +279,6 @@ class Printer:
                 )
             case _ if is_dataclass(v) and not isinstance(v, type):
                 return dataclass2doc(v)
-                # rows = self.dataclass_row_docs(v)
-                # non_nil_rows = filter(lambda r: r[1] is not nil, rows)
-                # return Pp.python_obj(
-                #     v.__class__.__name__,
-                #     non_nil_rows,
-                # )
             case _:
                 return Pp.text(repr(v))
 
