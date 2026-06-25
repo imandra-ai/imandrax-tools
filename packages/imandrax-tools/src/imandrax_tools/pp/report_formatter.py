@@ -12,13 +12,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Any
 
 import imandrax_api.lib as xtype
 
 from . import pretty as Pp
 from .goal_state import doc_of_sequent
-from .pretty import Doc, hcat, join, line, nil, text, tree
+from .pretty import Doc, hcat, join, line, nil, text, tree as tree_
 from .term_formatter import term2doc
 
 
@@ -198,12 +199,12 @@ def _build_forest(events: list, ctx: _Ctx) -> list[_Node]:
     return root
 
 
-def _node2doc(n: _Node) -> Doc:
+def _node2doc(n: _Node, tree: Callable[[Doc, list[Doc]], Doc]) -> Doc:
     header = n.header
     if n.duration is not None:
         header = hcat(header, text(f'  ({_fmt_dur(n.duration)})'))
     if n.children:
-        return tree(header, [_node2doc(c) for c in n.children])
+        return tree(header, [_node2doc(c, tree) for c in n.children])
     return header
 
 
@@ -212,6 +213,7 @@ def report2doc(
     *,
     value2doc: Callable[[Any], Doc],
     expand_payloads: bool = False,
+    ascii_only: bool = False,
 ) -> Doc:
     """
     Render a report as an event tree.
@@ -222,8 +224,11 @@ def report2doc(
             SMT proofs) when `expand_payloads` is set.
         expand_payloads: if True, render embedded models/SMT proofs in full;
             otherwise summarize them to a one-liner.
+        ascii_only: if True, use ASCII characters only for tree indentation.
 
     """
+    tree = partial(tree_, ascii_only=ascii_only)
+
     ctx = _Ctx(value2doc=value2doc, expand_payloads=expand_payloads)
     forest = _build_forest(list(report.events), ctx)
-    return tree(text('Report'), [_node2doc(n) for n in forest])
+    return tree(text('Report'), [_node2doc(n, tree) for n in forest])

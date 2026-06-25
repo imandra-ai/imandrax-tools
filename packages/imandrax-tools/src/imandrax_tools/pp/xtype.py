@@ -63,6 +63,7 @@ class PrinterConfig:
     show_anchor_hash: bool = False  # append a short chash to anchor/cname names
     report_expand_payloads: bool = False  # render full models/SMT proofs in reports
     unwrap_single_arg_dataclass: bool = True
+    ascii_only: bool = False
 
 
 def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
@@ -240,6 +241,7 @@ class Printer:
                     v,
                     value2doc=self.value2doc,
                     expand_payloads=self.config.report_expand_payloads,
+                    ascii_only=self.config.ascii_only,
                 )
             case (
                 xtype.Common_Verify_kind_K_verify()
@@ -287,7 +289,15 @@ class Printer:
             case xtype.Proof_Proof_term_t_poly():
                 return python_obj(
                     'ProofTerm',
-                    [(None, python_quote(proof2doc(v), single_quote=False))],
+                    [
+                        (
+                            None,
+                            python_quote(
+                                proof2doc(v, ascii_only=self.config.ascii_only),
+                                single_quote=False,
+                            ),
+                        )
+                    ],
                 )
             case (
                 xtype.Proof_Arg_A_term()
@@ -380,6 +390,6 @@ class Printer:
         return self.value2doc(v)
 
 
-def show_value(v: Any) -> str:
-    printer = Printer(PrinterConfig())
+def show_value(v: Any, **kwargs) -> str:
+    printer = Printer(PrinterConfig(**kwargs))
     return Pp.pretty(88, printer.value2doc(v))

@@ -402,15 +402,23 @@ def assoc_list(docs: Iterable[tuple[str, Doc]]) -> Doc:
 # Tree layout
 # ===========
 
-# TODO: add an ASCII-only mode
+# mid, end, gutter_mid, gutter_end
+TREE_CHARS = (
+    '├─ ',
+    '└─ ',
+    '│  ',
+    '   ',
+)
 
-_TREE_CONN_MID = '├─ '
-_TREE_CONN_END = '└─ '
-_TREE_GUTTER_MID = '│  '
-_TREE_GUTTER_END = '   '
+TREE_CHARS_ASCII = (
+    '|-- ',
+    '`-- ',
+    '|   ',
+    '    ',
+)
 
 
-def tree(header: Doc, children: list[Doc]) -> Doc:
+def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
     """
     Lay out `header` with `children` hung beneath it using box-drawing guides.
 
@@ -419,12 +427,13 @@ def tree(header: Doc, children: list[Doc]) -> Doc:
     subtrees stay aligned under their connector. Uses `hardline`, so the tree
     always breaks regardless of the enclosing group.
     """
+    end, mid, gutter_end, gutter_mid = TREE_CHARS_ASCII if ascii_only else TREE_CHARS
     parts: list[Doc] = [header]
     last = len(children) - 1
     for i, child in enumerate(children):
         is_last = i == last
-        conn = _TREE_CONN_END if is_last else _TREE_CONN_MID
-        gutter = _TREE_GUTTER_END if is_last else _TREE_GUTTER_MID
+        conn = end if is_last else mid
+        gutter = gutter_end if is_last else gutter_mid
         parts.append(hcat(hardline, text(conn), prefix(gutter, child)))
     return hcat(*parts)
 

@@ -10,6 +10,8 @@ via `pretty.prefix`.
 
 from __future__ import annotations
 
+from functools import partial
+
 import imandrax_api.lib as xtype
 
 from .goal_state import doc_of_sequent
@@ -22,7 +24,7 @@ from .pretty import (
     join,
     line,
     text,
-    tree,
+    tree as tree_,
 )
 from .term_formatter import term2doc
 from .type_formatter import type2doc
@@ -77,8 +79,9 @@ def _subst2doc(
 # ==============
 
 
-def proof2doc(p: xtype.Proof_Proof_term_t_poly) -> Doc:
+def proof2doc(p: xtype.Proof_Proof_term_t_poly, ascii_only: bool = False) -> Doc:
     """Render a proof term as a derivation tree."""
+    tree = partial(tree_, ascii_only=ascii_only)
     concl = doc_of_sequent(p.concl)
     v = p.view
     match v:
