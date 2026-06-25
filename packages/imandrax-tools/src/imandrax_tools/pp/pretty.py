@@ -380,8 +380,12 @@ def assoc_list(docs: Iterable[tuple[str, Doc]]) -> Doc:
     return python_enclose(text('{'), text('}'), items)
 
 
-def python_quote(inner: Doc, indent: int = PYTHON_INDENT) -> Doc:
-    q = flat_alt(text("'''"), text("'"))
+def python_quote(
+    inner: Doc,
+    indent: int = PYTHON_INDENT,
+    single_quote: bool = True,
+) -> Doc:
+    q = flat_alt(text("'''"), text("'") if single_quote else text('"'))
     body = nest(indent, concat(linebreak, inner))
     return group(hcat(q, body, linebreak, q))
 
