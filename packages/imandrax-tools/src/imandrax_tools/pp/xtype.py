@@ -2,18 +2,10 @@
 # pyright: reportUnusedExpression=false
 # ruff: noqa: RUF100, F401
 """
-PO printers.
+ImandraX API type printer.
 
-`value2doc` is a generic structural renderer over the decoded dataclass tree:
-
-  * `Mir_Term`                      -> `term2doc`   (IML syntax)
-  * `Common_Applied_symbol_t_poly`  -> `sym2doc`    (short symbol name)
-  * `Uid`                           -> name (+ a compact tag for non-persistent
-                                       views, so the discriminator is not lost)
-  * dataclasses                     -> `ClassName` header + one line per field
-  * lists / tuples / sets           -> inline `[a, b]` when every element is
-                                       scalar, else a bullet list
-  * scalars                         -> rendered directly
+- All outputs aim to be valid Python repr
+- For DSL-syntax, they are wrapped in `python_quote`
 """
 
 from __future__ import annotations
@@ -21,13 +13,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
-from typing import Any, assert_never
+from typing import Any, assert_never, cast
 
 import imandrax_api.lib as xtype
 
 from . import pretty as Pp
 from ._common import *
 from .goal_state import doc_of_sequent as Sequent2doc_raw
+from .model_formatter import model2doc
 from .pretty import (
     Doc,
     enclose_sep,
@@ -236,7 +229,10 @@ class Printer:
                 rows_ = [(python_quote(text(k)), v) for k, v in rows]
                 return python_dict(rows_)
             case xtype.Common_Model_t_poly():
-                return dataclass2doc(v, with_name='Model')
+                return python_obj(
+                    'Model',
+                    [(None, python_quote(model2doc(v), single_quote=False))],
+                )
             case xtype.Statistics():
                 return dataclass2doc(v, with_name='TacticExecStats')
             case xtype.Report_Report():
@@ -245,6 +241,15 @@ class Printer:
                     value2doc=self.value2doc,
                     expand_payloads=self.config.report_expand_payloads,
                 )
+            case (
+                xtype.Common_Verify_kind_K_verify()
+                | xtype.Common_Verify_kind_K_instance()
+                | xtype.Common_Verify_kind_K_test()
+            ):
+                name = (
+                    type(v).__name__.removeprefix('Common_Verify_kind_K_').capitalize()
+                )
+                return text(f'VerifyKind.{name}')
             # PO res
             case xtype.Tasks_PO_res_shallow_poly():
                 return dataclass2doc(
@@ -319,8 +324,15 @@ class Printer:
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
                     val = getattr(v, fld.name)
+                    if val is None:
+                        continue
                     if fld.name == 'goal':
                         val_doc = Goal2doc(val, ty2doc=type2doc)
+                    elif fld.name == 'named_hypotheses':
+                        val = cast(list[tuple[str, xtype.Mir_Term]], val)
+                        val_doc = python_dict(
+                            [(text(name), term2doc(term)) for name, term in val]
+                        )
                     else:
                         val_doc = self.value2doc(val)
                     rows.append((fld.name, val_doc))
