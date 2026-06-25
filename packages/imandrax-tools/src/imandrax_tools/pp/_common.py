@@ -11,6 +11,7 @@ type Sequent = xtype.Common_Sequent_t_poly[xtype.Mir_Term]
 type AssocList[T] = list[tuple[str, T]]
 type PO_res = xtype.Tasks_PO_res_Shallow
 type PO_task = xtype.Tasks_PO_task_Mir
+type ProofObligation = xtype.Common_Proof_obligation_t_poly
 
 __all__ = (
     'AssocList',
@@ -23,4 +24,5 @@ __all__ = (
     'Sequent',
     'PO_res',
     'PO_task',
+    'ProofObligation',
 )
