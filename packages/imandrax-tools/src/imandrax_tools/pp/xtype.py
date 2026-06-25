@@ -42,6 +42,7 @@ from .pretty import (
     vsep,
 )
 from .proof_formatter import proof2doc
+from .report_formatter import report2doc
 from .term_formatter import sym2doc, term2doc as term2doc_
 from .type_formatter import type2doc as type2doc_
 
@@ -67,6 +68,7 @@ class PrinterConfig:
         False  # Note: report can be found in a dedicated artifact
     )
     show_anchor_hash: bool = False  # append a short chash to anchor/cname names
+    report_expand_payloads: bool = False  # render full models/SMT proofs in reports
     unwrap_single_arg_dataclass: bool = True
 
 
@@ -99,6 +101,7 @@ def Goal2doc(v: Goal, ty2doc: Callable[[xtype.Mir_Type], Doc]) -> Doc:
     body = v[1]
     goal_doc = vsep(
         [
+            text('fun'),
             *var_docs,
             text('->'),
             term2doc(body),
@@ -118,9 +121,11 @@ class Printer:
     """
 
     config: PrinterConfig
+    debug: bool
 
-    def __init__(self, config: PrinterConfig = PrinterConfig()):
+    def __init__(self, config: PrinterConfig = PrinterConfig(), debug: bool = False):
         self.config = config
+        self.debug = debug
 
     def dataclass_row_docs(
         self,
@@ -171,12 +176,6 @@ class Printer:
 
     # Custom xtype printers
     # --------------------
-
-    def Tasks_PO_res_success_Proof2doc(
-        self, v: xtype.Tasks_PO_res_success_Proof
-    ) -> Doc:
-        proof_found = v.arg
-        return self.value2doc(proof_found)
 
     def Cname2doc(self, c: xtype.Cname_t_) -> Doc:
         """A content-addressed name: `name`, or `name/<short hash>` when configured."""
@@ -240,6 +239,12 @@ class Printer:
                 return dataclass2doc(v, with_name='Model')
             case xtype.Statistics():
                 return dataclass2doc(v, with_name='TacticExecStats')
+            case xtype.Report_Report():
+                return report2doc(
+                    v,
+                    value2doc=self.value2doc,
+                    expand_payloads=self.config.report_expand_payloads,
+                )
             # PO res
             case xtype.Tasks_PO_res_shallow_poly():
                 return dataclass2doc(
@@ -249,17 +254,31 @@ class Printer:
                     if not self.config.show_po_res_report
                     else None,
                 )
+            case xtype.Tasks_PO_res_success_Proof():
+                return dataclass2doc(v.arg, with_name='POSuccessProofFound')
+            case xtype.Tasks_PO_res_success_Instance():
+                return dataclass2doc(v.arg, with_name='POSuccessInstance')
+            case xtype.Tasks_PO_res_success_Verified_upto():
+                return dataclass2doc(v.arg, with_name='POSuccessVerifiedUpto')
+            case xtype.Tasks_PO_res_success_Test_ok():
+                return dataclass2doc(v, with_name='POSuccessTestOk')
+            case xtype.Tasks_PO_res_error_No_proof():
+                return dataclass2doc(v.arg, with_name='POErrorNoProof')
+            case xtype.Tasks_PO_res_error_Error():
+                return dataclass2doc(v.arg, with_name='POErrorError')
+            case xtype.Tasks_PO_res_error_Invalid_model():
+                rows = [
+                    ('error', self.value2doc(v.args[0])),
+                    ('model', self.value2doc(v.args[1])),
+                ]
+                return python_obj(
+                    'POErrorInvalidModel',
+                    rows,
+                )
+            case xtype.Tasks_PO_res_error_Unsat():
+                return dataclass2doc(v.arg, with_name='POErrorUnsat')
             case xtype.Common_Sequent_t_poly():
                 return Sequent2doc(v)
-            case xtype.Tasks_PO_res_success_Proof():
-                return self.Tasks_PO_res_success_Proof2doc(v)
-            case xtype.Tasks_PO_res_proof_found():
-                return dataclass2doc(v, with_name='ProofFound')
-            case xtype.Tasks_PO_res_error_No_proof():
-                # unwrap without `Obj` constructor
-                return self.value2doc(v.arg)
-            case xtype.Tasks_PO_res_no_proof():
-                return dataclass2doc(v, with_name='NoProof')
             case xtype.Proof_Proof_term_t_poly():
                 return python_obj(
                     'ProofTerm',
