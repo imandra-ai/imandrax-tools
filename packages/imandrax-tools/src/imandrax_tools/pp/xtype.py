@@ -34,6 +34,7 @@ from .term_formatter import sym2doc, term2doc
 class PrinterConfig:
     bytes_limit: int | None = None
     show_ca_store_key: bool = False
+    unwrap_single_arg_dataclass: bool = True
 
 
 def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
@@ -92,7 +93,9 @@ class Printer:
         ]
         return rows
 
-    def dataclass2doc(self, v: Any, with_name: str | None = None) -> Doc:
+    def _dataclass2doc(
+        self, v: Any, unwrap_single_arg: bool, with_name: str | None = None
+    ) -> Doc:
         """
         General purpose pretty-printer for dataclasses.
 
@@ -101,13 +104,24 @@ class Printer:
 
         Args:
             with_name: overrides the name of the dataclass
+            unwrap_single_arg: if True, unwrap single-argument dataclasses
 
         """
         rows = self.dataclass_row_docs(v)
+        if unwrap_single_arg and len(rows) == 1 and rows[0][0] == 'arg':
+            rows = [(None, rows[0][1])]
+
         non_nil_rows = filter(lambda r: r[1] is not nil, rows)
         return Pp.python_obj(
             with_name or v.__class__.__name__,
             non_nil_rows,
+        )
+
+    def dataclass2doc(self, v: Any, with_name: str | None = None) -> Doc:
+        return self._dataclass2doc(
+            v,
+            unwrap_single_arg=self.config.unwrap_single_arg_dataclass,
+            with_name=with_name,
         )
 
     def bytes2doc(self, v: bytes) -> Doc:
@@ -177,6 +191,17 @@ class Printer:
                 return self.dataclass2doc(v, with_name='ProofTerm')
             case xtype.Tasks_PO_res_shallow_poly():
                 return self.dataclass2doc(v, with_name='PORes')
+            case (
+                xtype.Proof_Arg_A_term()
+                | xtype.Proof_Arg_A_ty()
+                | xtype.Proof_Arg_A_int()
+                | xtype.Proof_Arg_A_string()
+                | xtype.Proof_Arg_A_list()
+                | xtype.Proof_Arg_A_dict()
+                | xtype.Proof_Arg_A_seq()
+            ):
+                # Strip the tag name in proof arg ADT
+                return self.dataclass2doc(v, with_name='ProofArg')
             # Collections
             case list():
                 return Pp.list_doc([self.value2doc(i) for i in v])

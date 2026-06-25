@@ -350,6 +350,14 @@ def python_dict(entries: Iterable[tuple[Doc, Doc]]) -> Doc:
 
 
 def python_obj(name: str, fields: Iterable[tuple[str | None, Doc]]) -> Doc:
+    """
+    Python-style object: `name(arg1=..., arg2=...)`; Breaks into multiple lines with a trailing comma if too wide.
+
+    Args:
+        name: the object name
+        fields: associated list of `(name, value)` pairs. If `name` is `None`, the value is treated like a positional arg.
+
+    """
     parts = [concat(text(f'{k}='), v) if k is not None else v for k, v in fields]
     return python_enclose(text(f'{name}('), text(')'), parts)
 
