@@ -22,6 +22,8 @@ from .goal_state import doc_of_sequent
 from .pretty import Doc, hcat, join, line, nil, text, tree as tree_
 from .term_formatter import term2doc
 
+# TODO: find all non-ascii characters
+
 
 @dataclass
 class _Ctx:
@@ -58,6 +60,10 @@ def _fmt_dur(s: float) -> str:
         return f'{s * 1e6:.0f}µs'
     if s < 1:
         return f'{s * 1e3:.1f}ms'
+    if s >= 1e6:
+        # Implausibly large (>~11 days): the span timestamps are unreliable, so
+        # fall back to scientific notation to bound the rendered width.
+        return f'{s:.2e}s'
     return f'{s:.2f}s'
 
 
