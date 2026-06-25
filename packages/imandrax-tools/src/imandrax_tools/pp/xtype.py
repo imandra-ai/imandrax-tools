@@ -41,6 +41,7 @@ from .pretty import (
     text,
     vsep,
 )
+from .proof_formatter import proof2doc
 from .term_formatter import sym2doc, term2doc as term2doc_
 from .type_formatter import type2doc as type2doc_
 
@@ -58,6 +59,9 @@ class PrinterConfig:
     bytes_limit: int | None = None
     show_ca_store_key: bool = False
     show_po_task_db: bool = False
+    show_po_res_report: bool = (
+        False  # Note: report can be found in a dedicated artifact
+    )
     unwrap_single_arg_dataclass: bool = True
 
 
@@ -131,6 +135,7 @@ class Printer:
         v: Any,
         unwrap_single_arg: bool,
         with_name: str | None = None,
+        ignore_fields: list[str] | None = None,
         filter_none_values: bool = False,
     ) -> Doc:
         """
@@ -144,7 +149,9 @@ class Printer:
             unwrap_single_arg: if True, unwrap single-argument dataclasses
 
         """
+        ignore_fields = ignore_fields or []
         rows = self.dataclass_row_docs(v, filter_none_values=filter_none_values)
+        rows = [r for r in rows if r[0] not in ignore_fields]
         if unwrap_single_arg and len(rows) == 1 and rows[0][0] == 'arg':
             rows = [(None, rows[0][1])]
 
@@ -202,8 +209,14 @@ class Printer:
             case xtype.Common_Model_t_poly():
                 return dataclass2doc(v, with_name='Model')
             # PO res
-            case xtype.Common_Db_ser_t_poly() if not self.config.show_po_task_db:
-                return nil
+            case xtype.Tasks_PO_res_shallow_poly():
+                return dataclass2doc(
+                    v,
+                    with_name='PORes',
+                    ignore_fields=['report']
+                    if not self.config.show_po_res_report
+                    else None,
+                )
             case xtype.Common_Sequent_t_poly():
                 return Sequent2doc(v)
             case xtype.Tasks_PO_res_success_Proof():
@@ -216,9 +229,10 @@ class Printer:
             case xtype.Tasks_PO_res_no_proof():
                 return dataclass2doc(v, with_name='NoProof')
             case xtype.Proof_Proof_term_t_poly():
-                return dataclass2doc(v, with_name='ProofTerm')
-            case xtype.Tasks_PO_res_shallow_poly():
-                return dataclass2doc(v, with_name='PORes')
+                return python_obj(
+                    'ProofTerm',
+                    [(None, python_quote(proof2doc(v), single_quote=False))],
+                )
             case (
                 xtype.Proof_Arg_A_term()
                 | xtype.Proof_Arg_A_ty()
@@ -232,7 +246,11 @@ class Printer:
                 return dataclass2doc(v, with_name='ProofArg')
             # PO task
             case xtype.Tasks_PO_task_t_poly():
-                return dataclass2doc(v, with_name='POTask')
+                return dataclass2doc(
+                    v,
+                    with_name='POTask',
+                    ignore_fields=['db'] if not self.config.show_po_task_db else None,
+                )
             case xtype.Common_Proof_obligation_t_poly():
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
