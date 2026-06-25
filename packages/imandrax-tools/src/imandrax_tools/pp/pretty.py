@@ -235,6 +235,7 @@ def hcat(*docs: Doc) -> Doc:
 
 def punctuate(sep: Doc, docs: Iterable[Doc]) -> Doc:
     """Concatenate documents with `sep` between each pair."""
+    docs = list(docs)
     if not docs:
         return nil
     it = iter(docs)
@@ -331,6 +332,7 @@ def python_enclose(
                 c,
             ]
     """
+    docs = list(docs)
     if not docs:
         return concat(ldelim, rdelim)
     sep = concat(text(','), line)
@@ -362,17 +364,17 @@ def python_obj(name: str, fields: Iterable[tuple[str | None, Doc]]) -> Doc:
     return python_enclose(text(f'{name}('), text(')'), parts)
 
 
-def list_doc(docs: list[Doc]) -> Doc:
+def list_doc(docs: Iterable[Doc]) -> Doc:
     """Python-style list: `[a, b, c]` flat or one-per-line broken."""
     return python_enclose(text('['), text(']'), docs)
 
 
-def tupled(docs: list[Doc] | tuple[Doc, ...]) -> Doc:
+def tupled(docs: Iterable[Doc]) -> Doc:
     """Python-style tuple: `(a, b, c)` flat or one-per-line broken."""
     return python_enclose(text('('), text(')'), list(docs))
 
 
-def assoc_list(docs: list[tuple[str, Doc]]) -> Doc:
+def assoc_list(docs: Iterable[tuple[str, Doc]]) -> Doc:
     """Python-style dict: `{k: v, ...}` flat or one-per-line broken."""
     items: list[Doc] = [concat(concat(text(k), text(': ')), v) for (k, v) in docs]
     return python_enclose(text('{'), text('}'), items)

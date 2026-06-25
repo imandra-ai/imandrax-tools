@@ -19,6 +19,7 @@ PO printers.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields, is_dataclass
+from functools import partial
 from typing import Any
 
 import imandrax_api.lib as xtype
@@ -34,6 +35,7 @@ from .term_formatter import sym2doc, term2doc
 class PrinterConfig:
     bytes_limit: int | None = None
     show_ca_store_key: bool = False
+    show_po_task_db: bool = False
     unwrap_single_arg_dataclass: bool = True
 
 
@@ -87,14 +89,25 @@ class Printer:
     def __init__(self, config: PrinterConfig = PrinterConfig()):
         self.config = config
 
-    def dataclass_row_docs(self, v: Any) -> AssocList[Doc]:
-        rows: AssocList[Doc] = [
-            (f.name, self.value2doc(getattr(v, f.name))) for f in fields(v)
-        ]
+    def dataclass_row_docs(
+        self,
+        v: Any,
+        filter_none_values: bool = False,
+    ) -> AssocList[Doc]:
+        rows: AssocList[Doc] = []
+        for fld in fields(v):
+            val = getattr(v, fld.name)
+            if filter_none_values and val is None:
+                continue
+            rows.append((fld.name, self.value2doc(val)))
         return rows
 
-    def _dataclass2doc(
-        self, v: Any, unwrap_single_arg: bool, with_name: str | None = None
+    def dataclass2doc(
+        self,
+        v: Any,
+        unwrap_single_arg: bool,
+        with_name: str | None = None,
+        filter_none_values: bool = False,
     ) -> Doc:
         """
         General purpose pretty-printer for dataclasses.
@@ -107,7 +120,7 @@ class Printer:
             unwrap_single_arg: if True, unwrap single-argument dataclasses
 
         """
-        rows = self.dataclass_row_docs(v)
+        rows = self.dataclass_row_docs(v, filter_none_values=filter_none_values)
         if unwrap_single_arg and len(rows) == 1 and rows[0][0] == 'arg':
             rows = [(None, rows[0][1])]
 
@@ -115,13 +128,6 @@ class Printer:
         return Pp.python_obj(
             with_name or v.__class__.__name__,
             non_nil_rows,
-        )
-
-    def dataclass2doc(self, v: Any, with_name: str | None = None) -> Doc:
-        return self._dataclass2doc(
-            v,
-            unwrap_single_arg=self.config.unwrap_single_arg_dataclass,
-            with_name=with_name,
         )
 
     def bytes2doc(self, v: bytes) -> Doc:
@@ -165,7 +171,10 @@ class Printer:
     # --------------------
 
     def value2doc(self, v: Any) -> Doc:
-        # Semantic dispatch for the types with dedicated pretty-printers
+        dataclass2doc = partial(
+            self.dataclass2doc,
+            unwrap_single_arg=self.config.unwrap_single_arg_dataclass,
+        )
         match v:
             case bytes():
                 return self.bytes2doc(v)
@@ -181,16 +190,18 @@ class Printer:
                     return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
                 else:
                     return nil
+            case xtype.Common_Db_ser_t_poly() if not self.config.show_po_task_db:
+                return nil
             case xtype.Common_Sequent_t_poly():
                 return Sequent2doc(v)
             case xtype.Tasks_PO_res_success_Proof():
                 return self.Tasks_PO_res_success_Proof2doc(v)
             case xtype.Tasks_PO_res_proof_found():
-                return self.dataclass2doc(v, with_name='ProofFound')
+                return dataclass2doc(v, with_name='ProofFound')
             case xtype.Proof_Proof_term_t_poly():
-                return self.dataclass2doc(v, with_name='ProofTerm')
+                return dataclass2doc(v, with_name='ProofTerm')
             case xtype.Tasks_PO_res_shallow_poly():
-                return self.dataclass2doc(v, with_name='PORes')
+                return dataclass2doc(v, with_name='PORes')
             case (
                 xtype.Proof_Arg_A_term()
                 | xtype.Proof_Arg_A_ty()
@@ -201,17 +212,29 @@ class Printer:
                 | xtype.Proof_Arg_A_seq()
             ):
                 # Strip the tag name in proof arg ADT
-                return self.dataclass2doc(v, with_name='ProofArg')
+                return dataclass2doc(v, with_name='ProofArg')
+            # PO task
+            case xtype.Common_Proof_obligation_t_poly():
+                return dataclass2doc(
+                    v, with_name='ProofObligation', filter_none_values=True
+                )
             # Collections
             case list():
-                return Pp.list_doc([self.value2doc(i) for i in v])
+                docs = [self.value2doc(i) for i in v]
+                docs = filter(lambda d: d is not nil, docs)
+                return Pp.list_doc(docs)
             case tuple():
-                return Pp.tupled([self.value2doc(i) for i in v])
+                docs = [self.value2doc(i) for i in v]
+                docs = filter(lambda d: d is not nil, docs)
+                return Pp.tupled(docs)
             case set() | frozenset():
+                docs = [self.value2doc(i) for i in v]
+                docs = filter(lambda d: d is not nil, docs)
+                docs = sorted(docs, key=repr)
                 return Pp.python_enclose(
                     Pp.text('{'),
                     Pp.text('}'),
-                    sorted((self.value2doc(i) for i in v), key=repr),
+                    docs,
                 )
             case dict():
                 return Pp.python_dict(
