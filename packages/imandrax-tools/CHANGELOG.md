@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.2.0-rc1] - 2026-06-25
+
+- ImandraX API pretty-printer
+
 ## [20.1.0] - 2026-06-21
 
 - Migrate goal-state pretty-printing to native Python implementation
