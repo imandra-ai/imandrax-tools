@@ -1,4 +1,4 @@
-# ruff: noqa: F403, F405
+# ruff: noqa: F403, F405, D417
 # pyright: reportUnusedExpression=false
 # ruff: noqa: RUF100, F401
 """
@@ -28,9 +28,6 @@ from ._common import *
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .pretty import Doc, hcat, nil, python_obj, text
 from .term_formatter import sym2doc, term2doc
-
-type PO_task = xtype.Tasks_PO_task_Mir
-type PO_res = xtype.Tasks_PO_res_Shallow
 
 
 @dataclass
@@ -89,8 +86,35 @@ class Printer:
     def __init__(self, config: PrinterConfig = PrinterConfig()):
         self.config = config
 
+    def dataclass_row_docs(self, v: Any) -> AssocList[Doc]:
+        rows: AssocList[Doc] = [
+            (f.name, self.value2doc(getattr(v, f.name))) for f in fields(v)
+        ]
+        return rows
+
+    def dataclass2doc(self, v: Any, with_name: str | None = None) -> Doc:
+        """
+        General purpose pretty-printer for dataclasses.
+
+        Field values with `nil` Doc are omitted from the output. So to remove
+        a field from the output, set its printer to output `nil` in `value2doc`.
+
+        Args:
+            with_name: overrides the name of the dataclass
+
+        """
+        rows = self.dataclass_row_docs(v)
+        non_nil_rows = filter(lambda r: r[1] is not nil, rows)
+        return Pp.python_obj(
+            with_name or v.__class__.__name__,
+            non_nil_rows,
+        )
+
     def bytes2doc(self, v: bytes) -> Doc:
         return _bytes2doc(v, self.config.bytes_limit)
+
+    # Custom xtype printers
+    # --------------------
 
     def Tasks_PO_res_success_Proof2doc(
         self, v: xtype.Tasks_PO_res_success_Proof
@@ -98,25 +122,33 @@ class Printer:
         proof_found = v.arg
         return self.value2doc(proof_found)
 
-    def Proof_Proof_term2doc(
-        self, v: xtype.Proof_Proof_term_t_poly[xtype.Mir_Term_term, xtype.Mir_Type]
-    ):
-        name = 'ProofTerm'
-        id = self.value2doc(v.id)
-        concl: Doc = Sequent2doc(v.concl)
-        view = self.value2doc(v.view)
-        return Pp.python_obj(
-            name,
-            [
-                ('id', id),
-                ('concl', concl),
-                ('view', view),
-            ],
-        )
+    # def Tasks_PO_res_proof_found2doc(self, v: xtype.Tasks_PO_res_proof_found) -> Doc:
+    #     return self.dataclass2doc(v, with_name='ProofFound')
+
+    # def Proof_Proof_term2doc(
+    #     self, v: xtype.Proof_Proof_term_t_poly[xtype.Mir_Term_term, xtype.Mir_Type]
+    # ) -> Doc:
+    #     return self.dataclass2doc(v, with_name='ProofTerm')
+    # name = 'ProofTerm'
+    # id = self.value2doc(v.id)
+    # concl: Doc = Sequent2doc(v.concl)
+    # view = self.value2doc(v.view)
+    # return Pp.python_obj(
+    #     name,
+    #     [
+    #         ('id', id),
+    #         ('concl', concl),
+    #         ('view', view),
+    #     ],
+    # )
 
     # def Anchor2doc(self, v: xtype.Anchor) -> Doc:
     #     match v:
     #         case Anchor_Named
+
+    # def PO_res2doc(self, v: PO_res) -> Doc:
+
+    # --------------------
 
     def value2doc(self, v: Any) -> Doc:
         # Semantic dispatch for the types with dedicated pretty-printers
@@ -135,10 +167,16 @@ class Printer:
                     return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
                 else:
                     return nil
+            case xtype.Common_Sequent_t_poly():
+                return Sequent2doc(v)
             case xtype.Tasks_PO_res_success_Proof():
                 return self.Tasks_PO_res_success_Proof2doc(v)
+            case xtype.Tasks_PO_res_proof_found():
+                return self.dataclass2doc(v, with_name='ProofFound')
             case xtype.Proof_Proof_term_t_poly():
-                return self.Proof_Proof_term2doc(v)
+                return self.dataclass2doc(v, with_name='ProofTerm')
+            case xtype.Tasks_PO_res_shallow_poly():
+                return self.dataclass2doc(v, with_name='PORes')
             # Collections
             case list():
                 return Pp.list_doc([self.value2doc(i) for i in v])
@@ -155,9 +193,7 @@ class Printer:
                     [(self.value2doc(k), self.value2doc(v)) for k, v in v.items()]
                 )
             case _ if is_dataclass(v) and not isinstance(v, type):
-                rows: AssocList[Doc] = [
-                    (f.name, self.value2doc(getattr(v, f.name))) for f in fields(v)
-                ]
+                rows = self.dataclass_row_docs(v)
                 non_nil_rows = filter(lambda r: r[1] is not nil, rows)
                 return Pp.python_obj(
                     v.__class__.__name__,
