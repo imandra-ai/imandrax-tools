@@ -344,13 +344,13 @@ def python_dict_entry(k: Doc, v: Doc) -> Doc:
     return hcat(k, text(': '), v)
 
 
-def python_dict(entries: list[tuple[Doc, Doc]]) -> Doc:
+def python_dict(entries: Iterable[tuple[Doc, Doc]]) -> Doc:
     items = [python_dict_entry(k, v) for k, v in entries]
     return python_enclose(text('{'), text('}'), items)
 
 
-def python_obj(name: str, fields: list[tuple[str, Doc]]) -> Doc:
-    parts = [concat(text(f'{k}='), v) for k, v in fields]
+def python_obj(name: str, fields: Iterable[tuple[str | None, Doc]]) -> Doc:
+    parts = [concat(text(f'{k}='), v) if k is not None else v for k, v in fields]
     return python_enclose(text(f'{name}('), text(')'), parts)
 
 
