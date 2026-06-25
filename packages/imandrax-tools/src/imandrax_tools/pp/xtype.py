@@ -41,7 +41,16 @@ from .pretty import (
     text,
     vsep,
 )
-from .term_formatter import sym2doc, term2doc
+from .term_formatter import sym2doc, term2doc as term2doc_
+from .type_formatter import type2doc as type2doc_
+
+
+def term2doc(t: Term) -> Doc:
+    return python_obj('Term', [(None, python_quote(term2doc_(t)))])
+
+
+def type2doc(t: Type) -> Doc:
+    return python_obj('Type', [(None, python_quote(type2doc_(t)))])
 
 
 @dataclass
@@ -83,10 +92,11 @@ def Goal2doc(v: Goal, ty2doc: Callable[[xtype.Mir_Type], Doc]) -> Doc:
         [
             *var_docs,
             text('->'),
-            python_obj('Term', [(None, python_quote(term2doc(body)))]),
+            term2doc(body),
         ]
     )
-    return python_obj('Goal', [(None, python_quote(goal_doc))])
+    # return hcat(text('<'), text('Goal'), text(' '), goal_doc, text('>'))
+    return python_obj('Goal', [(None, python_quote(goal_doc, single_quote=False))])
 
 
 # def _is_scalar(v: Any) -> bool:
@@ -217,7 +227,7 @@ class Printer:
             # General
             # --------------------
             case xtype.Mir_Term():
-                return python_obj('Term', [(None, python_quote(term2doc(v)))])
+                return term2doc(v)
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
@@ -274,8 +284,7 @@ class Printer:
                 for fld in fields(v):
                     val = getattr(v, fld.name)
                     if fld.name == 'goal':
-                        # TODO: replace ty2doc with proper ty2doc
-                        val_doc = Goal2doc(val, ty2doc=self.value2doc)
+                        val_doc = Goal2doc(val, ty2doc=type2doc)
                     else:
                         val_doc = self.value2doc(val)
                     rows.append((fld.name, val_doc))
@@ -290,7 +299,8 @@ class Printer:
                 return dataclass2doc(v, with_name='TacticDefaultTest')
             case xtype.Common_Tactic_t_poly_Term():
                 return dataclass2doc(v, with_name='Tactic')
-            # TODO: MIR type
+            case xtype.Mir_Type():
+                return type2doc(v)
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
