@@ -180,7 +180,11 @@ class Printer:
                 return self.bytes2doc(v)
             # ImandraX API types
             case xtype.Mir_Term():
-                return term2doc(v)
+                # TODO: currently if term breaks when getting printed, it still use `'`,
+                # can we make it use proper `"""` quoting when breaking?
+                return python_obj(
+                    'Term', [(None, hcat(text("'"), term2doc(v), text("'")))]
+                )
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
@@ -190,6 +194,7 @@ class Printer:
                     return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
                 else:
                     return nil
+            # PO res
             case xtype.Common_Db_ser_t_poly() if not self.config.show_po_task_db:
                 return nil
             case xtype.Common_Sequent_t_poly():
@@ -214,10 +219,23 @@ class Printer:
                 # Strip the tag name in proof arg ADT
                 return dataclass2doc(v, with_name='ProofArg')
             # PO task
+            case xtype.Tasks_PO_task_t_poly():
+                return dataclass2doc(v, with_name='POTask')
             case xtype.Common_Proof_obligation_t_poly():
                 return dataclass2doc(
                     v, with_name='ProofObligation', filter_none_values=True
                 )
+            case xtype.Common_Var_t_poly():
+                return dataclass2doc(v, with_name='Var')
+            case xtype.Common_Tactic_t_poly_Default_termination():
+                return dataclass2doc(v, with_name='TacticDefaultTermination')
+            case xtype.Common_Tactic_t_poly_Default_thm():
+                return dataclass2doc(v, with_name='TacticDefaultTheorem')
+            case xtype.Common_Tactic_t_poly_Default_test():
+                return dataclass2doc(v, with_name='TacticDefaultTest')
+            case xtype.Common_Tactic_t_poly_Term():
+                return dataclass2doc(v, with_name='Tactic')
+            # TODO: MIR type
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
