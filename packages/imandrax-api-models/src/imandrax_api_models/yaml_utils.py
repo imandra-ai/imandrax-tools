@@ -14,8 +14,6 @@ else:
     except ImportError:
         from yaml import Dumper
 
-from imandrax_api_models import ErrorKind, ModelType
-
 
 class ImandraXAPIModelDumper(Dumper):
     """
@@ -50,7 +48,7 @@ def enum_representer(dumper: Dumper, data: Enum):
 
 
 def basemodel_representer(dumper: Dumper, data: BaseModel):
-    return dumper.represent_dict(data.model_dump())
+    return dumper.represent_dict(data.model_dump(mode='json'))
 
 
 # ====================
@@ -59,6 +57,5 @@ def basemodel_representer(dumper: Dumper, data: BaseModel):
 
 
 ImandraXAPIModelDumper.add_representer(str, str_representer)
-ImandraXAPIModelDumper.add_representer(ModelType, enum_representer)
-ImandraXAPIModelDumper.add_representer(ErrorKind, enum_representer)
-ImandraXAPIModelDumper.add_representer(BaseModel, basemodel_representer)
+ImandraXAPIModelDumper.add_multi_representer(Enum, enum_representer)
+ImandraXAPIModelDumper.add_multi_representer(BaseModel, basemodel_representer)
