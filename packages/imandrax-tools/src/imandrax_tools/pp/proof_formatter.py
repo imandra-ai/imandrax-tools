@@ -18,43 +18,14 @@ from .pretty import (
     Doc,
     brackets,
     group,
-    hardline,
     hcat,
     join,
     line,
-    prefix,
     text,
+    tree,
 )
 from .term_formatter import term2doc
 from .type_formatter import type2doc
-
-# Tree guides
-# ===========
-
-# TODO: add a ASCII only mode
-
-_CONN_MID = '├─ '
-_CONN_END = '└─ '
-_GUTTER_MID = '│  '
-_GUTTER_END = '   '
-
-
-def _tree(header: Doc, children: list[Doc]) -> Doc:
-    """
-    Lay out `header` with `children` hung beneath it using tree guides.
-
-    Each child's first line is introduced by a connector (`├─`/`└─`); its
-    continuation lines carry the matching gutter (`│ `/spaces) so nested
-    subtrees stay aligned under their connector.
-    """
-    parts: list[Doc] = [header]
-    last = len(children) - 1
-    for i, child in enumerate(children):
-        is_last = i == last
-        conn = _CONN_END if is_last else _CONN_MID
-        gutter = _GUTTER_END if is_last else _GUTTER_MID
-        parts.append(hcat(hardline, text(conn), prefix(gutter, child)))
-    return hcat(*parts)
 
 
 def _tag(label: str, concl: Doc) -> Doc:
@@ -118,7 +89,7 @@ def proof2doc(p: xtype.Proof_Proof_term_t_poly) -> Doc:
             header = _tag(f'rule {r!r}', concl)
             if not args:
                 return header
-            return _tree(header, [_arg2doc(a) for a in args])
+            return tree(header, [_arg2doc(a) for a in args])
 
         case xtype.Proof_View_T_subst(
             t_subst=t_subst, ty_subst=ty_subst, premise=premise
@@ -130,14 +101,14 @@ def proof2doc(p: xtype.Proof_Proof_term_t_poly) -> Doc:
                 else text('subst')
             )
             header = hcat(text('['), label, text('] '), concl)
-            return _tree(header, [proof2doc(premise)])
+            return tree(header, [proof2doc(premise)])
 
         case xtype.Proof_View_T_deduction(premises=premises):
             header = _tag('deduction', concl)
             groups: list[Doc] = []
             for name, proofs in premises:
                 group_label = text(name) if name else text('•')
-                groups.append(_tree(group_label, [proof2doc(x) for x in proofs]))
-            return _tree(header, groups)
+                groups.append(tree(group_label, [proof2doc(x) for x in proofs]))
+            return tree(header, groups)
 
     raise ValueError(f'Unhandled proof view: {type(v).__name__}')
