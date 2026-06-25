@@ -427,7 +427,7 @@ def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
     subtrees stay aligned under their connector. Uses `hardline`, so the tree
     always breaks regardless of the enclosing group.
     """
-    end, mid, gutter_end, gutter_mid = TREE_CHARS_ASCII if ascii_only else TREE_CHARS
+    mid, end, gutter_mid, gutter_end = TREE_CHARS_ASCII if ascii_only else TREE_CHARS
     parts: list[Doc] = [header]
     last = len(children) - 1
     for i, child in enumerate(children):

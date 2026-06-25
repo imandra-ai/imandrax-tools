@@ -26,3 +26,19 @@ __all__ = (
     'PO_task',
     'ProofObligation',
 )
+
+
+def fmt_duration(s: float) -> str:
+    if s < 0:
+        return '?'
+    if s < 1e-6:
+        return f'{s * 1e9:.0f}ns'
+    if s < 1e-3:
+        return f'{s * 1e6:.0f}µs'
+    if s < 1:
+        return f'{s * 1e3:.1f}ms'
+    if s >= 1e6:
+        # Implausibly large (>~11 days): the span timestamps are unreliable, so
+        # fall back to scientific notation to bound the rendered width.
+        return f'{s:.2e}s'
+    return f'{s:.2f}s'

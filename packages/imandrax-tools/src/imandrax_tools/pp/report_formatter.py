@@ -18,6 +18,7 @@ from typing import Any
 import imandrax_api.lib as xtype
 
 from . import pretty as Pp
+from ._common import fmt_duration
 from .goal_state import doc_of_sequent
 from .pretty import Doc, hcat, join, line, nil, text, tree as tree_
 from .term_formatter import term2doc
@@ -45,26 +46,6 @@ def _leaf(d: Doc) -> _Node:
 
 def _kv(label: str, d: Doc) -> _Node:
     return _Node(hcat(text(f'{label}: '), d))
-
-
-# Durations
-# =========
-
-
-def _fmt_dur(s: float) -> str:
-    if s < 0:
-        return '?'
-    if s < 1e-6:
-        return f'{s * 1e9:.0f}ns'
-    if s < 1e-3:
-        return f'{s * 1e6:.0f}µs'
-    if s < 1:
-        return f'{s * 1e3:.1f}ms'
-    if s >= 1e6:
-        # Implausibly large (>~11 days): the span timestamps are unreliable, so
-        # fall back to scientific notation to bound the rendered width.
-        return f'{s:.2e}s'
-    return f'{s:.2f}s'
 
 
 # Rich text
@@ -208,7 +189,7 @@ def _build_forest(events: list, ctx: _Ctx) -> list[_Node]:
 def _node2doc(n: _Node, tree: Callable[[Doc, list[Doc]], Doc]) -> Doc:
     header = n.header
     if n.duration is not None:
-        header = hcat(header, text(f'  ({_fmt_dur(n.duration)})'))
+        header = hcat(header, text(f'  ({fmt_duration(n.duration)})'))
     if n.children:
         return tree(header, [_node2doc(c, tree) for c in n.children])
     return header

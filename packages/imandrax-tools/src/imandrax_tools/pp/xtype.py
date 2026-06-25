@@ -19,6 +19,7 @@ import imandrax_api.lib as xtype
 
 from . import pretty as Pp
 from ._common import *
+from ._common import fmt_duration
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .model_formatter import model2doc
 from .pretty import (
@@ -235,7 +236,11 @@ class Printer:
                     [(None, python_quote(model2doc(v), single_quote=False))],
                 )
             case xtype.Statistics():
-                return dataclass2doc(v, with_name='TacticExecStats')
+                rows = [
+                    ('time_s', text(fmt_duration(v.time_s))),
+                    ('tactic', self.value2doc(v.tactic)),
+                ]
+                return python_obj('TacticExecStats', rows)
             case xtype.Report_Report():
                 return report2doc(
                     v,
