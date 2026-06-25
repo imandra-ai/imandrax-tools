@@ -44,6 +44,11 @@ class LineBreak:
 
 
 @dataclass(slots=True, frozen=True)
+class HardLine:
+    """Unconditional line break; never flattened, and forces enclosing groups to break."""
+
+
+@dataclass(slots=True, frozen=True)
 class Concat:
     left: Doc
     right: Doc
@@ -81,7 +86,9 @@ class Prefix:
     doc: Doc
 
 
-type Doc = Nil | Text | Line | LineBreak | Concat | Nest | Group | FlatAlt | Prefix
+type Doc = (
+    Nil | Text | Line | LineBreak | HardLine | Concat | Nest | Group | FlatAlt | Prefix
+)
 
 # Smart constructors
 # ==================
@@ -111,6 +118,10 @@ def group(doc: Doc) -> Doc:
 
 def flat_alt(default: Doc, flat: Doc) -> Doc:
     return FlatAlt(default, flat)
+
+
+hardline: Doc = HardLine()
+"""A line break that always breaks, regardless of the enclosing group."""
 
 
 def prefix(p: str, doc: Doc) -> Doc:
@@ -146,6 +157,10 @@ def _fits(remaining: int, doc: Doc) -> bool:
             return False
         d = stack.pop()
         match d:
+            case HardLine():
+                # A hard break can never sit on the current line, so any group
+                # containing it must lay out broken.
+                return False
             case Nil() | LineBreak():
                 pass
             case Line():
@@ -188,6 +203,10 @@ def _best(width: int, doc: Doc) -> list[SimpleToken]:
                 if mode != FLAT:
                     result.append(('line', pfx))
                     col = len(pfx)
+            case HardLine():
+                # Always a real newline, in either mode, carrying the prefix.
+                result.append(('line', pfx))
+                col = len(pfx)
             case Concat(left, right):
                 stack.append((pfx, mode, right))
                 stack.append((pfx, mode, left))
