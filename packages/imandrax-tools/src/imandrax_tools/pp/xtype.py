@@ -16,7 +16,7 @@ PO printers.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields, is_dataclass
-from typing import Any, assert_never
+from typing import Any
 
 import imandrax_api.lib as xtype
 
@@ -33,10 +33,6 @@ class PrinterConfig:
     bytes_limit: int | None = None
 
 
-def _is_scalar(v: Any) -> bool:
-    return v is None or isinstance(v, (bool, int, float, str, bytes))
-
-
 def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
     if limit is None or limit == 0:
         return Pp.text(f'<{len(b)} bytes>')
@@ -47,26 +43,38 @@ def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
         return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
 
 
-def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
-    match v:
-        case None:
-            return Pp.text('None')
-        case bool():
-            return Pp.text('true' if v else 'false')
-        case int() | float():
-            return Pp.text(str(v))
-        case str():
-            return Pp.text(v)
-        case bytes():
-            return _bytes2doc(v)
-        case _:
-            assert_never(v)
+# def _is_scalar(v: Any) -> bool:
+#     return v is None or isinstance(v, (bool, int, float, str, bytes))
+
+
+# def _scalar2doc(v: None | bool | int | float | str | bytes) -> Doc:
+#     match v:
+#         case None:
+#             return Pp.text('None')
+#         case bool():
+#             return Pp.text('True' if v else 'False')
+#         case int() | float():
+#             return Pp.text(str(v))
+#         case str():
+#             return Pp.text(v)
+#         case bytes():
+#             return _bytes2doc(v)
+#         case _:
+#             assert_never(v)
 
 
 class Printer:
+    """
+    General printer for imandrax-api deserialized values.
+
+    - MIR terms are printed with a dedicated printer
+    - Values of some types are summarized
+    - Configurable via `PrinterConfig`
+    """
+
     config: PrinterConfig
 
-    def __init__(self, config: PrinterConfig):
+    def __init__(self, config: PrinterConfig = PrinterConfig()):
         self.config = config
 
     def bytes2doc(self, v: bytes) -> Doc:
@@ -75,6 +83,8 @@ class Printer:
     def value2doc(self, v: Any) -> Doc:
         # Semantic dispatch for the types with dedicated pretty-printers
         match v:
+            case bytes():
+                return self.bytes2doc(v)
             case xtype.Mir_Term():
                 return term2doc(v)
             case xtype.Common_Applied_symbol_t_poly():
@@ -83,8 +93,6 @@ class Printer:
                 return Pp.text(v.name)
             case xtype.Ca_store_Ca_ptr_Raw():
                 return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
-            case _ if _is_scalar(v):
-                return _scalar2doc(v)
             # Collections
             case list():
                 return Pp.list_doc([self.value2doc(i) for i in v])
@@ -106,8 +114,7 @@ class Printer:
                     [(f.name, self.value2doc(getattr(v, f.name))) for f in fields(v)],
                 )
             case _:
-                raise NotImplementedError
-                # return Pp.text(repr(v))
+                return Pp.text(repr(v))
 
 
 def show_value(v: Any) -> str:
