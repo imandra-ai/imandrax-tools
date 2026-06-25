@@ -279,6 +279,127 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> str:
             return s
 
 
+def format_error_msg_v2(
+    error_msg: ErrorMessage,
+    iml_src: str | None = None,
+    max_backtrace_len: int = 0,
+) -> dict[str, Any]:
+    locs: list[Location] = error_msg.locs or []
+    locs = [loc for loc in locs if (loc.start is not None and loc.stop is not None)]
+
+    res: dict[str, Any] = {}
+    if locs:
+        # TODO: handle multiple locations
+        start, stop = locs[0].start, locs[0].stop
+        start = cast(Position, start)
+        stop = cast(Position, stop)
+        location = {
+            'start': start.model_dump(),
+            'stop': stop.model_dump(),
+        }
+        res['location'] = location
+
+        if iml_src is not None:
+            start_pos = (start.line, start.col)
+            end_pos = (stop.line, stop.col)
+            error_src = format_code_snippet_with_loc(iml_src, start_pos, end_pos)
+            res['error_src'] = error_src
+    else:
+        # No location information
+        res['error_msg'] = error_msg.msg
+
+    if max_backtrace_len > 0 and error_msg.backtrace:
+        res['backtrace'] = error_msg.backtrace[:max_backtrace_len]
+    return res
+
+
+def format_error_v2(
+    error: Error,
+    iml_src: str | None = None,
+    max_stack_depth: int = 3,
+) -> dict[str, Any]:
+    err_kind = error.kind
+    top_msg: dict[str, Any] | None = None
+
+    if error.msg is not None:
+        top_msg = format_error_msg_v2(error.msg, iml_src)
+
+    stack_strs = (
+        [format_error_msg_v2(msg, iml_src) for msg in error.stack[:max_stack_depth]]
+        if error.stack
+        else []
+    )
+
+    out: dict[str, Any] = {}
+    # Top message
+    if top_msg:
+        out['top_msg'] = top_msg
+    out['err_kind'] = err_kind
+    out['stack'] = stack_strs
+
+    return out
+
+
+def format_errors_v2(
+    non_po_errors: list[Error],
+    po_errors: list[Error],
+    iml_src: str | None = None,
+    max_errors: int = 3,
+) -> dict[str, Any]:
+    # If non-PO error exist, ignore PO errors
+    is_po_error: bool = False
+    if len(non_po_errors) > 0:
+        errs = non_po_errors[:max_errors]
+    else:
+        is_po_error = True
+        errs = po_errors[:max_errors]
+
+    err_infos: list[dict[str, Any]] = [format_error_v2(err, iml_src) for err in errs]
+
+    out: dict[str, Any] = {}
+    if is_po_error:
+        out['error_type'] = 'proof_obligation_error'
+    for i, err_info in enumerate(err_infos, 1):
+        out[f'error_{i}'] = err_info
+    return out
+
+
+def format_eval_res_v2(eval_res: EvalRes, iml_src: str | None = None) -> dict[str, Any]:
+    # Check additional error in message (internal errors)
+    errs_in_eval_msg: list[str] = [
+        msg for msg in eval_res.messages if 'error' in msg.lower()
+    ]
+    has_structured_err = eval_res.has_errors
+    has_err_in_eval_msg = len(errs_in_eval_msg) > 0
+
+    out: dict[str, Any] = {}
+    match (has_structured_err, has_err_in_eval_msg):
+        case True, _:
+            out['error'] = format_errors_v2(
+                eval_res.errors, eval_res.po_errors, iml_src
+            )
+            if has_err_in_eval_msg:
+                out['unstructured_errors'] = _format_unstructured_msg_errors(
+                    errs_in_eval_msg, 200
+                )
+            return out
+        case False, True:
+            return {
+                'unstructured_errors': _format_unstructured_msg_errors(
+                    errs_in_eval_msg, 300
+                )
+            }
+        case False, False:
+            out['description'] = 'Eval success!'
+            for i, eval_result in enumerate(eval_res.eval_results, 1):
+                data = {
+                    'success': eval_result.success,
+                    'value_as_ocaml': eval_result.value_as_ocaml,
+                }
+                out[f'eval_result_{i}'] = data
+            return out
+
+
 # ====================
 
 
