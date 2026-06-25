@@ -9,8 +9,6 @@ from imandrax_tools.pp.term_formatter import term2doc
 
 from ._common import *
 
-type PO_res = xtype.Tasks_PO_res_Shallow
-
 
 def doc_of_labeled_term(labeled: tuple[None | str, xtype.Mir_Term]) -> Doc:
     label, term = labeled
