@@ -18,6 +18,7 @@ PO printers.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
 from typing import Any
@@ -27,7 +28,19 @@ import imandrax_api.lib as xtype
 from . import pretty as Pp
 from ._common import *
 from .goal_state import doc_of_sequent as Sequent2doc_raw
-from .pretty import Doc, hcat, nil, python_obj, text
+from .pretty import (
+    Doc,
+    enclose_sep,
+    group,
+    hcat,
+    line,
+    nil,
+    python_dict,
+    python_obj,
+    python_quote,
+    text,
+    vsep,
+)
 from .term_formatter import sym2doc, term2doc
 
 
@@ -53,6 +66,27 @@ def Sequent2doc(v: Sequent) -> Doc:
     inner = Sequent2doc_raw(v)
     inner = hcat(text("'"), inner, text("'"))
     return python_obj('Sequent', [(None, inner)])
+
+
+type Goal = tuple[list[xtype.Common_Var_t_poly[xtype.Mir_Type]], xtype.Mir_Term]
+"""fun vars -> body"""
+
+
+def Goal2doc(v: Goal, ty2doc: Callable[[xtype.Mir_Type], Doc]) -> Doc:
+    vars: list[tuple[xtype.Uid, xtype.Mir_Type]] = [(var.id, var.ty) for var in v[0]]
+    var_docs = [
+        hcat(text('('), text(var_id.name), text(' : '), ty2doc(var_ty), text(')'))
+        for var_id, var_ty in vars
+    ]
+    body = v[1]
+    goal_doc = vsep(
+        [
+            *var_docs,
+            text('->'),
+            python_obj('Term', [(None, python_quote(term2doc(body)))]),
+        ]
+    )
+    return python_obj('Goal', [(None, python_quote(goal_doc))])
 
 
 # def _is_scalar(v: Any) -> bool:
@@ -179,12 +213,11 @@ class Printer:
             case bytes():
                 return self.bytes2doc(v)
             # ImandraX API types
+            # ====================
+            # General
+            # --------------------
             case xtype.Mir_Term():
-                # TODO: currently if term breaks when getting printed, it still use `'`,
-                # can we make it use proper `"""` quoting when breaking?
-                return python_obj(
-                    'Term', [(None, hcat(text("'"), term2doc(v), text("'")))]
-                )
+                return python_obj('Term', [(None, python_quote(term2doc(v)))])
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
@@ -194,6 +227,16 @@ class Printer:
                     return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
                 else:
                     return nil
+            case xtype.Error_Error_core():
+                return dataclass2doc(v, with_name='Error')
+            case xtype.Error_Kind(name):
+                return python_quote(text(name))
+            case xtype.Error_Error_core_message():
+                rows = self.dataclass_row_docs(v, filter_none_values=True)
+                rows_ = [(python_quote(text(k)), v) for k, v in rows]
+                return python_dict(rows_)
+            case xtype.Common_Model_t_poly():
+                return dataclass2doc(v, with_name='Model')
             # PO res
             case xtype.Common_Db_ser_t_poly() if not self.config.show_po_task_db:
                 return nil
@@ -203,6 +246,11 @@ class Printer:
                 return self.Tasks_PO_res_success_Proof2doc(v)
             case xtype.Tasks_PO_res_proof_found():
                 return dataclass2doc(v, with_name='ProofFound')
+            case xtype.Tasks_PO_res_error_No_proof():
+                # unwrap without `Obj` constructor
+                return self.value2doc(v.arg)
+            case xtype.Tasks_PO_res_no_proof():
+                return dataclass2doc(v, with_name='NoProof')
             case xtype.Proof_Proof_term_t_poly():
                 return dataclass2doc(v, with_name='ProofTerm')
             case xtype.Tasks_PO_res_shallow_poly():
@@ -222,9 +270,16 @@ class Printer:
             case xtype.Tasks_PO_task_t_poly():
                 return dataclass2doc(v, with_name='POTask')
             case xtype.Common_Proof_obligation_t_poly():
-                return dataclass2doc(
-                    v, with_name='ProofObligation', filter_none_values=True
-                )
+                rows: AssocList[Doc] = []
+                for fld in fields(v):
+                    val = getattr(v, fld.name)
+                    if fld.name == 'goal':
+                        # TODO: replace ty2doc with proper ty2doc
+                        val_doc = Goal2doc(val, ty2doc=self.value2doc)
+                    else:
+                        val_doc = self.value2doc(val)
+                    rows.append((fld.name, val_doc))
+                return python_obj('ProofObligation', rows)
             case xtype.Common_Var_t_poly():
                 return dataclass2doc(v, with_name='Var')
             case xtype.Common_Tactic_t_poly_Default_termination():
@@ -259,12 +314,13 @@ class Printer:
                     [(self.value2doc(k), self.value2doc(v)) for k, v in v.items()]
                 )
             case _ if is_dataclass(v) and not isinstance(v, type):
-                rows = self.dataclass_row_docs(v)
-                non_nil_rows = filter(lambda r: r[1] is not nil, rows)
-                return Pp.python_obj(
-                    v.__class__.__name__,
-                    non_nil_rows,
-                )
+                return dataclass2doc(v)
+                # rows = self.dataclass_row_docs(v)
+                # non_nil_rows = filter(lambda r: r[1] is not nil, rows)
+                # return Pp.python_obj(
+                #     v.__class__.__name__,
+                #     non_nil_rows,
+                # )
             case _:
                 return Pp.text(repr(v))
 
