@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
-from typing import Any
+from typing import Any, assert_never
 
 import imandrax_api.lib as xtype
 
@@ -54,6 +54,10 @@ def type2doc(t: Type) -> Doc:
     return python_obj('Type', [(None, python_quote(type2doc_(t)))])
 
 
+def snake_to_camel(s: str) -> str:
+    return ''.join(w.capitalize() for w in s.split('_'))
+
+
 @dataclass
 class PrinterConfig:
     bytes_limit: int | None = None
@@ -62,6 +66,7 @@ class PrinterConfig:
     show_po_res_report: bool = (
         False  # Note: report can be found in a dedicated artifact
     )
+    show_anchor_hash: bool = False  # append a short chash to anchor/cname names
     unwrap_single_arg_dataclass: bool = True
 
 
@@ -173,6 +178,31 @@ class Printer:
         proof_found = v.arg
         return self.value2doc(proof_found)
 
+    def Cname2doc(self, c: xtype.Cname_t_) -> Doc:
+        """A content-addressed name: `name`, or `name/<short hash>` when configured."""
+        if self.config.show_anchor_hash and c.chash:
+            return Pp.text(f'{c.name}/{c.chash[:3].hex()}')
+        return Pp.text(c.name)
+
+    def Anchor2doc(self, a: xtype.Anchor) -> Doc:
+        """
+        Anchor as a content-addressed name qualified by transformation modifiers.
+
+        Modifiers are slash-prefixed, outermost first, e.g.
+        `proof_check/_verify_11_8`, `decomp/eval#3`.
+        """
+        match a:
+            case xtype.Anchor_Named(arg=c):
+                return self.Cname2doc(c)
+            case xtype.Anchor_Eval(arg=n):
+                return Pp.text(f'eval#{n}')
+            case xtype.Anchor_Proof_check(arg=inner):
+                return hcat(text('proof_check/'), self.Anchor2doc(inner))
+            case xtype.Anchor_Decomp(arg=inner):
+                return hcat(text('decomp/'), self.Anchor2doc(inner))
+            case _:
+                assert_never(a)
+
     # --------------------
 
     def value2doc(self, v: Any) -> Doc:
@@ -208,6 +238,8 @@ class Printer:
                 return python_dict(rows_)
             case xtype.Common_Model_t_poly():
                 return dataclass2doc(v, with_name='Model')
+            case xtype.Statistics():
+                return dataclass2doc(v, with_name='TacticExecStats')
             # PO res
             case xtype.Tasks_PO_res_shallow_poly():
                 return dataclass2doc(
@@ -244,6 +276,19 @@ class Printer:
             ):
                 # Strip the tag name in proof arg ADT
                 return dataclass2doc(v, with_name='ProofArg')
+            case (
+                xtype.Anchor_Named()
+                | xtype.Anchor_Eval()
+                | xtype.Anchor_Proof_check()
+                | xtype.Anchor_Decomp()
+            ):
+                inner = hcat(text("'"), self.Anchor2doc(v), text("'"))
+                return python_obj('Anchor', [(None, inner)])
+            case xtype.Sub_anchor():
+                inner = text(f"'{v.fname}#{v.anchor}'")
+                return python_obj('SubAnchor', [(None, inner)])
+            case xtype.Cname_t_():
+                return self.Cname2doc(v)
             # PO task
             case xtype.Tasks_PO_task_t_poly():
                 return dataclass2doc(
