@@ -1,11 +1,11 @@
 """Utility functions for formatting ImandraX models to LLM context."""
 
+from __future__ import annotations
+
+from collections.abc import Collection
 from typing import Any, cast
 
-import yaml
-
 from imandrax_api_models import (
-    DecomposeRes,
     Error,
     ErrorMessage,
     EvalOutput,
@@ -15,7 +15,10 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
-from imandrax_api_models.yaml_utils import ImandraXAPIModelDumper
+
+type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONObject = dict[str, JSONValue]
+type JSONArray = list[JSONValue]
 
 
 def format_code_snippet_with_loc(
@@ -364,35 +367,29 @@ def format_errors_v2(
     return out
 
 
-def format_eval_res_v2(eval_res: EvalRes, iml_src: str | None = None) -> dict[str, Any]:
-    # Check additional error in message (internal errors)
+def format_eval_res_v2(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject:
+    # Check additional error in messages
     errs_in_eval_msg: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
     ]
     has_structured_err = eval_res.has_errors
     has_err_in_eval_msg = len(errs_in_eval_msg) > 0
 
-    out: dict[str, Any] = {}
+    out: JSONObject = {}
     match (has_structured_err, has_err_in_eval_msg):
         case True, _:
             out['error'] = format_errors_v2(
                 eval_res.errors, eval_res.po_errors, iml_src
             )
             if has_err_in_eval_msg:
-                out['unstructured_errors'] = _format_unstructured_msg_errors(
-                    errs_in_eval_msg, 200
-                )
+                out['msg_errors'] = _format_unstructured_msg_errors(errs_in_eval_msg)
             return out
         case False, True:
-            return {
-                'unstructured_errors': _format_unstructured_msg_errors(
-                    errs_in_eval_msg, 300
-                )
-            }
+            return {'msg_errors': _format_unstructured_msg_errors(errs_in_eval_msg)}
         case False, False:
             out['description'] = 'Eval success!'
             for i, eval_result in enumerate(eval_res.eval_results, 1):
-                data = {
+                data: JSONObject = {
                     'success': eval_result.success,
                     'value_as_ocaml': eval_result.value_as_ocaml,
                 }
@@ -403,38 +400,29 @@ def format_eval_res_v2(eval_res: EvalRes, iml_src: str | None = None) -> dict[st
 # ====================
 
 
-def remove_art_and_task_fields(data: dict[str, Any]) -> dict[str, Any]:
+def remove_fields_rec(
+    data: dict[str, Any], remove_fields: Collection[str] = ('artifact', 'task')
+) -> dict[str, Any]:
     """Resursively look inside a dict for certain keys and remove it."""
     data = data.copy()
-    remove_fields = ['artifact', 'task']
     for k in list(data.keys()):
         v = data[k]
         if k in remove_fields:
             data.pop(k)
         elif isinstance(v, dict):
             v = cast(dict[str, Any], v)
-            data[k] = remove_art_and_task_fields(v)
+            data[k] = remove_fields_rec(v)
     return data
 
 
-def format_vg_res(vg_res: VerifyRes | InstanceRes) -> str:
+def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
+    out: JSONObject = {}
     if vg_res.errors:
-        s = ''
-        s += 'VG error:\n'
+        out['description'] = 'VG has errors'
         for i, err in enumerate(vg_res.errors, 1):
-            s += f'\nError {i}:\n'
-            s += format_error(err)
-        return s
-    res = vg_res.res
-    res_type = vg_res.res_type
+            out[f'error_{i}'] = format_error_v2(err)
+    else:
+        out['res_type'] = vg_res.res_type
+        out['res'] = vg_res.res.model_dump(mode='json')
 
-    data: dict[str, Any] = {res_type: res.model_dump()}
-    data = remove_art_and_task_fields(data)
-    return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
-
-
-def format_decomp_res(decomp_res: DecomposeRes) -> str:
-    data = decomp_res.model_dump()
-
-    data = remove_art_and_task_fields(data)
-    return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
+    return out
