@@ -62,6 +62,7 @@ class PrinterConfig:
         False  # Note: report can be found in a dedicated artifact
     )
     show_anchor_hash: bool = False  # append a short chash to anchor/cname names
+    hide_po_res_success_cases: bool = False
     report_expand_payloads: bool = False  # render full models/SMT proofs in reports
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
@@ -126,11 +127,14 @@ class Printer:
         self,
         v: Any,
         filter_none_values: bool = False,
+        filter_p: Callable[[str, Any], bool] | None = None,
     ) -> AssocList[Doc]:
         rows: AssocList[Doc] = []
         for fld in fields(v):
             val = getattr(v, fld.name)
             if filter_none_values and val is None:
+                continue
+            if filter_p is not None and not filter_p(fld.name, val):
                 continue
             rows.append((fld.name, self.value2doc(val)))
         return rows
@@ -142,6 +146,7 @@ class Printer:
         with_name: str | None = None,
         ignore_fields: list[str] | None = None,
         filter_none_values: bool = False,
+        filter_p: Callable[[str, Any], bool] | None = None,
     ) -> Doc:
         """
         General purpose pretty-printer for dataclasses.
@@ -152,10 +157,15 @@ class Printer:
         Args:
             with_name: overrides the name of the dataclass
             unwrap_single_arg: if True, unwrap single-argument dataclasses
+            filter_p: a function that filters fields by name and value
 
         """
         ignore_fields = ignore_fields or []
-        rows = self.dataclass_row_docs(v, filter_none_values=filter_none_values)
+        rows = self.dataclass_row_docs(
+            v,
+            filter_none_values=filter_none_values,
+            filter_p=filter_p,
+        )
         rows = [r for r in rows if r[0] not in ignore_fields]
         if unwrap_single_arg and len(rows) == 1 and rows[0][0] == 'arg':
             rows = [(None, rows[0][1])]
@@ -237,7 +247,7 @@ class Printer:
                 )
             case xtype.Statistics():
                 rows = [
-                    ('time_s', text(fmt_duration(v.time_s))),
+                    ('time_s', python_quote(text(fmt_duration(v.time_s)))),
                     ('tactic', self.value2doc(v.tactic)),
                 ]
                 return python_obj('TacticExecStats', rows)
@@ -259,21 +269,30 @@ class Printer:
                 return text(f'VerifyKind.{name}')
             # PO res
             case xtype.Tasks_PO_res_shallow_poly():
+                ignore_fields = (
+                    ['report'] if not self.config.show_po_res_report else None
+                )
                 return dataclass2doc(
                     v,
                     with_name='PORes',
-                    ignore_fields=['report']
-                    if not self.config.show_po_res_report
-                    else None,
+                    ignore_fields=ignore_fields,
+                    filter_p=lambda _, v: not (isinstance(v, list) and len(v) == 0),
                 )
-            case xtype.Tasks_PO_res_success_Proof():
-                return dataclass2doc(v.arg, with_name='POSuccessProofFound')
-            case xtype.Tasks_PO_res_success_Instance():
-                return dataclass2doc(v.arg, with_name='POSuccessInstance')
-            case xtype.Tasks_PO_res_success_Verified_upto():
-                return dataclass2doc(v.arg, with_name='POSuccessVerifiedUpto')
-            case xtype.Tasks_PO_res_success_Test_ok():
-                return dataclass2doc(v, with_name='POSuccessTestOk')
+            # case self.config.hide_po_res_success_cases:
+            case (
+                xtype.Tasks_PO_res_success_Proof()
+                | xtype.Tasks_PO_res_success_Instance()
+                | xtype.Tasks_PO_res_success_Verified_upto()
+                | xtype.Tasks_PO_res_success_Test_ok()
+            ):
+                with_name = type(v).__name__.removeprefix('Tasks_PO_res_success_')
+                with_name = snake_to_camel(with_name)
+                with_name = 'POSuccess' + with_name
+                if self.config.hide_po_res_success_cases:
+                    inner_doc = text('...')
+                    return python_obj(with_name, [(None, inner_doc)])
+                else:
+                    return dataclass2doc(v.arg, with_name=with_name)
             case xtype.Tasks_PO_res_error_No_proof():
                 return dataclass2doc(v.arg, with_name='POErrorNoProof')
             case xtype.Tasks_PO_res_error_Error():
