@@ -395,6 +395,6 @@ class Printer:
         return self.value2doc(v)
 
 
-def show_value(v: Any, **kwargs) -> str:
+def show_value(v: Any, **kwargs: Any) -> str:
     printer = Printer(PrinterConfig(**kwargs))
     return Pp.pretty(88, printer.value2doc(v))
