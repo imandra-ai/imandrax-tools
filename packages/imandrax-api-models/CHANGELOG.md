@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.1.0] - 2026-06-25
+- FEAT(client): add `eval_code_snippet`, `parse_term`, `parse_type`, and `get_artifact` endpoints
+
 ## [20.0.5] - 2026-06-24
 - FIX(yaml_utils): register representer for subclass
 
