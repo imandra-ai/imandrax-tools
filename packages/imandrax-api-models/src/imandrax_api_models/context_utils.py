@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Collection
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from imandrax_api_models import (
     Error,
@@ -271,16 +271,31 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject
 
 # ====================
 
+type Either[A, B] = tuple[Literal['left'], A] | tuple[Literal['right'], B]
+
 
 def remove_fields_rec(
-    data: dict[str, Any], remove_fields: Collection[str] = ('artifact', 'task')
+    data: dict[str, Any],
+    remove_fields: Collection[str] = ('artifact', 'task'),
+    replace_with: Either[None, Any] = ('left', None),
 ) -> dict[str, Any]:
-    """Resursively look inside a dict for certain keys and remove it."""
+    """
+    Resursively look inside a dict for certain keys and remove / replace it.
+
+    Args:
+        data: the dictionary to process.
+        remove_fields: the keys to remove or hide.
+        replace_with (Either[None, Any]): If provided, the field is replaced with this value instead of being removed.
+
+    """
     data = data.copy()
     for k in list(data.keys()):
         v = data[k]
         if k in remove_fields:
-            data.pop(k)
+            if replace_with[0] == 'left':
+                data[k] = replace_with[1]
+            else:
+                data.pop(k)
         elif isinstance(v, dict):
             v = cast(dict[str, Any], v)
             data[k] = remove_fields_rec(v)
