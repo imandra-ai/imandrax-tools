@@ -51,43 +51,73 @@ def test():
         assert leaf_group.region.constraints_str
         assert set(leaf_group.constraints) == set(leaf_group.region.constraints_str)
 
-    assert edr.regions_str == snapshot(
+    assert leaf_groups == snapshot(
         [
-            RegionStr(
-                constraints_str=['y <= 0', 'x <= 0'],
-                invariant_str='6',
-                model_str={'x': '0', 'y': '0'},
-                model_eval_str='6',
+            RegionGroup(
+                constraints=['x >= 1', 'y >= 1', 'x <= y'],
+                label_path=[1, 1, 1],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['x <= y', 'y >= 1', 'x >= 1'],
+                    invariant_str='2',
+                    model_str={'x': '1', 'y': '1'},
+                    model_eval_str='2',
+                ),
             ),
-            RegionStr(
-                constraints_str=['y >= 1', 'x <= 0'],
-                invariant_str='5',
-                model_str={'x': '0', 'y': '1'},
-                model_eval_str='5',
+            RegionGroup(
+                constraints=['x >= 1', 'y >= 1', 'x > y'],
+                label_path=[1, 1, 2],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['x > y', 'y >= 1', 'x >= 1'],
+                    invariant_str='1',
+                    model_str={'x': '2', 'y': '1'},
+                    model_eval_str='1',
+                ),
             ),
-            RegionStr(
-                constraints_str=['y >= (-10)', 'y <= 0', 'x >= 1'],
-                invariant_str='4',
-                model_str={'x': '1', 'y': '0'},
-                model_eval_str='4',
+            RegionGroup(
+                constraints=['x >= 1', 'y <= (-11)'],
+                label_path=[1, 2],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['y <= (-11)', 'x >= 1'],
+                    invariant_str='3',
+                    model_str={'x': '1', 'y': '(-11)'},
+                    model_eval_str='3',
+                ),
             ),
-            RegionStr(
-                constraints_str=['y <= (-11)', 'x >= 1'],
-                invariant_str='3',
-                model_str={'x': '1', 'y': '(-11)'},
-                model_eval_str='3',
+            RegionGroup(
+                constraints=['x >= 1', 'y <= 0', 'y >= (-10)'],
+                label_path=[1, 3, 1],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['y >= (-10)', 'y <= 0', 'x >= 1'],
+                    invariant_str='4',
+                    model_str={'x': '1', 'y': '0'},
+                    model_eval_str='4',
+                ),
             ),
-            RegionStr(
-                constraints_str=['x <= y', 'y >= 1', 'x >= 1'],
-                invariant_str='2',
-                model_str={'x': '1', 'y': '1'},
-                model_eval_str='2',
+            RegionGroup(
+                constraints=['y >= 1', 'x <= 0'],
+                label_path=[2, 1],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['y >= 1', 'x <= 0'],
+                    invariant_str='5',
+                    model_str={'x': '0', 'y': '1'},
+                    model_eval_str='5',
+                ),
             ),
-            RegionStr(
-                constraints_str=['x > y', 'y >= 1', 'x >= 1'],
-                invariant_str='1',
-                model_str={'x': '2', 'y': '1'},
-                model_eval_str='1',
+            RegionGroup(
+                constraints=['x <= 0', 'y <= 0'],
+                label_path=[3, 1],
+                weight=1,
+                region=RegionStr(
+                    constraints_str=['y <= 0', 'x <= 0'],
+                    invariant_str='6',
+                    model_str={'x': '0', 'y': '0'},
+                    model_eval_str='6',
+                ),
             ),
         ]
     )

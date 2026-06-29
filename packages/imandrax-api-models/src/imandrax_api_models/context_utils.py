@@ -350,14 +350,13 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
 
 
 def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
-    # TOOD: use remove_fields_rec
     d: dict[str, Any] = {}
     if decomp_res.regions_str is not None:
         enriched_regions = decomp_res.regions()
-        d['descr'] = f'Decomp succeeded with {len(enriched_regions)} regions'
+        d['description'] = f'Decomp succeeded with {len(enriched_regions)} regions'
         d['regions'] = enriched_regions
     else:
-        d['descr'] = 'Decomp failed'
+        d['description'] = 'Decomp failed'
         d |= remove_fields_rec(decomp_res.model_dump())
         d.pop('regions_str')
         d.pop('region_groups')
