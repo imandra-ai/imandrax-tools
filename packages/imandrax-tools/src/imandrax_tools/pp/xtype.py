@@ -288,11 +288,15 @@ class Printer:
                 with_name = type(v).__name__.removeprefix('Tasks_PO_res_success_')
                 with_name = snake_to_camel(with_name)
                 with_name = 'POSuccess' + with_name
-                if self.config.hide_po_res_success_cases:
-                    inner_doc = text('...')
-                    return python_obj(with_name, [(None, inner_doc)])
+                if isinstance(v, xtype.Tasks_PO_res_success_Test_ok):
+                    # Test_ok has no .arg
+                    return dataclass2doc(v, with_name=with_name)
                 else:
-                    return dataclass2doc(v.arg, with_name=with_name)
+                    if self.config.hide_po_res_success_cases:
+                        inner_doc = text('...')
+                        return python_obj(with_name, [(None, inner_doc)])
+                    else:
+                        return dataclass2doc(v.arg, with_name=with_name)
             case xtype.Tasks_PO_res_error_No_proof():
                 return dataclass2doc(v.arg, with_name='POErrorNoProof')
             case xtype.Tasks_PO_res_error_Error():
