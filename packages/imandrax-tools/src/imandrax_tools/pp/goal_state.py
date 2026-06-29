@@ -1,3 +1,4 @@
+# ruff: noqa: F403, F405
 from typing import Literal
 
 import imandrax_api.lib as xtype
@@ -6,8 +7,7 @@ import imandrax_tools.pp.pretty as Pp
 from imandrax_tools.pp.pretty import Doc
 from imandrax_tools.pp.term_formatter import term2doc
 
-type Sequent = xtype.Common_Sequent_t_poly[xtype.Mir_Term]
-type PO_res = xtype.Tasks_PO_res_Shallow
+from ._common import *
 
 
 def doc_of_labeled_term(labeled: tuple[None | str, xtype.Mir_Term]) -> Doc:

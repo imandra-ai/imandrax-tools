@@ -12,9 +12,10 @@ Ported from [imandrax-vscode/src/goal-state/term-formatter.ts@7275010ec14d821b2f
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import reduce
-from typing import Literal
+from typing import Literal, assert_never
 
 PYTHON_INDENT = 2
 
@@ -43,6 +44,11 @@ class LineBreak:
 
 
 @dataclass(slots=True, frozen=True)
+class HardLine:
+    """Unconditional line break; never flattened, and forces enclosing groups to break."""
+
+
+@dataclass(slots=True, frozen=True)
 class Concat:
     left: Doc
     right: Doc
@@ -62,6 +68,12 @@ class Group:
 
 
 @dataclass(slots=True, frozen=True)
+class FlatAlt:
+    default: Doc  # Used when the enclosing group breaks
+    flat: Doc  # Used when the enclosing group is flat
+
+
+@dataclass(slots=True, frozen=True)
 class Prefix:
     """
     Like `Nest`, but the indent unit is an arbitrary string, not N spaces.
@@ -74,14 +86,18 @@ class Prefix:
     doc: Doc
 
 
-type Doc = Nil | Text | Line | LineBreak | Concat | Nest | Group | Prefix
+type Doc = (
+    Nil | Text | Line | LineBreak | HardLine | Concat | Nest | Group | FlatAlt | Prefix
+)
 
 # Smart constructors
 # ==================
 
 nil: Doc = Nil()
 line: Doc = Line()
+"""Potential line break; flattened to a single space when the group fits."""
 linebreak: Doc = LineBreak()
+"""Potential line break; flattened to the empty string when the group fits."""
 
 
 def text(s: str) -> Doc:
@@ -98,6 +114,14 @@ def nest(i: int, doc: Doc) -> Doc:
 
 def group(doc: Doc) -> Doc:
     return Group(doc)
+
+
+def flat_alt(default: Doc, flat: Doc) -> Doc:
+    return FlatAlt(default, flat)
+
+
+hardline: Doc = HardLine()
+"""A line break that always breaks, regardless of the enclosing group."""
 
 
 def prefix(p: str, doc: Doc) -> Doc:
@@ -133,6 +157,10 @@ def _fits(remaining: int, doc: Doc) -> bool:
             return False
         d = stack.pop()
         match d:
+            case HardLine():
+                # A hard break can never sit on the current line, so any group
+                # containing it must lay out broken.
+                return False
             case Nil() | LineBreak():
                 pass
             case Line():
@@ -144,6 +172,8 @@ def _fits(remaining: int, doc: Doc) -> bool:
                 stack.append(left)
             case Nest(_, inner) | Group(inner) | Prefix(_, inner):
                 stack.append(inner)
+            case FlatAlt(_, flat):
+                stack.append(flat)
     return rem >= 0
 
 
@@ -173,11 +203,18 @@ def _best(width: int, doc: Doc) -> list[SimpleToken]:
                 if mode != FLAT:
                     result.append(('line', pfx))
                     col = len(pfx)
+            case HardLine():
+                # Always a real newline, in either mode, carrying the prefix.
+                result.append(('line', pfx))
+                col = len(pfx)
             case Concat(left, right):
                 stack.append((pfx, mode, right))
                 stack.append((pfx, mode, left))
             case Nest(i, inner):
                 stack.append((pfx + ' ' * i, mode, inner))
+            case FlatAlt(default, flat):
+                chosen = flat if mode == FLAT else default
+                stack.append((pfx, mode, chosen))
             case Prefix(p, inner):
                 stack.append((pfx + p, mode, inner))
             case Group(inner):
@@ -186,6 +223,8 @@ def _best(width: int, doc: Doc) -> list[SimpleToken]:
                 else:
                     m: Mode = FLAT if _fits(width - col, inner) else BREAK
                     stack.append((pfx, m, inner))
+            case _:
+                assert_never(d)
     return result
 
 
@@ -204,7 +243,7 @@ def pretty(width: int, doc: Doc) -> str:
     return _layout(_best(width, doc))
 
 
-# Public API — combinators
+# Public API -- combinators
 # ========================
 
 
@@ -213,8 +252,9 @@ def hcat(*docs: Doc) -> Doc:
     return reduce(concat, docs, nil)
 
 
-def punctuate(sep: Doc, docs: list[Doc]) -> Doc:
+def punctuate(sep: Doc, docs: Iterable[Doc]) -> Doc:
     """Concatenate documents with `sep` between each pair."""
+    docs = list(docs)
     if not docs:
         return nil
     it = iter(docs)
@@ -224,17 +264,17 @@ def punctuate(sep: Doc, docs: list[Doc]) -> Doc:
     return acc
 
 
-def hsep(docs: list[Doc]) -> Doc:
+def hsep(docs: Iterable[Doc]) -> Doc:
     """Lay out documents separated by spaces (never breaks)."""
     return punctuate(text(' '), docs)
 
 
-def vsep(docs: list[Doc]) -> Doc:
+def vsep(docs: Iterable[Doc]) -> Doc:
     """Lay out documents separated by `line` (spaces or newlines)."""
     return punctuate(line, docs)
 
 
-def fill(docs: list[Doc]) -> Doc:
+def fill(docs: Iterable[Doc]) -> Doc:
     """Try to fill a line; break only when necessary."""
     return punctuate(group(line), docs)
 
@@ -295,7 +335,12 @@ def enclose_sep(ldelim: Doc, rdelim: Doc, sep: Doc, docs: list[Doc]) -> Doc:
     return group(concat(body, rdelim))
 
 
-def _python_enclose(ldelim: Doc, rdelim: Doc, docs: list[Doc]) -> Doc:
+def python_enclose(
+    ldelim: Doc,
+    rdelim: Doc,
+    docs: Iterable[Doc],
+    trailing_comma: bool = True,
+) -> Doc:
     """
     Python-style layout: one line if it fits, else each item on its own line.
 
@@ -306,28 +351,101 @@ def _python_enclose(ldelim: Doc, rdelim: Doc, docs: list[Doc]) -> Doc:
                 c,
             ]
     """
+    docs = list(docs)
     if not docs:
         return concat(ldelim, rdelim)
     sep = concat(text(','), line)
     body = punctuate(sep, docs)
-    inner = nest(PYTHON_INDENT, concat(linebreak, body))
+    tcomma = flat_alt(text(','), nil) if trailing_comma else nil
+    inner = nest(PYTHON_INDENT, hcat(linebreak, body, tcomma))
     return group(hcat(ldelim, inner, linebreak, rdelim))
 
 
-def list_doc(docs: list[Doc]) -> Doc:
+def python_dict_entry(k: Doc, v: Doc) -> Doc:
+    return hcat(k, text(': '), v)
+
+
+def python_dict(entries: Iterable[tuple[Doc, Doc]]) -> Doc:
+    items = [python_dict_entry(k, v) for k, v in entries]
+    return python_enclose(text('{'), text('}'), items)
+
+
+def python_obj(name: str, fields: Iterable[tuple[str | None, Doc]]) -> Doc:
+    """
+    Python-style object: `name(arg1=..., arg2=...)`; Breaks into multiple lines with a trailing comma if too wide.
+
+    Args:
+        name: the object name
+        fields: associated list of `(name, value)` pairs. If `name` is `None`, the value is treated like a positional arg.
+
+    """
+    parts = [concat(text(f'{k}='), v) if k is not None else v for k, v in fields]
+    return python_enclose(text(f'{name}('), text(')'), parts)
+
+
+def list_doc(docs: Iterable[Doc]) -> Doc:
     """Python-style list: `[a, b, c]` flat or one-per-line broken."""
-    return _python_enclose(text('['), text(']'), docs)
+    return python_enclose(text('['), text(']'), docs)
 
 
-def tupled(docs: list[Doc]) -> Doc:
+def tupled(docs: Iterable[Doc]) -> Doc:
     """Python-style tuple: `(a, b, c)` flat or one-per-line broken."""
-    return _python_enclose(text('('), text(')'), docs)
+    return python_enclose(text('('), text(')'), list(docs))
 
 
-def assoc_list(docs: list[tuple[str, Doc]]) -> Doc:
+def assoc_list(docs: Iterable[tuple[str, Doc]]) -> Doc:
     """Python-style dict: `{k: v, ...}` flat or one-per-line broken."""
     items: list[Doc] = [concat(concat(text(k), text(': ')), v) for (k, v) in docs]
-    return _python_enclose(text('{'), text('}'), items)
+    return python_enclose(text('{'), text('}'), items)
+
+
+# Tree layout
+# ===========
+
+# mid, end, gutter_mid, gutter_end
+TREE_CHARS = (
+    '├─ ',
+    '└─ ',
+    '│  ',
+    '   ',
+)
+
+TREE_CHARS_ASCII = (
+    '|-- ',
+    '`-- ',
+    '|   ',
+    '    ',
+)
+
+
+def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
+    """
+    Lay out `header` with `children` hung beneath it using box-drawing guides.
+
+    Each child's first line is introduced by a connector (`├─`/`└─`); its
+    continuation lines carry the matching gutter (`│ `/spaces) so nested
+    subtrees stay aligned under their connector. Uses `hardline`, so the tree
+    always breaks regardless of the enclosing group.
+    """
+    mid, end, gutter_mid, gutter_end = TREE_CHARS_ASCII if ascii_only else TREE_CHARS
+    parts: list[Doc] = [header]
+    last = len(children) - 1
+    for i, child in enumerate(children):
+        is_last = i == last
+        conn = end if is_last else mid
+        gutter = gutter_end if is_last else gutter_mid
+        parts.append(hcat(hardline, text(conn), prefix(gutter, child)))
+    return hcat(*parts)
+
+
+def python_quote(
+    inner: Doc,
+    indent: int = PYTHON_INDENT,
+    single_quote: bool = True,
+) -> Doc:
+    q = flat_alt(text("'''"), text("'") if single_quote else text('"'))
+    body = nest(indent, concat(linebreak, inner))
+    return group(hcat(q, body, linebreak, q))
 
 
 # Helpers

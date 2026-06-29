@@ -1,6 +1,13 @@
 from imandrax_api.lib import RegionStr
 
-from .api import ArtifactListResult, ArtifactZip
+from .api import (
+    Artifact,
+    ArtifactListResult,
+    ArtifactZip,
+    CodeSnippet,
+    CodeSnippetEvalResult,
+    EvalResult,
+)
 from .artmsg import Art, StorageEntry
 from .error import Error, ErrorKind, ErrorKindParsingError, ErrorMessage
 from .locs import Location, Position
@@ -44,7 +51,11 @@ from .utils import Empty, StringMsg
 
 __all__ = [
     'Art',
+    'Artifact',
     'ArtifactListResult',
+    'CodeSnippet',
+    'CodeSnippetEvalResult',
+    'EvalResult',
     'ArtifactZip',
     'CounterSat',
     'DecomposeReq',
