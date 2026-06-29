@@ -212,7 +212,8 @@ def format_error(
     if top_msg:
         out['top_msg'] = top_msg
     out['err_kind'] = err_kind
-    out['stack'] = stack_strs
+    if stack_strs:
+        out['stack'] = stack_strs
 
     return out
 
@@ -241,7 +242,7 @@ def format_errors(
     return out
 
 
-def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject:
+def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject | str:
     # Check additional error in messages
     errs_in_eval_msg: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
@@ -252,24 +253,30 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject
     out: JSONObject = {}
     match (has_structured_err, has_err_in_eval_msg):
         case True, _:
-            out['description'] = (
-                f'Eval: {len(eval_res.errors)} non-PO errors, {len(eval_res.po_errors)} PO errors'
-            )
+            desc = 'Eval: '
+            if n_no_po_err := len(eval_res.errors):
+                desc += f'{n_no_po_err} non-PO errors; '
+            if n_po_err := len(eval_res.po_errors):
+                desc += f'{n_po_err} PO errors'
+            out['desc'] = desc.rstrip('; ')
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
                 out['msg_errors'] = _format_unstructured_msg_errors(errs_in_eval_msg)
             return out
         case False, True:
-            out['description'] = 'Eval: error in eval messages'
+            out['desc'] = 'Eval: error in eval messages'
             return {'msg_errors': _format_unstructured_msg_errors(errs_in_eval_msg)}
         case False, False:
-            out['description'] = 'Eval succeed'
+            out['desc'] = 'Eval succeed'
             for i, eval_result in enumerate(eval_res.eval_results, 1):
                 data: JSONObject = {
                     'success': eval_result.success,
                     'value_as_ocaml': eval_result.value_as_ocaml,
                 }
                 out[f'eval_result_{i}'] = data
+
+            if len(out.keys()) == 1 and 'desc' in out:
+                return out['desc']
             return out
 
 
