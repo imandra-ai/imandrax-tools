@@ -1,4 +1,4 @@
-"""Utility functions for formatting ImandraX models to LLM context."""
+"""Utility functions for formatting ImandraX API models to LLM context."""
 
 from __future__ import annotations
 
@@ -194,24 +194,18 @@ def format_error(
     error: Error,
     iml_src: str | None = None,
     max_stack_depth: int = 3,
-) -> dict[str, Any]:
-    err_kind = error.kind
-    top_msg: dict[str, Any] | None = None
+) -> JSONObject:
+    out: dict[str, Any] = {}
 
+    out['err_kind'] = error.kind
     if error.msg is not None:
-        top_msg = format_error_msg(error.msg, iml_src)
+        out['msg'] = format_error_msg(error.msg, iml_src)
 
     stack_strs = (
         [format_error_msg(msg, iml_src) for msg in error.stack[:max_stack_depth]]
         if error.stack
         else []
     )
-
-    out: dict[str, Any] = {}
-    # Top message
-    if top_msg:
-        out['top_msg'] = top_msg
-    out['err_kind'] = err_kind
     if stack_strs:
         out['stack'] = stack_strs
 
@@ -223,23 +217,48 @@ def format_errors(
     po_errors: list[Error],
     iml_src: str | None = None,
     max_errors: int = 3,
-) -> dict[str, Any]:
-    # If non-PO error exist, ignore PO errors
-    is_po_error: bool = False
-    if len(non_po_errors) > 0:
-        errs = non_po_errors[:max_errors]
+) -> JSONArray:
+    """
+    Format errors from non-PO and PO error lists.
+
+    If non-PO errors exist, return them; otherwise, return PO errors.
+    The total number of errors returned is limited to `max_errors`.
+    Omitted errors are counted and reported in the output.
+    """
+    n_non_po = len(non_po_errors)
+    n_po = len(po_errors)
+
+    out: list[JSONValue] = []
+    omitted_count = {'non_po': 0, 'po': 0}
+
+    def fmt_omitted(omitted_count: dict[str, int]) -> str:
+        if omitted_count['non_po'] == 0 and omitted_count['po'] == 0:
+            return ''
+        if omitted_count['non_po'] == 0:
+            return f'(omitted {omitted_count["po"]} PO errors)'
+        if omitted_count['po'] == 0:
+            return f'(omitted {omitted_count["non_po"]} non-PO errors)'
+        return f'(omitted {omitted_count["non_po"]} non-PO and {omitted_count["po"]} PO errors)'
+
+    for err in non_po_errors[:max_errors]:
+        out.append(format_error(err, iml_src))
+    if n_non_po > 0:
+        # Early return if non-PO errors exist
+        omitted_count['non_po'] = max(0, n_non_po - max_errors)
+        omitted_count['po'] = n_po
+        if omitted_str := fmt_omitted(omitted_count):
+            out.append(omitted_str)
+        return out
     else:
-        is_po_error = True
-        errs = po_errors[:max_errors]
-
-    err_infos: list[dict[str, Any]] = [format_error(err, iml_src) for err in errs]
-
-    out: dict[str, Any] = {}
-    if is_po_error:
-        out['error_type'] = 'proof_obligation_error'
-    for i, err_info in enumerate(err_infos, 1):
-        out[f'error_{i}'] = err_info
-    return out
+        for err in po_errors[:max_errors]:
+            err_disp = format_error(err, iml_src)
+            err_disp['is_po'] = True
+            out.append(err_disp)
+        if n_po > max_errors:
+            omitted_count['po'] = n_po - max_errors
+            if omitted_str := fmt_omitted(omitted_count):
+                out.append(omitted_str)
+        return out
 
 
 def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject | str:
