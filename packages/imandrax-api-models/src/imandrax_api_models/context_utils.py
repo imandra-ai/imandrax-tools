@@ -297,9 +297,9 @@ def remove_fields_rec(
         v = data[k]
         if k in remove_fields:
             if replace_with[0] == 'left':
-                data[k] = replace_with[1]
-            else:
                 data.pop(k)
+            else:
+                data[k] = replace_with[1]
         elif isinstance(v, dict):
             v = cast(dict[str, Any], v)
             data[k] = remove_fields_rec(v)
