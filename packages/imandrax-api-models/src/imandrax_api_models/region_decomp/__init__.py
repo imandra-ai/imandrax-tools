@@ -24,7 +24,7 @@ class EnrichedDecomposeRes(DecomposeRes):
     )
 
     @model_validator(mode='after')
-    def _populate_region_groups(self) -> Self:
+    def populate_region_groups(self) -> Self:
         if not self.region_groups and self.regions_str:
             self.region_groups = group_regions(self.regions_str)
         return self
@@ -32,6 +32,16 @@ class EnrichedDecomposeRes(DecomposeRes):
     @classmethod
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
+
+    @staticmethod
+    def leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
+        leaves = []
+        for group in groups:
+            if not group.children:
+                leaves.append(group)
+            else:
+                leaves.extend(EnrichedDecomposeRes.leaf_groups(group.children))
+        return leaves
 
     def to_tree_str(
         self,
@@ -64,27 +74,35 @@ class RegionGroup(BaseModel):
 
     Attributes:
         constraints:
-            Full accumulated constraint path from root to this node (root-first).
-            `constraints[-1]` is the constraint introduced at this node's own level.
-        label_path:
-            Positional index path from root to this node (root-first, 1-indexed).
-            Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.
-            Levels where a constraint applies to all regions are skipped, so the path
-            length may be shorter than the tree depth.
-        region:
-            The concrete region, if this group contains exactly one.
         children:
             Sub-groups under this node.
         weight:
-            Number of regions in the `has` partition at this node's level.
 
     """
 
-    constraints: list[str]
-    label_path: list[int]
-    region: RegionStr | None = None
-    children: list[RegionGroup] = []
-    weight: int
+    constraints: list[str] = Field(
+        description=(
+            'Full accumulated constraint path from root to this node (root-first).'
+            "`constraints[-1]` is the constraint introduced at this node's own level."
+        )
+    )
+    label_path: list[int] = Field(
+        description=(
+            'Positional index path from root to this node (root-first, 1-indexed).'
+            'Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.'
+            'Levels where a constraint applies to all regions are skipped, so the path'
+            'length may be shorter than the tree depth.'
+        )
+    )
+    region: RegionStr | None = Field(
+        default=None, description='The concrete region. Present iff at leaf nodes.'
+    )
+    children: list[RegionGroup] = Field(
+        default_factory=list, description='Sub-groups under this node.'
+    )
+    weight: int = Field(
+        description="Number of regions in the partition at this node's level."
+    )
 
     def n_regions(self) -> int:
         """Total regions in this subtree, including self."""

@@ -36,10 +36,15 @@ def trust() -> DecomposeRes:
 
 def test():
     decomp_res = trust()
-    hdr = EnrichedDecomposeRes.from_decomp_res(decomp_res)
+    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res)
 
-    # The raw regions are inherited from DecomposeRes.
-    assert hdr.regions_str == snapshot(
+    assert edr.regions_str
+    leaf_groups = edr.leaf_groups(edr.region_groups)
+    assert len(leaf_groups) == len(edr.regions_str)
+    for leaf_group in leaf_groups:
+        assert len(leaf_group.children) == 0
+
+    assert edr.regions_str == snapshot(
         [
             RegionStr(
                 constraints_str=['y <= 0', 'x <= 0'],
@@ -81,7 +86,7 @@ def test():
     )
 
     # region_groups is auto-populated on validation from regions_str.
-    assert hdr.to_tree_str() == snapshot("""\
+    assert edr.to_tree_str() == snapshot("""\
 ├── [1] new_constraint='x >= 1' n_leaf_regions=4
 │   ├── [1.1] new_constraint='y >= 1' n_leaf_regions=2
 │   │   ├── [1.1.1] new_constraint='x <= y' invariant='2' is_leaf=True
@@ -100,7 +105,7 @@ def test():
             out.extend(_walk(g.children))
         return out
 
-    assert _walk(hdr.region_groups) == snapshot(
+    assert _walk(edr.region_groups) == snapshot(
         [
             ('1', ['x >= 1']),
             ('1.1', ['x >= 1', 'y >= 1']),
