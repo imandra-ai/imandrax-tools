@@ -5,7 +5,11 @@ from imandrax_api.lib import RegionStr
 from inline_snapshot import snapshot
 
 from imandrax_api_models.proto_models import DecomposeRes
-from imandrax_api_models.region_decomp import EnrichedDecomposeRes, RegionGroup
+from imandrax_api_models.region_decomp import (
+    EnrichedDecomposeRes,
+    RegionGroup,
+    get_leaf_groups,
+)
 
 
 def trust() -> DecomposeRes:
@@ -39,7 +43,7 @@ def test():
     edr = EnrichedDecomposeRes.from_decomp_res(decomp_res)
 
     assert edr.regions_str
-    leaf_groups = edr.leaf_groups(edr.region_groups)
+    leaf_groups = get_leaf_groups(edr.region_groups)
     assert len(leaf_groups) == len(edr.regions_str)
     for leaf_group in leaf_groups:
         assert len(leaf_group.children) == 0
