@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-tools"
-version = "20.2.0rc2"
+version = "20.2.0"
 description = "Umbralla package bundling imandrax-api-models and iml-query. Also provides miscellaneous utilities (goal state formatting, rec knowledge base)."
 readme = "README.md"
 authors = [
