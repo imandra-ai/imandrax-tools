@@ -250,11 +250,15 @@ class Printer:
                     [(None, python_quote(model2doc(v), single_quote=False))],
                 )
             case xtype.Statistics():
-                rows = [
-                    ('time_s', python_quote(text(fmt_duration(v.time_s)))),
-                    ('tactic', self.value2doc(v.tactic)),
-                ]
-                return python_obj('TacticExecStats', rows)
+                if v.time_s < 0 and v.tactic is None:
+                    # Ignore invalid / empty stats
+                    return nil
+                else:
+                    rows = [
+                        ('time_s', python_quote(text(fmt_duration(v.time_s)))),
+                        ('tactic', self.value2doc(v.tactic)),
+                    ]
+                    return python_obj('TacticExecStats', rows)
             case xtype.Report_Report():
                 return report2doc(
                     v,
@@ -373,6 +377,8 @@ class Printer:
                         continue
                     if key == 'goal':
                         val_doc = Goal2doc(val, ty2doc=type2doc)
+                    elif key == 'is_instance' and not val:
+                        continue
                     elif key == 'named_hypotheses':
                         if not val:
                             continue
