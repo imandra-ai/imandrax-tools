@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, cast
 
 from imandrax_api_models import (
@@ -16,7 +16,9 @@ from imandrax_api_models import (
     VerifyRes,
 )
 
-type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
