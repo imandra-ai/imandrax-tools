@@ -139,6 +139,7 @@ def _format_unstructured_msg_errors(
     Up to `max_msgs` are shown, deduped by extracted text. Appends a
     truncation hint if more were dropped.
     """
+    # TODO: make this structural as well
     seen: set[str] = set()
     extracted: list[str] = []
     for msg in errs_in_eval_msg:
