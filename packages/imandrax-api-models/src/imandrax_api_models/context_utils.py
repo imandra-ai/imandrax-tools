@@ -252,14 +252,18 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject
     out: JSONObject = {}
     match (has_structured_err, has_err_in_eval_msg):
         case True, _:
+            out['description'] = (
+                f'Eval: {len(eval_res.errors)} non-PO errors, {len(eval_res.po_errors)} PO errors'
+            )
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
                 out['msg_errors'] = _format_unstructured_msg_errors(errs_in_eval_msg)
             return out
         case False, True:
+            out['description'] = 'Eval: error in eval messages'
             return {'msg_errors': _format_unstructured_msg_errors(errs_in_eval_msg)}
         case False, False:
-            out['description'] = 'Eval success!'
+            out['description'] = 'Eval succeed'
             for i, eval_result in enumerate(eval_res.eval_results, 1):
                 data: JSONObject = {
                     'success': eval_result.success,
