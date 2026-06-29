@@ -61,9 +61,14 @@ class PrinterConfig:
     show_po_res_report: bool = (
         False  # Note: report can be found in a dedicated artifact
     )
-    show_anchor_hash: bool = False  # append a short chash to anchor/cname names
+    show_anchor_hash: bool = False
+    """append a short chash to anchor/cname names"""
+    summarize_po_task: bool = False
+    """Show PO task as a summarized string. Useful in success case"""
     hide_po_res_success_cases: bool = False
-    report_expand_payloads: bool = False  # render full models/SMT proofs in reports
+    """Replace body of success cases with `...`"""
+    report_expand_payloads: bool = False
+    """render full models/SMT proofs in reports"""
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
 
@@ -286,7 +291,6 @@ class Printer:
                     ignore_fields=ignore_fields,
                     filter_p=lambda _, v: not (isinstance(v, list) and len(v) == 0),
                 )
-            # case self.config.hide_po_res_success_cases:
             case (
                 xtype.Tasks_PO_res_success_Proof()
                 | xtype.Tasks_PO_res_success_Instance()
@@ -363,11 +367,21 @@ class Printer:
                 return self.Cname2doc(v)
             # PO task
             case xtype.Tasks_PO_task_t_poly():
-                return dataclass2doc(
-                    v,
-                    with_name='POTask',
-                    ignore_fields=['db'] if not self.config.show_po_task_db else None,
-                )
+                if not self.config.summarize_po_task:
+                    return dataclass2doc(
+                        v,
+                        with_name='POTask',
+                        ignore_fields=['db']
+                        if not self.config.show_po_task_db
+                        else None,
+                    )
+                else:
+                    sym_info = f'{v.from_sym}#{v.count}'
+                    po_descr = v.po.descr
+                    return python_obj(
+                        'POTask',
+                        [(None, python_quote(text(f'{sym_info}: {po_descr}')))],
+                    )
             case xtype.Common_Proof_obligation_t_poly():
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
