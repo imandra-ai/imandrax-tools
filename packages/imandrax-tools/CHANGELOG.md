@@ -4,8 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
-## [20.2.0] - 2026-06-25
+## [20.2.1] - 2026-06-29
+-  PP: add config knob for summarizing PO tasks (useful for succeded proof cases)
 
+## [20.2.0] - 2026-06-29
 - ImandraX API pretty-printer
 
 ## [20.1.0] - 2026-06-21
