@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.2.0] - 2026-06-29
+- ENH: API models formatting utils (context_utils): show omitted fields (no slient omission), improve formatting structure (less untyped string)
+
 ## [20.1.0] - 2026-06-25
 - FEAT(client): add `eval_code_snippet`, `parse_term`, `parse_type`, and `get_artifact` endpoints
 
