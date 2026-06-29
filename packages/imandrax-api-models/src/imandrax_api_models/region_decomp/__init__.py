@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from functools import reduce
-from typing import Any, NoReturn, Self, TypedDict
+from typing import NoReturn, Self, TypedDict
 
 from devtools import pformat
 from imandrax_api.lib import RegionStr
@@ -51,6 +51,11 @@ class EnrichedDecomposeRes(DecomposeRes):
         return mk_icicle_widget_html(self.region_groups)
 
 
+type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONObject = dict[str, JSONValue]
+type JSONArray = list[JSONValue]
+
+
 class RegionGroup(BaseModel):
     """
     A hierarchical group of regions sharing constraints.
@@ -88,34 +93,40 @@ class RegionGroup(BaseModel):
         return self.n_regions() - 1
 
     def n_leaf_regions(self) -> int:
-        """Total leaf regions in this subtree, including self if no children."""
+        """Total leaf regions in this subtree, counting self if no children."""
         if not self.children:
             return 1
         return sum(c.n_leaf_regions() for c in self.children)
 
-    def to_dict(self) -> dict[str, Any]:
-        """Core fields shared by all serialization formats."""
-        d: dict[str, Any] = {
-            'label_path': '.'.join(map(str, self.label_path)),
-            'constraints': self.constraints,
-            'introduced_constraint': self.constraints[-1] if self.constraints else '',
-            'weight': self.weight,
-            'n_children_regions': len(self.children),
-            'n_descendant_regions': self.n_descendant_regions(),
-            'n_leaf_regions': self.n_leaf_regions(),
-        }
+    def describe(self) -> JSONObject:
+        d: JSONObject = {}
+        d['label_path'] = '.'.join(map(str, self.label_path))
+        d['constraints'] = self.constraints
+        d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
+        d['weight'] = self.weight
+        d['n_children_regions'] = len(self.children)
+        d['n_descendant_regions'] = self.n_descendant_regions()
+        d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
             d['invariant'] = r.invariant_str
             d['example_input'] = r.model_str
             d['example_output'] = r.model_eval_str
         return d
 
-    def to_json_dict(self) -> dict[str, Any]:
-        """Serialize to a d3-hierarchy-compatible dict."""
-        d = self.to_dict()
-        if self.children:
-            d['children'] = [c.to_json_dict() for c in self.children]
-        return d
+    def repr_line(self) -> str:
+        """One-line representation of the region group."""
+        d = self.describe()
+        parts: list[str] = []
+        parts.append(f'[{d["label_path"]}]')
+        parts.append(f"new_constraint='{d['introduced_constraint']}'")
+        if d.get('invariant'):
+            parts.append(f"invariant='{d['invariant']}'")
+        n_leaf_regions = d['n_leaf_regions']
+        if n_leaf_regions != 1:
+            parts.append(f'n_leaf_regions={n_leaf_regions}')
+        else:
+            parts.append('is_leaf=True')
+        return ' '.join(parts)
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
@@ -134,7 +145,7 @@ def render_region_groups(
     tree_repr: Callable[[RegionGroup], str] | None = None,
 ) -> str:
     """Render a forest of `RegionGroup`s as a tree in text."""
-    tree_repr_ = tree_repr or default_region_group_repr
+    tree_repr_ = tree_repr or RegionGroup.repr_line
     lines: list[str] = []
     for i, group in enumerate(groups):
         is_last = i == len(groups) - 1
@@ -147,22 +158,6 @@ def render_region_groups(
             summarize=tree_repr_,
         )
     return '\n'.join(lines)
-
-
-def default_region_group_repr(group: RegionGroup) -> str:
-    label = '.'.join(map(str, group.label_path))
-    # constraints is the full path from root; [-1] is this node's own constraint.
-    constraint = group.constraints[-1] if group.constraints else '?'
-    invariant: str | None = None
-    if (region := group.region) is not None:
-        invariant = region.invariant_str
-    parts = [
-        f'[{label}]',
-        f'constraints[-1]={constraint}',
-        f'{invariant=}',
-        f'(w={group.weight}, n_children={len(group.children)}, n_descendants={group.n_descendant_regions()})',
-    ]
-    return ' '.join(parts)
 
 
 def _tree_lines(

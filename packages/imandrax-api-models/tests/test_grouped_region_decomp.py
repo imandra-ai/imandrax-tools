@@ -82,14 +82,14 @@ def test():
 
     # region_groups is auto-populated on validation from regions_str.
     assert hdr.to_tree_str() == snapshot("""\
-├── [1] constraints[-1]=x >= 1 invariant=None (w=4, n_children=3, n_descendants=5)
-│   ├── [1.1] constraints[-1]=y >= 1 invariant=None (w=2, n_children=2, n_descendants=2)
-│   │   ├── [1.1.1] constraints[-1]=x <= y invariant='2' (w=1, n_children=0, n_descendants=0)
-│   │   └── [1.1.2] constraints[-1]=x > y invariant='1' (w=1, n_children=0, n_descendants=0)
-│   ├── [1.2] constraints[-1]=y <= (-11) invariant='3' (w=1, n_children=0, n_descendants=0)
-│   └── [1.3.1] constraints[-1]=y >= (-10) invariant='4' (w=1, n_children=0, n_descendants=0)
-├── [2.1] constraints[-1]=x <= 0 invariant='5' (w=1, n_children=0, n_descendants=0)
-└── [3.1] constraints[-1]=y <= 0 invariant='6' (w=1, n_children=0, n_descendants=0)\
+├── [1] new_constraint='x >= 1' n_leaf_regions=4
+│   ├── [1.1] new_constraint='y >= 1' n_leaf_regions=2
+│   │   ├── [1.1.1] new_constraint='x <= y' invariant='2' is_leaf=True
+│   │   └── [1.1.2] new_constraint='x > y' invariant='1' is_leaf=True
+│   ├── [1.2] new_constraint='y <= (-11)' invariant='3' is_leaf=True
+│   └── [1.3.1] new_constraint='y >= (-10)' invariant='4' is_leaf=True
+├── [2.1] new_constraint='x <= 0' invariant='5' is_leaf=True
+└── [3.1] new_constraint='y <= 0' invariant='6' is_leaf=True\
 """)
 
     # (label_path, full constraint path) for every node, depth-first.
