@@ -4,12 +4,11 @@ import imandrax_api
 from imandrax_api.lib import RegionStr
 from inline_snapshot import snapshot
 
+from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import HumDecomposeRes, RegionGroup
 
 
-def trust():
-    from typing import NoReturn
-
+def trust() -> DecomposeRes:
     import dotenv
 
     from imandrax_api_models.client import ImandraXClient
@@ -32,22 +31,15 @@ def trust():
         if y > 0 then 5
         else 6"""
     _eval_res = c.eval_src(IML_CODE)
-    decomp_res = c.decompose(name='classify', string_results=True, prune=True)
-
-    def raise_(exc: BaseException) -> NoReturn:
-        raise exc
-
-    regions: list[RegionStr] = (
-        decomp_res.regions_str
-        if (decomp_res.regions_str)
-        else (raise_(ValueError('No regions')))
-    )
-    return regions
+    return c.decompose(name='classify', string_results=True, prune=True)
 
 
 def test():
-    regions = trust()
-    assert regions == snapshot(
+    decomp_res = trust()
+    hdr = HumDecomposeRes.from_decomp_res(decomp_res)
+
+    # The raw regions are inherited from DecomposeRes.
+    assert hdr.regions_str == snapshot(
         [
             RegionStr(
                 constraints_str=['y <= 0', 'x <= 0'],
@@ -88,280 +80,35 @@ def test():
         ]
     )
 
-    hdr = HumDecomposeRes.from_regions(regions)
+    # region_groups is auto-populated on validation from regions_str.
     assert hdr.to_tree_str() == snapshot("""\
-├── [1] constraint='x >= 1' invariant=None (w=4, n_children=3, n_descendants=5)
-│   ├── [1.1] constraint='y >= 1' invariant=None (w=2, n_children=2, n_descendants=2)
-│   │   ├── [1.1.1] constraint='x <= y' invariant='2' (w=1, n_children=0, n_descendants=0)
-│   │   └── [1.1.2] constraint='x > y' invariant='1' (w=1, n_children=0, n_descendants=0)
-│   ├── [1.2] constraint='y <= (-11)' invariant='3' (w=1, n_children=0, n_descendants=0)
-│   └── [1.3.1] constraint='y >= (-10)' invariant='4' (w=1, n_children=0, n_descendants=0)
-├── [2.1] constraint='x <= 0' invariant='5' (w=1, n_children=0, n_descendants=0)
-└── [3.1] constraint='y <= 0' invariant='6' (w=1, n_children=0, n_descendants=0)\
+├── [1] constraints[-1]=x >= 1 invariant=None (w=4, n_children=3, n_descendants=5)
+│   ├── [1.1] constraints[-1]=y >= 1 invariant=None (w=2, n_children=2, n_descendants=2)
+│   │   ├── [1.1.1] constraints[-1]=x <= y invariant='2' (w=1, n_children=0, n_descendants=0)
+│   │   └── [1.1.2] constraints[-1]=x > y invariant='1' (w=1, n_children=0, n_descendants=0)
+│   ├── [1.2] constraints[-1]=y <= (-11) invariant='3' (w=1, n_children=0, n_descendants=0)
+│   └── [1.3.1] constraints[-1]=y >= (-10) invariant='4' (w=1, n_children=0, n_descendants=0)
+├── [2.1] constraints[-1]=x <= 0 invariant='5' (w=1, n_children=0, n_descendants=0)
+└── [3.1] constraints[-1]=y <= 0 invariant='6' (w=1, n_children=0, n_descendants=0)\
 """)
-    hdr_dict_hierarchy = hdr.to_dict_hierarchical()
-    hdr_dict_flat = hdr.to_dict_flat()
-    label_path_n_children_map_flat: list[tuple[str, int]] = [
-        ('.'.join(map(str, irg.label_path)), len(irg.children))
-        for irg in hdr_dict_flat['region_groups']
-    ]
 
-    # ::: test-child-count
-    def _collect_hierarchy(groups: list[RegionGroup]) -> list[tuple[str, int]]:
-        result: list[tuple[str, int]] = []
-        for rg in groups:
-            result.append(('.'.join(map(str, rg.label_path)), len(rg.children)))
-            if rg.children:
-                result.extend(_collect_hierarchy(rg.children))
-        return result
+    # (label_path, full constraint path) for every node, depth-first.
+    def _walk(groups: list[RegionGroup]) -> list[tuple[str, list[str]]]:
+        out: list[tuple[str, list[str]]] = []
+        for g in groups:
+            out.append(('.'.join(map(str, g.label_path)), g.constraints))
+            out.extend(_walk(g.children))
+        return out
 
-    label_path_n_children_map_hierarchy: list[tuple[str, int]] = _collect_hierarchy(
-        hdr_dict_hierarchy['region_groups']
+    assert _walk(hdr.region_groups) == snapshot(
+        [
+            ('1', ['x >= 1']),
+            ('1.1', ['x >= 1', 'y >= 1']),
+            ('1.1.1', ['x >= 1', 'y >= 1', 'x <= y']),
+            ('1.1.2', ['x >= 1', 'y >= 1', 'x > y']),
+            ('1.2', ['x >= 1', 'y <= (-11)']),
+            ('1.3.1', ['x >= 1', 'y <= 0', 'y >= (-10)']),
+            ('2.1', ['y >= 1', 'x <= 0']),
+            ('3.1', ['x <= 0', 'y <= 0']),
+        ]
     )
-    assert sorted(label_path_n_children_map_flat) == sorted(
-        label_path_n_children_map_hierarchy
-    )
-    # :::
-
-    assert (hdr.dumper_func()(hdr_dict_hierarchy)) == snapshot("""\
-summary:
-  n_regions: 6
-region_groups:
-- !RegionGroup
-  label_path: '1'
-  constraints:
-  - x >= 1
-  introduced_constraint: x >= 1
-  weight: 4
-  n_children_regions: 3
-  n_descendant_regions: 5
-  n_leaf_regions: 4
-  children:
-  - !RegionGroup
-    label_path: '1.1'
-    constraints:
-    - x >= 1
-    - y >= 1
-    introduced_constraint: y >= 1
-    weight: 2
-    n_children_regions: 2
-    n_descendant_regions: 2
-    n_leaf_regions: 2
-    children:
-    - !RegionGroup
-      label_path: 1.1.1
-      constraints:
-      - x >= 1
-      - y >= 1
-      - x <= y
-      introduced_constraint: x <= y
-      weight: 1
-      n_children_regions: 0
-      n_descendant_regions: 0
-      n_leaf_regions: 1
-      invariant: '2'
-      example_input:
-        x: '1'
-        y: '1'
-      example_output: '2'
-    - !RegionGroup
-      label_path: 1.1.2
-      constraints:
-      - x >= 1
-      - y >= 1
-      - x > y
-      introduced_constraint: x > y
-      weight: 1
-      n_children_regions: 0
-      n_descendant_regions: 0
-      n_leaf_regions: 1
-      invariant: '1'
-      example_input:
-        x: '2'
-        y: '1'
-      example_output: '1'
-  - !RegionGroup
-    label_path: '1.2'
-    constraints:
-    - x >= 1
-    - y <= (-11)
-    introduced_constraint: y <= (-11)
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '3'
-    example_input:
-      x: '1'
-      y: (-11)
-    example_output: '3'
-  - !RegionGroup
-    label_path: 1.3.1
-    constraints:
-    - x >= 1
-    - y <= 0
-    - y >= (-10)
-    introduced_constraint: y >= (-10)
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '4'
-    example_input:
-      x: '1'
-      y: '0'
-    example_output: '4'
-- !RegionGroup
-  label_path: '2.1'
-  constraints:
-  - y >= 1
-  - x <= 0
-  introduced_constraint: x <= 0
-  weight: 1
-  n_children_regions: 0
-  n_descendant_regions: 0
-  n_leaf_regions: 1
-  invariant: '5'
-  example_input:
-    x: '0'
-    y: '1'
-  example_output: '5'
-- !RegionGroup
-  label_path: '3.1'
-  constraints:
-  - x <= 0
-  - y <= 0
-  introduced_constraint: y <= 0
-  weight: 1
-  n_children_regions: 0
-  n_descendant_regions: 0
-  n_leaf_regions: 1
-  invariant: '6'
-  example_input:
-    x: '0'
-    y: '0'
-  example_output: '6'
-""")
-
-    assert (hdr.dumper_func()(hdr_dict_flat)) == snapshot("""\
-summary:
-  n_regions: 6
-region_groups:
-- id: '0'
-  label_path: '1'
-  depth: 1
-  weight: 4
-  constraints:
-  - x >= 1
-  introduced_constraint: x >= 1
-  n_children_regions: 3
-  children:
-  - '3'
-  - '4'
-  - '5'
-- id: '3'
-  label_path: '1.1'
-  depth: 2
-  weight: 2
-  constraints:
-  - x >= 1
-  - y >= 1
-  introduced_constraint: y >= 1
-  n_children_regions: 2
-  children:
-  - '6'
-  - '7'
-- id: '6'
-  label_path: 1.1.1
-  depth: 3
-  weight: 1
-  constraints:
-  - x >= 1
-  - y >= 1
-  - x <= y
-  introduced_constraint: x <= y
-  invariant: '2'
-  example_input:
-    x: '1'
-    y: '1'
-  example_output: '2'
-  n_children_regions: 0
-  children: []
-- id: '7'
-  label_path: 1.1.2
-  depth: 3
-  weight: 1
-  constraints:
-  - x >= 1
-  - y >= 1
-  - x > y
-  introduced_constraint: x > y
-  invariant: '1'
-  example_input:
-    x: '2'
-    y: '1'
-  example_output: '1'
-  n_children_regions: 0
-  children: []
-- id: '4'
-  label_path: '1.2'
-  depth: 2
-  weight: 1
-  constraints:
-  - x >= 1
-  - y <= (-11)
-  introduced_constraint: y <= (-11)
-  invariant: '3'
-  example_input:
-    x: '1'
-    y: (-11)
-  example_output: '3'
-  n_children_regions: 0
-  children: []
-- id: '5'
-  label_path: 1.3.1
-  depth: 2
-  weight: 1
-  constraints:
-  - x >= 1
-  - y <= 0
-  - y >= (-10)
-  introduced_constraint: y >= (-10)
-  invariant: '4'
-  example_input:
-    x: '1'
-    y: '0'
-  example_output: '4'
-  n_children_regions: 0
-  children: []
-- id: '1'
-  label_path: '2.1'
-  depth: 1
-  weight: 1
-  constraints:
-  - y >= 1
-  - x <= 0
-  introduced_constraint: x <= 0
-  invariant: '5'
-  example_input:
-    x: '0'
-    y: '1'
-  example_output: '5'
-  n_children_regions: 0
-  children: []
-- id: '2'
-  label_path: '3.1'
-  depth: 1
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  introduced_constraint: y <= 0
-  invariant: '6'
-  example_input:
-    x: '0'
-    y: '0'
-  example_output: '6'
-  n_children_regions: 0
-  children: []
-""")
