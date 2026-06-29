@@ -386,8 +386,10 @@ def _loop_group_regions(
     Invariants (across `reduce`/`loop` iterations):
     - `acc['regions']` shrinks monotonically: each iteration moves regions into
       `has` (grouped) or keeps them in `without` (remaining).
-    - `acc['constraint_path']` grows by one element per iteration (the current
-      `konstraint`), regardless of whether any regions matched.
+    - `acc['idx_path']` and `acc['constraint_path']` stay constant across
+      iterations (they describe this level). The current `konstraint` is only
+      prepended for the `has` branch's recursion, never carried into later
+      iterations, which process `without` regions that lack `konstraint`.
     - `acc['groups']` only grows: new groups are prepended when `has` is non-empty.
     """
 
@@ -424,8 +426,10 @@ def _loop_group_regions(
         return counter
 
     counter = mk_counter(all_constraints_with_dup)
-    assoc_list: list[tuple[str, int]] = [(k, v) for (k, v) in counter.items()]
-    sorted(assoc_list, key=lambda kv: kv[1], reverse=True)
+    # Most frequent first, ties broken alphabetically.
+    assoc_list: list[tuple[str, int]] = sorted(
+        counter.items(), key=lambda kv: (-kv[1], kv[0])
+    )
     constraints_by_most_frequent: list[str] = [kv[0] for kv in assoc_list]
 
     # grouped: tuple[list[RegionGroup], list[RegionStr]]
@@ -489,11 +493,16 @@ def _loop_group_regions(
             res = [group, *groups], without
         else:
             res = groups, without
+        # `idx_path` / `constraint_path` describe this level and must stay
+        # constant across reduce iterations. Only the `has` branch (recursed
+        # above) gets the extended `new_idx_path` / `new_constraint_path`; the
+        # `without` regions handled by later iterations do NOT contain
+        # `konstraint`, so it must not leak into their path.
         return Acc(
             groups=res[0],
             regions=res[1],
-            idx_path=new_idx_path,
-            constraint_path=new_constraint_path,
+            idx_path=idx_path,
+            constraint_path=constraint_path,
         )
 
     init = Acc(
