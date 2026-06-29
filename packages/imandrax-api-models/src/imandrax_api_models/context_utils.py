@@ -15,6 +15,7 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
+from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 from imandrax_api_models.yaml_utils import ImandraXAPIModelDumper
 
 
@@ -317,3 +318,19 @@ def format_decomp_res(decomp_res: DecomposeRes) -> str:
 
     data = remove_art_and_task_fields(data)
     return yaml.dump(data, Dumper=ImandraXAPIModelDumper, width=120)
+
+
+def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
+    # TOOD: use remove_fields_rec
+    d: dict[str, Any] = {}
+    if decomp_res.regions_str is not None:
+        enriched_regions = decomp_res.regions()
+        d['descr'] = f'Decomp succeeded with {len(enriched_regions)} regions'
+        d['regions'] = enriched_regions
+    else:
+        d['descr'] = 'Decomp failed'
+        d |= remove_art_and_task_fields(decomp_res.model_dump())
+        d.pop('regions_str')
+        d.pop('region_groups')
+
+    return d
