@@ -8,11 +8,47 @@ from typing import Any, NoReturn, Self, TypedDict
 
 from devtools import pformat
 from imandrax_api.lib import RegionStr
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from imandrax_api_models.proto_models import DecomposeRes
 
 from .icicle_widget import mk_icicle_widget_html
+
+
+class HumDecomposeRes(DecomposeRes):
+    """A `DecomposeRes` augmented with hierarchical region grouping."""
+
+    region_groups: list[RegionGroup] = Field(
+        default_factory=list,
+        description='Region groups grouped by constraints, containing child groups recursively. Empty when no regions are available (decomposition error).',
+    )
+
+    @model_validator(mode='after')
+    def _populate_region_groups(self) -> Self:
+        if not self.region_groups and self.regions_str:
+            self.region_groups = group_regions(self.regions_str)
+        return self
+
+    @classmethod
+    def from_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
+        return cls.model_validate(v.model_dump())
+
+    def to_tree_str(
+        self,
+        *,
+        depth_limit: int | None = None,
+        summarize: Callable[[RegionGroup], str] | None = None,
+    ) -> str:
+        if self.errors:
+            return pformat(self.errors, indent=2)
+        return render_region_groups(
+            self.region_groups, depth_limit=depth_limit, tree_repr=summarize
+        )
+
+    def _repr_html_(self) -> str:
+        if self.errors:
+            return f'<pre>{pformat(self.errors, indent=2)}</pre>'
+        return mk_icicle_widget_html(self.region_groups)
 
 
 class RegionGroup(BaseModel):
@@ -82,45 +118,6 @@ class RegionGroup(BaseModel):
         return d
 
 
-class HumDecomposeRes(DecomposeRes):
-    """
-    A `DecomposeRes` augmented with hierarchical region grouping.
-
-    `region_groups` is derived from the inherited `regions_str` (a pure function
-    of it), and is auto-populated on validation. Failure is represented by the
-    inherited `err` / `errors`, exactly as on `DecomposeRes`.
-    """
-
-    region_groups: list[RegionGroup] = []
-
-    @model_validator(mode='after')
-    def _populate_region_groups(self) -> Self:
-        if not self.region_groups and self.regions_str:
-            self.region_groups = group_regions(self.regions_str)
-        return self
-
-    @classmethod
-    def from_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
-        return cls.model_validate(v.model_dump())
-
-    def to_tree_str(
-        self,
-        *,
-        depth_limit: int | None = None,
-        summarize: Callable[[RegionGroup], str] | None = None,
-    ) -> str:
-        if self.errors:
-            return pformat(self.errors, indent=2)
-        return render_region_groups(
-            self.region_groups, depth_limit=depth_limit, summarize=summarize
-        )
-
-    def _repr_html_(self) -> str:
-        if self.errors:
-            return f'<pre>{pformat(self.errors, indent=2)}</pre>'
-        return mk_icicle_widget_html(self.region_groups)
-
-
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
@@ -134,10 +131,10 @@ def render_region_groups(
     groups: list[RegionGroup],
     *,
     depth_limit: int | None = None,
-    summarize: Callable[[RegionGroup], str] | None = None,
+    tree_repr: Callable[[RegionGroup], str] | None = None,
 ) -> str:
-    """Render a forest of `RegionGroup`s as an ASCII tree."""
-    summarize_ = summarize or default_region_group_summary
+    """Render a forest of `RegionGroup`s as a tree in text."""
+    tree_repr_ = tree_repr or default_region_group_repr
     lines: list[str] = []
     for i, group in enumerate(groups):
         is_last = i == len(groups) - 1
@@ -147,12 +144,12 @@ def render_region_groups(
             prefix='',
             is_last=is_last,
             depth_limit=depth_limit,
-            summarize=summarize_,
+            summarize=tree_repr_,
         )
     return '\n'.join(lines)
 
 
-def default_region_group_summary(group: RegionGroup) -> str:
+def default_region_group_repr(group: RegionGroup) -> str:
     label = '.'.join(map(str, group.label_path))
     # constraints is the full path from root; [-1] is this node's own constraint.
     constraint = group.constraints[-1] if group.constraints else '?'
@@ -344,7 +341,7 @@ def _loop_group_regions(
         # `idx_path` / `constraint_path` describe this level and must stay
         # constant across reduce iterations. Only the `has` branch (recursed
         # above) gets the extended `new_idx_path` / `new_constraint_path`; the
-        # `without` regions handled by later iterations do NOT contain
+        # `without` regions handled by later iterations do not contain
         # `konstraint`, so it must not leak into their path.
         return Acc(
             groups=res[0],
