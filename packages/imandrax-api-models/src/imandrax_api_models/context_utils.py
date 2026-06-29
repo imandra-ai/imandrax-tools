@@ -265,7 +265,11 @@ def format_errors(
         return out
 
 
-def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject | str:
+def format_eval_res(
+    eval_res: EvalRes,
+    iml_src: str | None = None,
+    process_decomp: bool = True,
+) -> JSONObject | str:
     # Check additional error in messages
     errs_in_eval_msg: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
@@ -297,6 +301,13 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject
                     'value_as_ocaml': eval_result.value_as_ocaml,
                 }
                 out[f'eval_result_{i}'] = data
+            for i, decomp_res in enumerate(eval_res.decomp_results, 1):
+                if not process_decomp:
+                    out[f'decomp_result_{i}'] = decomp_res.model_dump(mode='json')
+                else:
+                    out[f'decomp_result_{i}'] = format_enriched_decomp_res(
+                        EnrichedDecomposeRes.from_decomp_res(decomp_res)
+                    )
 
             if len(out.keys()) == 1 and 'desc' in out:
                 return out['desc']
