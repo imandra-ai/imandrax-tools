@@ -233,7 +233,11 @@ class Printer:
                 else:
                     return nil
             case xtype.Error_Error_core():
-                return dataclass2doc(v, with_name='Error')
+                return dataclass2doc(
+                    v,
+                    with_name='Error',
+                    filter_p=lambda k, v: False if k == 'stack' and v == [] else True,
+                )
             case xtype.Error_Kind(name):
                 return python_quote(text(name))
             case xtype.Error_Error_core_message():
@@ -298,7 +302,9 @@ class Printer:
                     else:
                         return dataclass2doc(v.arg, with_name=with_name)
             case xtype.Tasks_PO_res_error_No_proof():
-                return dataclass2doc(v.arg, with_name='POErrorNoProof')
+                return dataclass2doc(
+                    v.arg, with_name='POErrorNoProof', filter_none_values=True
+                )
             case xtype.Tasks_PO_res_error_Error():
                 return dataclass2doc(v.arg, with_name='POErrorError')
             case xtype.Tasks_PO_res_error_Invalid_model():
@@ -361,19 +367,22 @@ class Printer:
             case xtype.Common_Proof_obligation_t_poly():
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
-                    val = getattr(v, fld.name)
+                    key = fld.name
+                    val = getattr(v, key)
                     if val is None:
                         continue
-                    if fld.name == 'goal':
+                    if key == 'goal':
                         val_doc = Goal2doc(val, ty2doc=type2doc)
-                    elif fld.name == 'named_hypotheses':
+                    elif key == 'named_hypotheses':
+                        if not val:
+                            continue
                         val = cast(list[tuple[str, xtype.Mir_Term]], val)
                         val_doc = python_dict(
                             [(text(name), term2doc(term)) for name, term in val]
                         )
                     else:
                         val_doc = self.value2doc(val)
-                    rows.append((fld.name, val_doc))
+                    rows.append((key, val_doc))
                 return python_obj('ProofObligation', rows)
             case xtype.Common_Var_t_poly():
                 return dataclass2doc(v, with_name='Var')
