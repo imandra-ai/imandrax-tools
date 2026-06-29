@@ -15,6 +15,7 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
+from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
 type JSONValue = (
     str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
@@ -346,3 +347,19 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
         out['res'] = vg_res.res.model_dump(mode='json')
 
     return out
+
+
+def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
+    # TOOD: use remove_fields_rec
+    d: dict[str, Any] = {}
+    if decomp_res.regions_str is not None:
+        enriched_regions = decomp_res.regions()
+        d['descr'] = f'Decomp succeeded with {len(enriched_regions)} regions'
+        d['regions'] = enriched_regions
+    else:
+        d['descr'] = 'Decomp failed'
+        d |= remove_fields_rec(decomp_res.model_dump())
+        d.pop('regions_str')
+        d.pop('region_groups')
+
+    return d
