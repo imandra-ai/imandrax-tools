@@ -15,7 +15,7 @@ from imandrax_api_models.proto_models import DecomposeRes
 from .icicle_widget import mk_icicle_widget_html
 
 
-class HumDecomposeRes(DecomposeRes):
+class EnrichedDecomposeRes(DecomposeRes):
     """A `DecomposeRes` augmented with hierarchical region grouping."""
 
     region_groups: list[RegionGroup] = Field(
@@ -30,7 +30,7 @@ class HumDecomposeRes(DecomposeRes):
         return self
 
     @classmethod
-    def from_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
+    def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
     def to_tree_str(

@@ -5,7 +5,7 @@ from imandrax_api.lib import RegionStr
 from inline_snapshot import snapshot
 
 from imandrax_api_models.proto_models import DecomposeRes
-from imandrax_api_models.region_decomp import HumDecomposeRes, RegionGroup
+from imandrax_api_models.region_decomp import EnrichedDecomposeRes, RegionGroup
 
 
 def trust() -> DecomposeRes:
@@ -36,7 +36,7 @@ def trust() -> DecomposeRes:
 
 def test():
     decomp_res = trust()
-    hdr = HumDecomposeRes.from_decomp_res(decomp_res)
+    hdr = EnrichedDecomposeRes.from_decomp_res(decomp_res)
 
     # The raw regions are inherited from DecomposeRes.
     assert hdr.regions_str == snapshot(
