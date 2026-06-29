@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from dataclasses import asdict
 from functools import reduce
 from typing import NoReturn, Self, TypedDict
 
@@ -33,15 +34,18 @@ class EnrichedDecomposeRes(DecomposeRes):
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
-    @staticmethod
-    def leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
-        leaves = []
-        for group in groups:
-            if not group.children:
-                leaves.append(group)
-            else:
-                leaves.extend(EnrichedDecomposeRes.leaf_groups(group.children))
-        return leaves
+    def regions(self) -> JSONArray:
+        """Leaf region groups (concrete regions) with hierarchical grouping info."""
+        leaf_groups = get_leaf_groups(self.region_groups)
+        ds = []
+        for leaf_group in leaf_groups:
+            d: JSONObject = {}
+            assert leaf_group.region is not None, 'Leaf group must be concrete'
+            d['label_path'] = '.'.join(map(str, leaf_group.label_path))
+            d['weight'] = leaf_group.weight
+            d |= asdict(leaf_group.region)
+            ds.append(d)
+        return ds
 
     def to_tree_str(
         self,
@@ -94,14 +98,14 @@ class RegionGroup(BaseModel):
             'length may be shorter than the tree depth.'
         )
     )
+    weight: int = Field(
+        description="Number of regions in the partition at this node's level."
+    )
     region: RegionStr | None = Field(
         default=None, description='The concrete region. Present iff at leaf nodes.'
     )
     children: list[RegionGroup] = Field(
         default_factory=list, description='Sub-groups under this node.'
-    )
-    weight: int = Field(
-        description="Number of regions in the partition at this node's level."
     )
 
     def n_regions(self) -> int:
@@ -154,6 +158,16 @@ class RegionGroup(BaseModel):
         else:
             parts.append('is_leaf=True')
         return ' '.join(parts)
+
+
+def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
+    leaves = []
+    for group in groups:
+        if not group.children:
+            leaves.append(group)
+        else:
+            leaves.extend(get_leaf_groups(group.children))
+    return leaves
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:

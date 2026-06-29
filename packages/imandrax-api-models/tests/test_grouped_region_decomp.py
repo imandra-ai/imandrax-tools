@@ -43,6 +43,9 @@ def test():
     assert len(leaf_groups) == len(edr.regions_str)
     for leaf_group in leaf_groups:
         assert len(leaf_group.children) == 0
+        assert leaf_group.region, 'Leaf group must be concrete'
+        assert leaf_group.region.constraints_str
+        assert set(leaf_group.constraints) == set(leaf_group.region.constraints_str)
 
     assert edr.regions_str == snapshot(
         [
