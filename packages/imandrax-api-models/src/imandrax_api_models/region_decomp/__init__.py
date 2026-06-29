@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, Sequence
 from functools import reduce
 from typing import NoReturn, Self, TypedDict
 
@@ -51,7 +51,9 @@ class EnrichedDecomposeRes(DecomposeRes):
         return mk_icicle_widget_html(self.region_groups)
 
 
-type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
@@ -111,6 +113,13 @@ class RegionGroup(BaseModel):
             d['invariant'] = r.invariant_str
             d['example_input'] = r.model_str
             d['example_output'] = r.model_eval_str
+        return d
+
+    def to_json_dict(self) -> JSONObject:
+        """Serialize to a d3-hierarchy-compatible dict, recursing into children."""
+        d = self.describe()
+        if self.children:
+            d['children'] = [c.to_json_dict() for c in self.children]
         return d
 
     def repr_line(self) -> str:
