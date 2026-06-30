@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.3.0] - 2026-06-30
+- FIX(decomp/grouping): fix leak constraint bug
+- BREAKING: `HumDecomposeRes` becomes `EnrichedDecomposeRes`, a subclass of API `DecomposeRes`, containing region groups.
+
 ## [20.2.0] - 2026-06-29
 - ENH: API models formatting utils (context_utils): show omitted fields (no slient omission), improve formatting structure (less untyped string)
 
