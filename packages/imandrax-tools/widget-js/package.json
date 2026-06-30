@@ -5,7 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "esbuild src/region_decomp/index.ts --bundle --format=esm --minify --outfile=dist/region_decomp.js",
+    "build": "npm run build:treemap && npm run build:icicle",
+    "build:treemap": "esbuild src/region_decomp/index.ts --bundle --format=esm --minify --outfile=dist/region_decomp.js",
+    "build:icicle": "esbuild src/region_decomp/icicle_entry.ts --bundle --format=esm --minify --outfile=dist/region_decomp.icicle.js",
     "dev": "esbuild src/region_decomp/index.ts --bundle --format=esm --watch --outfile=dist/region_decomp.js",
     "gallery": "node scripts/gallery/build_gallery.mjs",
     "typecheck": "tsc --noEmit",

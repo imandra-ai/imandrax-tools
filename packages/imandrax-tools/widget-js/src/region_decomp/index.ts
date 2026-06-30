@@ -1,19 +1,19 @@
-// anywidget entry point. A thin adapter over the pure `draw` function: pull the
-// one-directional `data` traitlet off the model, render, and re-render whenever
-// it changes. There is almost nothing to test here — the logic lives in draw.ts.
+// anywidget entry point for the treemap view (the primary region-decomposition
+// widget). A thin adapter over the pure `drawTreemap`: pull the one-directional
+// `data` traitlet off the model, render, and re-render when it changes.
 
-import { draw } from "./draw";
-import type { DrawInput } from "./types";
+import { drawTreemap } from './treemap';
+import type { DrawInput } from './types';
 
 interface Model {
-  get(key: "data"): DrawInput;
-  on(event: "change:data", cb: () => void): void;
+  get(key: 'data'): DrawInput;
+  on(event: 'change:data', cb: () => void): void;
 }
 
 export default {
   render({ model, el }: { model: Model; el: HTMLElement }) {
-    const rerender = () => draw(el, model.get("data"));
+    const rerender = () => drawTreemap(el, model.get('data'));
     rerender();
-    model.on("change:data", rerender);
+    model.on('change:data', rerender);
   },
 };

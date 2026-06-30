@@ -28,9 +28,18 @@ export interface EnrichedDecomposeRes {
 // What `draw` accepts: the whole result, just its forest, or nothing.
 export type DrawInput = EnrichedDecomposeRes | RegionGroup[] | null | undefined;
 
+// Icicle layout options.
 export interface DrawOptions {
   width?: number; // chart pane width in px (falls back to el.clientWidth)
   rowHeight?: number; // px per tree level
   detailWidth?: number; // detail pane width in px
   height?: number; // overall widget height in px
+}
+
+// Treemap layout options.
+export interface TreemapOptions {
+  width?: number; // tiles pane width in px (falls back to measured width)
+  height?: number; // overall widget height in px
+  detailWidth?: number; // detail pane width in px
+  maxDepth?: number; // levels of descendants shown below the zoom root
 }
