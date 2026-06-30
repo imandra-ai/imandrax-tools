@@ -1,11 +1,10 @@
 import os
 from pathlib import Path
 
-import dotenv
 import imandrax_api
 import pytest
-from imandrax_api.lib import RegionStr
-from inline_snapshot import snapshot
+from devtools import pformat
+from inline_snapshot import external_file, snapshot
 
 from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
@@ -15,7 +14,7 @@ from imandrax_api_models.region_decomp import (
     get_leaf_groups,
 )
 
-dotenv.load_dotenv()
+fence_py = lambda s: f'```python\n{s}\n```'
 
 
 @pytest.fixture
@@ -67,6 +66,9 @@ def test_complex_decomp(decomp_res_six_swiss):
     enrich_decomp_res_props(edr)
 
     leaf_groups = get_leaf_groups(edr.region_groups)
+    assert fence_py(pformat(leaf_groups)) == external_file(
+        'data/test_complex_decomp.leaf_groups.expected', format='.txt'
+    )
     assert edr.to_tree_str() == snapshot("""\
 ├── [1] new_constraint='ob.buys <> []' n_leaf_regions=43
 │   ├── [1.1] new_constraint='ob.sells <> []' n_leaf_regions=42
@@ -149,75 +151,8 @@ def test_simple_decomp(decomp_res_classify):
     enrich_decomp_res_props(edr)
 
     leaf_groups = get_leaf_groups(edr.region_groups)
-    assert leaf_groups == snapshot(
-        [
-            RegionGroup(
-                constraints=['x >= 1', 'y >= 1', 'x <= y'],
-                label_path=[1, 1, 1],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['x <= y', 'y >= 1', 'x >= 1'],
-                    invariant_str='2',
-                    model_str={'x': '1', 'y': '1'},
-                    model_eval_str='2',
-                ),
-            ),
-            RegionGroup(
-                constraints=['x >= 1', 'y >= 1', 'x > y'],
-                label_path=[1, 1, 2],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['x > y', 'y >= 1', 'x >= 1'],
-                    invariant_str='1',
-                    model_str={'x': '2', 'y': '1'},
-                    model_eval_str='1',
-                ),
-            ),
-            RegionGroup(
-                constraints=['x >= 1', 'y <= (-11)'],
-                label_path=[1, 2],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['y <= (-11)', 'x >= 1'],
-                    invariant_str='3',
-                    model_str={'x': '1', 'y': '(-11)'},
-                    model_eval_str='3',
-                ),
-            ),
-            RegionGroup(
-                constraints=['x >= 1', 'y <= 0', 'y >= (-10)'],
-                label_path=[1, 3, 1],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['y >= (-10)', 'y <= 0', 'x >= 1'],
-                    invariant_str='4',
-                    model_str={'x': '1', 'y': '0'},
-                    model_eval_str='4',
-                ),
-            ),
-            RegionGroup(
-                constraints=['y >= 1', 'x <= 0'],
-                label_path=[2, 1],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['y >= 1', 'x <= 0'],
-                    invariant_str='5',
-                    model_str={'x': '0', 'y': '1'},
-                    model_eval_str='5',
-                ),
-            ),
-            RegionGroup(
-                constraints=['x <= 0', 'y <= 0'],
-                label_path=[3, 1],
-                weight=1,
-                region=RegionStr(
-                    constraints_str=['y <= 0', 'x <= 0'],
-                    invariant_str='6',
-                    model_str={'x': '0', 'y': '0'},
-                    model_eval_str='6',
-                ),
-            ),
-        ]
+    assert fence_py(pformat(leaf_groups)) == external_file(
+        'data/test_simple_decomp.leaf_groups.expected', format='.txt'
     )
 
     # region_groups is auto-populated on validation from regions_str.

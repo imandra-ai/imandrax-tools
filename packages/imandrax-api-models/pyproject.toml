@@ -78,7 +78,9 @@ ignore = [
   "D203",
   "D212",
   "D400",
+  "D401",
   "D415",
+  "E731",
   "E741",  # Ambigous variable name
   # These are all enforced by, or incompatible with, the ruff formatter:
   "E203",
