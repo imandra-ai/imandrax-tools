@@ -1,10 +1,7 @@
-// Pure, host-agnostic icicle view for ImandraX region decomposition.
+// Pure, host-agnostic icicle view for region decomposition.
 //
-// `draw(el, regionGroups, opts)` takes a DOM node and the forest of region
-// groups — i.e. `[g.to_json_dict() for g in EnrichedDecomposeRes.region_groups]`
-// — mutates the DOM, and returns nothing. It knows nothing about anywidget,
-// notebooks, or Python, so it can be unit-tested with a fabricated element and
-// mounted in any host.
+// `draw(el, regionGroups, opts)` takes a DOM node and the forest of region groups,
+// and mutates the DOM, and returns nothing. 
 
 import { hierarchy, partition } from 'd3-hierarchy';
 import { scaleOrdinal } from 'd3-scale';
