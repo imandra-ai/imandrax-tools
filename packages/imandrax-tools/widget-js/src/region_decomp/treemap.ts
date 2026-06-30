@@ -11,7 +11,7 @@
 // `drawTreemap(el, input, opts)` builds the DOM, wires interaction, and returns
 // nothing.
 
-import { treemap, type HierarchyRectangularNode } from 'd3-hierarchy';
+import { hierarchy, treemap, type HierarchyRectangularNode } from 'd3-hierarchy';
 import { select } from 'd3-selection';
 
 import { detailHtml, esc, PLACEHOLDER_HTML } from './detail';
@@ -32,8 +32,8 @@ interface Box {
   width: number;
   height: number;
 }
-// A tile to draw. `ghost` tiles sit one level past the depth limit and are drawn
-// as dimmed, non-interactive outlines — a preview of what a zoom would reveal.
+// A tile to draw. `ghost` tiles are the dimmed, non-interactive outline preview
+// of structure below the solid-tile depth (see GHOST_ALL_LEAVES).
 interface Item {
   node: Rect;
   ghost: boolean;
@@ -46,6 +46,12 @@ const DEFAULTS = {
   detailWidth: 300, // detail pane width in px
   maxDepth: 3, // levels of descendants shown below the zoom root
 };
+
+// Ghost preview mode. true: show every leaf below the solid-tile depth, so each
+// frontier tile reveals its full atomic partition. false: show only the next
+// level down (one step past the depth limit), a lighter "what's one zoom deeper"
+// hint. Flip to taste.
+const GHOST_ALL_LEAVES = true;
 
 const TOPBAR_H = 31; // breadcrumb bar height, for the jsdom size fallback
 const MIN_TILE_PX = 2; // tiles smaller than this on a side are culled
@@ -85,39 +91,61 @@ function projectedBox(node: Rect, ext: Extent, vw: number, vh: number): Box {
   };
 }
 
-// Place a ghost so it fills its parent's whole tile rather than just the
-// parent's content box. Without this a ghost sits below the parent's header
-// strip, making the title area read as a separate partition. We rescale the
-// ghost's fractional position within the parent's content box onto the parent's
-// full on-screen box, so the preview covers the entire tile.
-function ghostBoxInParent(node: Rect, parent: Rect, parentBox: Box): Box {
-  const pc = contentExtent(parent);
-  const cdx = pc.x1 - pc.x0 || 1;
-  const cdy = pc.y1 - pc.y0 || 1;
-  const fx0 = (node.x0 - pc.x0) / cdx;
-  const fy0 = (node.y0 - pc.y0) / cdy;
-  const fx1 = (node.x1 - pc.x0) / cdx;
-  const fy1 = (node.y1 - pc.y0) / cdy;
-  return {
-    left: parentBox.left + fx0 * parentBox.width,
-    top: parentBox.top + fy0 * parentBox.height,
-    width: (fx1 - fx0) * parentBox.width,
-    height: (fy1 - fy0) * parentBox.height,
-  };
-}
-
-// Descendants of `selected` to draw: full tiles down to `maxDepth`, plus one
-// further level of ghost outlines (the zoom preview).
-function visibleDescendants(selected: Rect, maxDepth: number): { node: Rect; ghost: boolean }[] {
-  const out: { node: Rect; ghost: boolean }[] = [];
+// Solid tiles to draw: every descendant of `selected` from one level down to
+// the depth limit (inclusive). At the limit we stop descending — anything below
+// is previewed as ghosts instead.
+function solidDescendants(selected: Rect, maxDepth: number): Rect[] {
+  const out: Rect[] = [];
   const walk = (node: Rect, rel: number) => {
-    if (rel > maxDepth + 1) return;
-    out.push({ node, ghost: rel > maxDepth });
-    // Ghosts are leaves of the preview — don't descend past them.
-    if (rel <= maxDepth && node.children) for (const c of node.children) walk(c as Rect, rel + 1);
+    out.push(node);
+    if (rel < maxDepth && node.children) for (const c of node.children) walk(c as Rect, rel + 1);
   };
   if (selected.children) for (const c of selected.children) walk(c as Rect, 1);
   return out;
+}
+
+// Frontier tiles: the solid tiles sitting at the depth limit that still have a
+// subtree below them. Each one gets its descendants previewed as ghosts.
+function ghostFrontiers(selected: Rect, frontierDepth: number): Rect[] {
+  const out: Rect[] = [];
+  const walk = (node: Rect) => {
+    if (node.depth === frontierDepth) {
+      if (node.children && node.children.length) out.push(node);
+      return;
+    }
+    if (node.children) for (const c of node.children) walk(c as Rect);
+  };
+  if (selected.children) for (const c of selected.children) walk(c as Rect);
+  return out;
+}
+
+// Ghost preview tiles filling a frontier's on-screen box. We lay the frontier's
+// subtree out fresh into that box with no reserved header strip, so the atomic
+// partition covers the whole tile — title strip included — rather than the
+// nested main layout's coordinates, whose interior headers and gaps would leave
+// the ghosts unaligned and floating below the frontier's title. In all-leaves
+// mode we draw every leaf (the full partition); otherwise just the next level
+// down. Ghosts are `pointer-events: none`, so the frontier beneath stays
+// clickable through them.
+function ghostLeaves(frontier: Rect, box: Box): Item[] {
+  const h = hierarchy<RegionGroup>(frontier.data)
+    .sum((d) => (d.children && d.children.length ? 0 : d.weight || 1))
+    .sort((a, b) => b.value! - a.value! || (labelPath(a) < labelPath(b) ? -1 : 1));
+  treemap<RegionGroup>()
+    .size([Math.max(box.width, 1), Math.max(box.height, 1)])
+    .paddingInner(TILE_GAP)
+    .round(false)(h);
+  const nodes = (GHOST_ALL_LEAVES ? h.leaves() : (h.children ?? [])) as Rect[];
+  return nodes.map((n) => ({
+    node: n,
+    ghost: true,
+    box: {
+      left: box.left + n.x0,
+      top: box.top + n.y0,
+      width: n.x1 - n.x0,
+      height: n.y1 - n.y0,
+    },
+  }));
 }
 
 function zoomable(node: Rect): boolean {
@@ -246,20 +274,27 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
     const { vw, vh } = viewport();
     layout(vw, vh);
     const ext = contentExtent(selected);
+    const frontierDepth = selected.depth + cfg.maxDepth;
 
-    const items: Item[] = visibleDescendants(selected, cfg.maxDepth)
-      .map(({ node, ghost }) => {
-        // A ghost fills its parent's whole tile; a real tile uses its own box.
-        const box = ghost
-          ? ghostBoxInParent(node, node.parent as Rect, projectedBox(node.parent as Rect, ext, vw, vh))
-          : projectedBox(node, ext, vw, vh);
-        return { node, ghost, box };
-      })
-      .filter(({ box }) => box.width >= MIN_TILE_PX && box.height >= MIN_TILE_PX);
+    // Solid tiles first, then their ghost previews — pre-order overall, so each
+    // frontier's header stays behind the ghosts that fill it.
+    const items: Item[] = solidDescendants(selected, cfg.maxDepth).map((node) => ({
+      node,
+      ghost: false,
+      box: projectedBox(node, ext, vw, vh),
+    }));
+    for (const frontier of ghostFrontiers(selected, frontierDepth)) {
+      const fbox = projectedBox(frontier, ext, vw, vh);
+      items.push(...ghostLeaves(frontier, fbox));
+    }
+
+    const drawn = items.filter(
+      ({ box }) => box.width >= MIN_TILE_PX && box.height >= MIN_TILE_PX,
+    );
 
     select(tiles)
       .selectAll<HTMLDivElement, Item>(`div.${ROOT_CLASS}-tile`)
-      .data(items, (d) => labelPath(d.node))
+      .data(drawn, (d) => labelPath(d.node))
       .join('div')
       .attr('class', (d) => tileClass(d))
       .style('left', (d) => `${round2(d.box.left)}px`)
