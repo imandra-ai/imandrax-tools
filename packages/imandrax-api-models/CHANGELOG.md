@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- ENH(context_utils): make message error structured
 
 ## [20.3.0] - 2026-06-30
 - FIX(decomp/grouping): fix leak constraint bug

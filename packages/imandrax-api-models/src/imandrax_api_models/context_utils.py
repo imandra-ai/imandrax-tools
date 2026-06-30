@@ -1,8 +1,12 @@
-"""Utility functions for formatting ImandraX API models to LLM context."""
+"""
+Utility functions for formatting ImandraX API models to LLM context.
+
+Most functions returns a JSON-serializable value, suitable to be further dumped as YAML (as a human-readable format)
+"""
 
 from __future__ import annotations
 
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, MutableMapping, MutableSequence
 from typing import Any, Literal, cast
 
 from imandrax_api_models import (
@@ -17,11 +21,9 @@ from imandrax_api_models import (
 )
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
-type JSONValue = (
-    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
-)
-type JSONObject = dict[str, JSONValue]
-type JSONArray = list[JSONValue]
+type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONObject = MutableMapping[str, JSONValue]
+type JSONArray = MutableSequence[JSONValue]
 
 
 def format_code_snippet_with_loc(
@@ -135,14 +137,13 @@ def _format_unstructured_msg_errors(
     errs_in_eval_msg: list[str],
     max_msgs: int = 2,
     max_len_per_msg: int = 500,
-) -> str:
+) -> JSONArray:
     """
     Render extracted error string blurbs from `eval_res.messages`.
 
     Up to `max_msgs` are shown, deduped by extracted text. Appends a
     truncation hint if more were dropped.
     """
-    # TODO: make this structural as well
     seen: set[str] = set()
     extracted: list[str] = []
     for msg in errs_in_eval_msg:
@@ -152,12 +153,10 @@ def _format_unstructured_msg_errors(
         seen.add(e)
         extracted.append(e)
 
-    shown = extracted[:max_msgs]
-    s = '\n'.join(f'- {e}' for e in shown)
-    hidden = len(extracted) - len(shown)
-    if hidden > 0:
-        s += f'\n- ... ({hidden} more similar message(s) omitted)'
-    return s
+    out: JSONArray = [*extracted[:max_msgs]]
+    if (n_hidden := len(extracted) - len(out)) > 0:
+        out.append(f'{n_hidden} error messages omitted')
+    return out
 
 
 def format_error_msg(
@@ -270,6 +269,17 @@ def format_eval_res(
     iml_src: str | None = None,
     process_decomp: bool = True,
 ) -> JSONObject | str:
+    """
+    Format an EvalRes object into a JSON-serializable value.
+
+    Args:
+        iml_src: IML source used to resolve error locations
+        process_decomp: whether to populate decomp grouping information
+
+    Returns:
+        A JSON-serializable object (Mapping) or a string if "description" is the only field
+
+    """
     # Check additional error in messages
     errs_in_eval_msg: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
