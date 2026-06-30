@@ -1,9 +1,13 @@
 import os
+from pathlib import Path
 
+import dotenv
 import imandrax_api
+import pytest
 from imandrax_api.lib import RegionStr
 from inline_snapshot import snapshot
 
+from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import (
     EnrichedDecomposeRes,
@@ -11,13 +15,11 @@ from imandrax_api_models.region_decomp import (
     get_leaf_groups,
 )
 
+dotenv.load_dotenv()
 
-def trust() -> DecomposeRes:
-    import dotenv
 
-    from imandrax_api_models.client import ImandraXClient
-
-    dotenv.load_dotenv()
+@pytest.fixture
+def decomp_res_classify() -> DecomposeRes:
     c = ImandraXClient(
         url=imandrax_api.url_prod,
         auth_token=os.environ['IMANDRAX_API_KEY'],
@@ -38,19 +40,115 @@ def trust() -> DecomposeRes:
     return c.decompose(name='classify', string_results=True, prune=True)
 
 
-def test():
-    decomp_res = trust()
-    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res)
+@pytest.fixture
+def decomp_res_six_swiss() -> DecomposeRes:
+    c = ImandraXClient(
+        url=imandrax_api.url_dev,
+        auth_token=os.environ['IMANDRAX_API_KEY'],
+    )
+    IML_CODE = (Path(__file__).parent / 'data/six_swiss.iml').read_text()
+    _eval_res = c.eval_src(IML_CODE)
+    return c.decompose(name='match_price', string_results=True, prune=True)
 
-    assert edr.regions_str
+
+def enrich_decomp_res_props(edr: EnrichedDecomposeRes) -> None:
+    assert edr.regions_str, 'Non-err decomp should have regions_str'
     leaf_groups = get_leaf_groups(edr.region_groups)
-    assert len(leaf_groups) == len(edr.regions_str)
+    assert len(leaf_groups) == len(edr.regions_str), 'Leaf groups ARE concrete regions'
     for leaf_group in leaf_groups:
-        assert len(leaf_group.children) == 0
+        assert len(leaf_group.children) == 0, 'Leaf group must not have children'
         assert leaf_group.region, 'Leaf group must be concrete'
         assert leaf_group.region.constraints_str
         assert set(leaf_group.constraints) == set(leaf_group.region.constraints_str)
 
+
+def test_complex_decomp(decomp_res_six_swiss):
+    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_six_swiss)
+    enrich_decomp_res_props(edr)
+
+    leaf_groups = get_leaf_groups(edr.region_groups)
+    assert edr.to_tree_str() == snapshot("""\
+├── [1] new_constraint='ob.buys <> []' n_leaf_regions=43
+│   ├── [1.1] new_constraint='ob.sells <> []' n_leaf_regions=42
+│   │   ├── [1.1.1] new_constraint='(List.hd ob.buys).order_type <> Limit' n_leaf_regions=34
+│   │   │   ├── [1.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Limit' n_leaf_regions=28
+│   │   │   │   ├── [1.1.1.1.1] new_constraint='(List.hd ob.buys).order_type = Market' n_leaf_regions=21
+│   │   │   │   │   ├── [1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty' n_leaf_regions=17
+│   │   │   │   │   │   ├── [1.1.1.1.1.1.1] new_constraint='(List.hd ob.sells).order_type = Market' n_leaf_regions=15
+│   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1] new_constraint='List.tl ob.buys <> []' n_leaf_regions=11
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1] new_constraint='List.tl ob.sells <> []' n_leaf_regions=8
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.buys)).order_type <> Market' n_leaf_regions=5
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.buys)).order_price <=. ref_price' n_leaf_regions=3
+│   │   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.sells)).order_type <> Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1.1.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.1.1.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.1.2] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.buys)).order_price >. ref_price' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.3.1] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.2] new_constraint='(List.hd (List.tl ob.buys)).order_type = Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.2.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.2.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.3.1] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.2] new_constraint='List.tl ob.sells = []' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.buys)).order_price <=. ref_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.2.2] new_constraint='(List.hd (List.tl ob.buys)).order_price >. ref_price' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.3.1] new_constraint='List.tl ob.sells = []' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2] new_constraint='List.tl ob.buys = []' n_leaf_regions=3
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.sells)).order_type <> Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2.1.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.2.1.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.2.2] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.3.1] new_constraint='List.tl ob.sells = []' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   ├── [1.1.1.1.1.1.2.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   └── [1.1.1.1.1.1.3.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   ├── [1.1.1.1.1.2.1] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   └── [1.1.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' n_leaf_regions=3
+│   │   │   │   │       ├── [1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=2
+│   │   │   │   │       │   ├── [1.1.1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │       │   └── [1.1.1.1.1.1.2] new_constraint='(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │       └── [1.1.1.1.1.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   ├── [1.1.1.1.2] new_constraint='(List.hd ob.buys).order_type <> Market' n_leaf_regions=5
+│   │   │   │   │   ├── [1.1.1.1.2.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=4
+│   │   │   │   │   │   ├── [1.1.1.1.2.1.1] new_constraint='(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty' n_leaf_regions=3
+│   │   │   │   │   │   │   ├── [1.1.1.1.2.1.1.1] new_constraint='(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty' n_leaf_regions=2
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.2.1.1.1.1] new_constraint='List.tl ob.sells <> []' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.2.1.1.1.2] new_constraint='List.tl ob.sells = []' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.1.1.2.1.1.2] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   │   └── [1.1.1.1.2.1.2] new_constraint='(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   └── [1.1.1.1.2.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   ├── [1.1.1.1.3.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   └── [1.1.1.1.4.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.2.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.3] new_constraint='(List.hd ob.sells).order_type = Limit' n_leaf_regions=2
+│   │   │   │   ├── [1.1.1.3.1] new_constraint='List.tl ob.sells <> []' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   └── [1.1.1.3.2] new_constraint='List.tl ob.sells = []' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.4] new_constraint='(List.hd ob.sells).order_type = Limit' n_leaf_regions=2
+│   │   │   │   ├── [1.1.1.4.1.1] new_constraint='(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty' invariant='None' is_leaf=True
+│   │   │   │   └── [1.1.1.4.2] new_constraint='(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   └── [1.1.1.5.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   ├── [1.1.2] new_constraint='(List.hd ob.buys).order_type = Limit' n_leaf_regions=6
+│   │   │   ├── [1.1.2.1] new_constraint='(List.hd ob.sells).order_type <> Market' n_leaf_regions=5
+│   │   │   │   ├── [1.1.2.1.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=4
+│   │   │   │   │   ├── [1.1.2.1.1.1] new_constraint='(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty' n_leaf_regions=3
+│   │   │   │   │   │   ├── [1.1.2.1.1.1.1] new_constraint='(List.hd ob.sells).order_qty = (List.hd ob.buys).order_qty' n_leaf_regions=2
+│   │   │   │   │   │   │   ├── [1.1.2.1.1.1.1.1] new_constraint='List.tl ob.buys <> []' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.2.1.1.1.1.2] new_constraint='List.tl ob.buys = []' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   │   └── [1.1.2.1.1.1.2] new_constraint='(List.hd ob.sells).order_qty <> (List.hd ob.buys).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   └── [1.1.2.1.1.2] new_constraint='(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   └── [1.1.2.1.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   └── [1.1.2.2] new_constraint='(List.hd ob.sells).order_type = Market' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   ├── [1.1.3.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   └── [1.1.4.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   └── [1.2] new_constraint='ob.sells = []' invariant='None' is_leaf=True
+└── [2] new_constraint='ob.buys = []' invariant='None' is_leaf=True\
+""")
+
+
+def test_simple_decomp(decomp_res_classify):
+    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_classify)
+    enrich_decomp_res_props(edr)
+
+    leaf_groups = get_leaf_groups(edr.region_groups)
     assert leaf_groups == snapshot(
         [
             RegionGroup(
