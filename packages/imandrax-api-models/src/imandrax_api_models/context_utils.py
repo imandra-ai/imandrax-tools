@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any, Literal, cast
 
 from imandrax_api_models import (
@@ -15,8 +15,11 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
+from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
-type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
@@ -262,7 +265,11 @@ def format_errors(
         return out
 
 
-def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject | str:
+def format_eval_res(
+    eval_res: EvalRes,
+    iml_src: str | None = None,
+    process_decomp: bool = True,
+) -> JSONObject | str:
     # Check additional error in messages
     errs_in_eval_msg: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
@@ -294,6 +301,13 @@ def format_eval_res(eval_res: EvalRes, iml_src: str | None = None) -> JSONObject
                     'value_as_ocaml': eval_result.value_as_ocaml,
                 }
                 out[f'eval_result_{i}'] = data
+            for i, decomp_res in enumerate(eval_res.decomp_results, 1):
+                if not process_decomp:
+                    out[f'decomp_result_{i}'] = decomp_res.model_dump(mode='json')
+                else:
+                    out[f'decomp_result_{i}'] = format_enriched_decomp_res(
+                        EnrichedDecomposeRes.from_decomp_res(decomp_res)
+                    )
 
             if len(out.keys()) == 1 and 'desc' in out:
                 return out['desc']
@@ -344,3 +358,18 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
         out['res'] = vg_res.res.model_dump(mode='json')
 
     return out
+
+
+def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
+    d: dict[str, Any] = {}
+    if decomp_res.regions_str is not None:
+        enriched_regions = decomp_res.regions()
+        d['description'] = f'Decomp succeeded with {len(enriched_regions)} regions'
+        d['regions'] = enriched_regions
+    else:
+        d['description'] = 'Decomp failed'
+        d |= remove_fields_rec(decomp_res.model_dump())
+        d.pop('regions_str')
+        d.pop('region_groups')
+
+    return d

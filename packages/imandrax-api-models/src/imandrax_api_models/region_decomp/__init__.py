@@ -1,168 +1,112 @@
-"""Post-processing (Hierarchical groupping) for region decomposition."""
+"""Post-processing (hierarchical grouping) for region decomposition."""
 
 from __future__ import annotations
 
-import itertools
-from collections.abc import Callable
-from dataclasses import dataclass
-from functools import partial, reduce
-from typing import Any, Literal, NoReturn, Protocol, Self, TypedDict
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import asdict
+from functools import reduce
+from typing import NoReturn, Self, TypedDict
 
-import yaml
 from devtools import pformat
 from imandrax_api.lib import RegionStr
+from pydantic import BaseModel, Field, model_validator
 
-from imandrax_api_models.proto_models import DecomposeRes, Error
-from imandrax_api_models.yaml_utils import str_representer
+from imandrax_api_models.proto_models import DecomposeRes
 
 from .icicle_widget import mk_icicle_widget_html
 
 
-@dataclass
-class HumDecomposeRes:
-    """Human readable decomp result"""
+class EnrichedDecomposeRes(DecomposeRes):
+    """A `DecomposeRes` augmented with hierarchical region grouping."""
 
-    _variants: (
-        tuple[Literal['Success'], list[RegionGroup]]
-        | tuple[Literal['Fail'], list[Error]]
+    region_groups: list[RegionGroup] = Field(
+        default_factory=list,
+        description='Region groups grouped by constraints, containing child groups recursively. Empty when no regions are available (decomposition error).',
     )
 
-    @classmethod
-    def mk_success(cls, pl: list[RegionGroup]) -> Self:
-        return cls(_variants=('Success', pl))
+    @model_validator(mode='after')
+    def populate_region_groups(self) -> Self:
+        if not self.region_groups and self.regions_str:
+            self.region_groups = group_regions(self.regions_str)
+        return self
 
     @classmethod
-    def mk_fail(cls, pl: list[Error]) -> Self:
-        return cls(_variants=('Fail', pl))
+    def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
+        return cls.model_validate(v.model_dump())
 
-    @classmethod
-    def from_decomp_res(cls, v: DecomposeRes) -> HumDecomposeRes:
-        return hum_of_decomp_res(v)
-
-    @classmethod
-    def from_regions(cls, regions: list[RegionStr]) -> HumDecomposeRes:
-        groups = group_regions(regions)
-        return HumDecomposeRes.mk_success(groups)
+    def regions(self) -> JSONArray:
+        """Leaf region groups (concrete regions) with hierarchical grouping info."""
+        leaf_groups = get_leaf_groups(self.region_groups)
+        ds = []
+        for leaf_group in leaf_groups:
+            d: JSONObject = {}
+            assert leaf_group.region is not None, 'Leaf group must be concrete'
+            d['label_path'] = '.'.join(map(str, leaf_group.label_path))
+            d['weight'] = leaf_group.weight
+            d |= asdict(leaf_group.region)
+            ds.append(d)
+        return ds
 
     def to_tree_str(
         self,
         *,
         depth_limit: int | None = None,
-        summarize: RegionGroupSummarizer | None = None,
+        summarize: Callable[[RegionGroup], str] | None = None,
     ) -> str:
-        match self._variants:
-            case ('Fail', errs):
-                return pformat(errs, indent=2)
-            case ('Success', groups):
-                summarize_ = summarize or default_region_group_summary
-                lines: list[str] = []
-                for i, group in enumerate(groups):
-                    is_last = i == len(groups) - 1
-                    _tree_lines(
-                        lines,
-                        group,
-                        prefix='',
-                        is_last=is_last,
-                        depth_limit=depth_limit,
-                        summarize=summarize_,
-                    )
-                return '\n'.join(lines)
-
-    def summary(self) -> dict[str, str | int] | None:
-        match self._variants:
-            case ('Fail', _):
-                return None
-            case ('Success', groups):
-                return {
-                    'n_regions': _count_leaf_regions(groups),
-                    # 'n_regions': sum(rg.n_regions() for rg in groups),
-                    # 'n_leaf_regions': _count_leaf_regions(groups),
-                    # 'max_depth': _max_tree_depth_of_groups(groups),
-                    # 'max_label_depth': _max_label_depth_of_groups(groups),
-                    # 'max_constraints_per_region': _max_constraints_per_region(groups),
-                }
-
-    @staticmethod
-    def dumper_func(depth_limit: int | None = None) -> Callable[..., str]:
-        dumper_cls = mk_dumper(depth_limit=depth_limit)
-        return partial(
-            yaml.dump,
-            Dumper=dumper_cls,
-            default_flow_style=False,
-            sort_keys=False,
+        if self.errors:
+            return pformat(self.errors, indent=2)
+        return render_region_groups(
+            self.region_groups, depth_limit=depth_limit, tree_repr=summarize
         )
 
-    def to_dict_hierarchical(
-        self,
-        depth_limit: int | None = None,
-    ) -> dict[str, Any]:
-        match self._variants:
-            case ('Fail', errs):
-                return {'errors': errs}
-            case ('Success', groups):
-                return {'summary': self.summary(), 'region_groups': groups}
-
-    def to_dict_flat(
-        self,
-    ) -> dict[str, Any]:
-        match self._variants:
-            case ('Fail', errs):
-                return {'errors': errs}
-            case ('Success', groups):
-                indexed_groups = indexed_of_region_groups(groups)
-                return {'summary': self.summary(), 'region_groups': indexed_groups}
-
     def _repr_html_(self) -> str:
-        match self._variants:
-            case ('Fail', errs):
-                return f'<pre>{pformat(errs, indent=2)}</pre>'
-            case ('Success', groups):
-                return mk_icicle_widget_html(groups)
+        if self.errors:
+            return f'<pre>{pformat(self.errors, indent=2)}</pre>'
+        return mk_icicle_widget_html(self.region_groups)
 
 
-def hum_of_decomp_res(decomp_res: DecomposeRes) -> HumDecomposeRes:
-    if decomp_res.err is None:
-        regions = decomp_res.regions_str
-        if regions is None:
-            raise ValueError(
-                'DecomposeRes has no `regions_str`; humanizing regions requires '
-                'the decomposition to be requested with `string_results=True`.'
-            )
-        groups = group_regions(regions)
-        return HumDecomposeRes.mk_success(groups)
-
-    else:
-        return HumDecomposeRes.mk_fail(decomp_res.errors)
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
+type JSONObject = dict[str, JSONValue]
+type JSONArray = list[JSONValue]
 
 
-@dataclass
-class RegionGroup:
+class RegionGroup(BaseModel):
     """
     A hierarchical group of regions sharing constraints.
 
     Attributes:
         constraints:
-            Full accumulated constraint path from root to this node (root-first).
-            `constraints[-1]` is the constraint introduced at this node's own level.
-        label_path:
-            Positional index path from root to this node (root-first, 1-indexed).
-            Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.
-            Levels where a constraint applies to all regions are skipped, so the path
-            length may be shorter than the tree depth.
-        region:
-            The concrete region, if this group contains exactly one.
         children:
             Sub-groups under this node.
         weight:
-            Number of regions in the `has` partition at this node's level.
 
     """
 
-    constraints: list[str]
-    label_path: list[int]
-    region: RegionStr | None
-    children: list[RegionGroup]
-    weight: int
+    constraints: list[str] = Field(
+        description=(
+            'Full accumulated constraint path from root to this node (root-first).'
+            "`constraints[-1]` is the constraint introduced at this node's own level."
+        )
+    )
+    label_path: list[int] = Field(
+        description=(
+            'Positional index path from root to this node (root-first, 1-indexed).'
+            'Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.'
+            'Levels where a constraint applies to all regions are skipped, so the path'
+            'length may be shorter than the tree depth.'
+        )
+    )
+    weight: int = Field(
+        description="Number of regions in the partition at this node's level."
+    )
+    region: RegionStr | None = Field(
+        default=None, description='The concrete region. Present iff at leaf nodes.'
+    )
+    children: list[RegionGroup] = Field(
+        default_factory=list, description='Sub-groups under this node.'
+    )
 
     def n_regions(self) -> int:
         """Total regions in this subtree, including self."""
@@ -173,34 +117,57 @@ class RegionGroup:
         return self.n_regions() - 1
 
     def n_leaf_regions(self) -> int:
-        """Total leaf regions in this subtree, including self if no children."""
+        """Total leaf regions in this subtree, counting self if no children."""
         if not self.children:
             return 1
         return sum(c.n_leaf_regions() for c in self.children)
 
-    def to_dict(self) -> dict[str, Any]:
-        """Core fields shared by all serialization formats."""
-        d: dict[str, Any] = {
-            'label_path': '.'.join(map(str, self.label_path)),
-            'constraints': self.constraints,
-            'introduced_constraint': self.constraints[-1] if self.constraints else '',
-            'weight': self.weight,
-            'n_children_regions': len(self.children),
-            'n_descendant_regions': self.n_descendant_regions(),
-            'n_leaf_regions': self.n_leaf_regions(),
-        }
+    def describe(self) -> JSONObject:
+        d: JSONObject = {}
+        d['label_path'] = '.'.join(map(str, self.label_path))
+        d['constraints'] = self.constraints
+        d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
+        d['weight'] = self.weight
+        d['n_children_regions'] = len(self.children)
+        d['n_descendant_regions'] = self.n_descendant_regions()
+        d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
             d['invariant'] = r.invariant_str
             d['example_input'] = r.model_str
             d['example_output'] = r.model_eval_str
         return d
 
-    def to_json_dict(self) -> dict[str, Any]:
-        """Serialize to a d3-hierarchy-compatible dict."""
-        d = self.to_dict()
+    def to_json_dict(self) -> JSONObject:
+        """Serialize to a d3-hierarchy-compatible dict, recursing into children."""
+        d = self.describe()
         if self.children:
             d['children'] = [c.to_json_dict() for c in self.children]
         return d
+
+    def repr_line(self) -> str:
+        """One-line representation of the region group."""
+        d = self.describe()
+        parts: list[str] = []
+        parts.append(f'[{d["label_path"]}]')
+        parts.append(f"new_constraint='{d['introduced_constraint']}'")
+        if d.get('invariant'):
+            parts.append(f"invariant='{d['invariant']}'")
+        n_leaf_regions = d['n_leaf_regions']
+        if n_leaf_regions != 1:
+            parts.append(f'n_leaf_regions={n_leaf_regions}')
+        else:
+            parts.append('is_leaf=True')
+        return ' '.join(parts)
+
+
+def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
+    leaves = []
+    for group in groups:
+        if not group.children:
+            leaves.append(group)
+        else:
+            leaves.extend(get_leaf_groups(group.children))
+    return leaves
 
 
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
@@ -208,120 +175,30 @@ def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
     return _loop_group_regions([], [], regions)
 
 
-@dataclass
-class IndexedRegionGroup:
-    """Equivalent to RegionGroup, but in flat structure."""
-
-    id: str
-    constraints: list[str]
-    label_path: list[int]
-    region: RegionStr | None
-    children: list[str]
-    weight: int
-    depth: int  # 1-indexed depth
+# Tree rendering
+# ====================
 
 
-def indexed_of_region_groups(groups: list[RegionGroup]) -> list[IndexedRegionGroup]:
-    id_generator = (str(i) for i in itertools.count())
-
-    def gen_id() -> str:
-        return next(id_generator)
-
-    def loop(
-        group_and_id_lst: list[tuple[RegionGroup, str]],
-        acc: list[IndexedRegionGroup],
-        depth: int,
-    ) -> None:
-        for rg, id in group_and_id_lst:
-            c_ids = [gen_id() for _ in rg.children]
-
-            irg = IndexedRegionGroup(
-                id=id,
-                constraints=rg.constraints,
-                label_path=rg.label_path,
-                region=rg.region,
-                children=c_ids,
-                weight=rg.weight,
-                depth=depth,
-            )
-            acc.append(irg)
-
-            children_group_and_id_lst = list(zip(rg.children, c_ids, strict=True))
-            loop(children_group_and_id_lst, acc, depth + 1)
-
-    initial_ids = [gen_id() for _ in groups]
-    group_and_id_lst = list(zip(groups, initial_ids, strict=True))
-    acc: list[IndexedRegionGroup] = []
-    loop(group_and_id_lst, acc, 1)
-    return acc
-
-
-def _max_label_depth_of_groups(groups: list[RegionGroup]) -> int:
-    """
-    Max length of any label_path in the tree (index-chain depth).
-
-    Counts collapsed singleton levels since label_path is built before
-    singleton promotion in `_loop_group_regions`.
-    """
-    init: int = 1
-
-    def loop(groups: list[RegionGroup]):
-        label_lengths: list[int] = [len(rg.label_path) for rg in groups]
-        nonlocal init
-        init = max(init, (max(label_lengths) if label_lengths else 0))
-        for rg in groups:
-            loop(rg.children)
-
-    loop(groups)
-    return init
-
-
-def _max_tree_depth_of_groups(groups: list[RegionGroup]) -> int:
-    """Max nesting depth of RegionGroup nodes (matches visual tree)."""
-
-    def depth(rg: RegionGroup) -> int:
-        return 1 + max((depth(c) for c in rg.children), default=0)
-
-    return max((depth(g) for g in groups), default=0)
-
-
-def _count_leaf_regions(groups: list[RegionGroup]) -> int:
-    """Count of nodes carrying a concrete RegionStr (region is not None)."""
-    total = 0
-    for g in groups:
-        if g.region is not None:
-            total += 1
-        total += _count_leaf_regions(g.children)
-    return total
-
-
-def _max_constraints_per_region(groups: list[RegionGroup]) -> int:
-    """Longest constraints list across all nodes."""
-
-    def walk(rg: RegionGroup) -> int:
-        return max(len(rg.constraints), *(walk(c) for c in rg.children), 0)
-
-    return max((walk(g) for g in groups), default=0)
-
-
-class RegionGroupSummarizer(Protocol):
-    def __call__(self, group: RegionGroup) -> str: ...
-
-
-def default_region_group_summary(group: RegionGroup) -> str:
-    label = '.'.join(map(str, group.label_path))
-    # rg_constraints is the full path from root; [-1] is this node's own constraint.
-    constraint = group.constraints[-1] if group.constraints else '?'
-    invariant: str | None = None
-    if (region := group.region) is not None:
-        invariant = region.invariant_str
-    parts = [
-        f'[{label}]',
-        f'{constraint=}',
-        f'{invariant=}',
-        f'(w={group.weight}, n_children={len(group.children)}, n_descendants={group.n_descendant_regions()})',
-    ]
-    return ' '.join(parts)
+def render_region_groups(
+    groups: list[RegionGroup],
+    *,
+    depth_limit: int | None = None,
+    tree_repr: Callable[[RegionGroup], str] | None = None,
+) -> str:
+    """Render a forest of `RegionGroup`s as a tree in text."""
+    tree_repr_ = tree_repr or RegionGroup.repr_line
+    lines: list[str] = []
+    for i, group in enumerate(groups):
+        is_last = i == len(groups) - 1
+        _tree_lines(
+            lines,
+            group,
+            prefix='',
+            is_last=is_last,
+            depth_limit=depth_limit,
+            summarize=tree_repr_,
+        )
+    return '\n'.join(lines)
 
 
 def _tree_lines(
@@ -331,7 +208,7 @@ def _tree_lines(
     prefix: str,
     is_last: bool,
     depth_limit: int | None,
-    summarize: RegionGroupSummarizer,
+    summarize: Callable[[RegionGroup], str],
 ) -> None:
     connector = '└── ' if is_last else '├── '
     lines.append(f'{prefix}{connector}{summarize(group)}')
@@ -352,6 +229,10 @@ def _tree_lines(
             depth_limit=next_limit,
             summarize=summarize,
         )
+
+
+# Grouping algorithm
+# ====================
 
 
 def _loop_group_regions(
@@ -386,8 +267,10 @@ def _loop_group_regions(
     Invariants (across `reduce`/`loop` iterations):
     - `acc['regions']` shrinks monotonically: each iteration moves regions into
       `has` (grouped) or keeps them in `without` (remaining).
-    - `acc['constraint_path']` grows by one element per iteration (the current
-      `konstraint`), regardless of whether any regions matched.
+    - `acc['idx_path']` and `acc['constraint_path']` stay constant across
+      iterations (they describe this level). The current `konstraint` is only
+      prepended for the `has` branch's recursion, never carried into later
+      iterations, which process `without` regions that lack `konstraint`.
     - `acc['groups']` only grows: new groups are prepended when `has` is non-empty.
     """
 
@@ -424,8 +307,10 @@ def _loop_group_regions(
         return counter
 
     counter = mk_counter(all_constraints_with_dup)
-    assoc_list: list[tuple[str, int]] = [(k, v) for (k, v) in counter.items()]
-    sorted(assoc_list, key=lambda kv: kv[1], reverse=True)
+    # Most frequent first, ties broken alphabetically.
+    assoc_list: list[tuple[str, int]] = sorted(
+        counter.items(), key=lambda kv: (-kv[1], kv[0])
+    )
     constraints_by_most_frequent: list[str] = [kv[0] for kv in assoc_list]
 
     # grouped: tuple[list[RegionGroup], list[RegionStr]]
@@ -489,85 +374,19 @@ def _loop_group_regions(
             res = [group, *groups], without
         else:
             res = groups, without
+        # `idx_path` / `constraint_path` describe this level and must stay
+        # constant across reduce iterations. Only the `has` branch (recursed
+        # above) gets the extended `new_idx_path` / `new_constraint_path`; the
+        # `without` regions handled by later iterations do not contain
+        # `konstraint`, so it must not leak into their path.
         return Acc(
             groups=res[0],
             regions=res[1],
-            idx_path=new_idx_path,
-            constraint_path=new_constraint_path,
+            idx_path=idx_path,
+            constraint_path=constraint_path,
         )
 
     init = Acc(
         groups=[], regions=regions, idx_path=idx_path, constraint_path=constraint_path
     )
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
-
-
-# YAML Dump
-# ====================
-
-
-def _region_str_representer(dumper: yaml.Dumper, data: RegionStr) -> yaml.Node:
-    mapping: dict[str, object] = {}
-    if data.constraints_str is not None:
-        mapping['constraints'] = data.constraints_str
-    if data.invariant_str is not None:
-        mapping['invariant'] = data.invariant_str
-    if data.model_str is not None:
-        mapping['model'] = data.model_str
-    if data.model_eval_str is not None:
-        mapping['model_eval'] = data.model_eval_str
-    return dumper.represent_mapping('!Region', mapping)
-
-
-def _region_group_representer(
-    dumper: yaml.Dumper, data: RegionGroup, *, depth_limit: int | None = None
-) -> yaml.Node:
-    mapping: dict[str, object] = data.to_dict()
-    if data.children:
-        if depth_limit is None or depth_limit <= 0:
-            mapping['children'] = data.children
-    return dumper.represent_mapping('!RegionGroup', mapping)
-
-
-def _indexed_region_group_representer(
-    dumper: yaml.Dumper, data: IndexedRegionGroup
-) -> yaml.Node:
-    mapping: dict[str, object] = {}
-
-    mapping['id'] = data.id
-    mapping['label_path'] = '.'.join(map(str, data.label_path))
-    mapping['depth'] = data.depth
-    mapping['weight'] = data.weight
-
-    mapping['constraints'] = data.constraints
-    mapping['introduced_constraint'] = data.constraints[-1]
-    if (region := data.region) is not None:
-        mapping['invariant'] = region.invariant_str
-        mapping['example_input'] = region.model_str
-        mapping['example_output'] = region.model_eval_str
-
-    mapping['n_children_regions'] = len(data.children)
-    mapping['children'] = data.children
-    return dumper.represent_mapping('tag:yaml.org,2002:map', mapping)
-    # return dumper.represent_mapping('!IndexedRegionGroup', mapping)
-
-
-def mk_dumper(*, depth_limit: int | None = None) -> type[yaml.Dumper]:
-    class RegionDecompDumper(yaml.Dumper):
-        pass
-
-    RegionDecompDumper.add_representer(
-        RegionStr,
-        _region_str_representer,
-    )
-
-    def _rg_representer(dumper: yaml.Dumper, data: RegionGroup) -> yaml.Node:
-        next_limit = None if depth_limit is None else depth_limit - 1
-        return _region_group_representer(dumper, data, depth_limit=next_limit)
-
-    RegionDecompDumper.add_representer(RegionGroup, _rg_representer)
-    RegionDecompDumper.add_representer(
-        IndexedRegionGroup, _indexed_region_group_representer
-    )
-    RegionDecompDumper.add_representer(str, str_representer)
-    return RegionDecompDumper

@@ -1,19 +1,24 @@
+import os
+from pathlib import Path
+
 import imandrax_api
-from imandrax_api.lib import RegionStr
-from inline_snapshot import snapshot
+import pytest
+from devtools import pformat
+from inline_snapshot import external_file, snapshot
 
-from imandrax_api_models.region_decomp import HumDecomposeRes, RegionGroup
+from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.proto_models import DecomposeRes
+from imandrax_api_models.region_decomp import (
+    EnrichedDecomposeRes,
+    RegionGroup,
+    get_leaf_groups,
+)
+
+fence_py = lambda s: f'```python\n{s}\n```'
 
 
-def trust():
-    import os
-    from typing import NoReturn
-
-    import dotenv
-
-    from imandrax_api_models.client import ImandraXClient
-
-    dotenv.load_dotenv()
+@pytest.fixture
+def decomp_res_classify() -> DecomposeRes:
     c = ImandraXClient(
         url=imandrax_api.url_prod,
         auth_token=os.environ['IMANDRAX_API_KEY'],
@@ -31,356 +36,154 @@ def trust():
         if y > 0 then 5
         else 6"""
     _eval_res = c.eval_src(IML_CODE)
-    decomp_res = c.decompose(name='classify')
+    return c.decompose(name='classify', string_results=True, prune=True)
 
-    def raise_(exc: BaseException) -> NoReturn:
-        raise exc
 
-    regions: list[RegionStr] = (
-        decomp_res.regions_str
-        if (decomp_res.regions_str)
-        else (raise_(ValueError('No regions')))
+@pytest.fixture
+def decomp_res_six_swiss() -> DecomposeRes:
+    c = ImandraXClient(
+        url=imandrax_api.url_dev,
+        auth_token=os.environ['IMANDRAX_API_KEY'],
     )
-    return regions
+    IML_CODE = (Path(__file__).parent / 'data/six_swiss.iml').read_text()
+    _eval_res = c.eval_src(IML_CODE)
+    return c.decompose(name='match_price', string_results=True, prune=True)
 
 
-def test():
-    # regions = trust()
-    # assert regions == snapshot()
-    regions = [
-        RegionStr(
-            constraints_str=['x <= 0', 'y <= 0'],
-            invariant_str='6',
-            model_str={'x': '0', 'y': '0'},
-            model_eval_str='6',
-        ),
-        RegionStr(
-            constraints_str=['y >= 1', 'x <= 0'],
-            invariant_str='5',
-            model_str={'x': '0', 'y': '1'},
-            model_eval_str='5',
-        ),
-        RegionStr(
-            constraints_str=['x >= 1', 'y >= (-10)', 'y <= 0'],
-            invariant_str='4',
-            model_str={'x': '1', 'y': '0'},
-            model_eval_str='4',
-        ),
-        RegionStr(
-            constraints_str=['x >= 1', 'y <= (-11)'],
-            invariant_str='3',
-            model_str={'x': '1', 'y': '(-11)'},
-            model_eval_str='3',
-        ),
-        RegionStr(
-            constraints_str=['x <= y', 'x >= 1', 'y >= 1'],
-            invariant_str='2',
-            model_str={'x': '1', 'y': '1'},
-            model_eval_str='2',
-        ),
-        RegionStr(
-            constraints_str=['not (x <= y)', 'x >= 1', 'y >= 1'],
-            invariant_str='1',
-            model_str={'x': '2', 'y': '1'},
-            model_eval_str='1',
-        ),
-    ]
+def enrich_decomp_res_props(edr: EnrichedDecomposeRes) -> None:
+    assert edr.regions_str, 'Non-err decomp should have regions_str'
+    leaf_groups = get_leaf_groups(edr.region_groups)
+    assert len(leaf_groups) == len(edr.regions_str), 'Leaf groups ARE concrete regions'
+    for leaf_group in leaf_groups:
+        assert len(leaf_group.children) == 0, 'Leaf group must not have children'
+        assert leaf_group.region, 'Leaf group must be concrete'
+        assert leaf_group.region.constraints_str
+        assert set(leaf_group.constraints) == set(leaf_group.region.constraints_str)
 
-    hdr = HumDecomposeRes.from_regions(regions)
-    assert hdr.to_tree_str() == snapshot("""\
-├── [1] constraint='x <= 0' invariant=None (w=2, n_children=2, n_descendants=2)
-│   ├── [1.1] constraint='y <= 0' invariant='6' (w=1, n_children=0, n_descendants=0)
-│   └── [1.1.2] constraint='y >= 1' invariant='5' (w=1, n_children=0, n_descendants=0)
-├── [1.2.1.1] constraint='y >= (-10)' invariant='4' (w=1, n_children=0, n_descendants=0)
-├── [1.2.3] constraint='y >= 1' invariant=None (w=2, n_children=2, n_descendants=2)
-│   ├── [1.2.3.1.1] constraint='x >= 1' invariant='2' (w=1, n_children=0, n_descendants=0)
-│   └── [1.2.3.1.2.1] constraint='not (x <= y)' invariant='1' (w=1, n_children=0, n_descendants=0)
-└── [1.2.3.4.1] constraint='y <= (-11)' invariant='3' (w=1, n_children=0, n_descendants=0)\
-""")
-    hdr_dict_hierarchy = hdr.to_dict_hierarchical()
-    hdr_dict_flat = hdr.to_dict_flat()
-    label_path_n_children_map_flat: list[tuple[str, int]] = [
-        ('.'.join(map(str, irg.label_path)), len(irg.children))
-        for irg in hdr_dict_flat['region_groups']
-    ]
 
-    # ::: test-child-count
-    def _collect_hierarchy(groups: list[RegionGroup]) -> list[tuple[str, int]]:
-        result: list[tuple[str, int]] = []
-        for rg in groups:
-            result.append(('.'.join(map(str, rg.label_path)), len(rg.children)))
-            if rg.children:
-                result.extend(_collect_hierarchy(rg.children))
-        return result
+def test_complex_decomp(decomp_res_six_swiss):
+    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_six_swiss)
+    enrich_decomp_res_props(edr)
 
-    label_path_n_children_map_hierarchy: list[tuple[str, int]] = _collect_hierarchy(
-        hdr_dict_hierarchy['region_groups']
+    leaf_groups = get_leaf_groups(edr.region_groups)
+    assert fence_py(pformat(leaf_groups)) == external_file(
+        'data/test_complex_decomp.leaf_groups.expected', format='.txt'
     )
-    assert sorted(label_path_n_children_map_flat) == sorted(
-        label_path_n_children_map_hierarchy
-    )
-    # :::
-
-    assert (hdr.dumper_func()(hdr_dict_hierarchy)) == snapshot("""\
-summary:
-  n_regions: 6
-region_groups:
-- !RegionGroup
-  label_path: '1'
-  constraints:
-  - x <= 0
-  introduced_constraint: x <= 0
-  weight: 2
-  n_children_regions: 2
-  n_descendant_regions: 2
-  n_leaf_regions: 2
-  children:
-  - !RegionGroup
-    label_path: '1.1'
-    constraints:
-    - x <= 0
-    - y <= 0
-    introduced_constraint: y <= 0
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '6'
-    example_input:
-      x: '0'
-      y: '0'
-    example_output: '6'
-  - !RegionGroup
-    label_path: 1.1.2
-    constraints:
-    - x <= 0
-    - y <= 0
-    - y >= 1
-    introduced_constraint: y >= 1
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '5'
-    example_input:
-      x: '0'
-      y: '1'
-    example_output: '5'
-- !RegionGroup
-  label_path: 1.2.1.1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - x >= 1
-  - y >= (-10)
-  introduced_constraint: y >= (-10)
-  weight: 1
-  n_children_regions: 0
-  n_descendant_regions: 0
-  n_leaf_regions: 1
-  invariant: '4'
-  example_input:
-    x: '1'
-    y: '0'
-  example_output: '4'
-- !RegionGroup
-  label_path: 1.2.3
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  introduced_constraint: y >= 1
-  weight: 2
-  n_children_regions: 2
-  n_descendant_regions: 2
-  n_leaf_regions: 2
-  children:
-  - !RegionGroup
-    label_path: 1.2.3.1.1
-    constraints:
-    - x <= 0
-    - y <= 0
-    - y >= 1
-    - x <= y
-    - x >= 1
-    introduced_constraint: x >= 1
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '2'
-    example_input:
-      x: '1'
-      y: '1'
-    example_output: '2'
-  - !RegionGroup
-    label_path: 1.2.3.1.2.1
-    constraints:
-    - x <= 0
-    - y <= 0
-    - y >= 1
-    - x <= y
-    - x >= 1
-    - not (x <= y)
-    introduced_constraint: not (x <= y)
-    weight: 1
-    n_children_regions: 0
-    n_descendant_regions: 0
-    n_leaf_regions: 1
-    invariant: '1'
-    example_input:
-      x: '2'
-      y: '1'
-    example_output: '1'
-- !RegionGroup
-  label_path: 1.2.3.4.1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  - x >= 1
-  - y <= (-11)
-  introduced_constraint: y <= (-11)
-  weight: 1
-  n_children_regions: 0
-  n_descendant_regions: 0
-  n_leaf_regions: 1
-  invariant: '3'
-  example_input:
-    x: '1'
-    y: (-11)
-  example_output: '3'
+    assert edr.to_tree_str() == snapshot("""\
+├── [1] new_constraint='ob.buys <> []' n_leaf_regions=43
+│   ├── [1.1] new_constraint='ob.sells <> []' n_leaf_regions=42
+│   │   ├── [1.1.1] new_constraint='(List.hd ob.buys).order_type <> Limit' n_leaf_regions=34
+│   │   │   ├── [1.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Limit' n_leaf_regions=28
+│   │   │   │   ├── [1.1.1.1.1] new_constraint='(List.hd ob.buys).order_type = Market' n_leaf_regions=21
+│   │   │   │   │   ├── [1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty' n_leaf_regions=17
+│   │   │   │   │   │   ├── [1.1.1.1.1.1.1] new_constraint='(List.hd ob.sells).order_type = Market' n_leaf_regions=15
+│   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1] new_constraint='List.tl ob.buys <> []' n_leaf_regions=11
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1] new_constraint='List.tl ob.sells <> []' n_leaf_regions=8
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.buys)).order_type <> Market' n_leaf_regions=5
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.buys)).order_price <=. ref_price' n_leaf_regions=3
+│   │   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1.1] new_constraint='(List.hd (List.tl ob.sells)).order_type <> Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.1.1.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.1.1.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.1.2] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.buys)).order_price >. ref_price' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.1.3.1] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.2] new_constraint='(List.hd (List.tl ob.buys)).order_type = Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.1.2.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.2.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.1.3.1] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.2] new_constraint='List.tl ob.sells = []' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.buys)).order_price <=. ref_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.2.2] new_constraint='(List.hd (List.tl ob.buys)).order_price >. ref_price' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.1.3.1] new_constraint='List.tl ob.sells = []' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2] new_constraint='List.tl ob.buys = []' n_leaf_regions=3
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2.1] new_constraint='(List.hd (List.tl ob.sells)).order_type <> Market' n_leaf_regions=2
+│   │   │   │   │   │   │   │   │   ├── [1.1.1.1.1.1.1.2.1.1] new_constraint='ref_price <=. (List.hd (List.tl ob.sells)).order_price' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.2.1.2] new_constraint='ref_price >. (List.hd (List.tl ob.sells)).order_price' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.2.2] new_constraint='(List.hd (List.tl ob.sells)).order_type = Market' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.1.1.1.1.1.3.1] new_constraint='List.tl ob.sells = []' invariant='Some ref_price' is_leaf=True
+│   │   │   │   │   │   ├── [1.1.1.1.1.1.2.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   └── [1.1.1.1.1.1.3.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   ├── [1.1.1.1.1.2.1] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   └── [1.1.1.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' n_leaf_regions=3
+│   │   │   │   │       ├── [1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=2
+│   │   │   │   │       │   ├── [1.1.1.1.1.1.1.1] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │       │   └── [1.1.1.1.1.1.2] new_constraint='(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │       └── [1.1.1.1.1.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   ├── [1.1.1.1.2] new_constraint='(List.hd ob.buys).order_type <> Market' n_leaf_regions=5
+│   │   │   │   │   ├── [1.1.1.1.2.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=4
+│   │   │   │   │   │   ├── [1.1.1.1.2.1.1] new_constraint='(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty' n_leaf_regions=3
+│   │   │   │   │   │   │   ├── [1.1.1.1.2.1.1.1] new_constraint='(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty' n_leaf_regions=2
+│   │   │   │   │   │   │   │   ├── [1.1.1.1.2.1.1.1.1] new_constraint='List.tl ob.sells <> []' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   │   │   │   │   └── [1.1.1.1.2.1.1.1.2] new_constraint='List.tl ob.sells = []' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.1.1.2.1.1.2] new_constraint='(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   │   └── [1.1.1.1.2.1.2] new_constraint='(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   └── [1.1.1.1.2.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   ├── [1.1.1.1.3.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   └── [1.1.1.1.4.1.1] new_constraint='(List.hd ob.sells).order_type <> Market' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.2.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.3] new_constraint='(List.hd ob.sells).order_type = Limit' n_leaf_regions=2
+│   │   │   │   ├── [1.1.1.3.1] new_constraint='List.tl ob.sells <> []' invariant='Some (List.hd (List.tl ob.sells)).order_price' is_leaf=True
+│   │   │   │   └── [1.1.1.3.2] new_constraint='List.tl ob.sells = []' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   ├── [1.1.1.4] new_constraint='(List.hd ob.sells).order_type = Limit' n_leaf_regions=2
+│   │   │   │   ├── [1.1.1.4.1.1] new_constraint='(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty' invariant='None' is_leaf=True
+│   │   │   │   └── [1.1.1.4.2] new_constraint='(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   └── [1.1.1.5.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   ├── [1.1.2] new_constraint='(List.hd ob.buys).order_type = Limit' n_leaf_regions=6
+│   │   │   ├── [1.1.2.1] new_constraint='(List.hd ob.sells).order_type <> Market' n_leaf_regions=5
+│   │   │   │   ├── [1.1.2.1.1] new_constraint='(List.hd ob.buys).order_time > (List.hd ob.sells).order_time' n_leaf_regions=4
+│   │   │   │   │   ├── [1.1.2.1.1.1] new_constraint='(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty' n_leaf_regions=3
+│   │   │   │   │   │   ├── [1.1.2.1.1.1.1] new_constraint='(List.hd ob.sells).order_qty = (List.hd ob.buys).order_qty' n_leaf_regions=2
+│   │   │   │   │   │   │   ├── [1.1.2.1.1.1.1.1] new_constraint='List.tl ob.buys <> []' invariant='Some (List.hd (List.tl ob.buys)).order_price' is_leaf=True
+│   │   │   │   │   │   │   └── [1.1.2.1.1.1.1.2] new_constraint='List.tl ob.buys = []' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   │   │   │   └── [1.1.2.1.1.1.2] new_constraint='(List.hd ob.sells).order_qty <> (List.hd ob.buys).order_qty' invariant='None' is_leaf=True
+│   │   │   │   │   └── [1.1.2.1.1.2] new_constraint='(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   │   │   └── [1.1.2.1.2] new_constraint='(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   │   └── [1.1.2.2] new_constraint='(List.hd ob.sells).order_type = Market' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   │   ├── [1.1.3.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.sells).order_price' is_leaf=True
+│   │   └── [1.1.4.1.1] new_constraint='(List.hd ob.sells).order_type = Limit' invariant='Some (List.hd ob.buys).order_price' is_leaf=True
+│   └── [1.2] new_constraint='ob.sells = []' invariant='None' is_leaf=True
+└── [2] new_constraint='ob.buys = []' invariant='None' is_leaf=True\
 """)
 
-    assert (hdr.dumper_func()(hdr_dict_flat)) == snapshot("""\
-summary:
-  n_regions: 6
-region_groups:
-- id: '0'
-  label_path: '1'
-  depth: 1
-  weight: 2
-  constraints:
-  - x <= 0
-  introduced_constraint: x <= 0
-  n_children_regions: 2
-  children:
-  - '4'
-  - '5'
-- id: '4'
-  label_path: '1.1'
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  introduced_constraint: y <= 0
-  invariant: '6'
-  example_input:
-    x: '0'
-    y: '0'
-  example_output: '6'
-  n_children_regions: 0
-  children: []
-- id: '5'
-  label_path: 1.1.2
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  introduced_constraint: y >= 1
-  invariant: '5'
-  example_input:
-    x: '0'
-    y: '1'
-  example_output: '5'
-  n_children_regions: 0
-  children: []
-- id: '1'
-  label_path: 1.2.1.1
-  depth: 1
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - x >= 1
-  - y >= (-10)
-  introduced_constraint: y >= (-10)
-  invariant: '4'
-  example_input:
-    x: '1'
-    y: '0'
-  example_output: '4'
-  n_children_regions: 0
-  children: []
-- id: '2'
-  label_path: 1.2.3
-  depth: 1
-  weight: 2
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  introduced_constraint: y >= 1
-  n_children_regions: 2
-  children:
-  - '6'
-  - '7'
-- id: '6'
-  label_path: 1.2.3.1.1
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  - x <= y
-  - x >= 1
-  introduced_constraint: x >= 1
-  invariant: '2'
-  example_input:
-    x: '1'
-    y: '1'
-  example_output: '2'
-  n_children_regions: 0
-  children: []
-- id: '7'
-  label_path: 1.2.3.1.2.1
-  depth: 2
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  - x <= y
-  - x >= 1
-  - not (x <= y)
-  introduced_constraint: not (x <= y)
-  invariant: '1'
-  example_input:
-    x: '2'
-    y: '1'
-  example_output: '1'
-  n_children_regions: 0
-  children: []
-- id: '3'
-  label_path: 1.2.3.4.1
-  depth: 1
-  weight: 1
-  constraints:
-  - x <= 0
-  - y <= 0
-  - y >= 1
-  - x >= 1
-  - y <= (-11)
-  introduced_constraint: y <= (-11)
-  invariant: '3'
-  example_input:
-    x: '1'
-    y: (-11)
-  example_output: '3'
-  n_children_regions: 0
-  children: []
+
+def test_simple_decomp(decomp_res_classify):
+    edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_classify)
+    enrich_decomp_res_props(edr)
+
+    leaf_groups = get_leaf_groups(edr.region_groups)
+    assert fence_py(pformat(leaf_groups)) == external_file(
+        'data/test_simple_decomp.leaf_groups.expected', format='.txt'
+    )
+
+    # region_groups is auto-populated on validation from regions_str.
+    assert edr.to_tree_str() == snapshot("""\
+├── [1] new_constraint='x >= 1' n_leaf_regions=4
+│   ├── [1.1] new_constraint='y >= 1' n_leaf_regions=2
+│   │   ├── [1.1.1] new_constraint='x <= y' invariant='2' is_leaf=True
+│   │   └── [1.1.2] new_constraint='x > y' invariant='1' is_leaf=True
+│   ├── [1.2] new_constraint='y <= (-11)' invariant='3' is_leaf=True
+│   └── [1.3.1] new_constraint='y >= (-10)' invariant='4' is_leaf=True
+├── [2.1] new_constraint='x <= 0' invariant='5' is_leaf=True
+└── [3.1] new_constraint='y <= 0' invariant='6' is_leaf=True\
 """)
+
+    # (label_path, full constraint path) for every node, depth-first.
+    def _walk(groups: list[RegionGroup]) -> list[tuple[str, list[str]]]:
+        out: list[tuple[str, list[str]]] = []
+        for g in groups:
+            out.append(('.'.join(map(str, g.label_path)), g.constraints))
+            out.extend(_walk(g.children))
+        return out
+
+    assert _walk(edr.region_groups) == snapshot(
+        [
+            ('1', ['x >= 1']),
+            ('1.1', ['x >= 1', 'y >= 1']),
+            ('1.1.1', ['x >= 1', 'y >= 1', 'x <= y']),
+            ('1.1.2', ['x >= 1', 'y >= 1', 'x > y']),
+            ('1.2', ['x >= 1', 'y <= (-11)']),
+            ('1.3.1', ['x >= 1', 'y <= 0', 'y >= (-10)']),
+            ('2.1', ['y >= 1', 'x <= 0']),
+            ('3.1', ['x <= 0', 'y <= 0']),
+        ]
+    )
