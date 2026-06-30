@@ -46,7 +46,6 @@ function statsHtml(node: Node): string {
     stat('leaf regions', node.leaves().length),
     stat('direct children', nChildren),
     stat('descendants', node.descendants().length - 1),
-    nChildren === 0 ? '<span><b>concrete region</b></span>' : '',
   ]
     .filter(Boolean)
     .join('');

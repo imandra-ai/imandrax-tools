@@ -1,6 +1,6 @@
-// Shared coloring for both views. Each top-level branch gets a stable Tableau
-// hue; cells grow paler with depth, so a subtree reads as one color family and
-// dark labels stay legible.
+// Icicle coloring: each top-level branch gets a stable Tableau hue, and cells
+// grow paler with depth, so a subtree reads as one color family. (The treemap
+// uses a single flat tile color from style.ts, not this.)
 
 import { scaleOrdinal } from 'd3-scale';
 import { schemeTableau10 } from 'd3-scale-chromatic';

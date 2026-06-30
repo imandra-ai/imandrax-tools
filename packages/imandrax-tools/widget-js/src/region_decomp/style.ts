@@ -3,7 +3,7 @@
 // self-contained in any host without a separate stylesheet. Each view injects
 // SHARED_STYLE plus its own layout block.
 
-export const ROOT_CLASS = 'imdx-rd';
+export const ROOT_CLASS = "imdx-rd";
 
 // Shared: the flex container, the detail panel, and the cell/tile label spans —
 // everything both the icicle and the treemap use.
@@ -62,10 +62,14 @@ export const TREEMAP_STYLE = `
 .${ROOT_CLASS}-tiles { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 .${ROOT_CLASS}-tile { position: absolute; overflow: hidden; cursor: pointer;
   border-radius: 3px; padding: 3px 6px; line-height: 1.2; white-space: nowrap;
+  background:rgb(114, 148, 186);
   border: 1px solid rgba(255, 255, 255, 0.85);
   transition: left 0.32s ease, top 0.32s ease, width 0.32s ease, height 0.32s ease,
     filter 0.08s ease, outline-color 0.08s ease;
   outline: 2px solid transparent; outline-offset: -2px; }
 .${ROOT_CLASS}-tile:hover { filter: brightness(0.94); }
 .${ROOT_CLASS}-tile.is-selected { outline-color: #d6336c; }
+.${ROOT_CLASS}-tile.is-leaf { border-width: 2px; border-color: rgba(26, 29, 33, 0.5); }
+.${ROOT_CLASS}-tile.is-ghost { background: none; pointer-events: none;
+  border: 1px solid rgba(26, 29, 33, 0.25); }
 `;
