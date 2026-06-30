@@ -53,6 +53,18 @@ const DEFAULTS = {
 // hint. Flip to taste.
 const GHOST_ALL_LEAVES = true;
 
+// Default for the breadcrumb "leaf counts" toggle. When on, each frontier tile
+// (the deepest solid tiles, whose body is the ghost partition) shows its
+// leaf-descendant count centered behind the ghosts. Flipped at runtime by the
+// checkbox; this only sets its initial state.
+const SHOW_LEAF_COUNT_DEFAULT = true;
+
+// Build-time: append the leaf-descendant count to the title of interior tiles
+// that don't show a ghost layer (e.g. "1.1 (42)"), so groupings carry their
+// size even when their body is covered by solid children. Frontier tiles use
+// the centered count instead, so they never get the title suffix.
+const SHOW_TITLE_LEAF_COUNT = true;
+
 const TOPBAR_H = 31; // breadcrumb bar height, for the jsdom size fallback
 const MIN_TILE_PX = 2; // tiles smaller than this on a side are culled
 const LABEL_MIN_W = 40; // tile must be this wide to show a label
@@ -200,6 +212,7 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
   // State: `selected` is the zoom root, `picked` is the node whose detail shows.
   let selected: Rect = root as Rect;
   let picked: Rect | null = null;
+  let showLeafCount = SHOW_LEAF_COUNT_DEFAULT;
   let laidOutW = 0;
   let laidOutH = 0;
 
@@ -268,6 +281,20 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
     meta.style.marginLeft = 'auto';
     meta.textContent = nodeSummary(selected);
     topbar.appendChild(meta);
+
+    const toggle = document.createElement('label');
+    toggle.className = `${ROOT_CLASS}-toggle`;
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = showLeafCount;
+    box.addEventListener('change', () => {
+      showLeafCount = box.checked;
+      renderTiles();
+    });
+    const txt = document.createElement('span');
+    txt.textContent = 'leaf counts';
+    toggle.append(box, txt);
+    topbar.appendChild(toggle);
   }
 
   function renderTiles(): void {
@@ -302,7 +329,7 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
       .style('width', (d) => `${round2(d.box.width)}px`)
       .style('height', (d) => `${round2(d.box.height)}px`)
       .attr('title', (d) => (d.ghost ? null : tileTooltip(d.node)))
-      .html((d) => (!d.ghost && tileLabel(d.box) ? cellLabel(d.node) : ''))
+      .html((d) => tileInner(d, frontierDepth, showLeafCount))
       .on('click', (_event, d) => {
         if (d.ghost) return;
         pickedEl = currentTarget(_event);
@@ -329,8 +356,32 @@ function tileLabel(box: Box): boolean {
   return box.width >= LABEL_MIN_W && box.height >= LABEL_MIN_H;
 }
 
-function cellLabel(node: Rect): string {
-  return `<span class="${ROOT_CLASS}-lp">${esc(labelPath(node))}</span> <span class="${ROOT_CLASS}-cst">${esc(introducedConstraint(node))}</span>`;
+// A frontier tile is big enough to carry a centered leaf-count without the
+// number spilling or crowding the corner label.
+function countFits(box: Box): boolean {
+  return box.width >= 26 && box.height >= 22;
+}
+
+// Inner HTML for a tile: the corner label, plus — on frontier tiles when the
+// toggle is on — the leaf-descendant count centered behind the ghost partition.
+// Ghosts carry neither.
+function tileInner(item: Item, frontierDepth: number, showLeafCount: boolean): string {
+  if (item.ghost) return '';
+  const isFrontier = item.node.depth === frontierDepth && zoomable(item.node);
+  // Interior groupings show no ghost layer, so the count rides in their title.
+  const titleCount = SHOW_TITLE_LEAF_COUNT && !isFrontier && zoomable(item.node);
+  let html = tileLabel(item.box) ? cellLabel(item.node, titleCount) : '';
+  if (showLeafCount && isFrontier && countFits(item.box)) {
+    html += `<span class="${ROOT_CLASS}-count">${item.node.leaves().length}</span>`;
+  }
+  return html;
+}
+
+function cellLabel(node: Rect, withCount = false): string {
+  const cnt = withCount
+    ? ` <span class="${ROOT_CLASS}-cnt">(${node.leaves().length})</span>`
+    : '';
+  return `<span class="${ROOT_CLASS}-lp">${esc(labelPath(node))}</span>${cnt} <span class="${ROOT_CLASS}-cst">${esc(introducedConstraint(node))}</span>`;
 }
 
 function tileTooltip(node: Rect): string {

@@ -72,4 +72,11 @@ export const TREEMAP_STYLE = `
 .${ROOT_CLASS}-tile.is-leaf { border-width: 2px; border-color: rgba(26, 29, 33, 0.5); }
 .${ROOT_CLASS}-tile.is-ghost { background: none; pointer-events: none;
   border: 1px solid rgba(26, 29, 33, 0.25); }
+.${ROOT_CLASS}-count { position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 20px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: #000; pointer-events: none; }
+.${ROOT_CLASS}-cnt { font-weight: 600; color: #000; font-variant-numeric: tabular-nums; }
+.${ROOT_CLASS}-toggle { display: inline-flex; align-items: center; gap: 4px; margin-left: 12px;
+  color: #6b727b; cursor: pointer; user-select: none; }
+.${ROOT_CLASS}-toggle input { margin: 0; cursor: pointer; }
 `;
