@@ -22,7 +22,7 @@ const stripLineComments = (text) => text.replace(/^\s*\/\/.*$/gm, "");
 const examples = {};
 for (const file of readdirSync(fixtureDir).sort()) {
   if (file.endsWith(".jsonc")) {
-    const name = file.replace(/\.jsonc$/, "");
+    const name = file.split(".")[0];
     const raw = readFileSync(resolve(fixtureDir, file), "utf8");
     examples[name] = JSON.parse(stripLineComments(raw));
   }

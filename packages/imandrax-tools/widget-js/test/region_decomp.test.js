@@ -3,18 +3,16 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { draw } from '../src/region_decomp/draw.js';
-import { toForest } from '../src/region_decomp/to_forest.js';
+import { draw } from '../src/region_decomp/draw';
 
-// Fixtures are raw EnrichedDecomposeRes dumps generated from real API output by
-// scripts/gen_fixtures.py (.jsonc, with a leading `//` header). We enrich them
-// via toForest exactly as the host does, so these tests exercise the actual
-// forest the widget is handed.
+// Fixtures are raw decomposition dumps generated from real API output by
+// scripts/gen_fixtures.py (.jsonc, with a leading `//` header). draw consumes
+// them as-is, so these tests exercise the actual data the widget is handed.
 function loadFixture(name) {
   // vitest runs with the package dir as cwd.
   const path = resolve(process.cwd(), `test/fixtures/region_decomp/${name}.enriched_decompose_res.jsonc`);
   const raw = readFileSync(path, 'utf8').replace(/^\s*\/\/.*$/gm, '');
-  return toForest(JSON.parse(raw));
+  return JSON.parse(raw);
 }
 
 const classify = loadFixture('classify');
