@@ -1,0 +1,25 @@
+{
+  "name": "imandrax-api-widget",
+  "version": "0.1.0",
+  "description": "Read-only visualization widgets for imandrax-api dataclasses.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/region_decomp/index.js --bundle --format=esm --minify --outfile=dist/region_decomp.js",
+    "dev": "esbuild src/region_decomp/index.js --bundle --format=esm --watch --outfile=dist/region_decomp.js",
+    "gallery": "node scripts/gallery/build_gallery.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "d3-hierarchy": "^3.1.2",
+    "d3-scale": "^4.0.2",
+    "d3-scale-chromatic": "^3.1.0",
+    "d3-selection": "^3.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.0"
+  }
+}
