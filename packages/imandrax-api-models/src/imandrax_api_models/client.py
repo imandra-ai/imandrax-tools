@@ -2,7 +2,7 @@
 
 import os
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, Literal
@@ -834,7 +834,26 @@ def end_session(
 # ====================
 
 
-def get_task_artifacts(task: Task, c: ImandraXClient) -> dict[str, Any]:
+def _sort_artifact_kinds(
+    art_kinds: list[str],
+) -> list[str]:
+    art_kind_order = [
+        ('po_task', 0),
+        ('po_res', 1),
+        ('decomp_task', 2),
+        ('decomp_res', 3),
+        ('show', 1000),
+        ('report', 1001),
+    ]
+    art_kinds = sorted(art_kinds, key=(lambda k: dict(art_kind_order).get(k, 100)))
+    return art_kinds
+
+
+def get_task_artifacts(
+    task: Task,
+    c: ImandraXClient,
+    exclude_artifact_kinds: Sequence[str] = ('show', 'report'),
+) -> dict[str, Any]:
     """
     Get the artifacts for a task, decoded into imandrax-api binding values.
 
@@ -846,23 +865,13 @@ def get_task_artifacts(task: Task, c: ImandraXClient) -> dict[str, Any]:
     twine = imandrax_api.lib.twine
 
     art_kinds = c.list_artifacts(task).kinds
-    # Artifact order: PO task > PO res > other
-    art_kind_order = [
-        ('po_task', 0),
-        ('po_res', 1),
-        ('decomp_task', 2),
-        ('decomp_res', 3),
-        ('show', 1000),
-        ('report', 1001),
-    ]
-    art_kinds = sorted(
-        art_kinds,
-        key=(lambda k: dict(art_kind_order).get(k, 100)),
-    )
+    art_kinds = _sort_artifact_kinds(art_kinds)
 
     # artifact-kind -> xvalue decoded from artifact
     xvalues: dict[str, Any] = {}
     for art_kind in art_kinds:
+        if art_kind in exclude_artifact_kinds:
+            continue
         art: Art = c.get_artifact(task=task, kind=art_kind).art
         d = twine.Decoder(art.data)
         x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
@@ -872,7 +881,9 @@ def get_task_artifacts(task: Task, c: ImandraXClient) -> dict[str, Any]:
 
 
 async def async_get_task_artifacts(
-    task: Task, c: ImandraXAsyncClient
+    task: Task,
+    c: ImandraXAsyncClient,
+    exclude_artifact_kinds: Sequence[str] = ('show', 'report'),
 ) -> dict[str, Any]:
     """
     Get the artifacts for a task, decoded into imandrax-api binding values.
@@ -886,15 +897,13 @@ async def async_get_task_artifacts(
 
     async with c as c:
         art_kinds = (await c.list_artifacts(task)).kinds
-        # Artifact order: PO task > PO res > other
-        art_kinds = sorted(
-            art_kinds,
-            key=(lambda k: 0 if k == 'po_task' else 1 if k == 'po_res' else 2),
-        )
+        art_kinds = _sort_artifact_kinds(art_kinds)
 
         # artifact-kind -> xvalue decoded from artifact
         xvalues: dict[str, Any] = {}
         for art_kind in art_kinds:
+            if art_kind in exclude_artifact_kinds:
+                continue
             art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
             d = twine.Decoder(art.data)
             x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
