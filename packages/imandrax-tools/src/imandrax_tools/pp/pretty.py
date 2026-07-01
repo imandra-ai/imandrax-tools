@@ -116,6 +116,36 @@ def group(doc: Doc) -> Doc:
     return Group(doc)
 
 
+def flatten(doc: Doc) -> Doc:
+    """
+    Force `doc` onto a single line, unconditionally.
+
+    Unlike `group` (which lays out flat only when it fits the width), this
+    rewrites every potential break to its flat form regardless of width:
+    `Line` becomes a space, `LineBreak` vanishes, `Group`/`FlatAlt` collapse to
+    their flat branch. `HardLine` cannot be flattened and is left intact.
+    """
+    match doc:
+        case Nil() | Text() | HardLine():
+            return doc
+        case Line():
+            return Text(' ')
+        case LineBreak():
+            return nil
+        case Concat(left, right):
+            return Concat(flatten(left), flatten(right))
+        case Nest(i, inner):
+            return Nest(i, flatten(inner))
+        case Group(inner):
+            return flatten(inner)
+        case FlatAlt(_, flat):
+            return flatten(flat)
+        case Prefix(p, inner):
+            return Prefix(p, flatten(inner))
+        case _:
+            assert_never(doc)
+
+
 def flat_alt(default: Doc, flat: Doc) -> Doc:
     return FlatAlt(default, flat)
 
