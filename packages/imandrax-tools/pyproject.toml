@@ -22,6 +22,9 @@ extended-client = [
 codegen = [
     "imandrax-codegen>=20.0.0, <21.0.0",
 ]
+widget = [
+    "anywidget>=0.11.0",
+]
 
 [tool.uv.sources]
 imandrax-codegen = { path = "../imandrax-codegen", editable = true }
