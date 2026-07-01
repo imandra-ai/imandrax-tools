@@ -13,23 +13,29 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
-from typing import Any, assert_never, cast
+from typing import Any, Literal, assert_never, cast
 
 import imandrax_api.lib as xtype
 
 from . import pretty as Pp
 from ._common import *
 from ._common import fmt_duration
-from .decomp import region_meta2doc, region_meta_assoc2doc
+from .decomp import (
+    drop_meta_paths,
+    region_meta2doc as region_meta2doc_,
+    region_meta_assoc2doc,
+)
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .model_formatter import model2doc
 from .pretty import (
     Doc,
     enclose_sep,
+    flatten,
     group,
     hcat,
     line,
     nil,
+    punctuate,
     python_dict,
     python_obj,
     python_quote,
@@ -44,6 +50,17 @@ from .type_formatter import type2doc as type2doc_
 
 def term2doc(t: Term) -> Doc:
     return python_obj('Term', [(None, python_quote(term2doc_(t)))])
+
+
+def terms2doc(ts: list[Term], flatten_terms: bool = False) -> Doc:
+    """Show terms in one `Terms(t1, t2, ...)` block."""
+    term_docs = (
+        [hcat(text("'"), flatten(term2doc_(t)), text("'")) for t in ts]
+        if flatten_terms
+        else [term2doc_(t) for t in ts]
+    )
+    inner = punctuate(text(', '), term_docs)
+    return hcat(text('Terms('), inner, text(')'))
 
 
 def type2doc(t: Type) -> Doc:
@@ -70,6 +87,16 @@ class PrinterConfig:
     """Replace body of success cases with `...`"""
     report_expand_payloads: bool = False
     """render full models/SMT proofs in reports"""
+    region_repr: Literal['full', 'compact'] = 'compact'
+    """Region representation mode
+    - `full`: regular ADT (dataclass)
+    - `compact`: more compact
+    """
+    hide_region_meta_str_cons_inv: bool = True
+    """Hide constraints and invariant in region meta's str field
+    You'd want to enable this since constraints and invariants are
+    already shown in region
+    """
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
 
@@ -219,6 +246,11 @@ class Printer:
         dataclass2doc = partial(
             self.dataclass2doc,
             unwrap_single_arg=self.config.unwrap_single_arg_dataclass,
+        )
+        ignore_meta_paths: set[tuple[str, ...]] = (
+            {('str', 'constraints'), ('str', 'invariant')}
+            if self.config.hide_region_meta_str_cons_inv
+            else set()
         )
         match v:
             case bytes():
@@ -420,16 +452,31 @@ class Printer:
             # Decomp
             case xtype.Common_Fun_decomp_t_poly():
                 return dataclass2doc(v, with_name='FunDecomp')
-            case xtype.Common_Region_t_poly():
+            # TODO: make following two different modes provided by decomp.py
+            case xtype.Common_Region_t_poly() if self.config.region_repr == 'full':
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
                     key = fld.name
                     val = getattr(v, key)
                     if key == 'meta':
                         val = cast(AssocList[xtype.Common_Region_meta], val)
-                        # meta_doc = python_dict(
-                        #     [(python_quote(text(k)), self.value2doc(m)) for k, m in val]
-                        # )
+                        val = drop_meta_paths(val, ignore_meta_paths)
+                        meta_doc = region_meta_assoc2doc(val)
+                        rows.append(('meta', meta_doc))
+                    else:
+                        rows.append((key, self.value2doc(val)))
+                return python_obj('Region', rows)
+            case xtype.Common_Region_t_poly() if self.config.region_repr == 'compact':
+                rows: AssocList[Doc] = []
+                for fld in fields(v):
+                    key = fld.name
+                    val = getattr(v, key)
+                    if key == 'constraints':
+                        val = cast(list[xtype.Mir_Term], val)
+                        rows.append(('constraints', terms2doc(val)))
+                    elif key == 'meta':
+                        val = cast(AssocList[xtype.Common_Region_meta], val)
+                        val = drop_meta_paths(val, ignore_meta_paths)
                         meta_doc = region_meta_assoc2doc(val)
                         rows.append(('meta', meta_doc))
                     else:
