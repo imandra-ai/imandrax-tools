@@ -1,10 +1,8 @@
 import imandrax_api.lib as xtypes
 
 from . import pretty as Pp
-from ._common import Region, RegionMeta
+from ._common import AssocList, Region, RegionMeta
 from .term_formatter import term2doc
-
-type AssocList[T] = list[tuple[str, T]]
 
 
 def region_meta2doc(meta: RegionMeta) -> Pp.Doc:
@@ -30,7 +28,7 @@ def region_meta2doc(meta: RegionMeta) -> Pp.Doc:
             return Pp.assoc_list(assoc_lst_)
 
 
-def region_meta_assoc2doc(assoc: list[tuple[str, RegionMeta]]) -> Pp.Doc:
+def region_meta_assoc2doc(assoc: AssocList[RegionMeta]) -> Pp.Doc:
     assoc_lst_: list[tuple[str, Pp.Doc]] = [(k, region_meta2doc(v)) for (k, v) in assoc]
     return Pp.assoc_list(assoc_lst_)
 

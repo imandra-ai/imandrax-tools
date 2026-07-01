@@ -20,6 +20,7 @@ import imandrax_api.lib as xtype
 from . import pretty as Pp
 from ._common import *
 from ._common import fmt_duration
+from .decomp import region_meta2doc, region_meta_assoc2doc
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .model_formatter import model2doc
 from .pretty import (
@@ -228,6 +229,8 @@ class Printer:
             # --------------------
             case xtype.Mir_Term():
                 return term2doc(v)
+            case xtype.Mir_Type():
+                return type2doc(v)
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
@@ -414,8 +417,24 @@ class Printer:
                 return dataclass2doc(v, with_name='TacticDefaultTest')
             case xtype.Common_Tactic_t_poly_Term():
                 return dataclass2doc(v, with_name='Tactic')
-            case xtype.Mir_Type():
-                return type2doc(v)
+            # Decomp
+            case xtype.Common_Fun_decomp_t_poly():
+                return dataclass2doc(v, with_name='FunDecomp')
+            case xtype.Common_Region_t_poly():
+                rows: AssocList[Doc] = []
+                for fld in fields(v):
+                    key = fld.name
+                    val = getattr(v, key)
+                    if key == 'meta':
+                        val = cast(AssocList[xtype.Common_Region_meta], val)
+                        # meta_doc = python_dict(
+                        #     [(python_quote(text(k)), self.value2doc(m)) for k, m in val]
+                        # )
+                        meta_doc = region_meta_assoc2doc(val)
+                        rows.append(('meta', meta_doc))
+                    else:
+                        rows.append((key, self.value2doc(val)))
+                return python_obj('Region', rows)
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
