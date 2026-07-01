@@ -12,6 +12,8 @@ from devtools import pformat
 from imandrax_api.lib import RegionStr
 from pydantic import BaseModel, Field, model_validator
 
+from imandrax_api_models.pp.pretty import pretty
+from imandrax_api_models.pp.term_formatter import prettify, term2doc
 from imandrax_api_models.pp.xtype import to_string as xtype_to_string
 from imandrax_api_models.proto_models import Art, DecomposeRes
 
@@ -68,7 +70,15 @@ class Region:
 
     def stat(self) -> JSONObject:
         out = self.data.copy()
-        out['invariant_str'] = xtype_to_string(self.mir_region.invariant)
+        out['invariant_str'] = pretty(88, term2doc(self.mir_region.invariant))
+
+        if out.get('model_str') is None:
+            # If model_str is not set (in the case of `string_results=False`)
+            # try to get it from the feasible status
+            status = self.mir_region.status
+            match status:
+                case xtype.Common_Region_status_Feasible(arg=model):
+                    out['model_str'] = xtype_to_string(model)
         return out
 
     @classmethod
