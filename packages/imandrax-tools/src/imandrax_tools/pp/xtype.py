@@ -22,7 +22,7 @@ from ._common import *
 from ._common import fmt_duration
 from .decomp import (
     drop_meta_paths,
-    region_meta2doc as region_meta2doc_,
+    region_meta2doc,
     region_meta_assoc2doc,
 )
 from .goal_state import doc_of_sequent as Sequent2doc_raw
@@ -52,15 +52,11 @@ def term2doc(t: Term) -> Doc:
     return python_obj('Term', [(None, python_quote(term2doc_(t)))])
 
 
-def terms2doc(ts: list[Term], flatten_terms: bool = False) -> Doc:
+def terms2doc(ts: list[Term]) -> Doc:
     """Show terms in one `Terms(t1, t2, ...)` block."""
-    term_docs = (
-        [hcat(text("'"), flatten(term2doc_(t)), text("'")) for t in ts]
-        if flatten_terms
-        else [term2doc_(t) for t in ts]
-    )
-    inner = punctuate(text(', '), term_docs)
-    return hcat(text('Terms('), inner, text(')'))
+    term_f = lambda t: flatten(term2doc_(t))
+    term_docs = [hcat(text("'"), term_f(t), text("'")) for t in ts]
+    return python_obj('Terms', [(None, d) for d in term_docs])
 
 
 def type2doc(t: Type) -> Doc:
@@ -87,16 +83,7 @@ class PrinterConfig:
     """Replace body of success cases with `...`"""
     report_expand_payloads: bool = False
     """render full models/SMT proofs in reports"""
-    region_repr: Literal['full', 'compact'] = 'compact'
-    """Region representation mode
-    - `full`: regular ADT (dataclass)
-    - `compact`: more compact
-    """
-    hide_region_meta_str_cons_inv: bool = True
-    """Hide constraints and invariant in region meta's str field
-    You'd want to enable this since constraints and invariants are
-    already shown in region
-    """
+    concise_region_repr: bool = True
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
 
@@ -246,11 +233,6 @@ class Printer:
         dataclass2doc = partial(
             self.dataclass2doc,
             unwrap_single_arg=self.config.unwrap_single_arg_dataclass,
-        )
-        ignore_meta_paths: set[tuple[str, ...]] = (
-            {('str', 'constraints'), ('str', 'invariant')}
-            if self.config.hide_region_meta_str_cons_inv
-            else set()
         )
         match v:
             case bytes():
@@ -453,20 +435,24 @@ class Printer:
             case xtype.Common_Fun_decomp_t_poly():
                 return dataclass2doc(v, with_name='FunDecomp')
             # TODO: make following two different modes provided by decomp.py
-            case xtype.Common_Region_t_poly() if self.config.region_repr == 'full':
+            case xtype.Common_Region_t_poly() if not self.config.concise_region_repr:
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
                     key = fld.name
                     val = getattr(v, key)
                     if key == 'meta':
                         val = cast(AssocList[xtype.Common_Region_meta], val)
-                        val = drop_meta_paths(val, ignore_meta_paths)
                         meta_doc = region_meta_assoc2doc(val)
                         rows.append(('meta', meta_doc))
                     else:
                         rows.append((key, self.value2doc(val)))
                 return python_obj('Region', rows)
-            case xtype.Common_Region_t_poly() if self.config.region_repr == 'compact':
+            case xtype.Common_Region_t_poly() if self.config.concise_region_repr:
+                # A few things are performed to make the region repr concise
+                # - constraint terms are shown in a `Terms` object form
+                # - meta: only model and model_eval are shown at a higher level
+                #   - .str are omitted since it duplicated region's constraints and invariant
+                #   - .id, .merge_src, .merge_tgt are omitted
                 rows: AssocList[Doc] = []
                 for fld in fields(v):
                     key = fld.name
@@ -476,9 +462,9 @@ class Printer:
                         rows.append(('constraints', terms2doc(val)))
                     elif key == 'meta':
                         val = cast(AssocList[xtype.Common_Region_meta], val)
-                        val = drop_meta_paths(val, ignore_meta_paths)
-                        meta_doc = region_meta_assoc2doc(val)
-                        rows.append(('meta', meta_doc))
+                        for meta_k, meta_v in val:
+                            if meta_k in ['model', 'model_eval']:
+                                rows.append((meta_k, region_meta2doc(meta_v)))
                     else:
                         rows.append((key, self.value2doc(val)))
                 return python_obj('Region', rows)
@@ -489,7 +475,14 @@ class Printer:
             ):
                 kind = type(v).__name__.removeprefix('Common_')
                 kind = snake_to_camel(kind)
-                return dataclass2doc(v, with_name=kind)
+                if (
+                    isinstance(v, xtype.Common_Region_status_Feasible)
+                    and self.config.concise_region_repr
+                ):
+                    # Ignore model since it's already in meta
+                    return python_obj(kind, [(None, text('...'))])
+                else:
+                    return dataclass2doc(v, with_name=kind)
 
             # Collections
             case list():

@@ -67,7 +67,8 @@ ignore = [
     "D212",
     "D401",
     "D200",
-    "C901"
+    "C901",
+    "E731"
 ]
 pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true

@@ -2,7 +2,11 @@ import imandrax_api.lib as xtypes
 
 from . import pretty as Pp
 from ._common import AssocList, Region, RegionMeta
-from .term_formatter import term2doc
+from .term_formatter import term2doc as term2doc_
+
+
+def term2doc(t: xtypes.Mir_Term_term) -> Pp.Doc:
+    return Pp.python_obj('Term', [(None, Pp.python_quote(term2doc_(t)))])
 
 
 def drop_meta_paths[T](
@@ -17,6 +21,8 @@ def drop_meta_paths[T](
     nested under the top-level `str` assoc. Filtering the data up front keeps
     the printers below path-agnostic. Generic over the term type since it only
     rebuilds the assoc structure.
+
+    No-op if the ignored path is not found at all.
     """
     out: AssocList[xtypes.Common_Region_meta[T]] = []
     for k, v in assoc:
@@ -57,6 +63,7 @@ def region_meta_assoc2doc(assoc: AssocList[RegionMeta]) -> Pp.Doc:
     return Pp.assoc_list(assoc_lst_)
 
 
+# TODO: remove this
 def region2doc(region: Region) -> Pp.Doc:
     assoc_lst: AssocList[Pp.Doc] = [
         ('constraints', Pp.list_doc([term2doc(t) for t in region.constraints])),
