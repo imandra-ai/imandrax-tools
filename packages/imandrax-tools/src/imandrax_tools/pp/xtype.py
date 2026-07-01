@@ -22,6 +22,7 @@ from ._common import *
 from ._common import fmt_duration
 from .decomp import (
     drop_meta_paths,
+    region2doc,
     region_meta2doc,
     region_meta_assoc2doc,
 )
@@ -44,19 +45,12 @@ from .pretty import (
 )
 from .proof_formatter import proof2doc
 from .report_formatter import report2doc
-from .term_formatter import sym2doc, term2doc as term2doc_
+from .term_formatter import sym2doc, term2doc as term2doc_, terms2doc
 from .type_formatter import type2doc as type2doc_
 
 
 def term2doc(t: Term) -> Doc:
     return python_obj('Term', [(None, python_quote(term2doc_(t)))])
-
-
-def terms2doc(ts: list[Term]) -> Doc:
-    """Show terms in one `Terms(t1, t2, ...)` block."""
-    term_f = lambda t: flatten(term2doc_(t))
-    term_docs = [hcat(text("'"), term_f(t), text("'")) for t in ts]
-    return python_obj('Terms', [(None, d) for d in term_docs])
 
 
 def type2doc(t: Type) -> Doc:
@@ -479,26 +473,7 @@ class Printer:
                         rows.append((key, self.value2doc(val)))
                 return python_obj('Region', rows)
             case xtype.Common_Region_t_poly() if self.config.concise_region_repr:
-                # A few things are performed to make the region repr concise
-                # - constraint terms are shown in a `Terms` object form
-                # - meta: only model and model_eval are shown at a higher level
-                #   - .str are omitted since it duplicated region's constraints and invariant
-                #   - .id, .merge_src, .merge_tgt are omitted
-                rows: AssocList[Doc] = []
-                for fld in fields(v):
-                    key = fld.name
-                    val = getattr(v, key)
-                    if key == 'constraints':
-                        val = cast(list[xtype.Mir_Term], val)
-                        rows.append(('constraints', terms2doc(val)))
-                    elif key == 'meta':
-                        val = cast(AssocList[xtype.Common_Region_meta], val)
-                        for meta_k, meta_v in val:
-                            if meta_k in ['model', 'model_eval']:
-                                rows.append((meta_k, region_meta2doc(meta_v)))
-                    else:
-                        rows.append((key, self.value2doc(val)))
-                return python_obj('Region', rows)
+                return region2doc(v, self.value2doc)
             case (
                 xtype.Common_Region_status_Unknown()
                 | xtype.Common_Region_status_Feasible()
