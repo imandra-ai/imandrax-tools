@@ -1,0 +1,143 @@
+/* ImandraX task-artifact widget. Bespoke, light + dark aware. */
+
+.imx-tasks {
+  --imx-fg: #1f2328;
+  --imx-muted: #656d76;
+  --imx-border: #d0d7de;
+  --imx-surface: #f6f8fa;
+  --imx-accent: #0969da;
+  --imx-code-bg: #ffffff;
+
+  font-family:
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--imx-fg);
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .imx-tasks {
+    --imx-fg: #e6edf3;
+    --imx-muted: #8b949e;
+    --imx-border: #30363d;
+    --imx-surface: #161b22;
+    --imx-accent: #58a6ff;
+    --imx-code-bg: #0d1117;
+  }
+}
+
+.imx-task,
+.imx-artifact {
+  border: 1px solid var(--imx-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.imx-task {
+  background: var(--imx-surface);
+}
+
+.imx-task-summary,
+.imx-artifact-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.imx-task-summary::-webkit-details-marker,
+.imx-artifact-summary::-webkit-details-marker {
+  display: none;
+}
+
+.imx-task-summary::before,
+.imx-artifact-summary::before {
+  content: "\25B8"; /* right-pointing triangle */
+  color: var(--imx-muted);
+  transition: transform 0.12s ease;
+  font-size: 10px;
+}
+
+details[open] > .imx-task-summary::before,
+details[open] > .imx-artifact-summary::before {
+  transform: rotate(90deg);
+}
+
+.imx-task-kind {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.imx-task-id,
+.imx-artifact-size {
+  color: var(--imx-muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.imx-task-count {
+  margin-left: auto;
+  color: var(--imx-muted);
+  font-size: 11px;
+}
+
+.imx-task-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imx-artifact {
+  background: var(--imx-code-bg);
+}
+
+.imx-artifact-kind {
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--imx-accent);
+}
+
+.imx-copy {
+  margin-left: auto;
+  font: inherit;
+  font-size: 11px;
+  color: var(--imx-muted);
+  background: transparent;
+  border: 1px solid var(--imx-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.imx-copy:hover {
+  color: var(--imx-accent);
+  border-color: var(--imx-accent);
+}
+
+.imx-scroll {
+  max-height: 420px;
+  overflow: auto;
+  border-top: 1px solid var(--imx-border);
+}
+
+.imx-pre {
+  margin: 0;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  white-space: pre;
+  tab-size: 2;
+}
+
+.imx-empty {
+  color: var(--imx-muted);
+  padding: 8px;
+  font-style: italic;
+}
