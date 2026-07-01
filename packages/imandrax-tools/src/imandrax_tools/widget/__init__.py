@@ -1,10 +1,14 @@
 """
-anywidget-based rendering of ImandraX task artifacts.
+anywidget-based rendering of ImandraX results.
 
-`register_repr_html` attaches a Jupyter widget renderer to `EvalRes` and
-`CodeSnippetEvalResult`, so displaying one of those objects in a notebook shows
-an interactive, collapsible view of each task's decoded artifacts instead of a
-raw HTML dump.
+Two widgets, both backed by bundles under `widget-js/dist` (built with
+`npm run build`):
+
+- `TasksWidget` -- a collapsible view of each task's pretty-printed artifacts.
+  `register_repr_html(c)` attaches it to `EvalRes` / `CodeSnippetEvalResult`.
+- `RegionDecompWidget` -- the region-decomposition treemap.
+  `register_region_decomp_repr()` attaches it to `EnrichedDecomposeRes` /
+  `DecomposeRes` (a plain `DecomposeRes` is enriched first).
 """
 
 from __future__ import annotations
@@ -22,22 +26,22 @@ from imandrax_api_models.client import (
     async_get_task_artifacts,
     get_task_artifacts,
 )
+from imandrax_api_models.pp.xtype import to_string as string_of_xtype
+from imandrax_api_models.region_decomp import RegionGroup
 
-from ..pp.xtype import to_string as string_of_xtype
-
-_STATIC = Path(__file__).parent / 'static'
+_DIST = Path(__file__).parents[3] / 'widget-js' / 'dist'
 
 
 class HasTasks(Protocol):
     tasks: list[Task]
 
 
-# Data collection
+# Task-artifact widget
 # ====================
 
 
 def _task_entry(task: Task, artifacts: dict[str, Any]) -> dict[str, Any]:
-    """Build one JSON-serialisable task entry for the `tasks_data` trait."""
+    """Build one JSON-serialisable task entry for the `tasks` trait."""
     return {
         'id': getattr(task, 'id', '') or '',
         'kind': task.kind.value,
@@ -51,7 +55,7 @@ def _task_entry(task: Task, artifacts: dict[str, Any]) -> dict[str, Any]:
 def collect_tasks_data(
     tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
 ) -> list[dict[str, Any]]:
-    """Fetch + decode + stringify artifacts for each task into trait data."""
+    """Fetch + decode + pretty-print artifacts for each task into trait data."""
     match c:
         case ImandraXClient():
             return [_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
@@ -68,24 +72,59 @@ def collect_tasks_data(
             assert_never(c)
 
 
-# Widget
-# ====================
-
-
 class TasksWidget(anywidget.AnyWidget):
-    """Collapsible view of decoded artifacts for a list of ImandraX tasks."""
+    """Collapsible view of pretty-printed artifacts for a list of tasks."""
 
-    _esm = _STATIC / 'tasks.js'
-    _css = _STATIC / 'tasks.css'
+    _esm = _DIST / 'task.js'
 
-    tasks_data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    tasks = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
 
 
 def tasks_widget(
     tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
 ) -> TasksWidget:
     """Build a `TasksWidget` for the given tasks."""
-    return TasksWidget(tasks_data=collect_tasks_data(tasks, c))
+    return TasksWidget(tasks=collect_tasks_data(tasks, c))
+
+
+# Region-decomposition widget
+# ====================
+
+
+class RegionDecompWidget(anywidget.AnyWidget):
+    """Treemap view of a region-group forest (see `widget-js/src/region_decomp`)."""
+
+    _esm = _DIST / 'region_decomp.js'
+
+    data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+
+
+def _region_group_node(rg: RegionGroup) -> dict[str, Any]:
+    """
+    A treemap node for one `RegionGroup`.
+
+    Group-level fields (`label_path`, `constraints`, `weight`, `children`) feed
+    the tiles and detail stats. A leaf additionally carries `region_stat`: its
+    concrete region's display stats (`Region.stat()` -- invariant, example
+    input/output), shown in the detail panel.
+    """
+    node: dict[str, Any] = {
+        'label_path': rg.label_path,
+        'constraints': rg.constraints,
+        'weight': rg.weight,
+        'children': [_region_group_node(c) for c in rg.children],
+        'region_stat': None,
+    }
+    if rg.region is not None:
+        node['region_stat'] = rg.region.stat()
+    return node
+
+
+def region_decomp_widget(enriched: Any) -> RegionDecompWidget:
+    """Build a `RegionDecompWidget` from an `EnrichedDecomposeRes`."""
+    return RegionDecompWidget(
+        data=[_region_group_node(g) for g in enriched.region_groups]
+    )
 
 
 # Notebook integration
@@ -94,13 +133,39 @@ def tasks_widget(
 _client: ImandraXClient | ImandraXAsyncClient | None = None
 
 
+def register_region_decomp_repr() -> None:
+    """
+    Make `EnrichedDecomposeRes` / `DecomposeRes` render as a `RegionDecompWidget`.
+
+    A plain `DecomposeRes` is enriched (grouped) first. Sets `_repr_mimebundle_`
+    on both classes, replacing the former `_repr_html_` icicle rendering.
+    """
+    from imandrax_api_models.proto_models import DecomposeRes
+    from imandrax_api_models.region_decomp import EnrichedDecomposeRes
+
+    def repr_mimebundle(self: Any, include: Any = None, exclude: Any = None):
+        enriched = (
+            self
+            if isinstance(self, EnrichedDecomposeRes)
+            else EnrichedDecomposeRes.from_decomp_res(self)
+        )
+        if enriched.errors:
+            return {'text/plain': str(enriched.errors)}
+        widget = region_decomp_widget(enriched)
+        return widget._repr_mimebundle_(include=include, exclude=exclude)
+
+    setattr(EnrichedDecomposeRes, '_repr_mimebundle_', repr_mimebundle)
+    setattr(DecomposeRes, '_repr_mimebundle_', repr_mimebundle)
+
+
 def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
     """
-    Make `EvalRes` / `CodeSnippetEvalResult` render as a `TasksWidget`.
+    Attach widget renderers to result types.
 
-    Sets `_repr_mimebundle_` (the ipywidgets display hook) on both classes,
-    delegating to a freshly built widget so the notebook frontend renders the
-    interactive view.
+    `EvalRes` / `CodeSnippetEvalResult` render as a `TasksWidget`, and
+    `EnrichedDecomposeRes` / `DecomposeRes` as a `RegionDecompWidget`. Sets
+    `_repr_mimebundle_` (the ipywidgets display hook) on each class, delegating
+    to a freshly built widget.
     """
     global _client
     _client = c
@@ -112,3 +177,5 @@ def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
 
     setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)
+
+    register_region_decomp_repr()

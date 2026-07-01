@@ -2,9 +2,8 @@
 // fields directly and derive every aggregate (leaf counts, etc.) from the d3
 // hierarchy at render time rather than expecting pre-computed stats.
 
-// A concrete region, present only on leaf groups (null on interior nodes).
-export interface Region {
-  constraints_str: string[];
+// Display stats for a concrete region, produced by the Python side (`Region.stat`).
+export interface RegionStat {
   invariant_str: string;
   // {var: value-string} for the example input, or a bare string.
   model_str: Record<string, string> | string;
@@ -16,7 +15,9 @@ export interface RegionGroup {
   constraints: string[];
   label_path: number[];
   weight: number;
-  region: Region | null;
+  // Present (non-null) only on leaf groups: the concrete region's display stats.
+  // Interior nodes carry null.
+  region_stat: RegionStat | null;
   children: RegionGroup[];
 }
 

@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { drawIcicle } from '../src/region_decomp/icicle';
 import { drawTreemap } from '../src/region_decomp/treemap';
 
-// Fixtures are raw decomposition dumps generated from real API output by
-// scripts/gen_fixtures.py (.jsonc, with a leading `//` header). The views
-// consume them as-is, so these tests exercise the actual data the widget gets.
+// Fixtures are the exact `RegionDecompWidget` input (the list the Python side
+// feeds the frontend), generated from real API output by scripts/gen_fixtures.py
+// (.jsonc, with a leading `//` header). The views consume them as-is, so these
+// tests exercise the actual data the widget gets.
 function loadFixture(name) {
   // vitest runs with the package dir as cwd.
-  const path = resolve(process.cwd(), `test/fixtures/region_decomp/${name}.enriched_decompose_res.jsonc`);
+  const path = resolve(process.cwd(), `test/fixtures/region_decomp/${name}.widget_data.jsonc`);
   const raw = readFileSync(path, 'utf8').replace(/^\s*\/\/.*$/gm, '');
   return JSON.parse(raw);
 }

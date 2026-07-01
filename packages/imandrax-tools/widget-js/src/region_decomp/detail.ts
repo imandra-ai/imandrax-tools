@@ -4,7 +4,7 @@
 
 import { introducedConstraint, labelPath, type Node } from './nodes';
 import { ROOT_CLASS } from './style';
-import type { Region } from './types';
+import type { RegionStat } from './types';
 
 export const PLACEHOLDER_HTML = `<p class="${ROOT_CLASS}-placeholder">Click a region to see its constraints and example.</p>`;
 
@@ -30,11 +30,11 @@ export function detailHtml(node: Node): string {
     parts.push(`<ol>${lis}</ol>`);
   }
 
-  const region = node.data.region;
-  if (region) {
-    parts.push(`<div class="k">Invariant</div><pre>${esc(region.invariant_str)}</pre>`);
-    parts.push(`<div class="k">Example input</div><pre>${esc(fmtModel(region.model_str))}</pre>`);
-    parts.push(`<div class="k">Example output</div><pre>${esc(region.model_eval_str)}</pre>`);
+  const stat = node.data.region_stat;
+  if (stat) {
+    parts.push(`<div class="k">Invariant</div><pre>${esc(stat.invariant_str)}</pre>`);
+    parts.push(`<div class="k">Example input</div><pre>${esc(fmtModel(stat.model_str))}</pre>`);
+    parts.push(`<div class="k">Example output</div><pre>${esc(stat.model_eval_str)}</pre>`);
   }
   return parts.join('');
 }
@@ -52,7 +52,7 @@ function statsHtml(node: Node): string {
 }
 
 // `model_str` is a {var: value-string} map; render it as aligned lines.
-function fmtModel(model: Region['model_str']): string {
+function fmtModel(model: RegionStat['model_str']): string {
   if (typeof model !== 'object' || model === null) return String(model);
   const entries = Object.entries(model);
   if (!entries.length) return '(no inputs)';

@@ -19,7 +19,7 @@ export function normalizeGroups(input: DrawInput): RegionGroup[] {
 // d3.hierarchy needs a single root, so the forest is wrapped in a synthetic
 // "all regions" group. It carries no constraints or region; depth 0 marks it.
 function syntheticRoot(groups: RegionGroup[]): RegionGroup {
-  return { label_path: [], constraints: [], weight: 0, region: null, children: groups };
+  return { label_path: [], constraints: [], weight: 0, region_stat: null, children: groups };
 }
 
 // Build the d3 hierarchy shared by both views: leaf weight drives the size, and
