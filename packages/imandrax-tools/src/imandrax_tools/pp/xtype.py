@@ -453,7 +453,7 @@ class Printer:
                 | xtype.Tasks_Decomp_task_decomp_poly_Let()
             ):
                 name = type(v).__name__.removeprefix('Tasks_Decomp_task_decomp_poly_')
-                return dataclass2doc(v, with_name=name)
+                return self.dataclass2doc(v, with_name=name, unwrap_single_arg=False)
             case xtype.Tasks_Decomp_res_shallow_poly():
                 ignore_fields = None if self.config.show_decomp_task_db else ['report']
                 return dataclass2doc(

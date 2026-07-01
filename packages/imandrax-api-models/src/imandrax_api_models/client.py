@@ -847,9 +847,17 @@ def get_task_artifacts(task: Task, c: ImandraXClient) -> dict[str, Any]:
 
     art_kinds = c.list_artifacts(task).kinds
     # Artifact order: PO task > PO res > other
+    art_kind_order = [
+        ('po_task', 0),
+        ('po_res', 1),
+        ('decomp_task', 2),
+        ('decomp_res', 3),
+        ('show', 1000),
+        ('report', 1001),
+    ]
     art_kinds = sorted(
         art_kinds,
-        key=(lambda k: 0 if k == 'po_task' else 1 if k == 'po_res' else 2),
+        key=(lambda k: dict(art_kind_order).get(k, 100)),
     )
 
     # artifact-kind -> xvalue decoded from artifact
