@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from functools import reduce
-from typing import NoReturn, Self, TypedDict
+from typing import TYPE_CHECKING, NoReturn, Self, TypedDict
 
 from devtools import pformat
 from imandrax_api.lib import RegionStr
@@ -14,6 +14,9 @@ from pydantic import BaseModel, Field, model_validator
 from imandrax_api_models.proto_models import DecomposeRes
 
 from .icicle_widget import mk_icicle_widget_html
+
+if TYPE_CHECKING:
+    import imandrax_api.lib as xtype
 
 
 class EnrichedDecomposeRes(DecomposeRes):
@@ -173,6 +176,15 @@ def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
 def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
+
+
+def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
+    import imandrax_api.lib as xtype
+
+    regions_str: list[RegionStr] = [
+        xtype.unwrap_region_str(r) for r in fun_decomp.regions
+    ]
+    return group_regions(regions_str)
 
 
 # Tree rendering
