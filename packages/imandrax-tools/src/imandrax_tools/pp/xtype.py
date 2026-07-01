@@ -75,6 +75,8 @@ class PrinterConfig:
     show_po_res_report: bool = (
         False  # Note: report can be found in a dedicated artifact
     )
+    show_decomp_task_db: bool = False
+    show_decomp_res_report: bool = False
     show_anchor_hash: bool = False
     """append a short chash to anchor/cname names"""
     summarize_po_task: bool = False
@@ -432,6 +434,35 @@ class Printer:
             case xtype.Common_Tactic_t_poly_Term():
                 return dataclass2doc(v, with_name='Tactic')
             # Decomp
+            case xtype.Tasks_Decomp_task_t_poly():
+                ignore_fields = ['db'] if not self.config.show_decomp_task_db else None
+                return dataclass2doc(
+                    v,
+                    with_name='DecompTask',
+                    ignore_fields=ignore_fields,
+                )
+            case (
+                xtype.Tasks_Decomp_task_decomp_poly_Decomp()
+                | xtype.Tasks_Decomp_task_decomp_poly_Term()
+                | xtype.Tasks_Decomp_task_decomp_poly_Return()
+                | xtype.Tasks_Decomp_task_decomp_poly_Prune()
+                | xtype.Tasks_Decomp_task_decomp_poly_Merge()
+                | xtype.Tasks_Decomp_task_decomp_poly_Compound_merge()
+                | xtype.Tasks_Decomp_task_decomp_poly_Combine()
+                | xtype.Tasks_Decomp_task_decomp_poly_Get()
+                | xtype.Tasks_Decomp_task_decomp_poly_Let()
+            ):
+                name = type(v).__name__.removeprefix('Tasks_Decomp_task_decomp_poly_')
+                return dataclass2doc(v, with_name=name)
+            case xtype.Tasks_Decomp_res_shallow_poly():
+                ignore_fields = None if self.config.show_decomp_task_db else ['report']
+                return dataclass2doc(
+                    v, with_name='DecompRes', ignore_fields=ignore_fields
+                )
+            case xtype.Tasks_Decomp_res_success():
+                return dataclass2doc(v, with_name='DecompResSuccess')
+            case xtype.Tasks_Decomp_res_error_Error():
+                return dataclass2doc(v, with_name='DecompResError')
             case xtype.Common_Fun_decomp_t_poly():
                 return dataclass2doc(v, with_name='FunDecomp')
             # TODO: make following two different modes provided by decomp.py
