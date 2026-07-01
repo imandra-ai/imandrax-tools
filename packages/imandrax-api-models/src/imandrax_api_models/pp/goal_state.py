@@ -3,11 +3,10 @@ from typing import Literal
 
 import imandrax_api.lib as xtype
 
-import imandrax_tools.pp.pretty as Pp
-from imandrax_tools.pp.pretty import Doc
-from imandrax_tools.pp.term_formatter import term2doc
-
+from . import pretty as Pp
 from ._common import *
+from .pretty import Doc
+from .term_formatter import term2doc
 
 
 def doc_of_labeled_term(labeled: tuple[None | str, xtype.Mir_Term]) -> Doc:
