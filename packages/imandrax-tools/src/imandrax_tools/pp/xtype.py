@@ -435,6 +435,15 @@ class Printer:
                     else:
                         rows.append((key, self.value2doc(val)))
                 return python_obj('Region', rows)
+            case (
+                xtype.Common_Region_status_Unknown()
+                | xtype.Common_Region_status_Feasible()
+                | xtype.Common_Region_status_Feasibility_check_failed()
+            ):
+                kind = type(v).__name__.removeprefix('Common_')
+                kind = snake_to_camel(kind)
+                return dataclass2doc(v, with_name=kind)
+
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
