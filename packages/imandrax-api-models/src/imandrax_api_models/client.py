@@ -36,6 +36,7 @@ For regular API client without Pydantic model validation, use `imandrax-api` ins
 
 
 from imandrax_api_models import (
+    Art,
     DecomposeRes,
     EvalRes,
     GetDeclsRes,
@@ -828,3 +829,67 @@ def end_session(
     if not imandrax_api_key:
         raise ValueError('IMANDRAX_API_KEY is None')
     imandrax_api.end_session(session_id, url=url, auth_token=imandrax_api_key)
+
+
+# ====================
+
+
+def get_task_artifacts(task: Task, c: ImandraXClient) -> dict[str, Any]:
+    """
+    Get the artifacts for a task, decoded into imandrax-api binding values.
+
+    Returns:
+        A dictionary mapping artifact kind to decoded xvalue.
+
+    """
+    xtype = imandrax_api.lib
+    twine = imandrax_api.lib.twine
+
+    art_kinds = c.list_artifacts(task).kinds
+    # Artifact order: PO task > PO res > other
+    art_kinds = sorted(
+        art_kinds,
+        key=(lambda k: 0 if k == 'po_task' else 1 if k == 'po_res' else 2),
+    )
+
+    # artifact-kind -> xvalue decoded from artifact
+    xvalues: dict[str, Any] = {}
+    for art_kind in art_kinds:
+        art: Art = c.get_artifact(task=task, kind=art_kind).art
+        d = twine.Decoder(art.data)
+        x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
+        xvalues[art_kind] = x_value
+
+    return xvalues
+
+
+async def async_get_task_artifacts(
+    task: Task, c: ImandraXAsyncClient
+) -> dict[str, Any]:
+    """
+    Get the artifacts for a task, decoded into imandrax-api binding values.
+
+    Returns:
+        A dictionary mapping artifact kind to decoded xvalue.
+
+    """
+    xtype = imandrax_api.lib
+    twine = imandrax_api.lib.twine
+
+    async with c as c:
+        art_kinds = (await c.list_artifacts(task)).kinds
+        # Artifact order: PO task > PO res > other
+        art_kinds = sorted(
+            art_kinds,
+            key=(lambda k: 0 if k == 'po_task' else 1 if k == 'po_res' else 2),
+        )
+
+        # artifact-kind -> xvalue decoded from artifact
+        xvalues: dict[str, Any] = {}
+        for art_kind in art_kinds:
+            art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
+            d = twine.Decoder(art.data)
+            x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
+            xvalues[art_kind] = x_value
+
+    return xvalues
