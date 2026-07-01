@@ -32,7 +32,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -48,23 +48,25 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price <=. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 0.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 2.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 38.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 0.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 2.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 38.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -100,7 +102,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -116,23 +118,25 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price >. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some (List.hd (List.tl ob.sells)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 0.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 2.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = (-1.0);\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.sells)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 0.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 2.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = (-1.0);\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some (-1.0)',
             },
-            model_eval_str='Some (-1.0)',
         ),
         children=[],
     ),
@@ -166,7 +170,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -181,23 +185,25 @@
                 '(List.hd (List.tl ob.buys)).order_price <=. ref_price',
                 '(List.hd (List.tl ob.sells)).order_type = Market',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '2.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '2.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -231,7 +237,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -246,23 +252,25 @@
                 '(List.hd (List.tl ob.buys)).order_price >. ref_price',
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
             ],
-            invariant_str='Some (List.hd (List.tl ob.buys)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '1.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.buys)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '1.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -296,7 +304,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -311,23 +319,25 @@
                 '(List.hd (List.tl ob.buys)).order_price >. ref_price',
                 '(List.hd (List.tl ob.sells)).order_type = Market',
             ],
-            invariant_str='Some (List.hd (List.tl ob.buys)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '1.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.buys)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '1.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -360,7 +370,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -375,23 +385,25 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price <=. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '3.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '3.0',
+                },
+                'model_eval': 'Some 3.0',
             },
-            model_eval_str='Some 3.0',
         ),
         children=[],
     ),
@@ -424,7 +436,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -439,23 +451,25 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price >. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some (List.hd (List.tl ob.sells)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '4.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.sells)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Limit; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '4.0',
+                },
+                'model_eval': 'Some 3.0',
             },
-            model_eval_str='Some 3.0',
         ),
         children=[],
     ),
@@ -487,7 +501,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -501,23 +515,25 @@
                 '(List.hd (List.tl ob.buys)).order_type = Market',
                 '(List.hd (List.tl ob.sells)).order_type = Market',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
-                    '   order_time = 10}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 8; order_type = Market; order_qty = 9; order_price = 3.0;\n'
+                        '   order_time = 10}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -548,7 +564,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -562,21 +578,23 @@
                 '(List.hd (List.tl ob.buys)).order_type <> Market',
                 '(List.hd (List.tl ob.buys)).order_price <=. ref_price',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4}]}'
-                ),
-                'ref_price': '2.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4}]}'
+                    ),
+                    'ref_price': '2.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -607,7 +625,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -621,21 +639,23 @@
                 '(List.hd (List.tl ob.buys)).order_type <> Market',
                 '(List.hd (List.tl ob.buys)).order_price >. ref_price',
             ],
-            invariant_str='Some (List.hd (List.tl ob.buys)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4}]}'
-                ),
-                'ref_price': '1.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.buys)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4}]}'
+                    ),
+                    'ref_price': '1.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -665,7 +685,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -678,21 +698,23 @@
                 'List.tl ob.sells = []',
                 '(List.hd (List.tl ob.buys)).order_type = Market',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1};\n'
-                    '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1};\n'
+                        '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -723,7 +745,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -737,21 +759,23 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price <=. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}]}'
-                ),
-                'ref_price': '2.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}]}'
+                    ),
+                    'ref_price': '2.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -782,7 +806,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -796,21 +820,23 @@
                 '(List.hd (List.tl ob.sells)).order_type <> Market',
                 'ref_price >. (List.hd (List.tl ob.sells)).order_price',
             ],
-            invariant_str='Some (List.hd (List.tl ob.sells)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}]}'
-                ),
-                'ref_price': '3.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.sells)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 5; order_type = Limit; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}]}'
+                    ),
+                    'ref_price': '3.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -839,7 +865,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -852,21 +878,23 @@
                 'List.tl ob.buys = []',
                 '(List.hd (List.tl ob.sells)).order_type = Market',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4};\n'
-                    '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
-                    '   order_time = 7}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4};\n'
+                        '  {order_id = 5; order_type = Market; order_qty = 6; order_price = 2.0;\n'
+                        '   order_time = 7}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -894,7 +922,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -906,19 +934,21 @@
                 'List.tl ob.sells = []',
                 'List.tl ob.buys = []',
             ],
-            invariant_str='Some ref_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 1}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = 4}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some ref_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 1}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = 4}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -948,7 +978,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -961,21 +991,23 @@
                 'List.tl ob.buys <> []',
                 '(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty',
             ],
-            invariant_str='Some (List.hd (List.tl ob.buys)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Market; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0};\n'
-                    '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
-                    '   order_time = 8}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Quote; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.buys)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Market; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0};\n'
+                        '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
+                        '   order_time = 8}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Quote; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -1005,7 +1037,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1018,19 +1050,21 @@
                 '(List.hd ob.buys).order_qty = (List.hd ob.sells).order_qty',
                 'List.tl ob.buys = []',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Market; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Quote; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Market; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Quote; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1054,7 +1088,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1064,19 +1098,21 @@
                 '(List.hd ob.sells).order_type = Market',
                 '(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
-                    '   order_time = 2}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 5}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
+                        '   order_time = 2}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 5}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -1103,7 +1139,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1115,19 +1151,21 @@
                 '(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty',
                 '(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Market; order_qty = 2436; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 2437; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Market; order_qty = 2436; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 2437; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -1152,7 +1190,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1163,19 +1201,21 @@
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
                 '(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Market; order_qty = 1237; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 1236; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Market; order_qty = 1237; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 1236; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1198,7 +1238,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1208,19 +1248,21 @@
                 '(List.hd ob.sells).order_type <> Market',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Market; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Market; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1249,7 +1291,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1262,21 +1304,23 @@
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
                 'List.tl ob.sells <> []',
             ],
-            invariant_str='Some (List.hd (List.tl ob.sells)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Market; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)};\n'
-                    '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
-                    '   order_time = 8}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.sells)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Market; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)};\n'
+                        '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
+                        '   order_time = 8}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -1305,7 +1349,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1318,19 +1362,21 @@
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
                 'List.tl ob.sells = []',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Market; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Market; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -1357,7 +1403,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1369,19 +1415,21 @@
                 '(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty',
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 1237; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 1236; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 1237; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 1236; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -1406,7 +1454,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1417,19 +1465,21 @@
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
                 '(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 2436; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 2437; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 2436; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 2437; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1452,7 +1502,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1462,19 +1512,21 @@
                 '(List.hd ob.sells).order_type = Market',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -1498,7 +1550,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1508,19 +1560,21 @@
                 '(List.hd ob.sells).order_type <> Market',
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Quote; order_qty = 5; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Quote; order_qty = 5; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1544,7 +1598,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1554,19 +1608,21 @@
                 '(List.hd ob.sells).order_type <> Market',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -1586,7 +1642,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1594,19 +1650,21 @@
                 '(List.hd ob.buys).order_type <> Limit',
                 '(List.hd ob.sells).order_type = Limit',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
-                    '   order_time = 2}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 5}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
+                        '   order_time = 2}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 5}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1630,7 +1688,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1642,21 +1700,23 @@
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
                 'List.tl ob.sells <> []',
             ],
-            invariant_str='Some (List.hd (List.tl ob.sells)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Limit; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)};\n'
-                    '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
-                    '   order_time = 8}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.sells)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Limit; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)};\n'
+                        '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
+                        '   order_time = 8}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -1680,7 +1740,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1692,19 +1752,21 @@
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
                 'List.tl ob.sells = []',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Limit; order_qty = 3; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Limit; order_qty = 3; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -1728,7 +1790,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1739,19 +1801,21 @@
                 '(List.hd ob.buys).order_qty <> (List.hd ob.sells).order_qty',
                 '(List.hd ob.sells).order_qty <= (List.hd ob.buys).order_qty',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 1237; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 1236; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 1237; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 1236; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -1773,7 +1837,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1783,19 +1847,21 @@
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
                 '(List.hd ob.sells).order_qty > (List.hd ob.buys).order_qty',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Quote; order_qty = 2436; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 2437; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Quote; order_qty = 2436; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 2437; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1817,7 +1883,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1826,19 +1892,21 @@
                 '(List.hd ob.sells).order_type = Limit',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Quote; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -1865,7 +1933,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1877,21 +1945,23 @@
                 '(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty',
                 'List.tl ob.buys <> []',
             ],
-            invariant_str='Some (List.hd (List.tl ob.buys)).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0};\n'
-                    '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
-                    '   order_time = 8}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Quote; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd (List.tl ob.buys)).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0};\n'
+                        '  {order_id = 6; order_type = Market; order_qty = 7; order_price = 2.0;\n'
+                        '   order_time = 8}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Quote; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 2.0',
             },
-            model_eval_str='Some 2.0',
         ),
         children=[],
     ),
@@ -1918,7 +1988,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1930,19 +2000,21 @@
                 '(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty',
                 'List.tl ob.buys = []',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Quote; order_qty = 2; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Quote; order_qty = 2; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -1967,7 +2039,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -1978,19 +2050,21 @@
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
                 '(List.hd ob.buys).order_qty <= (List.hd ob.sells).order_qty',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Limit; order_qty = 2436; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 2437; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Limit; order_qty = 2436; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 2437; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -2013,7 +2087,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -2023,19 +2097,21 @@
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
                 '(List.hd ob.buys).order_qty > (List.hd ob.sells).order_qty',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Limit; order_qty = 1237; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 1236; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Limit; order_qty = 1237; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 1236; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -2056,7 +2132,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -2065,19 +2141,21 @@
                 '(List.hd ob.sells).order_type <> Market',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Quote; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -2096,7 +2174,7 @@
             2,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -2104,19 +2182,21 @@
                 '(List.hd ob.sells).order_type <> Limit',
                 '(List.hd ob.sells).order_type = Market',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Limit; order_qty = 1; order_price = 0.0;\n'
-                    '   order_time = 2}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 5}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Limit; order_qty = 1; order_price = 0.0;\n'
+                        '   order_time = 2}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Market; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 5}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -2136,7 +2216,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -2144,19 +2224,21 @@
                 '(List.hd ob.sells).order_type = Limit',
                 '(List.hd ob.buys).order_time > (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.sells).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 2; order_type = Limit; order_qty = 3; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 4; order_type = Limit; order_qty = 5; order_price = 1.0;\n'
-                    '   order_time = (-1)}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.sells).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 2; order_type = Limit; order_qty = 3; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 4; order_type = Limit; order_qty = 5; order_price = 1.0;\n'
+                        '   order_time = (-1)}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 1.0',
             },
-            model_eval_str='Some 1.0',
         ),
         children=[],
     ),
@@ -2176,7 +2258,7 @@
             1,
         ],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells <> []',
@@ -2184,19 +2266,21 @@
                 '(List.hd ob.sells).order_type = Limit',
                 '(List.hd ob.buys).order_time <= (List.hd ob.sells).order_time',
             ],
-            invariant_str='Some (List.hd ob.buys).order_price',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 1; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
-                    '   order_time = 0}];\n'
-                    ' sells =\n'
-                    ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
-                    '   order_time = 38}]}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'Some (List.hd ob.buys).order_price',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 1; order_type = Limit; order_qty = 2; order_price = 0.0;\n'
+                        '   order_time = 0}];\n'
+                        ' sells =\n'
+                        ' [{order_id = 3; order_type = Limit; order_qty = 4; order_price = 1.0;\n'
+                        '   order_time = 38}]}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'Some 0.0',
             },
-            model_eval_str='Some 0.0',
         ),
         children=[],
     ),
@@ -2207,22 +2291,24 @@
         ],
         label_path=[1, 2],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys <> []',
                 'ob.sells = []',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': (
-                    '{buys =\n'
-                    ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
-                    '   order_time = 2}];\n'
-                    ' sells = []}'
-                ),
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': (
+                        '{buys =\n'
+                        ' [{order_id = 0; order_type = Market; order_qty = 1; order_price = 0.0;\n'
+                        '   order_time = 2}];\n'
+                        ' sells = []}'
+                    ),
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),
@@ -2232,16 +2318,18 @@
         ],
         label_path=[2],
         weight=1,
-        region=RegionStr(
+        region=Region(
             constraints_str=[
                 'ob.buys = []',
             ],
-            invariant_str='None',
-            model_str={
-                'ob': '{buys = []; sells = []}',
-                'ref_price': '0.0',
+            stats={
+                'invariant': 'None',
+                'model': {
+                    'ob': '{buys = []; sells = []}',
+                    'ref_price': '0.0',
+                },
+                'model_eval': 'None',
             },
-            model_eval_str='None',
         ),
         children=[],
     ),

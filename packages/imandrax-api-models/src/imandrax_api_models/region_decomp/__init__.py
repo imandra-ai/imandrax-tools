@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import TYPE_CHECKING, NoReturn, Self, TypedDict
+from typing import TYPE_CHECKING, NoReturn, Self, TypedDict, cast
 
 from devtools import pformat
 from imandrax_api.lib import RegionStr
@@ -18,6 +18,98 @@ from .icicle_widget import mk_icicle_widget_html
 if TYPE_CHECKING:
     import imandrax_api.lib as xtype
 
+    from imandrax_api_models.proto_models.artmsg import Art
+
+
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
+type JSONObject = dict[str, JSONValue]
+type JSONArray = list[JSONValue]
+
+
+def _term_key(obj: object) -> str:
+    """
+    A canonical structural string key for a decoded term.
+
+    Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
+    level. Terms that differ only in type annotations or source anchors produce
+    the same key, so regions sharing a constraint group together even though
+    their raw `repr`s differ.
+    """
+    # Term fields carrying no logical identity: `ty` is the (redundant, given the
+    # fully-resolved view) type annotation, `sub_anchor` is a source-position
+    # anchor. Both vary between structurally-identical constraints, so they are
+    # skipped when deriving a grouping key from a raw term.
+    term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
+    if is_dataclass(obj) and not isinstance(obj, type):
+        inner = ','.join(
+            f'{f.name}={_term_key(getattr(obj, f.name))}'
+            for f in fields(obj)
+            if f.name not in term_key_drop_fields
+        )
+        return f'{type(obj).__name__}({inner})'
+    if isinstance(obj, (list, tuple)):
+        return '[' + ','.join(_term_key(x) for x in obj) + ']'
+    return repr(obj)
+
+
+@dataclass
+class Region:
+    """
+    A region represented by string forms of its constraints.
+
+    Grouping keys off `constraints_str`; `stats` supplies display fields.
+
+    Constructed either from a `RegionStr` (when the decomposition embedded
+    string results in the artifact meta) or, as a fallback, from the raw terms
+    of a decoded region via `repr` (when string results are absent).
+    """
+
+    # TODO: move this to simple_api.py level
+    # unify it with RegionStr, either:
+    #   - make RegionStr carry id, etc
+    #   - directly use MIR region
+    #   - ...
+
+    constraints_str: list[str] | None
+    stats: JSONObject
+
+    @classmethod
+    def from_region_str(cls, region_str: RegionStr) -> Self:
+        stats = {
+            'invariant': region_str.invariant_str,
+            'model': region_str.model_str,
+            'model_eval': region_str.model_eval_str,
+        }
+        return cls(
+            constraints_str=region_str.constraints_str,
+            stats=stats,
+        )
+
+    @classmethod
+    def from_mir_region(cls, region: xtype.Mir_Region_Region) -> Self:
+        """
+        Build from a raw decoded region via a canonical structural term key.
+
+        Used when `regions_str` is unavailable: the region's `constraints` and
+        `invariant` are `Mir_Term`s with no string meta attached, so we derive
+        a `_term_key` for each. The key omits type annotations and source
+        anchors (see `_TERM_KEY_DROP_FIELDS`), so terms that are equal modulo
+        those still key identically and group together — matching how the
+        string path groups by the pretty-printed constraint text.
+        """
+        meta = region.meta
+        id: str | None = cast(str | None, dict(meta).get('id', None))
+        stats = {
+            'invariant': _term_key(region.invariant),
+            'id': id,
+        }
+        return cls(
+            constraints_str=[_term_key(c) for c in region.constraints],
+            stats=stats,
+        )
+
 
 class EnrichedDecomposeRes(DecomposeRes):
     """A `DecomposeRes` augmented with hierarchical region grouping."""
@@ -29,8 +121,19 @@ class EnrichedDecomposeRes(DecomposeRes):
 
     @model_validator(mode='after')
     def populate_region_groups(self) -> Self:
-        if not self.region_groups and self.regions_str:
-            self.region_groups = group_regions(self.regions_str)
+        if self.region_groups:
+            return self
+        regions: list[Region] | None = None
+        if self.regions_str:
+            regions = [Region.from_region_str(r) for r in self.regions_str]
+        elif self.artifact is not None:
+            # `regions_str` is only populated when the decomposition embedded
+            # string results in the artifact meta (`string_results=True`). When
+            # it didn't, fall back to the raw regions in the decoded artifact,
+            # stringifying their constraint terms via `repr`.
+            regions = _regions_from_artifact(self.artifact)
+        if regions:
+            self.region_groups = group_regions(regions)
         return self
 
     @classmethod
@@ -68,13 +171,6 @@ class EnrichedDecomposeRes(DecomposeRes):
         return mk_icicle_widget_html(self.region_groups)
 
 
-type JSONValue = (
-    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
-)
-type JSONObject = dict[str, JSONValue]
-type JSONArray = list[JSONValue]
-
-
 class RegionGroup(BaseModel):
     """
     A hierarchical group of regions sharing constraints.
@@ -104,7 +200,7 @@ class RegionGroup(BaseModel):
     weight: int = Field(
         description="Number of regions in the partition at this node's level."
     )
-    region: RegionStr | None = Field(
+    region: Region | None = Field(
         default=None, description='The concrete region. Present iff at leaf nodes.'
     )
     children: list[RegionGroup] = Field(
@@ -135,9 +231,7 @@ class RegionGroup(BaseModel):
         d['n_descendant_regions'] = self.n_descendant_regions()
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
-            d['invariant'] = r.invariant_str
-            d['example_input'] = r.model_str
-            d['example_output'] = r.model_eval_str
+            d |= r.stats
         return d
 
     def to_json_dict(self) -> JSONObject:
@@ -173,7 +267,7 @@ def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
     return leaves
 
 
-def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
+def group_regions(regions: Sequence[Region]) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions)
 
@@ -181,10 +275,24 @@ def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
 def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
     import imandrax_api.lib as xtype
 
-    regions_str: list[RegionStr] = [
-        xtype.unwrap_region_str(r) for r in fun_decomp.regions
+    regions = [
+        Region.from_region_str(xtype.unwrap_region_str(r)) for r in fun_decomp.regions
     ]
-    return group_regions(regions_str)
+    return group_regions(regions)
+
+
+def _regions_from_artifact(artifact: Art) -> list[Region] | None:
+    """
+    Decode a `mir.fun_decomp` artifact into `RegionStr_`s via `repr`.
+
+    Returns ``None`` when the artifact is not a function decomposition.
+    """
+    import imandrax_api.lib as xtype
+
+    parsed = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
+    if not isinstance(parsed, xtype.Common_Fun_decomp_t_poly):
+        return None
+    return [Region.from_mir_region(r) for r in parsed.regions]
 
 
 # Tree rendering
@@ -248,7 +356,7 @@ def _tree_lines(
 
 
 def _loop_group_regions(
-    idx_path: list[int], constraint_path: list[str], regions: list[RegionStr]
+    idx_path: list[int], constraint_path: list[str], regions: Sequence[Region]
 ) -> list[RegionGroup]:
     """
     Recursively group regions by shared constraints.
@@ -325,10 +433,10 @@ def _loop_group_regions(
     )
     constraints_by_most_frequent: list[str] = [kv[0] for kv in assoc_list]
 
-    # grouped: tuple[list[RegionGroup], list[RegionStr]]
+    # grouped: tuple[list[RegionGroup], list[RegionStr_]]
     class Acc(TypedDict):
         groups: list[RegionGroup]
-        regions: list[RegionStr]
+        regions: list[Region]
         idx_path: list[int]
         constraint_path: list[str]
 
@@ -348,8 +456,8 @@ def _loop_group_regions(
         idx_path = acc['idx_path']
         constraint_path = acc['constraint_path']
 
-        has: list[RegionStr] = []
-        without: list[RegionStr] = []
+        has: list[Region] = []
+        without: list[Region] = []
         for r in regions:
             assert r.constraints_str, 'region has no constraint_str'
             if konstraint in r.constraints_str:
@@ -370,7 +478,7 @@ def _loop_group_regions(
                 group = rg_children[0]
             else:
                 rg_constraints = new_constraint_path[::-1]
-                rg_region: RegionStr | None
+                rg_region: Region | None
                 if len(has) == 1:
                     rg_region = has[0]
                 else:
@@ -399,6 +507,9 @@ def _loop_group_regions(
         )
 
     init = Acc(
-        groups=[], regions=regions, idx_path=idx_path, constraint_path=constraint_path
+        groups=[],
+        regions=list(regions),
+        idx_path=idx_path,
+        constraint_path=constraint_path,
     )
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]

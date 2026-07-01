@@ -1,3 +1,4 @@
+import copy
 import os
 from pathlib import Path
 
@@ -48,6 +49,15 @@ def decomp_res_six_swiss() -> DecomposeRes:
     IML_CODE = (Path(__file__).parent / 'data/six_swiss.iml').read_text()
     _eval_res = c.eval_src(IML_CODE)
     return c.decompose(name='match_price', string_results=True, prune=True)
+
+
+# (label_path, full constraint path) for every node, depth-first.
+def _walk(groups: list[RegionGroup]) -> list[tuple[str, list[str]]]:
+    out: list[tuple[str, list[str]]] = []
+    for g in groups:
+        out.append(('.'.join(map(str, g.label_path)), g.constraints))
+        out.extend(_walk(g.children))
+    return out
 
 
 def enrich_decomp_res_props(edr: EnrichedDecomposeRes) -> None:
@@ -167,14 +177,6 @@ def test_simple_decomp(decomp_res_classify):
 └── [3.1] new_constraint='y <= 0' invariant='6' is_leaf=True\
 """)
 
-    # (label_path, full constraint path) for every node, depth-first.
-    def _walk(groups: list[RegionGroup]) -> list[tuple[str, list[str]]]:
-        out: list[tuple[str, list[str]]] = []
-        for g in groups:
-            out.append(('.'.join(map(str, g.label_path)), g.constraints))
-            out.extend(_walk(g.children))
-        return out
-
     assert _walk(edr.region_groups) == snapshot(
         [
             ('1', ['x >= 1']),
@@ -187,3 +189,18 @@ def test_simple_decomp(decomp_res_classify):
             ('3.1', ['x <= 0', 'y <= 0']),
         ]
     )
+
+
+@pytest.mark.parametrize(
+    'decomp_res_fixture',
+    ['decomp_res_classify', 'decomp_res_six_swiss'],
+)
+def test_region_group_constr_equivalence(decomp_res_fixture: str, request):
+    decomp_res: DecomposeRes = request.getfixturevalue(decomp_res_fixture)
+    erd1 = EnrichedDecomposeRes.from_decomp_res(decomp_res)
+
+    decomp_res2 = copy.deepcopy(decomp_res)
+    decomp_res2.regions_str = None
+    erd2 = EnrichedDecomposeRes.from_decomp_res(decomp_res2)
+
+    assert _walk(erd1.region_groups) == _walk(erd2.region_groups)
