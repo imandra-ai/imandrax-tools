@@ -5,19 +5,15 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import TYPE_CHECKING, Any, NoReturn, Self, TypedDict
+from typing import Any, NoReturn, Self, TypedDict
 
+import imandrax_api.lib as xtype
 from devtools import pformat
 from imandrax_api.lib import RegionStr
 from pydantic import BaseModel, Field, model_validator
 
-from imandrax_api_models.proto_models import DecomposeRes
-
-if TYPE_CHECKING:
-    import imandrax_api.lib as xtype
-
-    from imandrax_api_models.proto_models.artmsg import Art
-
+from imandrax_api_models.pp.xtype import to_string as xtype_to_string
+from imandrax_api_models.proto_models import Art, DecomposeRes
 
 type JSONValue = (
     str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
@@ -67,20 +63,26 @@ class Region:
     #   - ...
 
     constraints_str: list[str] | None  # Grouping key
-    data: dict[str, Any]
+    mir_region: xtype.Mir_Region_Region
+    data: dict[str, Any]  # extra display fields
+
+    def stat(self) -> JSONObject:
+        out = self.data.copy()
+        out['invariant_str'] = xtype_to_string(self.mir_region.invariant)
+        return out
 
     @classmethod
     def from_region_str(
         cls, region_str: RegionStr, mir_region: xtype.Mir_Region_Region
     ) -> Self:
         meta_str = {
-            'mir_region': mir_region,
             'invariant_str': region_str.invariant_str,
             'model_str': region_str.model_str,
             'model_eval_str': region_str.model_eval_str,
         }
         return cls(
             constraints_str=region_str.constraints_str,
+            mir_region=mir_region,
             data=meta_str,
         )
 
@@ -95,8 +97,9 @@ class Region:
         and group together
         """
         return cls(
-            constraints_str=[_term_key(c) for c in region.constraints],
-            data={'mir_region': region},
+            constraints_str=[xtype_to_string(c) for c in region.constraints],
+            mir_region=region,
+            data={},
         )
 
 
@@ -234,8 +237,8 @@ class RegionGroup(BaseModel):
         parts: list[str] = []
         parts.append(f'[{d["label_path"]}]')
         parts.append(f"new_constraint='{d['introduced_constraint']}'")
-        if d.get('invariant'):
-            parts.append(f"invariant='{d['invariant']}'")
+        if d.get('invariant_str'):
+            parts.append(f"invariant='{d['invariant_str']}'")
         n_leaf_regions = d['n_leaf_regions']
         if n_leaf_regions != 1:
             parts.append(f'n_leaf_regions={n_leaf_regions}')
@@ -278,6 +281,7 @@ def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]
 
 
 def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
+    import imandrax_api.lib as xtype
 
     xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
     assert isinstance(xval, xtype.Common_Fun_decomp_t_poly)
