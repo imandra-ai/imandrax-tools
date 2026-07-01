@@ -5,15 +5,13 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import TYPE_CHECKING, NoReturn, Self, TypedDict, cast
+from typing import TYPE_CHECKING, Any, NoReturn, Self, TypedDict
 
 from devtools import pformat
 from imandrax_api.lib import RegionStr
 from pydantic import BaseModel, Field, model_validator
 
 from imandrax_api_models.proto_models import DecomposeRes
-
-from .icicle_widget import mk_icicle_widget_html
 
 if TYPE_CHECKING:
     import imandrax_api.lib as xtype
@@ -59,11 +57,7 @@ class Region:
     """
     A region represented by string forms of its constraints.
 
-    Grouping keys off `constraints_str`; `stats` supplies display fields.
-
-    Constructed either from a `RegionStr` (when the decomposition embedded
-    string results in the artifact meta) or, as a fallback, from the raw terms
-    of a decoded region via `repr` (when string results are absent).
+    Grouping keys off `constraints_str`; `data` supplies display fields.
     """
 
     # TODO: move this to simple_api.py level
@@ -72,19 +66,22 @@ class Region:
     #   - directly use MIR region
     #   - ...
 
-    constraints_str: list[str] | None
-    stats: JSONObject
+    constraints_str: list[str] | None  # Grouping key
+    data: dict[str, Any]
 
     @classmethod
-    def from_region_str(cls, region_str: RegionStr) -> Self:
-        stats = {
-            'invariant': region_str.invariant_str,
-            'model': region_str.model_str,
-            'model_eval': region_str.model_eval_str,
+    def from_region_str(
+        cls, region_str: RegionStr, mir_region: xtype.Mir_Region_Region
+    ) -> Self:
+        meta_str = {
+            'mir_region': mir_region,
+            'invariant_str': region_str.invariant_str,
+            'model_str': region_str.model_str,
+            'model_eval_str': region_str.model_eval_str,
         }
         return cls(
             constraints_str=region_str.constraints_str,
-            stats=stats,
+            data=meta_str,
         )
 
     @classmethod
@@ -92,22 +89,14 @@ class Region:
         """
         Build from a raw decoded region via a canonical structural term key.
 
-        Used when `regions_str` is unavailable: the region's `constraints` and
-        `invariant` are `Mir_Term`s with no string meta attached, so we derive
-        a `_term_key` for each. The key omits type annotations and source
-        anchors (see `_TERM_KEY_DROP_FIELDS`), so terms that are equal modulo
-        those still key identically and group together — matching how the
-        string path groups by the pretty-printed constraint text.
+        the region's `constraints` are `Mir_Term`s with no string meta attached,
+        so we derive a `_term_key`. The key omits type data and source
+        anchors, so terms that are equal modulo those still key identically
+        and group together
         """
-        meta = region.meta
-        id: str | None = cast(str | None, dict(meta).get('id', None))
-        stats = {
-            'invariant': _term_key(region.invariant),
-            'id': id,
-        }
         return cls(
             constraints_str=[_term_key(c) for c in region.constraints],
-            stats=stats,
+            data={'mir_region': region},
         )
 
 
@@ -121,17 +110,22 @@ class EnrichedDecomposeRes(DecomposeRes):
 
     @model_validator(mode='after')
     def populate_region_groups(self) -> Self:
-        if self.region_groups:
+        if self.region_groups or self.artifact is None:
             return self
-        regions: list[Region] | None = None
+        mir_regions = _mir_regions_of_fun_decomp_artifact(self.artifact)
+
         if self.regions_str:
-            regions = [Region.from_region_str(r) for r in self.regions_str]
-        elif self.artifact is not None:
+            regions = [
+                Region.from_region_str(r_str, mir_r)
+                for r_str, mir_r in zip(self.regions_str, mir_regions)
+            ]
+        else:
             # `regions_str` is only populated when the decomposition embedded
             # string results in the artifact meta (`string_results=True`). When
             # it didn't, fall back to the raw regions in the decoded artifact,
             # stringifying their constraint terms via `repr`.
-            regions = _regions_from_artifact(self.artifact)
+            regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
+
         if regions:
             self.region_groups = group_regions(regions)
         return self
@@ -164,11 +158,6 @@ class EnrichedDecomposeRes(DecomposeRes):
         return render_region_groups(
             self.region_groups, depth_limit=depth_limit, tree_repr=summarize
         )
-
-    def _repr_html_(self) -> str:
-        if self.errors:
-            return f'<pre>{pformat(self.errors, indent=2)}</pre>'
-        return mk_icicle_widget_html(self.region_groups)
 
 
 class RegionGroup(BaseModel):
@@ -227,11 +216,9 @@ class RegionGroup(BaseModel):
         d['constraints'] = self.constraints
         d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
         d['weight'] = self.weight
-        d['n_children_regions'] = len(self.children)
-        d['n_descendant_regions'] = self.n_descendant_regions()
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
-            d |= r.stats
+            d |= r.data
         return d
 
     def to_json_dict(self) -> JSONObject:
@@ -273,26 +260,28 @@ def group_regions(regions: Sequence[Region]) -> list[RegionGroup]:
 
 
 def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
-    import imandrax_api.lib as xtype
 
-    regions = [
-        Region.from_region_str(xtype.unwrap_region_str(r)) for r in fun_decomp.regions
-    ]
+    regions_str: list[RegionStr] | None = None
+    try:
+        regions_str = [xtype.unwrap_region_str(r) for r in fun_decomp.regions]
+    except Exception:
+        pass
+
+    if regions_str is None:
+        regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
+    else:
+        regions = [
+            Region.from_region_str(r_str, mir_r)
+            for r_str, mir_r in zip(regions_str, fun_decomp.regions)
+        ]
     return group_regions(regions)
 
 
-def _regions_from_artifact(artifact: Art) -> list[Region] | None:
-    """
-    Decode a `mir.fun_decomp` artifact into `RegionStr_`s via `repr`.
+def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
 
-    Returns ``None`` when the artifact is not a function decomposition.
-    """
-    import imandrax_api.lib as xtype
-
-    parsed = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
-    if not isinstance(parsed, xtype.Common_Fun_decomp_t_poly):
-        return None
-    return [Region.from_mir_region(r) for r in parsed.regions]
+    xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
+    assert isinstance(xval, xtype.Common_Fun_decomp_t_poly)
+    return xval.regions
 
 
 # Tree rendering
