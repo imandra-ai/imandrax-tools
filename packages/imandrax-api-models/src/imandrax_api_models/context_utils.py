@@ -373,28 +373,28 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
 
 def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
     d: dict[str, Any] = {}
-    if decomp_res.regions_str is not None:
-        enriched_regions = decomp_res.regions()
+    if len(decomp_res.region_groups) > 0:
+        enriched_regions = decomp_res.regions_with_group_info()
         d['description'] = f'Decomp succeeded with {len(enriched_regions)} regions'
         d['regions'] = enriched_regions
     else:
         d['description'] = 'Decomp failed'
-        d |= remove_fields_rec(decomp_res.model_dump())
-        d.pop('regions_str')
-        d.pop('region_groups')
+        d |= remove_fields_rec(
+            decomp_res.model_dump(exclude={'regions_str', 'region_groups'})
+        )
 
     return d
 
 
 type FormattableModel = (
     EvalOutput
-    | EnrichedDecomposeRes
     | VerifyRes
     | InstanceRes
     | Error
     | ErrorMessage
     | EvalRes
     | DecomposeRes
+    | EnrichedDecomposeRes
 )
 
 # ====================
@@ -421,7 +421,7 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
             except Exception:
-                return to_jsonable_python(model)
+                return remove_fields_rec(to_jsonable_python(model))
         case ErrorMessage():
             return format_error_msg(model)
         case _:
