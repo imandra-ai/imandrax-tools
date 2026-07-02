@@ -113,18 +113,6 @@ isort.combine-as-imports = true
 [tool.ruff.format]
 quote-style = "single"
 
-[tool.ty]
-environment.python = "./.venv"
-
-[tool.ty.rules]
-# Handled by pyright
-unsupported-operator = "ignore"
-invalid-argument-type = "ignore"
-invalid-return-type = "ignore"
-possibly-missing-import = "ignore"
-unresolved-import = "ignore"
-possibly-missing-attribute = "ignore"
-
 [tool.pyright]
 venvPath = "."
 venv = ".venv"

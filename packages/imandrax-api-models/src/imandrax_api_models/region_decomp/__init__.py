@@ -23,7 +23,8 @@ type JSONValue = (
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
-type GroupingKey = Callable[[xtype.Mir_Region_Region], list[str]]
+_PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT = True
+"""Region group's constraints (list[str]) are from pp, so we align invariant's representation for leaf nodes"""
 
 
 def term_to_string(t: xtype.Mir_Term) -> str:
@@ -34,64 +35,14 @@ def eq_term_with_pp(left: xtype.Mir_Term, right: xtype.Mir_Term) -> bool:
     return term_to_string(left) == term_to_string(right)
 
 
-def naive_grouping_key(r: xtype.Mir_Region_Region) -> list[str]:
-    return [str(c) for c in r.constraints]
-
-
-def server_side_grouping_key(r: xtype.Mir_Region_Region) -> list[str]:
-    """Grouping key provided by `string_results=True`"""
-    res = xtype.unwrap_region_str(r).constraints_str
-    if res is None:
-        raise ValueError('constraints_str is None')
-    return res
-
-
-def pp_grouping_key(r: xtype.Mir_Region_Region) -> list[str]:
-    """Grouping key using pp to stringify constraints"""
-    constraints = r.constraints
-    return [xtype_to_string(c) for c in constraints]
-
-
-grouping_keys: list[GroupingKey] = [
-    naive_grouping_key,
-    server_side_grouping_key,
-    pp_grouping_key,
-]
-
-
-def _term_key(obj: object) -> str:
-    """
-    A canonical structural string key for a decoded term.
-
-    Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
-    level. Terms that differ only in type annotations or source anchors produce
-    the same key, so regions sharing a constraint group together even though
-    their raw `repr`s differ.
-    """
-    # Term fields carrying no logical identity: `ty` is the (redundant, given the
-    # fully-resolved view) type annotation, `sub_anchor` is a source-position
-    # anchor. Both vary between structurally-identical constraints, so they are
-    # skipped when deriving a grouping key from a raw term.
-    term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
-    if is_dataclass(obj) and not isinstance(obj, type):
-        inner = ','.join(
-            f'{f.name}={_term_key(getattr(obj, f.name))}'
-            for f in fields(obj)
-            if f.name not in term_key_drop_fields
-        )
-        return f'{type(obj).__name__}({inner})'
-    if isinstance(obj, (list, tuple)):
-        return '[' + ','.join(_term_key(x) for x in obj) + ']'  # pyright: ignore
-    return repr(obj)
-
-
 class StringResult(TypedDict):
     constraints: list[str]
     invariant: str
-    model: dict[str, str]
+    model: dict[str, str] | None
     model_eval: str | None
 
 
+# TODO: now we are ready to replace RegionStr with Region completely in simple_api,py
 @dataclass
 class Region:
     """
@@ -119,9 +70,15 @@ class Region:
         # TODO: include id?
         out['invariant'] = term_to_string(self.mir_region.invariant)
         if self.string_result is not None:
-            out['model'] = self.string_result['model']
-            out['model_eval'] = self.string_result['model_eval']
+            if not _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT:
+                out['invariant'] = self.string_result['invariant']
+            if self.string_result['model'] is not None:
+                out['model'] = self.string_result['model']
+            if self.string_result['model_eval'] is not None:
+                out['model_eval'] = self.string_result['model_eval']
         else:
+            out['invariant'] = term_to_string(self.mir_region.invariant)
+
             # If model is not set (in the case of `string_results=False`)
             # try to get it from the feasible status
             status = self.mir_region.status
@@ -201,7 +158,7 @@ def _parse_region(
 
     invariant = src_of_meta_str(meta_str_dict.get('invariant'))
 
-    model: dict[str, str] = {}
+    model: dict[str, str] | None = None
     if (model_meta := meta_str_dict.get('model')) is not None:
         assert isinstance(model_meta, xtype.Common_Region_meta_Assoc)
         model = {k: src_of_meta_str(v) for (k, v) in model_meta.arg}
@@ -286,6 +243,7 @@ class RegionGroup(BaseModel):
     A hierarchical group of regions sharing constraints.
     """
 
+    # Obtained via pp
     constraints: list[str] = Field(
         description=(
             'Full accumulated constraint path from root to this node (root-first).'
@@ -638,3 +596,67 @@ def _loop_group_regions(
         constraint_path=constraint_path,
     )
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
+
+
+# For test
+# ====================
+
+
+def _stringified_term_map_of_region(
+    r: xtype.Mir_Region_Region, base: dict[int, str] | None = None
+) -> dict[int, str]:
+    # MIR terms are unhashable (they contain lists), so key the map by object
+    # identity (`id`). This maps each concrete term instance to its server-side
+    # string, keeping this grouping strategy independent of the structural
+    # `_term_key` used by `eq_term_naive`.
+    out = base or {}
+
+    constraints_str = xtype.unwrap_region_str(r).constraints_str
+    assert constraints_str is not None
+    for c, s in zip(r.constraints, constraints_str):
+        out[id(c)] = s
+
+    return out
+
+
+def _eq_term_with_string_results(
+    left: xtype.Mir_Term,
+    right: xtype.Mir_Term,
+    stringified_term_map: dict[int, str],
+) -> bool:
+    l = stringified_term_map[id(left)]
+    r = stringified_term_map[id(right)]
+    return l == r
+
+
+def _eq_term_naive(
+    left: xtype.Mir_Term,
+    right: xtype.Mir_Term,
+) -> bool:
+    return _term_key(left) == _term_key(right)
+
+
+def _term_key(obj: object) -> str:
+    """
+    A canonical structural string key for a decoded term.
+
+    Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
+    level. Terms that differ only in type annotations or source anchors produce
+    the same key, so regions sharing a constraint group together even though
+    their raw `repr`s differ.
+    """
+    # Term fields carrying no logical identity: `ty` is the (redundant, given the
+    # fully-resolved view) type annotation, `sub_anchor` is a source-position
+    # anchor. Both vary between structurally-identical constraints, so they are
+    # skipped when deriving a grouping key from a raw term.
+    term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
+    if is_dataclass(obj) and not isinstance(obj, type):
+        inner = ','.join(
+            f'{f.name}={_term_key(getattr(obj, f.name))}'
+            for f in fields(obj)
+            if f.name not in term_key_drop_fields
+        )
+        return f'{type(obj).__name__}({inner})'
+    if isinstance(obj, (list, tuple)):
+        return '[' + ','.join(_term_key(x) for x in obj) + ']'  # pyright: ignore
+    return repr(obj)
