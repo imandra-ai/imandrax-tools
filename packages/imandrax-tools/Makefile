@@ -51,6 +51,14 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 	uvx ruff format $(CORPUS_TGT)
 	uvx ruff check $(CORPUS_TGT) --fix
 
+.PHONY: build-widget-js
+build-widget-js:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
+	cd widget-js && npm ci && npm run build
+
+.PHONY: check-widget-js
+check-widget-js: build-widget-js  ## Verify the committed JS bundles match a fresh build (fails if stale)
+	git diff --exit-code -- src/imandrax_tools/widget/static
+
 .PHONY: build
 build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*

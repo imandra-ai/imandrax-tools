@@ -1,8 +1,7 @@
 """
 anywidget-based rendering of ImandraX results.
 
-Two widgets, both backed by bundles under `widget-js/dist` (built with
-`npm run build`):
+Two widgets, both backed by JS bundles under `widget/static`:
 
 - `TasksWidget` -- a collapsible view of each task's pretty-printed artifacts.
   `register_repr_html(c)` attaches it to `EvalRes` / `CodeSnippetEvalResult`.
@@ -29,7 +28,7 @@ from imandrax_api_models.client import (
 from imandrax_api_models.pp.xtype import to_string as string_of_xtype
 from imandrax_api_models.region_decomp import RegionGroup
 
-_DIST = Path(__file__).parents[3] / 'widget-js' / 'dist'
+_DIST = Path(__file__).parent / 'static'
 
 
 class HasTasks(Protocol):

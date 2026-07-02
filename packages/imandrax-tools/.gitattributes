@@ -1,0 +1,2 @@
+# Built anywidget JS bundles (source of truth: widget-js/src, built via `make build-widget-js`).
+src/imandrax_tools/widget/static/*.js linguist-generated=true -diff
