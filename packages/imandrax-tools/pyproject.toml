@@ -83,29 +83,18 @@ isort.combine-as-imports = true
 [tool.ruff.format]
 quote-style = "single"
 
-[tool.ty]
-environment.python = "./.venv"
-
-[tool.ty.rules]
-# Handled by pyright
-unsupported-operator = "ignore"
-invalid-argument-type = "ignore"
-invalid-return-type = "ignore"
-possibly-missing-attribute = "ignore"
-unresolved-import = "ignore"
-missing-argument = "ignore"
-
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.12"
-typeCheckingMode = "strict"
-reportMissingModuleSource = "none"
-reportMissingTypeStubs = false
-reportUnnecessaryIsInstance = false
-reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "none"
-reportUnusedExpression = false
+# handle by workspace root config
+# [tool.pyright]
+# venvPath = "."
+# venv = ".venv"
+# pythonVersion = "3.12"
+# typeCheckingMode = "strict"
+# reportMissingModuleSource = "none"
+# reportMissingTypeStubs = false
+# reportUnnecessaryIsInstance = false
+# reportUnnecessaryTypeIgnoreComment = true
+# reportUnusedImport = "none"
+# reportUnusedExpression = false
 
 [tool.inline-snapshot]
 format-command="uvx ruff check --fix-only --stdin-filename {filename} | uvx ruff format --stdin-filename {filename}"

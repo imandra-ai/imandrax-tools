@@ -59,11 +59,12 @@ def collect_tasks_data(
     match c:
         case ImandraXClient():
             return [_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
-        case ImandraXAsyncClient():
-
+        case ImandraXAsyncClient() as ac:
+            # Bind the narrowed client to a fresh name: the closure below captures
+            # it, and a captured `c` would revert to the un-narrowed union type.
             async def _gather() -> list[dict[str, Any]]:
                 artifacts = await asyncio.gather(
-                    *[async_get_task_artifacts(t, c) for t in tasks]
+                    *[async_get_task_artifacts(t, ac) for t in tasks]
                 )
                 return [_task_entry(t, a) for t, a in zip(tasks, artifacts)]
 
@@ -152,7 +153,12 @@ def register_region_decomp_repr() -> None:
         if enriched.errors:
             return {'text/plain': str(enriched.errors)}
         widget = region_decomp_widget(enriched)
-        return widget._repr_mimebundle_(include=include, exclude=exclude)
+        # Call anywidget's impl explicitly, rather than via `widget._repr_mimebundle_`:
+        # the latter resolves to a union with `ipywidgets.Widget._repr_mimebundle_`
+        # that some type checkers can't bind `self` on.
+        return anywidget.AnyWidget._repr_mimebundle_(
+            widget, include=include, exclude=exclude
+        )
 
     setattr(EnrichedDecomposeRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(DecomposeRes, '_repr_mimebundle_', repr_mimebundle)
@@ -173,7 +179,9 @@ def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
     def repr_mimebundle(self: HasTasks, include: Any = None, exclude: Any = None):
         assert _client is not None
         widget = tasks_widget(self.tasks, _client)
-        return widget._repr_mimebundle_(include=include, exclude=exclude)
+        return anywidget.AnyWidget._repr_mimebundle_(
+            widget, include=include, exclude=exclude
+        )
 
     setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)

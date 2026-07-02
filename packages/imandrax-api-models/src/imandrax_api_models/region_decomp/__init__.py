@@ -13,7 +13,7 @@ from imandrax_api.lib import RegionStr
 from pydantic import BaseModel, Field, model_validator
 
 from imandrax_api_models.pp.pretty import pretty
-from imandrax_api_models.pp.term_formatter import prettify, term2doc
+from imandrax_api_models.pp.term_formatter import term2doc
 from imandrax_api_models.pp.xtype import to_string as xtype_to_string
 from imandrax_api_models.proto_models import Art, DecomposeRes
 
