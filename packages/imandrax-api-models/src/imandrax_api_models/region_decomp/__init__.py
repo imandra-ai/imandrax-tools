@@ -5,11 +5,11 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import Any, Self, TypedDict
+from typing import Annotated, Any, Self, TypedDict
 
 import imandrax_api.lib as xtype
 from devtools import pformat
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
 from imandrax_api_models.pp.pretty import pretty
 from imandrax_api_models.pp.term_formatter import term2doc
@@ -81,7 +81,7 @@ def _term_key(obj: object) -> str:
         )
         return f'{type(obj).__name__}({inner})'
     if isinstance(obj, (list, tuple)):
-        return '[' + ','.join(_term_key(x) for x in obj) + ']'
+        return '[' + ','.join(_term_key(x) for x in obj) + ']'  # pyright: ignore
     return repr(obj)
 
 
@@ -109,6 +109,11 @@ class Region:
     def constraints(self) -> list[xtype.Mir_Term_term]:
         return self.mir_region.constraints
 
+    def to_jsonable(self) -> JSONObject:
+        dct = asdict(self)
+        dct.pop('mir_region')
+        return dct
+
     def stat(self) -> JSONObject:
         out = self.other.copy()
         # TODO: include id?
@@ -123,6 +128,8 @@ class Region:
             match status:
                 case xtype.Common_Region_status_Feasible(arg=model):
                     out['model'] = xtype_to_string(model)
+                case _:
+                    pass
         return out
 
     # @classmethod
@@ -164,7 +171,9 @@ def _parse_region(
     at every level.
     """
 
-    def src_of_meta_str(m: xtype.Common_Region_meta_String | Any) -> str:
+    def src_of_meta_str(
+        m: xtype.Common_Region_meta_String[xtype.Mir_Term_term] | Any,
+    ) -> str:
         assert isinstance(m, xtype.Common_Region_meta_String)
         return m.arg
 
@@ -214,7 +223,7 @@ class EnrichedDecomposeRes(DecomposeRes):
     """A `DecomposeRes` augmented with hierarchical region grouping."""
 
     region_groups: list[RegionGroup] = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description='Region groups grouped by constraints, containing child groups recursively. Empty when no regions are available (decomposition error).',
     )
 
@@ -249,7 +258,7 @@ class EnrichedDecomposeRes(DecomposeRes):
     def regions(self) -> JSONArray:
         """Leaf region groups (concrete regions) with hierarchical grouping info."""
         leaf_groups = get_leaf_groups(self.region_groups)
-        ds = []
+        ds: JSONArray = []
         for leaf_group in leaf_groups:
             d: JSONObject = {}
             assert leaf_group.region is not None, 'Leaf group must be concrete'
@@ -277,7 +286,7 @@ class RegionGroup(BaseModel):
     A hierarchical group of regions sharing constraints.
     """
 
-    constraints: list[xtype.Mir_Term_term] = Field(
+    constraints: list[str] = Field(
         description=(
             'Full accumulated constraint path from root to this node (root-first).'
             "`constraints[-1]` is the constraint introduced at this node's own level."
@@ -294,11 +303,17 @@ class RegionGroup(BaseModel):
     weight: int = Field(
         description="Number of regions in the partition at this node's level."
     )
-    region: Region | None = Field(
-        default=None, description='The concrete region. Present iff at leaf nodes.'
+    region: Annotated[
+        Region | None,
+        PlainSerializer(
+            lambda x: x.to_jsonable() if x is not None else None, return_type=JSONObject
+        ),
+    ] = Field(
+        default=None,
+        description='The concrete region. Present iff at leaf nodes.',
     )
     children: list[RegionGroup] = Field(
-        default_factory=list, description='Sub-groups under this node.'
+        default_factory=lambda: [], description='Sub-groups under this node.'
     )
 
     def n_regions(self) -> int:
@@ -318,9 +333,8 @@ class RegionGroup(BaseModel):
     def describe(self) -> JSONObject:
         d: JSONObject = {}
         d['label_path'] = '.'.join(map(str, self.label_path))
-        constraints = [term_to_string(c) for c in self.constraints]
-        d['constraints'] = constraints
-        d['introduced_constraint'] = constraints[-1] if self.constraints else ''
+        d['constraints'] = self.constraints
+        d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
         d['weight'] = self.weight
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
@@ -340,8 +354,10 @@ class RegionGroup(BaseModel):
         parts: list[str] = []
         parts.append(f'[{d["label_path"]}]')
         parts.append(f"new_constraint='{d['introduced_constraint']}'")
-        if d.get('invariant_str'):
-            parts.append(f"invariant='{d['invariant_str']}'")
+        region_info = d.get('region', None)
+        if region_info is not None:
+            parts.append(f"invariant='{region_info['invariant']}'")  # type: ignore
+
         n_leaf_regions = d['n_leaf_regions']
         if n_leaf_regions != 1:
             parts.append(f'n_leaf_regions={n_leaf_regions}')
@@ -351,7 +367,7 @@ class RegionGroup(BaseModel):
 
 
 def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
-    leaves = []
+    leaves: list[RegionGroup] = []
     for group in groups:
         if not group.children:
             leaves.append(group)
@@ -594,7 +610,7 @@ def _loop_group_regions(
                     rg_region = None
                 rg_weight = len(has)
                 group = RegionGroup(
-                    constraints=rg_constraints,
+                    constraints=[term_to_string(c) for c in rg_constraints],
                     region=rg_region,
                     children=rg_children,
                     label_path=new_idx_path[::-1],
