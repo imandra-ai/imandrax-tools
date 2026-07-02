@@ -116,7 +116,7 @@ def _region_group_node(rg: RegionGroup) -> dict[str, Any]:
         'region_stat': None,
     }
     if rg.region is not None:
-        node['region_stat'] = rg.region.stat()
+        node['region_stat'] = rg.region.non_group_stat()
     return node
 
 

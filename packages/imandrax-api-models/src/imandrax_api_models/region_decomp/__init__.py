@@ -66,7 +66,15 @@ class Region:
         return dct
 
     def stat(self) -> JSONObject:
-        out = self.other.copy()
+        out: JSONObject = {}
+        out['constraints'] = [term_to_string(c) for c in self.constraints]
+        out |= self.non_group_stat()
+
+        return out
+
+    def non_group_stat(self) -> JSONObject:
+        out: JSONObject = {}
+
         # TODO: include id?
         out['invariant'] = term_to_string(self.mir_region.invariant)
         if self.string_result is not None:
@@ -87,6 +95,8 @@ class Region:
                     out['model'] = xtype_to_string(model)
                 case _:
                     pass
+
+        out |= self.other
         return out
 
     # @classmethod
@@ -212,7 +222,7 @@ class EnrichedDecomposeRes(DecomposeRes):
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
-    def regions(self) -> JSONArray:
+    def regions_with_group_info(self) -> JSONArray:
         """Leaf region groups (concrete regions) with hierarchical grouping info."""
         leaf_groups = get_leaf_groups(self.region_groups)
         ds: JSONArray = []
@@ -221,7 +231,7 @@ class EnrichedDecomposeRes(DecomposeRes):
             assert leaf_group.region is not None, 'Leaf group must be concrete'
             d['label_path'] = '.'.join(map(str, leaf_group.label_path))
             d['weight'] = leaf_group.weight
-            d |= asdict(leaf_group.region)
+            d |= leaf_group.region.stat()
             ds.append(d)
         return ds
 
@@ -296,7 +306,7 @@ class RegionGroup(BaseModel):
         d['weight'] = self.weight
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
-            d['region'] = r.stat()
+            d['region'] = r.non_group_stat()
         return d
 
     def to_json_dict(self) -> JSONObject:
