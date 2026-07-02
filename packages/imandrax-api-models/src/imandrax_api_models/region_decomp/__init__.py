@@ -23,8 +23,11 @@ type JSONValue = (
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
+# NOTE: can be `ContextVar` once it's needed to be mutated
 _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT = True
 """Region group's constraints (list[str]) are from pp, so we align invariant's representation for leaf nodes"""
+_IGNORE_REGION_OTHER_FIELDS = True
+"""When converting to JSON, ignore the `other` field of `Region`, which currently contains `status`"""
 
 
 def term_to_string(t: xtype.Mir_Term) -> str:
@@ -96,7 +99,8 @@ class Region:
                 case _:
                     pass
 
-        out |= self.other
+        if not _IGNORE_REGION_OTHER_FIELDS:
+            out |= self.other
         return out
 
     # @classmethod
