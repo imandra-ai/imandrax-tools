@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import Any, Self, TypedDict, cast
+from typing import Any, Self, TypedDict
 
 import imandrax_api.lib as xtype
 from devtools import pformat
@@ -88,7 +88,7 @@ def _term_key(obj: object) -> str:
 class StringResult(TypedDict):
     constraints: list[str]
     invariant: str
-    model: str | None
+    model: dict[str, str]
     model_eval: str | None
 
 
@@ -155,41 +155,59 @@ class Region:
 def _parse_region(
     region: xtype.Mir_Region_Region,
 ) -> tuple[str, StringResult | None, JSONObject]:
-    """A local replacement for xtype.unwrap_region_str"""
-    meta: AssocList[xtype.Common_Region_meta] = region.meta
+    """
+    A local replacement for xtype.unwrap_region_str.
 
-    id = dict(meta).get('id')
-    assert isinstance(id, str)
+    `region.meta` is an assoc-list whose values are wrapped in
+    `Common_Region_meta_*` variants (`String`, `Assoc`, `List`, ...); the raw
+    payload lives on their `.arg`. Mirror `xtype.unwrap_region_str` and unwrap
+    at every level.
+    """
 
-    other = {}
-    if (merge_src := dict(meta).get('merge_src')) is not None:
-        other['merge_src'] = merge_src
-    if (merge_tgt := dict(meta).get('merge_tgt')) is not None:
-        other['merge_tgt'] = merge_tgt
+    def src_of_meta_str(m: xtype.Common_Region_meta_String | Any) -> str:
+        assert isinstance(m, xtype.Common_Region_meta_String)
+        return m.arg
+
+    meta = dict(region.meta)
+
+    id = src_of_meta_str(meta.get('id'))
+
+    other: JSONObject = {}
+    if (merge_src := meta.get('merge_src')) is not None:
+        other['merge_src'] = src_of_meta_str(merge_src)
+    if (merge_tgt := meta.get('merge_tgt')) is not None:
+        other['merge_tgt'] = src_of_meta_str(merge_tgt)
     other['status'] = type(region.status).__name__.removeprefix('Common_Region_status_')
 
-    meta_str = dict(meta).get('str')
+    meta_str = meta.get('str')
     if meta_str is None:
         return id, None, other
-    else:
-        meta_str = cast(AssocList[xtype.Common_Region_meta], meta_str)
 
-        constraints = dict(meta_str).get('constraints')
-        invariant = dict(meta_str).get('invariant')
-        model = dict(meta_str).get('model')
-        model_eval = dict(meta_str).get('model_eval')
+    assert isinstance(meta_str, xtype.Common_Region_meta_Assoc)
+    meta_str_dict = dict(meta_str.arg)
 
-        assert isinstance(constraints, list)
-        assert isinstance(invariant, str)
-        assert isinstance(model, str | None)
-        assert isinstance(model_eval, str | None)
-        string_res = StringResult(
-            constraints=constraints,
-            invariant=invariant,
-            model=model,
-            model_eval=model_eval,
-        )
-        return id, string_res, other
+    constraints_ = meta_str_dict.get('constraints')
+    assert isinstance(constraints_, xtype.Common_Region_meta_List)
+    constraints: list[str] = [src_of_meta_str(c) for c in constraints_.arg]
+
+    invariant = src_of_meta_str(meta_str_dict.get('invariant'))
+
+    model: dict[str, str] = {}
+    if (model_meta := meta_str_dict.get('model')) is not None:
+        assert isinstance(model_meta, xtype.Common_Region_meta_Assoc)
+        model = {k: src_of_meta_str(v) for (k, v) in model_meta.arg}
+
+    model_eval: str | None = None
+    if (model_eval_meta := meta_str_dict.get('model_eval')) is not None:
+        model_eval = src_of_meta_str(model_eval_meta)
+
+    string_res = StringResult(
+        constraints=constraints,
+        invariant=invariant,
+        model=model,
+        model_eval=model_eval,
+    )
+    return id, string_res, other
 
 
 class EnrichedDecomposeRes(DecomposeRes):
@@ -257,13 +275,6 @@ class EnrichedDecomposeRes(DecomposeRes):
 class RegionGroup(BaseModel):
     """
     A hierarchical group of regions sharing constraints.
-
-    Attributes:
-        constraints:
-        children:
-            Sub-groups under this node.
-        weight:
-
     """
 
     constraints: list[xtype.Mir_Term_term] = Field(
@@ -503,24 +514,27 @@ def _loop_group_regions(
     ]
 
     # constraints_by_most_frequent
-    def mk_counter(ls: list[xtype.Mir_Term_term]) -> dict[xtype.Mir_Term_term, int]:
-        counter: dict[xtype.Mir_Term_term, int] = {}
-
-        def update_counter(s: xtype.Mir_Term_term) -> None:
-            curr_count = counter.get(s)
-            if curr_count is None:
-                counter[s] = 1
-            else:
-                counter[s] = curr_count + 1
-
+    # Count occurrences of each distinct constraint (distinctness per `eq_term`).
+    # MIR terms are unhashable (they contain lists) and unorderable, so we can't
+    # key a dict on them or sort on them directly: dedup via `eq_term` into an
+    # assoc list, and use the pretty-printed form only as the sort tiebreak.
+    def mk_counter(
+        ls: list[xtype.Mir_Term_term],
+    ) -> list[tuple[xtype.Mir_Term_term, int]]:
+        counter: list[list[Any]] = []  # [representative_term, count]
         for s in ls:
-            update_counter(s)
-        return counter
+            for entry in counter:
+                if eq_term(entry[0], s):
+                    entry[1] += 1
+                    break
+            else:
+                counter.append([s, 1])
+        return [(rep, n) for rep, n in counter]
 
     counter = mk_counter(all_constraints_with_dup)
     # Most frequent first, ties broken alphabetically.
     assoc_list: list[tuple[xtype.Mir_Term_term, int]] = sorted(
-        counter.items(), key=lambda kv: (-kv[1], kv[0])
+        counter, key=lambda kv: (-kv[1], term_to_string(kv[0]))
     )
     constraints_by_most_frequent: list[xtype.Mir_Term_term] = [
         kv[0] for kv in assoc_list
