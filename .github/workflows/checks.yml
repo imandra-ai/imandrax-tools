@@ -1,0 +1,35 @@
+# $schema: https://json.schemastore.org/github-workflow.json
+name: checks
+on:
+  pull_request:
+    paths:
+      - "packages/imandrax-tools/**"
+      - "packages/imandrax-api-models/**"
+      - ".github/workflows/checks.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/imandrax-tools/**"
+      - "packages/imandrax-api-models/**"
+      - ".github/workflows/checks.yml"
+
+jobs:
+  widget-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: astral-sh/setup-uv@v7
+
+      - name: Check generated TS node type is in sync with the pydantic model
+        run: make check-widget-types
+        working-directory: packages/imandrax-tools
+
+      - name: Check committed JS bundles in `imandrax_tools.widget` module is in sync with a fresh build
+        run: make check-widget-js
+        working-directory: packages/imandrax-tools
