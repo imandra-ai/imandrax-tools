@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Any, Protocol, assert_never
+from typing import Any, Protocol, TypedDict, assert_never
 
 import anywidget
 import traitlets
-from imandrax_api_models import CodeSnippetEvalResult, EvalRes, Task
+from imandrax_api_models import CodeSnippetEvalResult, DecomposeRes, EvalRes, Task
 from imandrax_api_models.client import (
     ImandraXAsyncClient,
     ImandraXClient,
@@ -26,6 +26,7 @@ from imandrax_api_models.client import (
     get_task_artifacts,
 )
 from imandrax_api_models.pp.xtype import to_string as string_of_xtype
+from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
 _DIST = Path(__file__).parent / 'static'
 
@@ -38,7 +39,18 @@ class HasTasks(Protocol):
 # ====================
 
 
-def _task_entry(task: Task, artifacts: dict[str, Any]) -> dict[str, Any]:
+class ArtifactEntry(TypedDict):
+    kind: str
+    text: str
+
+
+class TaskEntry(TypedDict):
+    id: str
+    kind: str
+    artifacts: list[ArtifactEntry]
+
+
+def _task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
     """Build one JSON-serialisable task entry for the `tasks` trait."""
     return {
         'id': getattr(task, 'id', '') or '',
@@ -52,15 +64,16 @@ def _task_entry(task: Task, artifacts: dict[str, Any]) -> dict[str, Any]:
 
 def collect_tasks_data(
     tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
-) -> list[dict[str, Any]]:
+) -> list[TaskEntry]:
     """Fetch + decode + pretty-print artifacts for each task into trait data."""
     match c:
         case ImandraXClient():
             return [_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
         case ImandraXAsyncClient() as ac:
+            # type checking note:
             # Bind the narrowed client to a fresh name: the closure below captures
             # it, and a captured `c` would revert to the un-narrowed union type.
-            async def _gather() -> list[dict[str, Any]]:
+            async def _gather() -> list[TaskEntry]:
                 artifacts = await asyncio.gather(
                     *[async_get_task_artifacts(t, ac) for t in tasks]
                 )
@@ -121,8 +134,6 @@ def register_region_decomp_repr() -> None:
     A plain `DecomposeRes` is enriched (grouped) first. Sets `_repr_mimebundle_`
     on both classes, replacing the former `_repr_html_` icicle rendering.
     """
-    from imandrax_api_models.proto_models import DecomposeRes
-    from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
     def repr_mimebundle(self: Any, include: Any = None, exclude: Any = None):
         enriched = (

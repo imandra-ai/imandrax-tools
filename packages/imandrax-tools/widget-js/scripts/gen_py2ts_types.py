@@ -1,13 +1,14 @@
 #!/usr/bin/env uv run
 """
-Generate the TS type for the region-decomp widget node from its Python model.
+Generate the TS type for the widgets from Python pydantic models.
 
-`RegionGroupView` (imandrax_api_models.region_decomp) is the single source of
-truth for the shape the JS widget consumes. This runs `pydantic-to-typescript`
-(pydantic2ts, which wraps `json-schema-to-typescript`) to emit `generated/node.ts`,
-which the handwritten `types.ts` re-exports. pydantic2ts is pointed at THIS
-module and reads `__all__` below, so only the widget-facing models are emitted;
-referenced models (`RegionNonGroupStat`) are pulled in automatically.
+The schema for widgets is defined in `imandrax_api_models`.
+This runs `pydantic-to-typescript`
+(pydantic2ts, which wraps `json-schema-to-typescript`) to emit generated TS types,
+which might be re-exported by handwritten `types.ts`.
+pydantic2ts is pointed at THIS module and reads `__all__` below,
+so only the widget-facing models are emitted;
+referenced models (dependencies) are pulled in automatically.
 """
 
 from __future__ import annotations
@@ -17,6 +18,8 @@ from pathlib import Path
 
 from imandrax_api_models.region_decomp import RegionGroupView
 from pydantic2ts import generate_typescript_defs
+
+# TODO: generalize this script to handle more widgets.
 
 # The models pydantic2ts emits when it imports this module as `--module`.
 __all__ = ['RegionGroupView']
