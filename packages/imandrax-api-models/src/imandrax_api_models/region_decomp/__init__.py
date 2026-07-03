@@ -45,6 +45,16 @@ class StringResult(TypedDict):
     model_eval: str | None
 
 
+class RegionNonGroupStat(BaseModel):
+    """
+    Display stats for one concrete region when in a hierarchical region group.
+    """
+
+    invariant: str = Field()
+    model: dict[str, str] | str | None = Field(default=None)
+    model_eval: str | None = Field(default=None)
+
+
 # TODO: now we are ready to replace RegionStr with Region completely in simple_api,py
 @dataclass
 class Region:
@@ -69,40 +79,44 @@ class Region:
         return dct
 
     def stat(self) -> JSONObject:
+        # All region stats, used in debugging, not by the widget
         out: JSONObject = {}
         out['constraints'] = [term_to_string(c) for c in self.constraints]
-        out |= self.non_group_stat()
-
-        return out
-
-    def non_group_stat(self) -> JSONObject:
-        """Information in addition to hierarchical info. E.g. constraints are used during grouping so it's not included here."""
-        out: JSONObject = {}
-
-        # TODO: include id?
-        out['invariant'] = term_to_string(self.mir_region.invariant)
-        if self.string_result is not None:
-            if not _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT:
-                out['invariant'] = self.string_result['invariant']
-            if self.string_result['model'] is not None:
-                out['model'] = self.string_result['model']
-            if self.string_result['model_eval'] is not None:
-                out['model_eval'] = self.string_result['model_eval']
-        else:
-            out['invariant'] = term_to_string(self.mir_region.invariant)
-
-            # If model is not set (in the case of `string_results=False`)
-            # try to get it from the feasible status
-            status = self.mir_region.status
-            match status:
-                case xtype.Common_Region_status_Feasible(arg=model):
-                    out['model'] = xtype_to_string(model)
-                case _:
-                    pass
+        out |= self.non_group_stat().model_dump(exclude_none=True)
 
         if not _IGNORE_REGION_OTHER_FIELDS:
             out |= self.other
+
         return out
+
+    def non_group_stat(self) -> RegionNonGroupStat:
+        """
+        Display stats beyond the hierarchical info (constraints are used during grouping, so they live on `RegionGroup`, not here).
+        """
+        # TODO: include id?
+        invariant = term_to_string(self.mir_region.invariant)
+        model: dict[str, str] | str | None = None
+        model_eval: str | None = None
+
+        if self.string_result is not None:
+            if not _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT:
+                invariant = self.string_result['invariant']
+            if self.string_result['model'] is not None:
+                model = self.string_result['model']
+            if self.string_result['model_eval'] is not None:
+                model_eval = self.string_result['model_eval']
+        else:
+            # If model is not set (in the case of `string_results=False`)
+            # try to get it from the feasible status
+            match self.mir_region.status:
+                case xtype.Common_Region_status_Feasible(arg=feasible_model):
+                    model = xtype_to_string(feasible_model)
+                case _:
+                    pass
+
+        return RegionNonGroupStat(
+            invariant=invariant, model=model, model_eval=model_eval
+        )
 
     @classmethod
     def from_mir_region(cls, region: xtype.Mir_Region_Region) -> Self:
@@ -223,6 +237,9 @@ class EnrichedDecomposeRes(DecomposeRes):
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
+    def region_group_views(self) -> list[RegionGroupView]:
+        return [RegionGroupView.from_region_group(g) for g in self.region_groups]
+
     def regions_with_group_info(self) -> JSONArray:
         """Leaf region groups (concrete regions) with hierarchical grouping info."""
         leaf_groups = get_leaf_groups(self.region_groups)
@@ -307,7 +324,7 @@ class RegionGroup(BaseModel):
         d['weight'] = self.weight
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
-            d['region'] = r.non_group_stat()
+            d['region'] = r.non_group_stat().model_dump(exclude_none=True)
         return d
 
     def to_json_dict(self) -> JSONObject:
@@ -333,6 +350,41 @@ class RegionGroup(BaseModel):
         else:
             parts.append('is_leaf=True')
         return ' '.join(parts)
+
+
+class RegionGroupView(BaseModel):
+    """
+    The single source of truth for the shape the JS region-decomp widget consumes
+
+    RegionGroup but with `region` replaced with `region_stat`
+    """
+
+    # Widget node contract
+
+    label_path: list[int]
+    constraints: list[str]
+    weight: int
+    region_stat: RegionNonGroupStat | None = Field(default=None)
+    children: list[RegionGroupView] = Field(default_factory=list)
+
+    @classmethod
+    def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:
+        """
+        The typed treemap node consumed by the JS widget (`widget-js/src/region_decomp`).
+
+        This is the single source of truth for the frontend contract: its JSON
+        schema is code-generated into the TS `RegionGroupNode` type (see
+        `widget-js/scripts/gen_types.py`). Any field change here must be paired
+        with a regen (`make gen-widget-types`); CI (`make check-widget-types`)
+        fails if the committed TS is stale.
+        """
+        return RegionGroupView(
+            label_path=rg.label_path,
+            constraints=rg.constraints,
+            weight=rg.weight,
+            region_stat=(rg.region.non_group_stat() if rg.region is not None else None),
+            children=[cls.from_region_group(c) for c in rg.children],
+        )
 
 
 def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
