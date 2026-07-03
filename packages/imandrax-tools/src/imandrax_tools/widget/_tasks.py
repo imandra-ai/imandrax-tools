@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Protocol, TypedDict, assert_never
+from typing import Any, Protocol, assert_never
 
 from imandrax_api_models import Task
 from imandrax_api_models.client import (
@@ -11,36 +11,33 @@ from imandrax_api_models.client import (
     get_task_artifacts,
 )
 from imandrax_api_models.pp.xtype import to_string as string_of_xtype
-from pydantic import TypeAdapter
+from pydantic import BaseModel
 
 
 class HasTasks(Protocol):
     tasks: list[Task]
 
 
-class ArtifactEntry(TypedDict):
+class ArtifactEntry(BaseModel):
     kind: str
-    pp: str
+    text: str
 
 
-class TaskEntry(TypedDict):
+class TaskEntry(BaseModel):
     id: str
     kind: str
     artifacts: list[ArtifactEntry]
 
 
-TaskEntries = TypeAdapter(list[TaskEntry])
-
-
 def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
-    return {
-        'id': getattr(task, 'id', '') or '',
-        'kind': task.kind.value,
-        'artifacts': [
-            {'kind': a_kind, 'pp': string_of_xtype(xval)}
+    return TaskEntry(
+        id=getattr(task, 'id', '') or '',
+        kind=task.kind.value,
+        artifacts=[
+            ArtifactEntry(kind=a_kind, text=string_of_xtype(xval))
             for a_kind, xval in artifacts.items()
         ],
-    }
+    )
 
 
 def collect_tasks_artifacts(

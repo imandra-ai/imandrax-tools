@@ -30,3 +30,18 @@ export interface RegionNonGroupStat {
     | null;
   model_eval?: string | null;
 }
+/**
+ * The front-end contract for one task and its artifacts.
+ */
+export interface TaskEntry {
+  id: string;
+  kind: string;
+  artifacts: ArtifactEntry[];
+}
+/**
+ * The front-end contract for one artifact (see `widget-js/src/task`).
+ */
+export interface ArtifactEntry {
+  kind: string;
+  text: string;
+}

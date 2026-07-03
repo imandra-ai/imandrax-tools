@@ -1,19 +1,19 @@
 // anywidget entry point for the task-artifact view. A thin adapter over the pure
-// `drawTasks`: pull the one-directional `tasks` traitlet off the model, render,
-// and re-render when it changes.
+// `drawTasks`: pull the one-directional `task_entries` traitlet off the model,
+// render, and re-render when it changes.
 
 import type { TaskData } from './types';
 import { drawTasks } from './view';
 
 interface Model {
-  get(key: 'tasks'): TaskData[];
-  on(event: 'change:tasks', cb: () => void): void;
+  get(key: 'task_entries'): TaskData[];
+  on(event: 'change:task_entries', cb: () => void): void;
 }
 
 export default {
   render({ model, el }: { model: Model; el: HTMLElement }) {
-    const rerender = () => drawTasks(el, model.get('tasks'));
+    const rerender = () => drawTasks(el, model.get('task_entries'));
     rerender();
-    model.on('change:tasks', rerender);
+    model.on('change:task_entries', rerender);
   },
 };

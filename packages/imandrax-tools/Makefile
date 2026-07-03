@@ -66,7 +66,7 @@ gen-widget-types:  ## Generate the TS widget types from pydantic models
 
 .PHONY: check-widget-types
 check-widget-types: gen-widget-types  ## Verify the committed TS node type matches the pydantic model (fails if stale)
-	git diff --exit-code -- widget-js/src/region_decomp/generated
+	git diff --exit-code -- widget-js/src/generated
 
 .PHONY: build
 build: sync-corpus  ## Build

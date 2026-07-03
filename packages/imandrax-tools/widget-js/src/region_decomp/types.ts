@@ -4,9 +4,9 @@
 //
 // The node shape (`RegionGroupView` + `RegionNonGroupStat`) is the frontend
 // contract, code-generated from the Python `RegionGroupView` pydantic model
-// into ./generated/node.ts
+// into ../generated/node.ts (shared by all widgets)
 
-import type { RegionGroupView, RegionNonGroupStat } from './generated/node';
+import type { RegionGroupView, RegionNonGroupStat } from '../generated/types';
 
 export type { RegionGroupView, RegionNonGroupStat };
 

@@ -4,10 +4,13 @@ anywidget-based rendering of ImandraX results.
 Two widgets, both backed by JS bundles under `widget/static`:
 
 - `TasksWidget` -- a collapsible view of each task's pretty-printed artifacts.
-  `register_repr_html(c)` attaches it to `EvalRes` / `CodeSnippetEvalResult`.
+  `register_tasks_widget(c)` attaches it to `EvalRes` / `CodeSnippetEvalResult`.
 - `RegionDecompWidget` -- the region-decomposition treemap.
-  `register_region_decomp_repr()` attaches it to `EnrichedDecomposeRes` /
+  `register_region_decomp_widget()` attaches it to `EnrichedDecomposeRes` /
   `DecomposeRes` (a plain `DecomposeRes` is enriched first).
+
+Each widget also overrides `_repr_mimebundle_` to fall back to a `text/plain`
+pretty-print when there is nothing to render (no tasks / decomposition errors).
 """
 
 from __future__ import annotations
@@ -32,23 +35,28 @@ class TasksWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'task.js'
 
-    api_resp_with_tasks = traitlets.Any().tag(sync=True)  # pyright: ignore[reportAssignmentType]
-    task_entries = traitlets.List().tag(sync=True)  # Derived field
+    # Synced to JS (the `task.js` bundle reads `task_entries`).
+    task_entries = traitlets.List().tag(sync=True)
+
+    # Non-JS fallback, not synced b/c a pydantic model is not
+    # JSON-serialisable over the comm, and the front end never reads it.
+    api_resp_with_tasks = traitlets.Any()
 
     @classmethod
     def from_has_tasks(
         cls, obj: HasTasks, c: ImandraXClient | ImandraXAsyncClient
     ) -> Self:
-        task_entries = collect_tasks_artifacts(obj.tasks, c)
-        return cls(api_resp_with_tasks=obj, task_entries=task_entries)
+        entries = collect_tasks_artifacts(obj.tasks, c)
+        return cls(
+            task_entries=[e.model_dump(mode='json') for e in entries],
+            api_resp_with_tasks=obj,
+        )
 
-    def _repr_mimebundle_(self, include: Any = None, exclude: Any = None) -> dict:
+    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
         if len(self.task_entries) == 0:
             return {'text/plain': xapi_to_string(self.api_resp_with_tasks)}
         else:
-            return anywidget.AnyWidget._repr_mimebundle_(
-                self.api_resp_with_tasks, include=include, exclude=exclude
-            )
+            return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
 
 
 class RegionDecompWidget(anywidget.AnyWidget):
@@ -56,34 +64,30 @@ class RegionDecompWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'region_decomp.js'
 
-    decomp_res = traitlets.Any().tag(sync=True)
+    # Synced to JS (the `region_decomp.js` bundle reads `data`)
+    data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+
+    # Non-JS fallback
+    decomp_res = traitlets.Any()  # pyright: ignore[reportAssignmentType]
 
     @classmethod
     def from_decomp_res(cls, decomp_res: EnrichedDecomposeRes | DecomposeRes) -> Self:
-        match decomp_res:
-            case EnrichedDecomposeRes():
-                return cls(
-                    data=[
-                        v.model_dump(mode='json')
-                        for v in decomp_res.region_group_views()
-                    ]
-                )
-            case DecomposeRes():
-                enriched = EnrichedDecomposeRes.from_decomp_res(decomp_res)
-                return cls(
-                    data=[
-                        v.model_dump(mode='json') for v in enriched.region_group_views()
-                    ]
-                )
+        enriched = (
+            decomp_res
+            if isinstance(decomp_res, EnrichedDecomposeRes)
+            else EnrichedDecomposeRes.from_decomp_res(decomp_res)
+        )
+        return cls(
+            data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
+            decomp_res=enriched,
+        )
 
-    def _repr_mimebundle_(self, include: Any = None, exclude: Any = None):
+    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
         if self.decomp_res.errors:
             return {'text/plain': xapi_to_string(self.decomp_res)}
         else:
-            # Only resolve to JS if there are no errors
-            return anywidget.AnyWidget._repr_mimebundle_(
-                self, include=include, exclude=exclude
-            )
+            # Only resolve to JS if there are no errors.
+            return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
 
 
 # Notebook integration
@@ -99,12 +103,11 @@ def register_tasks_widget(c: ImandraXClient | ImandraXAsyncClient) -> None:
     global _client
     _client = c
 
-    def repr_mimebundle(self: HasTasks, include: Any = None, exclude: Any = None):
+    def repr_mimebundle(self: HasTasks, **kwargs: Any) -> Any:
         assert _client is not None
         widget = TasksWidget.from_has_tasks(self, _client)
-        return anywidget.AnyWidget._repr_mimebundle_(
-            widget, include=include, exclude=exclude
-        )
+        # Delegate to the widget's own hook so its text fallback still applies.
+        return widget._repr_mimebundle_(**kwargs)
 
     setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)
@@ -116,14 +119,10 @@ def register_region_decomp_widget() -> None:
     """
 
     def repr_mimebundle(
-        self: DecomposeRes | EnrichedDecomposeRes,
-        include: Any = None,
-        exclude: Any = None,
-    ):
+        self: DecomposeRes | EnrichedDecomposeRes, **kwargs: Any
+    ) -> Any:
         widget = RegionDecompWidget.from_decomp_res(self)
-        return anywidget.AnyWidget._repr_mimebundle_(
-            widget, include=include, exclude=exclude
-        )
+        return widget._repr_mimebundle_(**kwargs)
 
     setattr(EnrichedDecomposeRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(DecomposeRes, '_repr_mimebundle_', repr_mimebundle)
