@@ -51,23 +51,6 @@ sync-corpus:  ## Sync corpus from knowledge-base/iml-eval-corpus into the packag
 	uvx ruff format $(CORPUS_TGT)
 	uvx ruff check $(CORPUS_TGT) --fix
 
-.PHONY: build-widget-js
-build-widget-js:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
-	cd widget-js && npm ci && npm run build
-
-.PHONY: check-widget-js
-check-widget-js: build-widget-js  ## Verify the committed JS bundles match a fresh build (fails if stale)
-	git diff --exit-code -- src/imandrax_tools/widget/static
-
-.PHONY: gen-widget-types
-gen-widget-types:  ## Generate the TS widget types from pydantic models
-	cd widget-js && npm ci
-	uv run python widget-js/scripts/gen_py2ts_types.py
-
-.PHONY: check-widget-types
-check-widget-types: gen-widget-types  ## Verify the committed TS node type matches the pydantic model (fails if stale)
-	git diff --exit-code -- widget-js/src/generated
-
 .PHONY: build
 build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*
@@ -103,3 +86,23 @@ publish-pypi: pre-release-test  ## Publish to PyPI
 	-u __token__ \
 	-p $$(gcloud secrets versions access --project imandra-dev --secret pypi-imandrax-api-api-token latest) \
 	./dist/imandrax_tools-*
+
+# Widgets
+# ====================
+
+.PHONY: gen-widget-types-py2ts
+gen-widget-types-py2ts:  ## Generate the TS widget types from pydantic models
+	cd widget-js && npm ci
+	uv run python widget-js/scripts/gen_py2ts_types.py
+
+.PHONY: build-widget-js-ts2py
+build-widget-js-ts2py:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
+	cd widget-js && npm ci && npm run build
+
+.PHONY: check-widget-js
+check-widget-js: build-widget-js-ts2py  ## Verify the committed JS bundles match a fresh build (fails if stale)
+	git diff --exit-code -- src/imandrax_tools/widget/static
+
+.PHONY: check-widget-types
+check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type matches the pydantic model (fails if stale)
+	git diff --exit-code -- widget-js/src/generated
