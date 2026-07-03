@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Protocol, assert_never
 
+import imandrax_api.lib as xtype
 from imandrax_api_models import Task
 from imandrax_api_models.client import (
     ImandraXAsyncClient,
@@ -10,8 +11,42 @@ from imandrax_api_models.client import (
     async_get_task_artifacts,
     get_task_artifacts,
 )
-from imandrax_api_models.pp.xtype import to_string as string_of_xtype
+from imandrax_api_models.pp.xtype import (
+    config_items_of_art,
+    to_string as string_of_xtype,
+)
 from pydantic import BaseModel
+
+STATUS_EMOJI = {
+    'success': '✅',
+    'error': '❌',
+    'warning': '⚠️',
+    'info': 'ℹ️',
+    'in_progress': '🚧',
+    'pending': '⏳',
+    'running': '⏱️',
+    'skipped': '⏭️',
+    'unknown': '❓',
+    'healthy': '🟢',
+    'degraded': '🟡',
+    'down': '🔴',
+}
+
+
+def status_emoji_of_art(kind: str, xval: Any) -> str | None:
+    match kind, xval:
+        case 'po_res', _:
+            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
+                if 'success' in type(xval.res).__name__:
+                    return STATUS_EMOJI['success']
+                elif isinstance(xval.res, xtype.Tasks_PO_res_error_No_proof):
+                    return STATUS_EMOJI['warning']
+                else:
+                    return STATUS_EMOJI['error']
+            else:
+                return STATUS_EMOJI['unknown']
+        case _, _:
+            return None
 
 
 class HasTasks(Protocol):
@@ -21,6 +56,7 @@ class HasTasks(Protocol):
 class ArtifactEntry(BaseModel):
     kind: str
     text: str
+    icon: str | None
 
 
 class TaskEntry(BaseModel):
@@ -34,6 +70,7 @@ def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
     for a_kind, xval in artifacts.items():
         # NOTE: simple right-win merge. Conflicts are not handled.
         config_items.update(config_items_of_art(a_kind, xval))
+
     return TaskEntry(
         # TODO: should we really allow empty task ids? shouldn't we raise a hard error here?
         id=task.id.id if task.id else '',
@@ -42,6 +79,8 @@ def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
             ArtifactEntry(
                 kind=a_kind,
                 text=string_of_xtype(xval, **dict(config_items)),
+                icon=status_emoji_of_art(a_kind, xval),
+            )
             for a_kind, xval in artifacts.items()
         ],
     )
