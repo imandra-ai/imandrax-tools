@@ -1,25 +1,19 @@
 // Shapes of the raw decomposition JSON the widget is handed. We read these
 // fields directly and derive every aggregate (leaf counts, etc.) from the d3
 // hierarchy at render time rather than expecting pre-computed stats.
+//
+// The node shape (`RegionGroupView` + `RegionNonGroupStat`) is the frontend
+// contract, code-generated from the Python `RegionGroupView` pydantic model
+// into ./generated/node.ts
 
-// Display stats for a concrete region, produced by the Python side (`Region.stat`).
-export interface RegionStat {
-  invariant_str: string;
-  // {var: value-string} for the example input, or a bare string.
-  model_str: Record<string, string> | string;
-  model_eval_str: string;
-}
+import type { RegionGroupView, RegionNonGroupStat } from './generated/node';
 
-// One node in the region-group forest. `children` is `[]` on leaves.
-export interface RegionGroup {
-  constraints: string[];
-  label_path: number[];
-  weight: number;
-  // Present (non-null) only on leaf groups: the concrete region's display stats.
-  // Interior nodes carry null.
-  region_stat: RegionStat | null;
-  children: RegionGroup[];
-}
+export type { RegionGroupView, RegionNonGroupStat };
+
+// One node in the region-group forest (`region_stat` non-null only on leaves).
+export type RegionGroup = RegionGroupView;
+// Display stats for a concrete leaf region.
+export type RegionStat = RegionNonGroupStat;
 
 // The decomposition result; we only read `region_groups`.
 export interface EnrichedDecomposeRes {

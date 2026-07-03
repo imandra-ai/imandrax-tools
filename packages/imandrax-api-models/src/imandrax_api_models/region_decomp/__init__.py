@@ -365,7 +365,7 @@ class RegionGroupView(BaseModel):
     constraints: list[str]
     weight: int
     region_stat: RegionNonGroupStat | None = Field(default=None)
-    children: list[RegionGroupView] = Field(default_factory=list)
+    children: list[RegionGroupView] = Field(default_factory=lambda: [])
 
     @classmethod
     def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:

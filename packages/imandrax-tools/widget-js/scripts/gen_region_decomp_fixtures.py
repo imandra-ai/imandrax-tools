@@ -12,9 +12,8 @@ Two files are written per example under `test/fixtures/region_decomp/`:
   exercise the real production shape. Always regenerated from the raw cache, so
   adapting the widget shape only needs a re-run -- no API call.
 
-Run from anywhere:
-
-    uv run python widget-js/scripts/gen_fixtures.py [--refresh]
+Flag:
+    --refresh: force re-calling the API and regenerating the raw cache
 """
 
 from __future__ import annotations
@@ -29,8 +28,6 @@ import imandrax_api
 from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
-
-from imandrax_tools.widget import _region_group_node
 
 PKG_ROOT = Path(__file__).resolve().parents[1]
 API_MODELS_ROOT = PKG_ROOT.parents[1] / 'imandrax-api-models'
@@ -103,7 +100,9 @@ def main() -> None:
             enriched = load_enriched(raw_path)
             print(f'[{name}] using cached {raw_path.relative_to(PKG_ROOT)}')
 
-        data = [_region_group_node(g) for g in enriched.region_groups]
+        # The exact `RegionDecompWidget` input: `region_group_views()` serialised,
+        # matching what `region_decomp_widget` feeds the frontend.
+        data = [v.model_dump(mode='json') for v in enriched.region_group_views()]
         data_path.write_text(
             HEADER.format(path=__file__) + json.dumps(data, indent=2) + '\n'
         )

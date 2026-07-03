@@ -32,9 +32,9 @@ export function detailHtml(node: Node): string {
 
   const stat = node.data.region_stat;
   if (stat) {
-    parts.push(`<div class="k">Invariant</div><pre>${esc(stat.invariant_str)}</pre>`);
-    parts.push(`<div class="k">Example input</div><pre>${esc(fmtModel(stat.model_str))}</pre>`);
-    parts.push(`<div class="k">Example output</div><pre>${esc(stat.model_eval_str)}</pre>`);
+    parts.push(`<div class="k">Invariant</div><pre>${esc(stat.invariant)}</pre>`);
+    parts.push(`<div class="k">Example input</div><pre>${esc(fmtModel(stat.model))}</pre>`);
+    parts.push(`<div class="k">Example output</div><pre>${esc(stat.model_eval)}</pre>`);
   }
   return parts.join('');
 }
@@ -51,9 +51,11 @@ function statsHtml(node: Node): string {
     .join('');
 }
 
-// `model_str` is a {var: value-string} map; render it as aligned lines.
-function fmtModel(model: RegionStat['model_str']): string {
-  if (typeof model !== 'object' || model === null) return String(model);
+// `model` is a {var: value-string} map; render it as aligned lines. May be a
+// bare string, or absent/null when the region carries no example input.
+function fmtModel(model: RegionStat['model']): string {
+  if (model == null) return '(no inputs)';
+  if (typeof model !== 'object') return String(model);
   const entries = Object.entries(model);
   if (!entries.length) return '(no inputs)';
   return entries.map(([k, v]) => `${k} = ${v}`).join('\n');

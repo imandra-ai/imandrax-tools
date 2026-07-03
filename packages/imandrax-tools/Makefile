@@ -59,6 +59,15 @@ build-widget-js:  ## Build the anywidget JS bundles into the package tree (src/i
 check-widget-js: build-widget-js  ## Verify the committed JS bundles match a fresh build (fails if stale)
 	git diff --exit-code -- src/imandrax_tools/widget/static
 
+.PHONY: gen-widget-types
+gen-widget-types:  ## Generate the TS widget types from pydantic models
+	cd widget-js && npm ci
+	uv run python widget-js/scripts/gen_py2ts_types.py
+
+.PHONY: check-widget-types
+check-widget-types: gen-widget-types  ## Verify the committed TS node type matches the pydantic model (fails if stale)
+	git diff --exit-code -- widget-js/src/region_decomp/generated
+
 .PHONY: build
 build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*

@@ -26,7 +26,6 @@ from imandrax_api_models.client import (
     get_task_artifacts,
 )
 from imandrax_api_models.pp.xtype import to_string as string_of_xtype
-from imandrax_api_models.region_decomp import RegionGroup
 
 _DIST = Path(__file__).parent / 'static'
 
@@ -99,31 +98,13 @@ class RegionDecompWidget(anywidget.AnyWidget):
     data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
 
 
-def _region_group_node(rg: RegionGroup) -> dict[str, Any]:
-    """
-    A treemap node for one `RegionGroup`.
-
-    Group-level fields (`label_path`, `constraints`, `weight`, `children`) feed
-    the tiles and detail stats. A leaf additionally carries `region_stat`: its
-    concrete region's display stats (`Region.stat()` -- invariant, example
-    input/output), shown in the detail panel.
-    """
-    node: dict[str, Any] = {
-        'label_path': rg.label_path,
-        'constraints': rg.constraints,
-        'weight': rg.weight,
-        'children': [_region_group_node(c) for c in rg.children],
-        'region_stat': None,
-    }
-    if rg.region is not None:
-        node['region_stat'] = rg.region.non_group_stat()
-    return node
-
-
 def region_decomp_widget(enriched: Any) -> RegionDecompWidget:
-    """Build a `RegionDecompWidget` from an `EnrichedDecomposeRes`."""
+    """
+    Build a `RegionDecompWidget` from an `EnrichedDecomposeRes`.
+
+    """
     return RegionDecompWidget(
-        data=[_region_group_node(g) for g in enriched.region_groups]
+        data=[v.model_dump(mode='json') for v in enriched.region_group_views()]
     )
 
 
