@@ -12,76 +12,19 @@ Two widgets, both backed by JS bundles under `widget/static`:
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
-from typing import Any, Protocol, TypedDict, assert_never
+from typing import Any, Self
 
 import anywidget
 import traitlets
-from imandrax_api_models import CodeSnippetEvalResult, DecomposeRes, EvalRes, Task
-from imandrax_api_models.client import (
-    ImandraXAsyncClient,
-    ImandraXClient,
-    async_get_task_artifacts,
-    get_task_artifacts,
-)
-from imandrax_api_models.pp.xtype import to_string as string_of_xtype
+from imandrax_api_models import CodeSnippetEvalResult, DecomposeRes, EvalRes
+from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
+from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
+from imandrax_tools.widget._tasks import HasTasks, collect_tasks_artifacts
+
 _DIST = Path(__file__).parent / 'static'
-
-
-class HasTasks(Protocol):
-    tasks: list[Task]
-
-
-# Task-artifact widget
-# ====================
-
-
-class ArtifactEntry(TypedDict):
-    kind: str
-    text: str
-
-
-class TaskEntry(TypedDict):
-    id: str
-    kind: str
-    artifacts: list[ArtifactEntry]
-
-
-def _task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
-    """Build one JSON-serialisable task entry for the `tasks` trait."""
-    return {
-        'id': getattr(task, 'id', '') or '',
-        'kind': task.kind.value,
-        'artifacts': [
-            {'kind': a_kind, 'text': string_of_xtype(xval)}
-            for a_kind, xval in artifacts.items()
-        ],
-    }
-
-
-def collect_tasks_data(
-    tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
-) -> list[TaskEntry]:
-    """Fetch + decode + pretty-print artifacts for each task into trait data."""
-    match c:
-        case ImandraXClient():
-            return [_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
-        case ImandraXAsyncClient() as ac:
-            # type checking note:
-            # Bind the narrowed client to a fresh name: the closure below captures
-            # it, and a captured `c` would revert to the un-narrowed union type.
-            async def _gather() -> list[TaskEntry]:
-                artifacts = await asyncio.gather(
-                    *[async_get_task_artifacts(t, ac) for t in tasks]
-                )
-                return [_task_entry(t, a) for t, a in zip(tasks, artifacts)]
-
-            return asyncio.run(_gather())
-        case _:
-            assert_never(c)
 
 
 class TasksWidget(anywidget.AnyWidget):
@@ -89,36 +32,58 @@ class TasksWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'task.js'
 
-    tasks = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    api_resp_with_tasks = traitlets.Any().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    task_entries = traitlets.List().tag(sync=True)  # Derived field
 
+    @classmethod
+    def from_has_tasks(
+        cls, obj: HasTasks, c: ImandraXClient | ImandraXAsyncClient
+    ) -> Self:
+        task_entries = collect_tasks_artifacts(obj.tasks, c)
+        return cls(api_resp_with_tasks=obj, task_entries=task_entries)
 
-def tasks_widget(
-    tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
-) -> TasksWidget:
-    """Build a `TasksWidget` for the given tasks."""
-    return TasksWidget(tasks=collect_tasks_data(tasks, c))
-
-
-# Region-decomposition widget
-# ====================
+    def _repr_mimebundle_(self, include: Any = None, exclude: Any = None) -> dict:
+        if len(self.task_entries) == 0:
+            return {'text/plain': xapi_to_string(self.api_resp_with_tasks)}
+        else:
+            return anywidget.AnyWidget._repr_mimebundle_(
+                self.api_resp_with_tasks, include=include, exclude=exclude
+            )
 
 
 class RegionDecompWidget(anywidget.AnyWidget):
-    """Treemap view of a region-group forest (see `widget-js/src/region_decomp`)."""
+    """Treemap view of a region-group forest."""
 
     _esm = _DIST / 'region_decomp.js'
 
-    data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    decomp_res = traitlets.Any().tag(sync=True)
 
+    @classmethod
+    def from_decomp_res(cls, decomp_res: EnrichedDecomposeRes | DecomposeRes) -> Self:
+        match decomp_res:
+            case EnrichedDecomposeRes():
+                return cls(
+                    data=[
+                        v.model_dump(mode='json')
+                        for v in decomp_res.region_group_views()
+                    ]
+                )
+            case DecomposeRes():
+                enriched = EnrichedDecomposeRes.from_decomp_res(decomp_res)
+                return cls(
+                    data=[
+                        v.model_dump(mode='json') for v in enriched.region_group_views()
+                    ]
+                )
 
-def region_decomp_widget(enriched: Any) -> RegionDecompWidget:
-    """
-    Build a `RegionDecompWidget` from an `EnrichedDecomposeRes`.
-
-    """
-    return RegionDecompWidget(
-        data=[v.model_dump(mode='json') for v in enriched.region_group_views()]
-    )
+    def _repr_mimebundle_(self, include: Any = None, exclude: Any = None):
+        if self.decomp_res.errors:
+            return {'text/plain': xapi_to_string(self.decomp_res)}
+        else:
+            # Only resolve to JS if there are no errors
+            return anywidget.AnyWidget._repr_mimebundle_(
+                self, include=include, exclude=exclude
+            )
 
 
 # Notebook integration
@@ -127,26 +92,35 @@ def region_decomp_widget(enriched: Any) -> RegionDecompWidget:
 _client: ImandraXClient | ImandraXAsyncClient | None = None
 
 
-def register_region_decomp_repr() -> None:
+def register_tasks_widget(c: ImandraXClient | ImandraXAsyncClient) -> None:
+    """
+    Make `EvalRes` and `CodeSnippetEvalResult` render as a `TasksWidget`.
+    """
+    global _client
+    _client = c
+
+    def repr_mimebundle(self: HasTasks, include: Any = None, exclude: Any = None):
+        assert _client is not None
+        widget = TasksWidget.from_has_tasks(self, _client)
+        return anywidget.AnyWidget._repr_mimebundle_(
+            widget, include=include, exclude=exclude
+        )
+
+    setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
+    setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)
+
+
+def register_region_decomp_widget() -> None:
     """
     Make `EnrichedDecomposeRes` / `DecomposeRes` render as a `RegionDecompWidget`.
-
-    A plain `DecomposeRes` is enriched (grouped) first. Sets `_repr_mimebundle_`
-    on both classes, replacing the former `_repr_html_` icicle rendering.
     """
 
-    def repr_mimebundle(self: Any, include: Any = None, exclude: Any = None):
-        enriched = (
-            self
-            if isinstance(self, EnrichedDecomposeRes)
-            else EnrichedDecomposeRes.from_decomp_res(self)
-        )
-        if enriched.errors:
-            return {'text/plain': str(enriched.errors)}
-        widget = region_decomp_widget(enriched)
-        # Call anywidget's impl explicitly, rather than via `widget._repr_mimebundle_`:
-        # the latter resolves to a union with `ipywidgets.Widget._repr_mimebundle_`
-        # that some type checkers can't bind `self` on.
+    def repr_mimebundle(
+        self: DecomposeRes | EnrichedDecomposeRes,
+        include: Any = None,
+        exclude: Any = None,
+    ):
+        widget = RegionDecompWidget.from_decomp_res(self)
         return anywidget.AnyWidget._repr_mimebundle_(
             widget, include=include, exclude=exclude
         )
@@ -158,26 +132,8 @@ def register_region_decomp_repr() -> None:
 def register_widgets(c: ImandraXClient | ImandraXAsyncClient | None) -> None:
     """
     Attach widget renderers to result types.
-
-    `EvalRes` / `CodeSnippetEvalResult` render as a `TasksWidget`, and
-    `EnrichedDecomposeRes` / `DecomposeRes` as a `RegionDecompWidget`. Sets
-    `_repr_mimebundle_` (the ipywidgets display hook) on each class, delegating
-    to a freshly built widget.
     """
-    register_region_decomp_repr()
+    register_region_decomp_widget()
 
-    if c is None:
-        return
-
-    global _client
-    _client = c
-
-    def repr_mimebundle(self: HasTasks, include: Any = None, exclude: Any = None):
-        assert _client is not None
-        widget = tasks_widget(self.tasks, _client)
-        return anywidget.AnyWidget._repr_mimebundle_(
-            widget, include=include, exclude=exclude
-        )
-
-    setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
-    setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)
+    if c is not None:
+        register_tasks_widget(c)
