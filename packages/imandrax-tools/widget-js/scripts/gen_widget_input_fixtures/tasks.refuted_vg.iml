@@ -1,0 +1,6 @@
+let rec f x =
+  if x > 0
+  then f (x - 1)
+  else 0
+
+verify (fun x -> f x <> 0)

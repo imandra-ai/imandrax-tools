@@ -31,7 +31,8 @@ class TaskEntry(BaseModel):
 
 def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
     return TaskEntry(
-        id=getattr(task, 'id', '') or '',
+        # TODO: should we really allow empty task ids? shouldn't we raise a hard error here?
+        id=task.id.id if task.id else '',
         kind=task.kind.value,
         artifacts=[
             ArtifactEntry(kind=a_kind, text=string_of_xtype(xval))
