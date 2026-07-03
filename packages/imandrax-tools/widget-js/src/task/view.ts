@@ -3,6 +3,7 @@
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
 
+import { highlightRepr } from './highlight';
 import { ROOT_CLASS, TASK_STYLE } from './style';
 import type { Artifact, TaskData } from './types';
 
@@ -42,7 +43,7 @@ function makeArtifact(art: Artifact): HTMLElement {
   scroll.className = `${ROOT_CLASS}-scroll`;
   const pre = document.createElement('pre');
   pre.className = `${ROOT_CLASS}-pre`;
-  pre.textContent = art.text; // escaped by the DOM
+  pre.innerHTML = highlightRepr(art.text); // tokens are HTML-escaped by highlightRepr
   scroll.appendChild(pre);
   details.appendChild(scroll);
   return details;

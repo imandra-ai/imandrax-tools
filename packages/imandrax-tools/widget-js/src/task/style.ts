@@ -42,5 +42,13 @@ details[open] > .${ROOT_CLASS}-summary::before { transform: rotate(90deg); }
 .${ROOT_CLASS}-pre { margin: 0; padding: 10px; white-space: pre; tab-size: 2; font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
+/* Syntax highlighting for the Python-repr artifact text (see task/highlight.ts).
+   Light palette tuned for the #fff code bg. */
+.${ROOT_CLASS}-pre .t-cls { color: #8250df; }   /* constructor / class names */
+.${ROOT_CLASS}-pre .t-attr { color: #0550ae; }  /* keyword-arg names */
+.${ROOT_CLASS}-pre .t-str { color: #0a7d33; }   /* string literals */
+.${ROOT_CLASS}-pre .t-num { color: #953800; }   /* numbers */
+.${ROOT_CLASS}-pre .t-lit { color: #cf222e; }   /* None / True / False */
+
 .${ROOT_CLASS}-placeholder { color: #9aa1a9; font-style: italic; padding: 8px; }
 `;

@@ -67,6 +67,16 @@ describe("task", () => {
     );
   });
 
+  it("syntax-highlights the repr text without altering it", () => {
+    const pre = render(admitRec).querySelector(".imdx-task-pre");
+    // Constructors, kwargs, and strings are wrapped in token spans...
+    expect(pre.querySelector(".t-cls")).not.toBeNull(); // POTask(...)
+    expect(pre.querySelector(".t-attr")).not.toBeNull(); // from_sym=
+    expect(pre.querySelector(".t-str")).not.toBeNull(); // 'f'
+    // ...but the concatenated text is still byte-for-byte the original.
+    expect(pre.textContent).toBe(admitRec[0].artifacts[0].text);
+  });
+
   it("tolerates an empty task list", () => {
     const el = render([]);
     expect(el.querySelectorAll(".imdx-task-task").length).toBe(0);
