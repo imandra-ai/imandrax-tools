@@ -528,3 +528,20 @@ def to_string(v: Any, **kwargs: Any) -> str:
 
 def show_value(v: Any, **kwargs: Any) -> None:
     return print(to_string(v, **kwargs))
+
+
+# Config recommendataion
+# ====================
+
+
+def config_items_of_art(kind: str, xval: Any) -> list[tuple[str, Any]]:
+    items = []
+    match kind, xval:
+        case 'po_res', _:
+            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
+                if isinstance(xval.res, xtype.Tasks_PO_res_success_Proof):  # pyright: ignore[reportUnknownMemberType]
+                    items.append(('summarize_po_task', True))
+
+        case _, _:
+            pass
+    return items

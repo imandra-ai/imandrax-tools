@@ -30,12 +30,18 @@ class TaskEntry(BaseModel):
 
 
 def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
+    config_items: dict[str, Any] = {}
+    for a_kind, xval in artifacts.items():
+        # NOTE: simple right-win merge. Conflicts are not handled.
+        config_items.update(config_items_of_art(a_kind, xval))
     return TaskEntry(
         # TODO: should we really allow empty task ids? shouldn't we raise a hard error here?
         id=task.id.id if task.id else '',
         kind=task.kind.value,
         artifacts=[
-            ArtifactEntry(kind=a_kind, text=string_of_xtype(xval))
+            ArtifactEntry(
+                kind=a_kind,
+                text=string_of_xtype(xval, **dict(config_items)),
             for a_kind, xval in artifacts.items()
         ],
     )
