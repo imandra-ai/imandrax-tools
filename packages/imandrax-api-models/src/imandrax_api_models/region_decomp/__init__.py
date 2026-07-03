@@ -23,7 +23,7 @@ type JSONValue = (
 type JSONObject = dict[str, JSONValue]
 type JSONArray = list[JSONValue]
 
-# NOTE: can be `ContextVar` once it's needed to be mutated
+# NOTE: can be `ContextVar` once it's needs to be mutated
 _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT = True
 """Region group's constraints (list[str]) are from pp, so we align invariant's representation for leaf nodes"""
 _IGNORE_REGION_OTHER_FIELDS = True
@@ -76,6 +76,7 @@ class Region:
         return out
 
     def non_group_stat(self) -> JSONObject:
+        """Information in addition to hierarchical info. E.g. constraints are used during grouping so it's not included here."""
         out: JSONObject = {}
 
         # TODO: include id?
@@ -103,21 +104,6 @@ class Region:
             out |= self.other
         return out
 
-    # @classmethod
-    # def from_region_str(
-    #     cls, region_str: RegionStr, mir_region: xtype.Mir_Region_Region
-    # ) -> Self:
-    #     meta_str = {
-    #         'invariant_str': region_str.invariant_str,
-    #         'model_str': region_str.model_str,
-    #         'model_eval_str': region_str.model_eval_str,
-    #     }
-    #     return cls(
-    #         constraints_str=region_str.constraints_str,
-    #         mir_region=mir_region,
-    #         data=meta_str,
-    #     )
-
     @classmethod
     def from_mir_region(cls, region: xtype.Mir_Region_Region) -> Self:
         id, string_result, other = _parse_region(region)
@@ -130,16 +116,33 @@ class Region:
         )
 
 
+def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
+    regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
+    return group_regions(regions)
+
+
+def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
+    import imandrax_api.lib as xtype
+
+    xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
+    assert isinstance(xval, xtype.Common_Fun_decomp_t_poly)
+    return xval.regions
+
+
 def _parse_region(
     region: xtype.Mir_Region_Region,
 ) -> tuple[str, StringResult | None, JSONObject]:
     """
-    A local replacement for xtype.unwrap_region_str.
+    A local replacement for xtype.unwrap_region_str, extracting info from MIR region.
 
     `region.meta` is an assoc-list whose values are wrapped in
     `Common_Region_meta_*` variants (`String`, `Assoc`, `List`, ...); the raw
     payload lives on their `.arg`. Mirror `xtype.unwrap_region_str` and unwrap
     at every level.
+
+    Returns:
+        A tuple of region id, string results (optional), and other metadata.
+
     """
 
     def src_of_meta_str(
@@ -195,26 +198,20 @@ class EnrichedDecomposeRes(DecomposeRes):
 
     region_groups: list[RegionGroup] = Field(
         default_factory=lambda: [],
-        description='Region groups grouped by constraints, containing child groups recursively. Empty when no regions are available (decomposition error).',
+        description=(
+            'Region groups grouped by constraints, containing child groups recursively.'
+            ' Empty when no regions are available (decomposition error).'
+            ' Considered to supersede `regions_str` field.'
+        ),
     )
 
     @model_validator(mode='after')
     def populate_region_groups(self) -> Self:
         if self.region_groups or self.artifact is None:
             return self
-        mir_regions = _mir_regions_of_fun_decomp_artifact(self.artifact)
-
-        # if self.regions_str:
-        #     regions = [
-        #         Region.from_region_str(r_str, mir_r)
-        #         for r_str, mir_r in zip(self.regions_str, mir_regions)
-        #     ]
-        # else:
-        #     # `regions_str` is only populated when the decomposition embedded
-        #     # string results in the artifact meta (`string_results=True`). When
-        #     # it didn't, fall back to the raw regions in the decoded artifact,
-        #     # stringifying their constraint terms via `repr`.
-        #     regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
+        mir_regions: list[xtype.Mir_Region_Region] = (
+            _mir_regions_of_fun_decomp_artifact(self.artifact)
+        )
 
         regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
 
@@ -356,34 +353,6 @@ def group_regions(
 ) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
     return _loop_group_regions([], [], regions, eq_term)
-
-
-def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
-
-    # regions_str: list[RegionStr] | None = None
-    # try:
-    #     regions_str = [xtype.unwrap_region_str(r) for r in fun_decomp.regions]
-    # except Exception:
-    #     pass
-
-    # if regions_str is None:
-    #     regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
-    # else:
-    #     regions = [
-    #         Region.from_region_str(r_str, mir_r)
-    #         for r_str, mir_r in zip(regions_str, fun_decomp.regions)
-    #     ]
-
-    regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
-    return group_regions(regions)
-
-
-def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
-    import imandrax_api.lib as xtype
-
-    xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
-    assert isinstance(xval, xtype.Common_Fun_decomp_t_poly)
-    return xval.regions
 
 
 # Tree rendering

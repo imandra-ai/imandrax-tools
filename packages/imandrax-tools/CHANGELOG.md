@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- **BREAKING** `imandrax_api.lib` pretty-printer is moved to `imandrax_api_models.pp`
 
 ## [20.2.1] - 2026-06-29
 -  PP: add config knob for summarizing PO tasks (useful for succeded proof cases)

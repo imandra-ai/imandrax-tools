@@ -163,7 +163,7 @@ def register_region_decomp_repr() -> None:
     setattr(DecomposeRes, '_repr_mimebundle_', repr_mimebundle)
 
 
-def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
+def register_widgets(c: ImandraXClient | ImandraXAsyncClient | None) -> None:
     """
     Attach widget renderers to result types.
 
@@ -172,6 +172,11 @@ def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
     `_repr_mimebundle_` (the ipywidgets display hook) on each class, delegating
     to a freshly built widget.
     """
+    register_region_decomp_repr()
+
+    if c is None:
+        return
+
     global _client
     _client = c
 
@@ -184,5 +189,3 @@ def register_repr_html(c: ImandraXClient | ImandraXAsyncClient) -> None:
 
     setattr(EvalRes, '_repr_mimebundle_', repr_mimebundle)
     setattr(CodeSnippetEvalResult, '_repr_mimebundle_', repr_mimebundle)
-
-    register_region_decomp_repr()

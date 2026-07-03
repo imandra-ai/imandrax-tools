@@ -172,6 +172,7 @@ def test_simple_decomp(decomp_res_classify):
     edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_classify)
     enrich_decomp_res_props(edr)
 
+    # The following tests are commented out because we haven't found a way to stablize the representation of region groups
     # leaf_groups = get_leaf_groups(edr.region_groups)
     # assert fence_py(xtype_to_string(leaf_groups)) == external_file(
     #     'data/test_simple_decomp.leaf_groups.expected', format='.txt'
