@@ -14,10 +14,19 @@ function makeArtifact(art: Artifact): HTMLElement {
 
   const summary = document.createElement('summary');
   summary.className = `${ROOT_CLASS}-summary`;
+
   const kind = document.createElement('span');
   kind.className = `${ROOT_CLASS}-art-kind`;
   kind.textContent = art.kind;
   summary.appendChild(kind);
+
+  // Status icon sits right after the artifact-kind label.
+  if (art.icon) {
+    const icon = document.createElement('span');
+    icon.className = `${ROOT_CLASS}-art-icon`;
+    icon.textContent = art.icon;
+    summary.appendChild(icon);
+  }
 
   const meta = document.createElement('span');
   meta.className = `${ROOT_CLASS}-meta`;

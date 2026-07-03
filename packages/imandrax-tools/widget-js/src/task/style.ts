@@ -30,6 +30,7 @@ details[open] > .${ROOT_CLASS}-summary::before { transform: rotate(90deg); }
 
 .${ROOT_CLASS}-body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
 .${ROOT_CLASS}-art { background: #fff; }
+.${ROOT_CLASS}-art-icon { font-size: 12px; line-height: 1; }
 .${ROOT_CLASS}-art-kind { font-weight: 600; color: #1a1d21;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
