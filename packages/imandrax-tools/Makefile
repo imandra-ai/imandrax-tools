@@ -93,7 +93,7 @@ publish-pypi: pre-release-test  ## Publish to PyPI
 .PHONY: gen-widget-types-py2ts
 gen-widget-types-py2ts:  ## Generate the TS widget types from pydantic models
 	cd widget-js && npm ci
-	uv run python widget-js/scripts/gen_py2ts_types.py
+	uv run --extra widget python widget-js/scripts/gen_py2ts_types.py
 
 .PHONY: build-widget-js-ts2py
 build-widget-js-ts2py:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
