@@ -13,22 +13,30 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
-from typing import Any, assert_never, cast
+from typing import Any, Literal, assert_never, cast
 
 import imandrax_api.lib as xtype
 
 from . import pretty as Pp
 from ._common import *
 from ._common import fmt_duration
+from .decomp import (
+    drop_meta_paths,
+    region2doc,
+    region_meta2doc,
+    region_meta_assoc2doc,
+)
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .model_formatter import model2doc
 from .pretty import (
     Doc,
     enclose_sep,
+    flatten,
     group,
     hcat,
     line,
     nil,
+    punctuate,
     python_dict,
     python_obj,
     python_quote,
@@ -37,7 +45,7 @@ from .pretty import (
 )
 from .proof_formatter import proof2doc
 from .report_formatter import report2doc
-from .term_formatter import sym2doc, term2doc as term2doc_
+from .term_formatter import sym2doc, term2doc as term2doc_, terms2doc
 from .type_formatter import type2doc as type2doc_
 
 
@@ -61,6 +69,8 @@ class PrinterConfig:
     show_po_res_report: bool = (
         False  # Note: report can be found in a dedicated artifact
     )
+    show_decomp_task_db: bool = False
+    show_decomp_res_report: bool = False
     show_anchor_hash: bool = False
     """append a short chash to anchor/cname names"""
     summarize_po_task: bool = False
@@ -69,6 +79,7 @@ class PrinterConfig:
     """Replace body of success cases with `...`"""
     report_expand_payloads: bool = False
     """render full models/SMT proofs in reports"""
+    concise_region_repr: bool = True
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
 
@@ -228,6 +239,8 @@ class Printer:
             # --------------------
             case xtype.Mir_Term():
                 return term2doc(v)
+            case xtype.Mir_Type():
+                return type2doc(v)
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
@@ -414,8 +427,69 @@ class Printer:
                 return dataclass2doc(v, with_name='TacticDefaultTest')
             case xtype.Common_Tactic_t_poly_Term():
                 return dataclass2doc(v, with_name='Tactic')
-            case xtype.Mir_Type():
-                return type2doc(v)
+            # Decomp
+            case xtype.Tasks_Decomp_task_t_poly():
+                ignore_fields = ['db'] if not self.config.show_decomp_task_db else None
+                return dataclass2doc(
+                    v,
+                    with_name='DecompTask',
+                    ignore_fields=ignore_fields,
+                )
+            case (
+                xtype.Tasks_Decomp_task_decomp_poly_Decomp()
+                | xtype.Tasks_Decomp_task_decomp_poly_Term()
+                | xtype.Tasks_Decomp_task_decomp_poly_Return()
+                | xtype.Tasks_Decomp_task_decomp_poly_Prune()
+                | xtype.Tasks_Decomp_task_decomp_poly_Merge()
+                | xtype.Tasks_Decomp_task_decomp_poly_Compound_merge()
+                | xtype.Tasks_Decomp_task_decomp_poly_Combine()
+                | xtype.Tasks_Decomp_task_decomp_poly_Get()
+                | xtype.Tasks_Decomp_task_decomp_poly_Let()
+            ):
+                name = type(v).__name__.removeprefix('Tasks_Decomp_task_decomp_poly_')
+                return self.dataclass2doc(v, with_name=name, unwrap_single_arg=False)
+            case xtype.Tasks_Decomp_res_shallow_poly():
+                ignore_fields = None if self.config.show_decomp_task_db else ['report']
+                return dataclass2doc(
+                    v, with_name='DecompRes', ignore_fields=ignore_fields
+                )
+            case xtype.Tasks_Decomp_res_success():
+                return dataclass2doc(v, with_name='DecompResSuccess')
+            case xtype.Tasks_Decomp_res_error_Error():
+                return dataclass2doc(v, with_name='DecompResError')
+            case xtype.Common_Fun_decomp_t_poly():
+                return dataclass2doc(v, with_name='FunDecomp')
+            # TODO: make following two different modes provided by decomp.py
+            case xtype.Common_Region_t_poly() if not self.config.concise_region_repr:
+                rows: AssocList[Doc] = []
+                for fld in fields(v):
+                    key = fld.name
+                    val = getattr(v, key)
+                    if key == 'meta':
+                        val = cast(AssocList[xtype.Common_Region_meta], val)
+                        meta_doc = region_meta_assoc2doc(val)
+                        rows.append(('meta', meta_doc))
+                    else:
+                        rows.append((key, self.value2doc(val)))
+                return python_obj('Region', rows)
+            case xtype.Common_Region_t_poly() if self.config.concise_region_repr:
+                return region2doc(v, self.value2doc)
+            case (
+                xtype.Common_Region_status_Unknown()
+                | xtype.Common_Region_status_Feasible()
+                | xtype.Common_Region_status_Feasibility_check_failed()
+            ):
+                kind = type(v).__name__.removeprefix('Common_')
+                kind = snake_to_camel(kind)
+                if (
+                    isinstance(v, xtype.Common_Region_status_Feasible)
+                    and self.config.concise_region_repr
+                ):
+                    # Ignore model since it's already in meta
+                    return python_obj(kind, [(None, text('...'))])
+                else:
+                    return dataclass2doc(v, with_name=kind)
+
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
@@ -447,6 +521,27 @@ class Printer:
         return self.value2doc(v)
 
 
-def show_value(v: Any, **kwargs: Any) -> str:
+def to_string(v: Any, **kwargs: Any) -> str:
     printer = Printer(PrinterConfig(**kwargs))
     return Pp.pretty(88, printer.value2doc(v))
+
+
+def show_value(v: Any, **kwargs: Any) -> None:
+    return print(to_string(v, **kwargs))
+
+
+# Config recommendataion
+# ====================
+
+
+def config_items_of_art(kind: str, xval: Any) -> list[tuple[str, Any]]:
+    items = []
+    match kind, xval:
+        case 'po_res', _:
+            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
+                if isinstance(xval.res, xtype.Tasks_PO_res_success_Proof):  # pyright: ignore[reportUnknownMemberType]
+                    items.append(('summarize_po_task', True))
+
+        case _, _:
+            pass
+    return items

@@ -3,47 +3,253 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import reduce
-from typing import NoReturn, Self, TypedDict
+from typing import Annotated, Any, Self, TypedDict
 
+import imandrax_api.lib as xtype
 from devtools import pformat
-from imandrax_api.lib import RegionStr
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
-from imandrax_api_models.proto_models import DecomposeRes
+from imandrax_api_models.pp.pretty import pretty
+from imandrax_api_models.pp.term_formatter import term2doc
+from imandrax_api_models.pp.xtype import to_string as xtype_to_string
+from imandrax_api_models.proto_models import Art, DecomposeRes
 
-from .icicle_widget import mk_icicle_widget_html
+type AssocList[T] = list[tuple[str, T]]
+type JSONValue = (
+    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
+)
+type JSONObject = dict[str, JSONValue]
+type JSONArray = list[JSONValue]
+
+# NOTE: can be `ContextVar` once it's needs to be mutated
+_PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT = True
+"""Region group's constraints (list[str]) are from pp, so we align invariant's representation for leaf nodes"""
+_IGNORE_REGION_OTHER_FIELDS = True
+"""When converting to JSON, ignore the `other` field of `Region`, which currently contains `status`"""
+
+
+def term_to_string(t: xtype.Mir_Term) -> str:
+    return pretty(88, term2doc(t))
+
+
+def eq_term_with_pp(left: xtype.Mir_Term, right: xtype.Mir_Term) -> bool:
+    return term_to_string(left) == term_to_string(right)
+
+
+class StringResult(TypedDict):
+    constraints: list[str]
+    invariant: str
+    model: dict[str, str] | None
+    model_eval: str | None
+
+
+class RegionNonGroupStat(BaseModel):
+    """
+    Display stats for one concrete region when in a hierarchical region group.
+    """
+
+    invariant: str = Field()
+    model: dict[str, str] | str | None = Field(default=None)
+    model_eval: str | None = Field(default=None)
+
+
+# TODO: now we are ready to replace RegionStr with Region completely in simple_api,py
+@dataclass
+class Region:
+    """
+    A region represented by string forms of its constraints.
+
+    Grouping keys off `constraints_str`; `data` supplies display fields.
+    """
+
+    mir_region: xtype.Mir_Region_Region
+    string_result: StringResult | None
+    id: str
+    other: dict[str, Any]
+
+    @property
+    def constraints(self) -> list[xtype.Mir_Term_term]:
+        return self.mir_region.constraints
+
+    def to_jsonable(self) -> JSONObject:
+        dct = asdict(self)
+        dct.pop('mir_region')
+        return dct
+
+    def stat(self) -> JSONObject:
+        # All region stats, used in debugging, not by the widget
+        out: JSONObject = {}
+        out['constraints'] = [term_to_string(c) for c in self.constraints]
+        out |= self.non_group_stat().model_dump(exclude_none=True)
+
+        if not _IGNORE_REGION_OTHER_FIELDS:
+            out |= self.other
+
+        return out
+
+    def non_group_stat(self) -> RegionNonGroupStat:
+        """
+        Display stats beyond the hierarchical info (constraints are used during grouping, so they live on `RegionGroup`, not here).
+        """
+        # TODO: include id?
+        invariant = term_to_string(self.mir_region.invariant)
+        model: dict[str, str] | str | None = None
+        model_eval: str | None = None
+
+        if self.string_result is not None:
+            if not _PREFER_INVARIANT_FROM_PP_OVER_FROM_STRING_RESULT:
+                invariant = self.string_result['invariant']
+            if self.string_result['model'] is not None:
+                model = self.string_result['model']
+            if self.string_result['model_eval'] is not None:
+                model_eval = self.string_result['model_eval']
+        else:
+            # If model is not set (in the case of `string_results=False`)
+            # try to get it from the feasible status
+            match self.mir_region.status:
+                case xtype.Common_Region_status_Feasible(arg=feasible_model):
+                    model = xtype_to_string(feasible_model)
+                case _:
+                    pass
+
+        return RegionNonGroupStat(
+            invariant=invariant, model=model, model_eval=model_eval
+        )
+
+    @classmethod
+    def from_mir_region(cls, region: xtype.Mir_Region_Region) -> Self:
+        id, string_result, other = _parse_region(region)
+
+        return cls(
+            mir_region=region,
+            id=id,
+            string_result=string_result,
+            other=other,
+        )
+
+
+def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
+    regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
+    return group_regions(regions)
+
+
+def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
+    import imandrax_api.lib as xtype
+
+    xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)
+    assert isinstance(xval, xtype.Common_Fun_decomp_t_poly)
+    return xval.regions
+
+
+def _parse_region(
+    region: xtype.Mir_Region_Region,
+) -> tuple[str, StringResult | None, JSONObject]:
+    """
+    A local replacement for xtype.unwrap_region_str, extracting info from MIR region.
+
+    `region.meta` is an assoc-list whose values are wrapped in
+    `Common_Region_meta_*` variants (`String`, `Assoc`, `List`, ...); the raw
+    payload lives on their `.arg`. Mirror `xtype.unwrap_region_str` and unwrap
+    at every level.
+
+    Returns:
+        A tuple of region id, string results (optional), and other metadata.
+
+    """
+
+    def src_of_meta_str(
+        m: xtype.Common_Region_meta_String[xtype.Mir_Term_term] | Any,
+    ) -> str:
+        assert isinstance(m, xtype.Common_Region_meta_String)
+        return m.arg
+
+    meta = dict(region.meta)
+
+    id = src_of_meta_str(meta.get('id'))
+
+    other: JSONObject = {}
+    if (merge_src := meta.get('merge_src')) is not None:
+        other['merge_src'] = src_of_meta_str(merge_src)
+    if (merge_tgt := meta.get('merge_tgt')) is not None:
+        other['merge_tgt'] = src_of_meta_str(merge_tgt)
+    other['status'] = type(region.status).__name__.removeprefix('Common_Region_status_')
+
+    meta_str = meta.get('str')
+    if meta_str is None:
+        return id, None, other
+
+    assert isinstance(meta_str, xtype.Common_Region_meta_Assoc)
+    meta_str_dict = dict(meta_str.arg)
+
+    constraints_ = meta_str_dict.get('constraints')
+    assert isinstance(constraints_, xtype.Common_Region_meta_List)
+    constraints: list[str] = [src_of_meta_str(c) for c in constraints_.arg]
+
+    invariant = src_of_meta_str(meta_str_dict.get('invariant'))
+
+    model: dict[str, str] | None = None
+    if (model_meta := meta_str_dict.get('model')) is not None:
+        assert isinstance(model_meta, xtype.Common_Region_meta_Assoc)
+        model = {k: src_of_meta_str(v) for (k, v) in model_meta.arg}
+
+    model_eval: str | None = None
+    if (model_eval_meta := meta_str_dict.get('model_eval')) is not None:
+        model_eval = src_of_meta_str(model_eval_meta)
+
+    string_res = StringResult(
+        constraints=constraints,
+        invariant=invariant,
+        model=model,
+        model_eval=model_eval,
+    )
+    return id, string_res, other
 
 
 class EnrichedDecomposeRes(DecomposeRes):
     """A `DecomposeRes` augmented with hierarchical region grouping."""
 
     region_groups: list[RegionGroup] = Field(
-        default_factory=list,
-        description='Region groups grouped by constraints, containing child groups recursively. Empty when no regions are available (decomposition error).',
+        default_factory=lambda: [],
+        description=(
+            'Region groups grouped by constraints, containing child groups recursively.'
+            ' Empty when no regions are available (decomposition error).'
+            ' Considered to supersede `regions_str` field.'
+        ),
     )
 
     @model_validator(mode='after')
     def populate_region_groups(self) -> Self:
-        if not self.region_groups and self.regions_str:
-            self.region_groups = group_regions(self.regions_str)
+        if self.region_groups or self.artifact is None:
+            return self
+        mir_regions: list[xtype.Mir_Region_Region] = (
+            _mir_regions_of_fun_decomp_artifact(self.artifact)
+        )
+
+        regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
+
+        if regions:
+            self.region_groups = group_regions(regions)
         return self
 
     @classmethod
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
-    def regions(self) -> JSONArray:
+    def region_group_views(self) -> list[RegionGroupView]:
+        return [RegionGroupView.from_region_group(g) for g in self.region_groups]
+
+    def regions_with_group_info(self) -> JSONArray:
         """Leaf region groups (concrete regions) with hierarchical grouping info."""
         leaf_groups = get_leaf_groups(self.region_groups)
-        ds = []
+        ds: JSONArray = []
         for leaf_group in leaf_groups:
             d: JSONObject = {}
             assert leaf_group.region is not None, 'Leaf group must be concrete'
             d['label_path'] = '.'.join(map(str, leaf_group.label_path))
             d['weight'] = leaf_group.weight
-            d |= asdict(leaf_group.region)
+            d |= leaf_group.region.stat()
             ds.append(d)
         return ds
 
@@ -59,31 +265,13 @@ class EnrichedDecomposeRes(DecomposeRes):
             self.region_groups, depth_limit=depth_limit, tree_repr=summarize
         )
 
-    def _repr_html_(self) -> str:
-        if self.errors:
-            return f'<pre>{pformat(self.errors, indent=2)}</pre>'
-        return mk_icicle_widget_html(self.region_groups)
-
-
-type JSONValue = (
-    str | int | float | bool | None | Mapping[str, JSONValue] | Sequence[JSONValue]
-)
-type JSONObject = dict[str, JSONValue]
-type JSONArray = list[JSONValue]
-
 
 class RegionGroup(BaseModel):
     """
     A hierarchical group of regions sharing constraints.
-
-    Attributes:
-        constraints:
-        children:
-            Sub-groups under this node.
-        weight:
-
     """
 
+    # Obtained via pp
     constraints: list[str] = Field(
         description=(
             'Full accumulated constraint path from root to this node (root-first).'
@@ -101,11 +289,17 @@ class RegionGroup(BaseModel):
     weight: int = Field(
         description="Number of regions in the partition at this node's level."
     )
-    region: RegionStr | None = Field(
-        default=None, description='The concrete region. Present iff at leaf nodes.'
+    region: Annotated[
+        Region | None,
+        PlainSerializer(
+            lambda x: x.to_jsonable() if x is not None else None, return_type=JSONObject
+        ),
+    ] = Field(
+        default=None,
+        description='The concrete region. Present iff at leaf nodes.',
     )
     children: list[RegionGroup] = Field(
-        default_factory=list, description='Sub-groups under this node.'
+        default_factory=lambda: [], description='Sub-groups under this node.'
     )
 
     def n_regions(self) -> int:
@@ -128,13 +322,9 @@ class RegionGroup(BaseModel):
         d['constraints'] = self.constraints
         d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
         d['weight'] = self.weight
-        d['n_children_regions'] = len(self.children)
-        d['n_descendant_regions'] = self.n_descendant_regions()
         d['n_leaf_regions'] = self.n_leaf_regions()
         if (r := self.region) is not None:
-            d['invariant'] = r.invariant_str
-            d['example_input'] = r.model_str
-            d['example_output'] = r.model_eval_str
+            d['region'] = r.non_group_stat().model_dump(exclude_none=True)
         return d
 
     def to_json_dict(self) -> JSONObject:
@@ -150,8 +340,10 @@ class RegionGroup(BaseModel):
         parts: list[str] = []
         parts.append(f'[{d["label_path"]}]')
         parts.append(f"new_constraint='{d['introduced_constraint']}'")
-        if d.get('invariant'):
-            parts.append(f"invariant='{d['invariant']}'")
+        region_info = d.get('region', None)
+        if region_info is not None:
+            parts.append(f"invariant='{region_info['invariant']}'")  # type: ignore
+
         n_leaf_regions = d['n_leaf_regions']
         if n_leaf_regions != 1:
             parts.append(f'n_leaf_regions={n_leaf_regions}')
@@ -160,8 +352,43 @@ class RegionGroup(BaseModel):
         return ' '.join(parts)
 
 
+class RegionGroupView(BaseModel):
+    """
+    The single source of truth for the shape the JS region-decomp widget consumes
+
+    RegionGroup but with `region` replaced with `region_stat`
+    """
+
+    # Widget node contract
+
+    label_path: list[int]
+    constraints: list[str]
+    weight: int
+    region_stat: RegionNonGroupStat | None = Field(default=None)
+    children: list[RegionGroupView] = Field(default_factory=lambda: [])
+
+    @classmethod
+    def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:
+        """
+        The typed treemap node consumed by the JS widget (`widget-js/src/region_decomp`).
+
+        This is the single source of truth for the frontend contract: its JSON
+        schema is code-generated into the TS `RegionGroupNode` type (see
+        `widget-js/scripts/gen_types.py`). Any field change here must be paired
+        with a regen (`make gen-widget-types`); CI (`make check-widget-types`)
+        fails if the committed TS is stale.
+        """
+        return RegionGroupView(
+            label_path=rg.label_path,
+            constraints=rg.constraints,
+            weight=rg.weight,
+            region_stat=(rg.region.non_group_stat() if rg.region is not None else None),
+            children=[cls.from_region_group(c) for c in rg.children],
+        )
+
+
 def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
-    leaves = []
+    leaves: list[RegionGroup] = []
     for group in groups:
         if not group.children:
             leaves.append(group)
@@ -170,9 +397,14 @@ def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
     return leaves
 
 
-def group_regions(regions: list[RegionStr]) -> list[RegionGroup]:
+def group_regions(
+    regions: Sequence[Region],
+    eq_term: Callable[
+        [xtype.Mir_Term_term, xtype.Mir_Term_term], bool
+    ] = eq_term_with_pp,
+) -> list[RegionGroup]:
     """Group regions hierarchically based on constraints."""
-    return _loop_group_regions([], [], regions)
+    return _loop_group_regions([], [], regions, eq_term)
 
 
 # Tree rendering
@@ -236,7 +468,10 @@ def _tree_lines(
 
 
 def _loop_group_regions(
-    idx_path: list[int], constraint_path: list[str], regions: list[RegionStr]
+    idx_path: list[int],
+    constraint_path: list[xtype.Mir_Term_term],
+    regions: Sequence[Region],
+    eq_term: Callable[[xtype.Mir_Term_term, xtype.Mir_Term_term], bool],
 ) -> list[RegionGroup]:
     """
     Recursively group regions by shared constraints.
@@ -274,51 +509,52 @@ def _loop_group_regions(
     - `acc['groups']` only grows: new groups are prepended when `has` is non-empty.
     """
 
-    def raise_(exc: BaseException) -> NoReturn:
-        raise exc
+    def term_in_list(term: xtype.Mir_Term, terms: list[xtype.Mir_Term]) -> bool:
+        return any(eq_term(term, t) for t in terms)
 
     # all_constraints_with_dup
-    constraints_: list[list[str]] = [
-        (
-            r.constraints_str
-            if r.constraints_str
-            else raise_(ValueError(f'Region {r} has no constraint string'))
-        )
-        for r in regions
-    ]
-    constraints: list[str] = [c for cs in constraints_ for c in cs]
-    all_constraints_with_dup: list[str] = [
-        c for c in constraints if c not in constraint_path
+    constraints_: list[list[xtype.Mir_Term_term]] = [r.constraints for r in regions]
+    constraints: list[xtype.Mir_Term_term] = [c for cs in constraints_ for c in cs]
+    all_constraints_with_dup: list[xtype.Mir_Term_term] = [
+        # c for c in constraints if c not in constraint_path
+        c
+        for c in constraints
+        if not term_in_list(c, constraint_path)
     ]
 
     # constraints_by_most_frequent
-    def mk_counter(ls: list[str]) -> dict[str, int]:
-        counter: dict[str, int] = {}
-
-        def update_counter(s: str) -> None:
-            curr_count = counter.get(s)
-            if curr_count is None:
-                counter[s] = 1
-            else:
-                counter[s] = curr_count + 1
-
+    # Count occurrences of each distinct constraint (distinctness per `eq_term`).
+    # MIR terms are unhashable (they contain lists) and unorderable, so we can't
+    # key a dict on them or sort on them directly: dedup via `eq_term` into an
+    # assoc list, and use the pretty-printed form only as the sort tiebreak.
+    def mk_counter(
+        ls: list[xtype.Mir_Term_term],
+    ) -> list[tuple[xtype.Mir_Term_term, int]]:
+        counter: list[list[Any]] = []  # [representative_term, count]
         for s in ls:
-            update_counter(s)
-        return counter
+            for entry in counter:
+                if eq_term(entry[0], s):
+                    entry[1] += 1
+                    break
+            else:
+                counter.append([s, 1])
+        return [(rep, n) for rep, n in counter]
 
     counter = mk_counter(all_constraints_with_dup)
     # Most frequent first, ties broken alphabetically.
-    assoc_list: list[tuple[str, int]] = sorted(
-        counter.items(), key=lambda kv: (-kv[1], kv[0])
+    assoc_list: list[tuple[xtype.Mir_Term_term, int]] = sorted(
+        counter, key=lambda kv: (-kv[1], term_to_string(kv[0]))
     )
-    constraints_by_most_frequent: list[str] = [kv[0] for kv in assoc_list]
+    constraints_by_most_frequent: list[xtype.Mir_Term_term] = [
+        kv[0] for kv in assoc_list
+    ]
 
-    # grouped: tuple[list[RegionGroup], list[RegionStr]]
+    # grouped: tuple[list[RegionGroup], list[RegionStr_]]
     class Acc(TypedDict):
         groups: list[RegionGroup]
-        regions: list[RegionStr]
+        regions: list[Region]
         idx_path: list[int]
-        constraint_path: list[str]
+        constraint_path: list[xtype.Mir_Term_term]
 
     def loop(
         # 'acc
@@ -328,7 +564,7 @@ def _loop_group_regions(
         # idx_path: list[int],
         # constraint_path: list[str],
         # 'a
-        konstraint: str,
+        konstraint: xtype.Mir_Term_term,
     ) -> Acc:
         # ) -> tuple[list[RegionGroup], list[RegionStr], list[int], list[str]]:
         groups = acc['groups']
@@ -336,11 +572,11 @@ def _loop_group_regions(
         idx_path = acc['idx_path']
         constraint_path = acc['constraint_path']
 
-        has: list[RegionStr] = []
-        without: list[RegionStr] = []
+        has: list[Region] = []
+        without: list[Region] = []
         for r in regions:
-            assert r.constraints_str, 'region has no constraint_str'
-            if konstraint in r.constraints_str:
+            # if konstraint in r.constraints:
+            if term_in_list(konstraint, r.constraints):
                 has.append(r)
             else:
                 without.append(r)
@@ -349,23 +585,25 @@ def _loop_group_regions(
             new_idx_path = idx_path
         else:
             new_idx_path: list[int] = [i, *idx_path]
-        new_constraint_path: list[str] = [konstraint, *constraint_path]
+        new_constraint_path: list[xtype.Mir_Term_term] = [konstraint, *constraint_path]
 
         if len(has) > 0:
-            rg_children = _loop_group_regions(new_idx_path, new_constraint_path, has)
+            rg_children = _loop_group_regions(
+                new_idx_path, new_constraint_path, has, eq_term
+            )
             group: RegionGroup
             if len(rg_children) == 1:
                 group = rg_children[0]
             else:
                 rg_constraints = new_constraint_path[::-1]
-                rg_region: RegionStr | None
+                rg_region: Region | None
                 if len(has) == 1:
                     rg_region = has[0]
                 else:
                     rg_region = None
                 rg_weight = len(has)
                 group = RegionGroup(
-                    constraints=rg_constraints,
+                    constraints=[term_to_string(c) for c in rg_constraints],
                     region=rg_region,
                     children=rg_children,
                     label_path=new_idx_path[::-1],
@@ -387,6 +625,73 @@ def _loop_group_regions(
         )
 
     init = Acc(
-        groups=[], regions=regions, idx_path=idx_path, constraint_path=constraint_path
+        groups=[],
+        regions=list(regions),
+        idx_path=idx_path,
+        constraint_path=constraint_path,
     )
     return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
+
+
+# For test
+# ====================
+
+
+def _stringified_term_map_of_region(
+    r: xtype.Mir_Region_Region, base: dict[int, str] | None = None
+) -> dict[int, str]:
+    # MIR terms are unhashable (they contain lists), so key the map by object
+    # identity (`id`). This maps each concrete term instance to its server-side
+    # string, keeping this grouping strategy independent of the structural
+    # `_term_key` used by `eq_term_naive`.
+    out = base or {}
+
+    constraints_str = xtype.unwrap_region_str(r).constraints_str
+    assert constraints_str is not None
+    for c, s in zip(r.constraints, constraints_str):
+        out[id(c)] = s
+
+    return out
+
+
+def _eq_term_with_string_results(
+    left: xtype.Mir_Term,
+    right: xtype.Mir_Term,
+    stringified_term_map: dict[int, str],
+) -> bool:
+    l = stringified_term_map[id(left)]
+    r = stringified_term_map[id(right)]
+    return l == r
+
+
+def _eq_term_naive(
+    left: xtype.Mir_Term,
+    right: xtype.Mir_Term,
+) -> bool:
+    return _term_key(left) == _term_key(right)
+
+
+def _term_key(obj: object) -> str:
+    """
+    A canonical structural string key for a decoded term.
+
+    Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
+    level. Terms that differ only in type annotations or source anchors produce
+    the same key, so regions sharing a constraint group together even though
+    their raw `repr`s differ.
+    """
+    # Term fields carrying no logical identity: `ty` is the (redundant, given the
+    # fully-resolved view) type annotation, `sub_anchor` is a source-position
+    # anchor. Both vary between structurally-identical constraints, so they are
+    # skipped when deriving a grouping key from a raw term.
+    term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
+    if is_dataclass(obj) and not isinstance(obj, type):
+        inner = ','.join(
+            f'{f.name}={_term_key(getattr(obj, f.name))}'
+            for f in fields(obj)
+            if f.name not in term_key_drop_fields
+        )
+        return f'{type(obj).__name__}({inner})'
+    if isinstance(obj, (list, tuple)):
+        return '[' + ','.join(_term_key(x) for x in obj) + ']'  # pyright: ignore
+    return repr(obj)

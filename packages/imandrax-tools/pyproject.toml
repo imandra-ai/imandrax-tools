@@ -22,6 +22,9 @@ extended-client = [
 codegen = [
     "imandrax-codegen>=20.0.0, <21.0.0",
 ]
+widget = [
+    "anywidget>=0.11.0",
+]
 
 [tool.uv.sources]
 imandrax-codegen = { path = "../imandrax-codegen", editable = true }
@@ -32,6 +35,7 @@ iml-query = { workspace = true }
 dev = [
     "inline-snapshot>=0.32.6",
     "pytest>=9.0.1",
+    "pydantic-to-typescript>=2.0.0",
 ]
 
 [build-system]
@@ -67,7 +71,8 @@ ignore = [
     "D212",
     "D401",
     "D200",
-    "C901"
+    "C901",
+    "E731"
 ]
 pycodestyle.ignore-overlong-task-comments = true
 isort.combine-as-imports = true
@@ -79,29 +84,18 @@ isort.combine-as-imports = true
 [tool.ruff.format]
 quote-style = "single"
 
-[tool.ty]
-environment.python = "./.venv"
-
-[tool.ty.rules]
-# Handled by pyright
-unsupported-operator = "ignore"
-invalid-argument-type = "ignore"
-invalid-return-type = "ignore"
-possibly-missing-attribute = "ignore"
-unresolved-import = "ignore"
-missing-argument = "ignore"
-
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.12"
-typeCheckingMode = "strict"
-reportMissingModuleSource = "none"
-reportMissingTypeStubs = false
-reportUnnecessaryIsInstance = false
-reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "none"
-reportUnusedExpression = false
+# handle by workspace root config
+# [tool.pyright]
+# venvPath = "."
+# venv = ".venv"
+# pythonVersion = "3.12"
+# typeCheckingMode = "strict"
+# reportMissingModuleSource = "none"
+# reportMissingTypeStubs = false
+# reportUnnecessaryIsInstance = false
+# reportUnnecessaryTypeIgnoreComment = true
+# reportUnusedImport = "none"
+# reportUnusedExpression = false
 
 [tool.inline-snapshot]
 format-command="uvx ruff check --fix-only --stdin-filename {filename} | uvx ruff format --stdin-filename {filename}"

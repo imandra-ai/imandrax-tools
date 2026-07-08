@@ -7,9 +7,10 @@ Most functions returns a JSON-serializable value, suitable to be further dumped 
 from __future__ import annotations
 
 from collections.abc import Collection, MutableMapping, MutableSequence
-from typing import Any, Literal, cast
+from typing import Any, Literal, assert_never, cast, get_args
 
 from imandrax_api_models import (
+    DecomposeRes,
     Error,
     ErrorMessage,
     EvalOutput,
@@ -372,14 +373,74 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
 
 def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
     d: dict[str, Any] = {}
-    if decomp_res.regions_str is not None:
-        enriched_regions = decomp_res.regions()
+    if len(decomp_res.region_groups) > 0:
+        enriched_regions = decomp_res.regions_with_group_info()
         d['description'] = f'Decomp succeeded with {len(enriched_regions)} regions'
         d['regions'] = enriched_regions
     else:
         d['description'] = 'Decomp failed'
-        d |= remove_fields_rec(decomp_res.model_dump())
-        d.pop('regions_str')
-        d.pop('region_groups')
+        d |= remove_fields_rec(
+            decomp_res.model_dump(exclude={'regions_str', 'region_groups'})
+        )
 
     return d
+
+
+type FormattableModel = (
+    EvalOutput
+    | VerifyRes
+    | InstanceRes
+    | Error
+    | ErrorMessage
+    | EvalRes
+    | DecomposeRes
+    | EnrichedDecomposeRes
+)
+
+# ====================
+
+
+def jsonable_of_model(model: FormattableModel) -> JSONValue:
+    """Dispatch to the appropriate string representation for the given model."""
+    from pydantic_core import to_jsonable_python
+
+    match model:
+        case EvalOutput():
+            return format_eval_output(model)
+        case VerifyRes() | InstanceRes():
+            return format_vg_res(model)
+        case Error():
+            return format_error(model)
+        case EvalRes():
+            return format_eval_res(model)
+        case EnrichedDecomposeRes():
+            return format_enriched_decomp_res(
+                EnrichedDecomposeRes.from_decomp_res(model)
+            )
+        case DecomposeRes():
+            try:
+                return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
+            except Exception:
+                return remove_fields_rec(to_jsonable_python(model))
+        case ErrorMessage():
+            return format_error_msg(model)
+        case _:
+            assert_never(model)
+            return None
+
+
+def string_of_model(model: FormattableModel) -> str:
+    import yaml
+
+    return yaml.dump(
+        jsonable_of_model(model), sort_keys=False, default_flow_style=False
+    )
+
+
+def show_model(model: FormattableModel) -> None:
+    print(string_of_model(model))
+
+
+def register_model_repr() -> None:
+    for model_cls in get_args(FormattableModel.__value__):
+        model_cls.__repr__ = string_of_model

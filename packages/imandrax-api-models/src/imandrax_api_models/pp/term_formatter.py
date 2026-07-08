@@ -17,6 +17,7 @@ from .operators import (
 from .pretty import (
     Doc,
     brackets,
+    flatten,
     group,
     hcat,
     join,
@@ -26,6 +27,7 @@ from .pretty import (
     nil,
     parens,
     pretty,
+    python_obj,
     text,
 )
 
@@ -154,6 +156,13 @@ def _subterm_selection2doc(ts: list[xtype.Mir_Term]) -> Doc:
 
 # Main recursion
 # --------------
+
+
+def terms2doc(ts: list[xtype.Mir_Term]) -> Doc:
+    """Show terms in one `Terms(t1, t2, ...)` block."""
+    term_f = lambda t: flatten(term2doc(t))
+    term_docs = [hcat(text("'"), term_f(t), text("'")) for t in ts]
+    return python_obj('Terms', [(None, d) for d in term_docs])
 
 
 def term2doc(t: xtype.Mir_Term) -> Doc:

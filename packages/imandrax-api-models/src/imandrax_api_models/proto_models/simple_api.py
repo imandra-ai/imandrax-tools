@@ -350,12 +350,15 @@ class PO_Res(BaseModel):
 
 
 class VerifyRes(BaseModel):
-    # One of the following will be returned
-    unknown: StringMsg | None = Field(default=None)
-    err: Empty | None = Field(default=None)
-    proved: Proved | None = Field(default=None)
-    refuted: Refuted | None = Field(default=None)
-    verified_upto: Verified_upto | None = Field(default=None)
+    # oneof res
+    unknown: StringMsg | None = Field(default=None, exclude_if=lambda v: v is None)
+    err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
+    proved: Proved | None = Field(default=None, exclude_if=lambda v: v is None)
+    refuted: Refuted | None = Field(default=None, exclude_if=lambda v: v is None)
+    verified_upto: Verified_upto | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
+    # /oneof res
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
@@ -417,8 +420,10 @@ class VerifyRes(BaseModel):
 
 class TestRes(BaseModel):
     # oneof res
-    err: Empty | None = Field(default=None)
-    counter_example: CounterSat | None = Field(default=None)
+    err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
+    counter_example: CounterSat | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
     # /oneof res
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
@@ -452,11 +457,12 @@ class TestRes(BaseModel):
 
 
 class InstanceRes(BaseModel):
-    # One of the following will be returned
-    unknown: StringMsg | None = Field(default=None)
-    err: Empty | None = Field(default=None)
-    unsat: Unsat | None = Field(default=None)
-    sat: Sat | None = Field(default=None)
+    # oneof res
+    unknown: StringMsg | None = Field(default=None, exclude_if=lambda v: v is None)
+    err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
+    unsat: Unsat | None = Field(default=None, exclude_if=lambda v: v is None)
+    sat: Sat | None = Field(default=None, exclude_if=lambda v: v is None)
+    # /oneof res
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')

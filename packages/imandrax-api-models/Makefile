@@ -12,11 +12,11 @@ help:  ## Show this help (usage: make help)
 	}' $(MAKEFILE_LIST)
 
 .PHONY: typecheck-ty
-typecheck-ty:  ## Typecheck with ty
+typecheck-ty:  # Typecheck with ty
 	uvx ty check
 
 .PHONY: typecheck-pyright
-typecheck-pyright:  ## Typecheck with pyright
+typecheck-pyright:  # Typecheck with pyright
 	uvx pyright -p pyproject.toml src/ tests/
 
 .PHONY: typecheck
