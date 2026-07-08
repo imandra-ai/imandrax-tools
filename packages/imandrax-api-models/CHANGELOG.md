@@ -7,6 +7,7 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 - **BREAKING** ENH!: exclude None fields from `InstanceRes` and `VerifyRes` when serializing
 - FEAT: imandrax-api.lib pretty-printer is added (upstreamed from `imandrax_tools.pp`)
 - **BREAKING** REFA!: region grouping now works with decomp results without `string_results=True`. Pretty-printer is used to stringify constraints when performing region grouping. 
+- FEAT(pp): decomp pretty-printer
 
 ## [20.3.0] - 2026-06-30
 - FIX(decomp/grouping): fix leak constraint bug
