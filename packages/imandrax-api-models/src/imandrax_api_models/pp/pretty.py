@@ -470,21 +470,46 @@ def assoc_list(docs: Iterable[tuple[str, Doc]]) -> Doc:
 
 # mid, end, gutter_mid, gutter_end
 TREE_CHARS = (
-    '├─ ',
-    '└─ ',
-    '│  ',
-    '   ',
+    '├─',
+    '└─',
+    '│ ',
+    '  ',
 )
 
 TREE_CHARS_ASCII = (
-    '|-- ',
-    '`-- ',
-    '|   ',
-    '    ',
+    '|-',
+    '`-',
+    '| ',
+    '  ',
 )
 
 
-def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
+def _get_tree_chars(
+    ascii: bool = False,
+    extra_bar_len: int = 0,
+    add_arrow: bool = False,
+) -> tuple[str, ...]:
+    mid, end, gutter_mid, gutter_end = TREE_CHARS_ASCII if ascii else TREE_CHARS
+    extra_bar = '-' * extra_bar_len if ascii else '─' * extra_bar_len
+    arrow_char = '' if not add_arrow else '>' if ascii else '▶'
+    gutter_arrow_placeholder = '' if not add_arrow else ' '
+
+    mid, end = mid + extra_bar + arrow_char, end + extra_bar + arrow_char
+    gutter_mid, gutter_end = (
+        gutter_mid + ' ' * extra_bar_len + gutter_arrow_placeholder,
+        gutter_end + ' ' * extra_bar_len + gutter_arrow_placeholder,
+    )
+    # Add default one space padding at the end
+    return tuple(s + ' ' for s in (mid, end, gutter_mid, gutter_end))
+
+
+def tree(
+    header: Doc,
+    children: list[Doc],
+    ascii_only: bool = False,
+    extra_bar_len: int = 0,
+    add_arrow: bool = False,
+) -> Doc:
     """
     Lay out `header` with `children` hung beneath it using box-drawing guides.
 
@@ -493,7 +518,9 @@ def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
     subtrees stay aligned under their connector. Uses `hardline`, so the tree
     always breaks regardless of the enclosing group.
     """
-    mid, end, gutter_mid, gutter_end = TREE_CHARS_ASCII if ascii_only else TREE_CHARS
+    mid, end, gutter_mid, gutter_end = _get_tree_chars(
+        ascii=ascii_only, extra_bar_len=extra_bar_len, add_arrow=add_arrow
+    )
     parts: list[Doc] = [header]
     last = len(children) - 1
     for i, child in enumerate(children):
