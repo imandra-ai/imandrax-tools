@@ -101,7 +101,28 @@ linebreak: Doc = LineBreak()
 
 
 def text(s: str) -> Doc:
-    # return nil if len(s) == 0 else Text(s)
+    r"""
+    A single-line literal.
+
+    `s` must not contain a newline. `Text` is emitted verbatim by `_best`, so an
+    embedded `\\n` slips past the indent/prefix machinery and corrupts every
+    enclosing layout (nesting, tree guides, box gutters) -- the newline lands with
+    no accumulated prefix after it. Use `multiline_text` for strings that may
+    contain newlines. The empty string collapses to `nil`.
+    """
+    return nil if len(s) == 0 else Text(s)
+
+
+def multiline_text(s: str) -> Doc:
+    r"""
+    A literal that may contain newlines, laid out as a stack of lines.
+
+    Each `\\n` becomes a `hardline`, which re-emits the accumulated prefix (nest
+    indent, tree/box gutters) after the break so the surrounding layout stays
+    aligned. Because it uses `hardline`, any string with a newline forces its
+    enclosing group to break. Equivalent to `text` for single-line input; the
+    empty string collapses to `nil`.
+    """
     if len(s) == 0:
         return nil
     if '\n' not in s:
@@ -481,6 +502,38 @@ def tree(header: Doc, children: list[Doc], ascii_only: bool = False) -> Doc:
         gutter = gutter_end if is_last else gutter_mid
         parts.append(hcat(hardline, text(conn), prefix(gutter, child)))
     return hcat(*parts)
+
+
+def box_left(
+    body: Doc,
+    header: str | None = None,
+    rounded: bool = True,
+    extra_guard_len: int = 0,
+) -> Doc:
+    """
+    Enclose `body` in a left-side box, with a `│ ` gutter down every body line.
+
+        ┌─ header          ╭─ header   (rounded=True)
+        │ <body line 1>     │ <body line 1>
+        │ <body line 2>     │ <body line 2>
+        └─                  ╰─
+
+    The leading break is placed *inside* the `│ ` prefix scope so the first body
+    line carries the gutter too; the trailing break is left outside it so the
+    bottom guard aligns with the top. Uses `hardline`, so the box always breaks
+    regardless of the enclosing group. `rounded` swaps the sharp corners
+    (`┌`/`└`) for rounded ones (`╭`/`╰`).
+    """
+    top_corner, bottom_corner = ('╭', '╰') if rounded else ('┌', '└')
+    top_guard = f'{top_corner}─' + '─' * extra_guard_len
+    bottom_guard = f'{bottom_corner}─' + '─' * extra_guard_len
+    top = text(top_guard) if header is None else text(f'{top_corner}─ {header}')
+    return hcat(
+        top,
+        prefix('│ ', hcat(hardline, body)),
+        hardline,
+        text(bottom_guard),
+    )
 
 
 def python_quote(
