@@ -101,7 +101,22 @@ linebreak: Doc = LineBreak()
 
 
 def text(s: str) -> Doc:
-    return nil if len(s) == 0 else Text(s)
+    # return nil if len(s) == 0 else Text(s)
+    if len(s) == 0:
+        return nil
+    if '\n' not in s:
+        return Text(s)
+    # A raw newline inside a single `Text` node would be emitted verbatim by
+    # `_best`, bypassing the indent/prefix machinery and corrupting gutters
+    # (tree guides, nesting). Split into per-line `Text`s joined by `hardline`,
+    # which re-emits the accumulated prefix after each break.
+    parts: list[Doc] = []
+    for i, seg in enumerate(s.split('\n')):
+        if i > 0:
+            parts.append(hardline)
+        if seg:
+            parts.append(Text(seg))
+    return hcat(*parts)
 
 
 def concat(left: Doc, right: Doc) -> Doc:
