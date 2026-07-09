@@ -80,6 +80,7 @@ class PrinterConfig:
     report_expand_payloads: bool = False
     """render full models/SMT proofs in reports"""
     concise_region_repr: bool = True
+    """Whether to use concise region representation provided by `region2doc`"""
     unwrap_single_arg_dataclass: bool = True
     ascii_only: bool = False
 
@@ -528,6 +529,23 @@ def to_string(v: Any, **kwargs: Any) -> str:
 
 def show_value(v: Any, **kwargs: Any) -> None:
     return print(to_string(v, **kwargs))
+
+
+# Register repr
+# ====================
+
+
+def register_xtype_repr(**kwargs: Any) -> None:
+    import inspect
+
+    classes = []
+    for _name, obj in vars(xtype).items():
+        if inspect.isclass(obj) and obj.__module__ == xtype.__name__:
+            # The second filter is to exclude imported classes
+            classes.append(obj)
+
+    for cls in classes:
+        cls.__repr__ = lambda self: to_string(self, **kwargs)
 
 
 # Config recommendataion
