@@ -25,6 +25,7 @@ class StringResult(TypedDict):
     model_eval: str | None
 
 
+# BaseModel because we want to pass it to the frontend
 class RegionNonGroupStat(BaseModel):
     """
     Display stats for one concrete region when in a hierarchical region group.
@@ -33,6 +34,14 @@ class RegionNonGroupStat(BaseModel):
     invariant: str = Field()
     model: dict[str, str] | str | None = Field(default=None)
     model_eval: str | None = Field(default=None)
+
+
+class RegionStat(TypedDict):
+    constraints: list[str]
+    invariant: str
+    model: dict[str, str] | str | None
+    model_eval: str | None
+    other: dict[str, Any] | None
 
 
 # TODO: now we are ready to replace RegionStr with Region completely in simple_api,py
@@ -56,16 +65,27 @@ class Region:
         dct.pop('mir_region')
         return dct
 
-    def stat(self) -> JSONObject:
-        """Region stats without the hierarchical info"""
-        out: JSONObject = {}
-        out['constraints'] = [term_to_string(c) for c in self.constraints]
-        out |= self.non_group_stat().model_dump(exclude_none=True)
+    def stat(self) -> RegionStat:
+        """Region stats without the hierarchical info, superset of `non_group_stat`"""
+        constraints = [term_to_string(c) for c in self.constraints]
+
+        non_group_stat = self.non_group_stat()
+        invariant = non_group_stat.invariant
+        model = non_group_stat.model
+        model_eval = non_group_stat.model_eval
 
         if not _IGNORE_REGION_OTHER_FIELDS:
-            out |= self.other
+            other = self.other
+        else:
+            other = None
 
-        return out
+        return RegionStat(
+            constraints=constraints,
+            invariant=invariant,
+            model=model,
+            model_eval=model_eval,
+            other=other,
+        )
 
     def non_group_stat(self) -> RegionNonGroupStat:
         """
@@ -108,6 +128,27 @@ class Region:
         )
 
 
+def mk_stablized_id_map(
+    regions: list[Region],
+    stablized_id_map: dict[str, int] | None = None,
+) -> dict[str, int]:
+    if stablized_id_map is None:
+        stablized_id_map = {}
+
+    meta_ids = [region.id for region in regions]
+    meta_merge_src = filter(None, [region.other.get('merge_src') for region in regions])
+    meta_merge_tgt = filter(None, [region.other.get('merge_tgt') for region in regions])
+    meta_base = filter(None, [region.other.get('base') for region in regions])
+
+    i = max(stablized_id_map.values(), default=-1) + 1
+    # The order matters here
+    for id in [*meta_ids, *meta_merge_src, *meta_merge_tgt, *meta_base]:
+        if id not in stablized_id_map:
+            stablized_id_map[id] = i
+            i += 1
+    return stablized_id_map
+
+
 def _parse_region(
     region: xtype.Mir_Region_Region,
 ) -> tuple[str, StringResult | None, JSONObject]:
@@ -120,7 +161,7 @@ def _parse_region(
     at every level.
 
     Returns:
-        A tuple of region id, string results (optional), and other metadata.
+        A tuple of region id, string results (optional), and other metadata (base, merge_src, merge_tgt).
 
     """
 
