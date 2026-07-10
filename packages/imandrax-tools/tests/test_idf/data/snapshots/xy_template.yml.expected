@@ -1,0 +1,161 @@
+root
+└───▶ ╭─ id=1, step_idx=0
+      │ invariant='{ x: destruct[IncX|0] (destruct[Some|0] (nth 0 events)); y: 0 }',
+      │ constraints=[
+      │   '(nth 0 events) is-a Some',
+      │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+      │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+      │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+      │ ]
+      ╰───────────
+      ├───▶ ╭─ id=2, step_idx=1
+      │     │ invariant='''
+      │     │   { x: 0; y: destruct[IncX|0] (destruct[Some|0] (nth 0 events)) }
+      │     │ ''',
+      │     │ constraints=[
+      │     │   '(nth 1 events) is-a Some',
+      │     │   '(nth 0 events) is-a Some',
+      │     │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+      │     │   'not ((destruct[Some|0] (nth 1 events)) is-a IncX)',
+      │     │   'not ((destruct[Some|0] (nth 1 events)) is-a IncY)',
+      │     │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+      │     │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+      │     │ ]
+      │     ╰───────────
+      │     └───▶ ╭─ id=5, step_idx=2 [LEAF]
+      │           │ invariant='''
+      │           │   { x: 0
+      │           │   ; y:
+      │           │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+      │           │     +
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 2 events))
+      │           │   }
+      │           │ ''',
+      │           │ constraints=[
+      │           │   '(nth 2 events) is-a Some',
+      │           │   '(nth 1 events) is-a Some',
+      │           │   '(nth 0 events) is-a Some',
+      │           │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+      │           │   '(destruct[Some|0] (nth 2 events)) is-a IncY',
+      │           │   'not ((destruct[Some|0] (nth 2 events)) is-a IncX)',
+      │           │   'not ((destruct[Some|0] (nth 1 events)) is-a IncX)',
+      │           │   'not ((destruct[Some|0] (nth 1 events)) is-a IncY)',
+      │           │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+      │           │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+      │           │   'destruct[IncY|0] (destruct[Some|0] (nth 2 events)) >= 1',
+      │           │   '''
+      │           │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+      │           │     +
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 2 events))
+      │           │     <=
+      │           │     5
+      │           │   ''',
+      │           │ ]
+      │           ╰───────────
+      ├───▶ ╭─ id=3, step_idx=1
+      │     │ invariant='''
+      │     │   { x: destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+      │     │   ; y: destruct[IncY|0] (destruct[Some|0] (nth 1 events))
+      │     │   }
+      │     │ ''',
+      │     │ constraints=[
+      │     │   '(nth 1 events) is-a Some',
+      │     │   '(nth 0 events) is-a Some',
+      │     │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+      │     │   '(destruct[Some|0] (nth 1 events)) is-a IncY',
+      │     │   'not ((destruct[Some|0] (nth 1 events)) is-a IncX)',
+      │     │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+      │     │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+      │     │   'destruct[IncY|0] (destruct[Some|0] (nth 1 events)) >= 1',
+      │     │   'destruct[IncY|0] (destruct[Some|0] (nth 1 events)) <= 5',
+      │     │ ]
+      │     ╰───────────
+      │     └───▶ ╭─ id=6, step_idx=2 [LEAF]
+      │           │ invariant='''
+      │           │   { x: destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+      │           │   ; y:
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 1 events))
+      │           │     +
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 2 events))
+      │           │   }
+      │           │ ''',
+      │           │ constraints=[
+      │           │   '(nth 2 events) is-a Some',
+      │           │   '(nth 1 events) is-a Some',
+      │           │   '(nth 0 events) is-a Some',
+      │           │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+      │           │   '(destruct[Some|0] (nth 1 events)) is-a IncY',
+      │           │   '(destruct[Some|0] (nth 2 events)) is-a IncY',
+      │           │   'not ((destruct[Some|0] (nth 2 events)) is-a IncX)',
+      │           │   'not ((destruct[Some|0] (nth 1 events)) is-a IncX)',
+      │           │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+      │           │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+      │           │   'destruct[IncY|0] (destruct[Some|0] (nth 2 events)) >= 1',
+      │           │   'destruct[IncY|0] (destruct[Some|0] (nth 1 events)) >= 1',
+      │           │   'destruct[IncY|0] (destruct[Some|0] (nth 1 events)) <= 5',
+      │           │   '''
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 1 events))
+      │           │     +
+      │           │     destruct[IncY|0] (destruct[Some|0] (nth 2 events))
+      │           │     <=
+      │           │     5
+      │           │   ''',
+      │           │ ]
+      │           ╰───────────
+      └───▶ ╭─ id=4, step_idx=1
+            │ invariant='''
+            │   { x:
+            │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+            │     +
+            │     destruct[IncX|0] (destruct[Some|0] (nth 1 events))
+            │   ; y: 0
+            │   }
+            │ ''',
+            │ constraints=[
+            │   '(nth 1 events) is-a Some',
+            │   '(nth 0 events) is-a Some',
+            │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+            │   '(destruct[Some|0] (nth 1 events)) is-a IncX',
+            │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+            │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+            │   'destruct[IncX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+            │   '''
+            │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+            │     +
+            │     destruct[IncX|0] (destruct[Some|0] (nth 1 events))
+            │     <=
+            │     5
+            │   ''',
+            │ ]
+            ╰───────────
+            └───▶ ╭─ id=7, step_idx=2 [LEAF]
+                  │ invariant='''
+                  │   { x:
+                  │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+                  │     +
+                  │     destruct[IncX|0] (destruct[Some|0] (nth 1 events))
+                  │   ; y: destruct[IncY|0] (destruct[Some|0] (nth 2 events))
+                  │   }
+                  │ ''',
+                  │ constraints=[
+                  │   '(nth 2 events) is-a Some',
+                  │   '(nth 1 events) is-a Some',
+                  │   '(nth 0 events) is-a Some',
+                  │   '(destruct[Some|0] (nth 0 events)) is-a IncX',
+                  │   '(destruct[Some|0] (nth 1 events)) is-a IncX',
+                  │   '(destruct[Some|0] (nth 2 events)) is-a IncY',
+                  │   'not ((destruct[Some|0] (nth 2 events)) is-a IncX)',
+                  │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+                  │   'destruct[IncX|0] (destruct[Some|0] (nth 0 events)) <= 5',
+                  │   'destruct[IncY|0] (destruct[Some|0] (nth 2 events)) >= 1',
+                  │   'destruct[IncY|0] (destruct[Some|0] (nth 2 events)) <= 5',
+                  │   'destruct[IncX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+                  │   '''
+                  │     destruct[IncX|0] (destruct[Some|0] (nth 0 events))
+                  │     +
+                  │     destruct[IncX|0] (destruct[Some|0] (nth 1 events))
+                  │     <=
+                  │     5
+                  │   ''',
+                  │ ]
+                  ╰───────────

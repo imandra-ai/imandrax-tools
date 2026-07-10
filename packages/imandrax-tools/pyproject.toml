@@ -36,6 +36,8 @@ dev = [
     "inline-snapshot>=0.32.6",
     "pytest>=9.0.1",
     "pydantic-to-typescript>=2.0.0",
+    "pytest-recording>=0.13.4",
+    "pytest-asyncio>=1.4.0",
 ]
 
 [build-system]

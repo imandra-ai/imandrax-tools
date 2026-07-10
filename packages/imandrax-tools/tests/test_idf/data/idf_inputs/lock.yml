@@ -1,0 +1,18 @@
+sm: |
+  type state = { locked: bool; count: int }
+  type event = Toggle | Inc
+
+  let is_valid (e: event) (state: state) = match e with
+    | Toggle -> true
+    | Inc -> not state.locked
+
+  let step (e: event) (state: state) = match e with
+    | Toggle -> { state with locked = not state.locked }
+    | Inc -> { state with count = state.count + 1 }
+
+  let initial_state = { locked = true; count = 0 }
+tpl: |
+  type t = Any
+  type c = SM.event
+  let concrete (_t: t) (_c: c) (_state: SM.state) = true
+message_flows: [TPL.Any, TPL.Any, TPL.Any]

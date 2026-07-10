@@ -1,0 +1,18 @@
+sm: |
+  type state = { n: int }
+  type event = Add1 | Add2
+
+  let is_valid (e: event) (state: state) = match e with
+    | Add1 -> state.n + 1 <= 3
+    | Add2 -> state.n + 2 <= 3
+
+  let step (e: event) (state: state) = match e with
+    | Add1 -> { n = state.n + 1 }
+    | Add2 -> { n = state.n + 2 }
+
+  let initial_state = { n = 0 }
+tpl: |
+  type t = Any
+  type c = SM.event
+  let concrete (_t: t) (_c: c) (_state: SM.state) = true
+message_flows: [TPL.Any, TPL.Any, TPL.Any]

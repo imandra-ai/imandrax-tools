@@ -1,0 +1,53 @@
+root
+├───▶ ╭─ id=1, step_idx=0
+│     │ invariant='{ n: 1 }',
+│     │ constraints=[
+│     │   '(nth 0 events) is-a Some',
+│     │   'destruct[Some|0] (nth 0 events) = Add1',
+│     │ ]
+│     ╰───────────
+│     ├───▶ ╭─ id=3, step_idx=1
+│     │     │ invariant='{ n: 2 }',
+│     │     │ constraints=[
+│     │     │   '(nth 1 events) is-a Some',
+│     │     │   '(nth 0 events) is-a Some',
+│     │     │   'destruct[Some|0] (nth 0 events) = Add1',
+│     │     │   'destruct[Some|0] (nth 1 events) = Add1',
+│     │     │ ]
+│     │     ╰───────────
+│     │     └───▶ ╭─ id=6, step_idx=2 [LEAF]
+│     │           │ invariant='{ n: 3 }',
+│     │           │ constraints=[
+│     │           │   '(nth 2 events) is-a Some',
+│     │           │   '(nth 1 events) is-a Some',
+│     │           │   '(nth 0 events) is-a Some',
+│     │           │   'destruct[Some|0] (nth 0 events) = Add1',
+│     │           │   'destruct[Some|0] (nth 1 events) = Add1',
+│     │           │   'destruct[Some|0] (nth 2 events) = Add1',
+│     │           │ ]
+│     │           ╰───────────
+│     └───▶ ╭─ id=5, step_idx=1 [LEAF]
+│           │ invariant='{ n: 3 }',
+│           │ constraints=[
+│           │   '(nth 1 events) is-a Some',
+│           │   '(nth 0 events) is-a Some',
+│           │   'destruct[Some|0] (nth 0 events) = Add1',
+│           │   'destruct[Some|0] (nth 1 events) <> Add1',
+│           │ ]
+│           ╰───────────
+└───▶ ╭─ id=2, step_idx=0
+      │ invariant='{ n: 2 }',
+      │ constraints=[
+      │   '(nth 0 events) is-a Some',
+      │   'destruct[Some|0] (nth 0 events) <> Add1',
+      │ ]
+      ╰───────────
+      └───▶ ╭─ id=4, step_idx=1 [LEAF]
+            │ invariant='{ n: 3 }',
+            │ constraints=[
+            │   '(nth 1 events) is-a Some',
+            │   '(nth 0 events) is-a Some',
+            │   'destruct[Some|0] (nth 1 events) = Add1',
+            │   'destruct[Some|0] (nth 0 events) <> Add1',
+            │ ]
+            ╰───────────
