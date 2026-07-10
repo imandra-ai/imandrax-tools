@@ -85,3 +85,6 @@ isort.combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "single"
+
+[tool.pytest.ini_options]
+addopts = "--record-mode=once"
