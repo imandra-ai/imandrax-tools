@@ -174,10 +174,7 @@ def test_verify_src(c: Client):
     verify_res_msg = c.verify_src(VERIFY_SRC)
     verify_res = VerifyRes.model_validate(verify_res_msg)
     assert verify_res.model_dump() == snapshot(
-        {
-            'unknown': None,
-            'err': None,
-            'proved': {
+        {'proved': {
                 'proof_pp': """\
 { id = 1;
   concl =
@@ -199,10 +196,7 @@ def test_verify_src(c: Client):
       ]}
   }\
 """
-            },
-            'refuted': None,
-            'verified_upto': None,
-            'errors': [],
+            }, 'errors': [],
             'task': None,
         }
     )
@@ -214,11 +208,7 @@ def test_verify_refuted(c: Client):
     verify_res_msg = c.verify_src(VERIFY_SRC_REFUTED)
     verify_res = VerifyRes.model_validate(verify_res_msg)
     assert verify_res.model_dump() == snapshot(
-        {
-            'unknown': None,
-            'err': None,
-            'proved': None,
-            'refuted': {
+        {'refuted': {
                 'model': {
                     'm_type': ModelType.Counter_example,
                     'src': """\
@@ -235,9 +225,7 @@ end
                         'storage': [],
                     },
                 }
-            },
-            'verified_upto': None,
-            'errors': [],
+            }, 'errors': [],
             'task': None,
         }
     )
@@ -249,10 +237,7 @@ def test_instance_src(c: Client):
     instance_res_msg = c.instance_src(VERIFY_SRC_REFUTED)
     instance_res = InstanceRes.model_validate(instance_res_msg)
     assert instance_res.model_dump() == snapshot(
-        {
-            'unknown': None,
-            'err': None,
-            'unsat': {
+        {'unsat': {
                 'proof_pp': """\
 { id = 1;
   concl =
@@ -274,9 +259,7 @@ def test_instance_src(c: Client):
       ]}
   }\
 """
-            },
-            'sat': None,
-            'errors': [],
+            }, 'errors': [],
             'task': None,
         }
     )
@@ -293,9 +276,7 @@ def test_test_src(c: Client):
     test_res_msg = c.qcheck_src(test_src)
     test_res = TestRes.model_validate(test_res_msg)
     assert test_res.model_dump() == snapshot(
-        {
-            'err': None,
-            'counter_example': {
+        {'counter_example': {
                 'model': {
                     'm_type': ModelType.Counter_example,
                     'src': """\
@@ -336,9 +317,7 @@ def test_test_name(c: Client):
     # NOTE: we shouldn't really see a tactic eval error here.
     assert test_res.model_dump() == snapshot(
         {
-            'err': {},
-            'counter_example': None,
-            'errors': [
+            'err': {}, 'errors': [
                 {
                     'msg': {
                         'msg': 'Did not find a counter-example.',
@@ -363,11 +342,7 @@ def test_instance_unsat(c: Client):
     instance_res_msg = c.instance_src(VERIFY_SRC)
     instance_res = InstanceRes.model_validate(instance_res_msg)
     assert instance_res.model_dump() == snapshot(
-        {
-            'unknown': None,
-            'err': None,
-            'unsat': None,
-            'sat': {
+        {'sat': {
                 'model': {
                     'm_type': ModelType.Instance,
                     'src': """\

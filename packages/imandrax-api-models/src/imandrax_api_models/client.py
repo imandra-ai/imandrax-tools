@@ -248,10 +248,10 @@ class ImandraXClient(imandrax_api.Client):
         with self._trace(
             'eval_code_snippet', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = super()._api_client.eval_code_snippet(
-                ctx=super().mk_context(),
+            res = self._api_client.eval_code_snippet(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -269,10 +269,10 @@ class ImandraXClient(imandrax_api.Client):
         with self._trace(
             'parse_term', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = super()._api_client.parse_term(
-                ctx=super().mk_context(),
+            res = self._api_client.parse_term(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -290,10 +290,10 @@ class ImandraXClient(imandrax_api.Client):
         with self._trace(
             'parse_type', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = super()._api_client.parse_type(
-                ctx=super().mk_context(),
+            res = self._api_client.parse_type(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -311,7 +311,7 @@ class ImandraXClient(imandrax_api.Client):
 
         with self._trace('get_artifact', kind=kind):
             res = self._api_client.get_artifact(
-                ctx=super().mk_context(),
+                ctx=self.mk_context(),
                 request=api_pb2.ArtifactGetQuery(task_id=task_id, kind=kind),
             )
         return Artifact.model_validate(res)
@@ -523,10 +523,10 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         with self._trace(
             'eval_code_snippet', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await super()._api_client.eval_code_snippet(
-                ctx=super().mk_context(),
+            res = await self._api_client.eval_code_snippet(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -544,10 +544,10 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         with self._trace(
             'parse_term', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await super()._api_client.parse_term(
-                ctx=super().mk_context(),
+            res = await self._api_client.parse_term(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -565,10 +565,10 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         with self._trace(
             'parse_type', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or super()._timeout
+            timeout = timeout or self._timeout
             req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await super()._api_client.parse_type(
-                ctx=super().mk_context(),
+            res = await self._api_client.parse_type(
+                ctx=self.mk_context(),
                 request=req,
                 timeout=timeout,
             )
@@ -586,7 +586,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
 
         with self._trace('get_artifact', kind=kind):
             res = await self._api_client.get_artifact(
-                ctx=super().mk_context(),
+                ctx=self.mk_context(),
                 request=api_pb2.ArtifactGetQuery(task_id=task_id, kind=kind),
             )
         return Artifact.model_validate(res)
