@@ -3,6 +3,9 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- FEAT(pp): multiline_text, box_left, tree configs
+- REFA(decomp): factor out non-grouping related types
+- FIX(client): a few endpoints incorrectly access parent class attributes
 - ENH(context_utils): make message error structured
 - **BREAKING** ENH!: exclude None fields from `InstanceRes` and `VerifyRes` when serializing
 - FEAT: imandrax-api.lib pretty-printer is added (upstreamed from `imandrax_tools.pp`)
