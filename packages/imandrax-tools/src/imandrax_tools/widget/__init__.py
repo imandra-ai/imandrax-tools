@@ -25,6 +25,7 @@ from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
+from imandrax_tools.idf.viz_view import View as IDFView
 from imandrax_tools.widget._tasks import HasTasks, collect_tasks_artifacts
 
 _DIST = Path(__file__).parent / 'static'
@@ -90,6 +91,28 @@ class RegionDecompWidget(anywidget.AnyWidget):
             return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
 
 
+class IDFWidget(anywidget.AnyWidget):
+    """Two-panel graph of an iterative-decomposition (IDF) region tree."""
+
+    _esm = _DIST / 'idf.js'
+
+    # Synced to JS (the `idf.js` bundle reads `data` -- a serialized `View`).
+    data = traitlets.Dict().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+
+    # Non-JS fallback
+    view = traitlets.Any()  # pyright: ignore[reportAssignmentType]
+
+    @classmethod
+    def from_view(cls, view: IDFView) -> Self:
+        return cls(data=view.model_dump(mode='json'), view=view)
+
+    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
+        if not self.view.steps:
+            return {'text/plain': repr(self.view)}
+        else:
+            return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
+
+
 # Notebook integration
 # ====================
 
@@ -128,11 +151,24 @@ def register_region_decomp_widget() -> None:
     setattr(DecomposeRes, '_repr_mimebundle_', repr_mimebundle)
 
 
+def register_idf_widget() -> None:
+    """
+    Make an IDF `View` render as an `IDFWidget`.
+    """
+
+    def repr_mimebundle(self: IDFView, **kwargs: Any) -> Any:
+        widget = IDFWidget.from_view(self)
+        return widget._repr_mimebundle_(**kwargs)
+
+    setattr(IDFView, '_repr_mimebundle_', repr_mimebundle)
+
+
 def register_widgets(c: ImandraXClient | ImandraXAsyncClient | None) -> None:
     """
     Attach widget renderers to result types.
     """
     register_region_decomp_widget()
+    register_idf_widget()
 
     if c is not None:
         register_tasks_widget(c)

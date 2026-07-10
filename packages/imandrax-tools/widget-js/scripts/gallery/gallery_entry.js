@@ -2,6 +2,7 @@
 // build_gallery.mjs, so the resulting HTML runs the widgets live (clicks,
 // hovers, zoom) when opened directly from the filesystem — no server needed.
 
+import { drawGraph } from "../../src/idf/graph";
 import { drawTreemap } from "../../src/region_decomp/treemap";
 import { drawTasks } from "../../src/task/view";
 
@@ -14,6 +15,7 @@ const examples = __GALLERY_EXAMPLES__;
 // One tab per widget type; `type` matches the fixture filename prefix.
 const TABS = [
   { type: "decomp", label: "Region Decomposition", draw: drawTreemap },
+  { type: "idf", label: "IDF", draw: drawGraph },
   { type: "tasks", label: "Tasks", draw: drawTasks },
 ];
 

@@ -13,20 +13,29 @@ Flag:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import imandrax_api
-from imandrax_api_models.client import ImandraXClient
+import yaml
+from imandrax_api_models.client import ImandraXClient, get_imandrax_async_client
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
-
+from imandrax_tools.idf.iter_decomp import Step, iter_decomp
+from imandrax_tools.idf.viz_view import View
 from imandrax_tools.widget._tasks import collect_tasks_artifacts
 
 CURR_DIR = Path(__file__).resolve().parents[0]
 PKG_JSON_DIR = CURR_DIR.parents[1]
 OUT_DIR = PKG_JSON_DIR / 'test/fixtures/inputs/'
+
+# IDF inputs are the `sm`/`tpl`/`message_flows` YAML files that drive
+# `iter_decomp`; we reuse the ones the Python IDF tests already ship.
+IDF_INPUTS_DIR = PKG_JSON_DIR.parent / 'tests/test_idf/data/idf_inputs'
+# Which of those to emit widget fixtures for (name -> fixture stem `idf.<name>`).
+IDF_FIXTURES = ['addx', 'choose', 'xy_template']
 
 # ====================
 # Fixture sources are named `<widget_type>.<name>.<additional_data>.iml`
@@ -70,6 +79,28 @@ def tasks_widget_input(iml: str) -> list[dict[str, Any]]:
     return [e.model_dump(mode='json') for e in entries]
 
 
+def idf_widget_input(name: str) -> dict[str, Any]:
+    """The `IDFWidget.data` traitlet: a serialized `View`."""
+    import os
+
+    data = yaml.safe_load((IDF_INPUTS_DIR / f'{name}.yml').read_text())
+
+    async def _run() -> View:
+        async with get_imandrax_async_client(
+            auth_token=os.environ['IMANDRAX_API_KEY'], env='dev'
+        ) as c:
+            tag, steps_or_err = await iter_decomp(
+                c,
+                sm=data['sm'],
+                tpl=data['tpl'],
+                message_flows=data['message_flows'],
+            )
+            assert tag == 'left', f'IDF decomp failed: {steps_or_err}'
+            return View.from_steps(cast(list[Step], steps_or_err))
+
+    return asyncio.run(_run()).model_dump(mode='json')
+
+
 def main() -> None:
     refresh = '--refresh' in sys.argv[1:]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -90,6 +121,17 @@ def main() -> None:
 
         out_path.write_text(json.dumps(widget_input, indent=2))
         print(f'[{file_name}] wrote {out_path.relative_to(PKG_JSON_DIR)}')
+
+    # IDF fixtures: `idf.<name>.iml.widget_input.json` (the `.iml` segment keeps
+    # the gallery's `<type>.<name>...` filename convention uniform).
+    for name in IDF_FIXTURES:
+        out_path = OUT_DIR / f'idf.{name}.iml.widget_input.json'
+        if not (refresh or not out_path.exists()):
+            print(f'[idf.{name}] using cached {out_path.relative_to(PKG_JSON_DIR)}')
+            continue
+        widget_input = idf_widget_input(name)
+        out_path.write_text(json.dumps(widget_input, indent=2))
+        print(f'[idf.{name}] wrote {out_path.relative_to(PKG_JSON_DIR)}')
 
 
 if __name__ == '__main__':

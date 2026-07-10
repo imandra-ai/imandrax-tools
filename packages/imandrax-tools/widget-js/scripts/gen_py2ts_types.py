@@ -19,11 +19,11 @@ from pathlib import Path
 
 import pydantic2ts
 from imandrax_api_models.region_decomp import RegionGroupView
-
+from imandrax_tools.idf.viz_view import View as IDFView
 from imandrax_tools.widget._tasks import TaskEntry
 
 # The models pydantic2ts emits when it imports this module as `--module`.
-__all__ = ['RegionGroupView', 'TaskEntry']
+__all__ = ['RegionGroupView', 'TaskEntry', 'IDFView']
 
 PKG_ROOT = Path(__file__).resolve().parents[1]
 TS_PATH = PKG_ROOT / 'src/generated/types.ts'
