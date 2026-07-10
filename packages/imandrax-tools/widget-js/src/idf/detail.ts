@@ -15,9 +15,7 @@ function nodeKind(r: RegionNodeView): 'root' | 'leaf' | 'interior' {
   return r.is_leaf ? 'leaf' : 'interior';
 }
 
-// `introduced` is the set of constraints this node adds over its parent; we
-// highlight those within the full path.
-export function nodeDetailHtml(r: RegionNodeView, introduced: string[]): string {
+export function nodeDetailHtml(r: RegionNodeView): string {
   const kind = nodeKind(r);
   const parts: string[] = [];
   parts.push(
@@ -25,19 +23,9 @@ export function nodeDetailHtml(r: RegionNodeView, introduced: string[]): string 
   );
   parts.push(`<p class="sub">step ${r.step_idx} · <code>${esc(r.raw_id)}</code></p>`);
 
-  parts.push(`<div class="stats">${statsHtml(r, introduced)}</div>`);
-
-  if (introduced.length) {
-    parts.push(`<div class="k">Introduced this step</div>`);
-    parts.push(`<ol>${introduced.map((c) => `<li><code>${esc(c)}</code></li>`).join('')}</ol>`);
-  }
-
-  const introSet = new Set(introduced);
   if (r.constraints.length) {
-    parts.push(`<div class="k">Constraint path</div>`);
-    const lis = r.constraints
-      .map((c) => `<li${introSet.has(c) ? ' class="cur"' : ''}><code>${esc(c)}</code></li>`)
-      .join('');
+    parts.push(`<div class="k">Constraints</div>`);
+    const lis = r.constraints.map((c) => `<li><code>${esc(c)}</code></li>`).join('');
     parts.push(`<ol>${lis}</ol>`);
   }
 
@@ -49,14 +37,6 @@ export function nodeDetailHtml(r: RegionNodeView, introduced: string[]): string 
     parts.push(`<div class="k">Example output</div><pre>${esc(r.model_eval)}</pre>`);
   }
   return parts.join('');
-}
-
-function statsHtml(r: RegionNodeView, introduced: string[]): string {
-  const stat = (label: string, value: number | string) => `<span>${label}: <b>${value}</b></span>`;
-  return [
-    stat('constraints', r.constraints.length),
-    stat('new here', introduced.length),
-  ].join('');
 }
 
 // Step metadata view

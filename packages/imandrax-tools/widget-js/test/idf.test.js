@@ -20,6 +20,12 @@ const choose = loadFixture("idf.choose.iml");
 const click = (node) =>
   node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
+// Node cards select via pointerdown+pointerup (a no-move press == a click).
+const tap = (node) => {
+  node.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+  node.dispatchEvent(new Event("pointerup", { bubbles: true }));
+};
+
 // Find a rendered node card by its `#id` label.
 function byNodeId(el, id) {
   for (const span of el.querySelectorAll(".imdx-idf-nid")) {
@@ -48,25 +54,31 @@ describe("idf graph", () => {
     );
   });
 
-  it("renders one clickable step band per step, plus the root band", () => {
-    const bands = render(choose).querySelectorAll(".imdx-idf-band");
-    expect(bands.length).toBe(choose.steps.length + 1);
+  it("renders one step-axis label per step, plus the root label", () => {
+    const labels = render(choose).querySelectorAll(".imdx-idf-axislabel");
+    expect(labels.length).toBe(choose.steps.length + 1);
+  });
+
+  it("draws one step-hull outline per step, each with a path", () => {
+    const hulls = render(choose).querySelectorAll(".imdx-idf-hull");
+    expect(hulls.length).toBe(choose.steps.length); // root has no hull
+    for (const h of hulls) expect(h.getAttribute("d")).toBeTruthy();
   });
 
   it("shows the region body on a node click", () => {
     const el = render(choose);
-    click(byNodeId(el, 7)); // a leaf in step 2
+    tap(byNodeId(el, 7)); // a leaf in step 2
     const detail = el.querySelector(".imdx-idf-detail").textContent;
     expect(detail).toContain("#7");
-    expect(detail).toContain("Constraint path");
+    expect(detail).toContain("Constraints");
     expect(detail).toContain("Invariant");
   });
 
-  it("shows step metadata when a step band is clicked", () => {
+  it("shows step metadata when a step-axis label is clicked", () => {
     const el = render(choose);
-    const bands = el.querySelectorAll(".imdx-idf-band");
-    // bands[0] is the root row; bands[1] is Step 0.
-    click(bands[1]);
+    const labels = el.querySelectorAll(".imdx-idf-axislabel");
+    // labels[0] is the root row; labels[1] is Step 0.
+    click(labels[1]);
     const detail = el.querySelector(".imdx-idf-detail").textContent;
     expect(detail).toContain("Step 0");
     expect(detail).toContain("Guard");
@@ -76,8 +88,37 @@ describe("idf graph", () => {
   it("highlights a selected node's card", () => {
     const el = render(choose);
     const card = byNodeId(el, 7);
-    click(card);
+    tap(card);
     expect(card.classList.contains("is-selected")).toBe(true);
+  });
+
+  it("drags a node, moving its card and rerouting an incident edge", () => {
+    const el = render(choose);
+    const card = byNodeId(el, 1); // a step-0 node with children (edges incident)
+    const edge = el.querySelector(".imdx-idf-edge"); // root -> 1
+    const beforeLeft = card.style.left;
+    const beforeD = edge.getAttribute("d");
+    card.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, clientX: 0, clientY: 0 }));
+    card.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: 90, clientY: 90 }));
+    card.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+    expect(card.style.left).not.toBe(beforeLeft);
+    expect(edge.getAttribute("d")).not.toBe(beforeD);
+    // a real drag is not treated as a selecting click
+    expect(card.classList.contains("is-selected")).toBe(false);
+  });
+
+  it("selects a step when its hull is clicked", () => {
+    const el = render(choose);
+    const hull = el.querySelector(".imdx-idf-hull"); // step 0's hull (lowest step)
+    hull.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, clientX: 0, clientY: 0 }));
+    hull.dispatchEvent(new MouseEvent("pointerup", { bubbles: true, clientX: 0, clientY: 0 }));
+    const detail = el.querySelector(".imdx-idf-detail").textContent;
+    expect(detail).toContain("Step");
+    expect(detail).toContain("Guard");
+  });
+
+  it("offers a reset-view button", () => {
+    expect(render(choose).querySelector(".imdx-idf-reset")).not.toBeNull();
   });
 
   it("tolerates an empty view (decomposition error)", () => {
