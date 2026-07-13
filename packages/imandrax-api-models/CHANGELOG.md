@@ -3,13 +3,15 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.4.0] - 26-07-13
 - FEAT(pp): multiline_text, box_left, tree configs
 - REFA(decomp): factor out non-grouping related types
 - FIX(client): a few endpoints incorrectly access parent class attributes
 - ENH(context_utils): make message error structured
 - **BREAKING** ENH!: exclude None fields from `InstanceRes` and `VerifyRes` when serializing
 - FEAT: imandrax-api.lib pretty-printer is added (upstreamed from `imandrax_tools.pp`)
-- **BREAKING** REFA!: region grouping now works with decomp results without `string_results=True`. Pretty-printer is used to stringify constraints when performing region grouping. 
+- **BREAKING** REFA!: region grouping now works with decomp results without `string_results=True`. Pretty-printer is used to stringify constraints when performing region grouping.
 - FEAT(pp): decomp pretty-printer
 
 ## [20.3.0] - 2026-06-30

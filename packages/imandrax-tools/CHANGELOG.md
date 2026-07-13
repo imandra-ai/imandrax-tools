@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.3.0] - 2026-07-13
 - FEAT: IDF
 - **BREAKING** `imandrax_api.lib` pretty-printer is moved to `imandrax_api_models.pp`
 - FEAT: new `imandrax-tools[widget]` optional dependency, providing web widgets for ImandraX API.
