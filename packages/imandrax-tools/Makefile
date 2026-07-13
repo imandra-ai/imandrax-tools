@@ -11,12 +11,24 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
-.PHONY: check
-check:  ## Format, lint, typecheck
-	uvx ruff check src/
-	uvx ruff format src/ --check
-	uvx ty check src/
-	uvx pyright check src/
+.PHONY: check-all
+check-all: ## Run all checks (Python, Py2TS, TS2Py)
+	@make check-py
+	@make check-widget-types
+	@make check-widget-js
+
+.PHONY: check-py
+check-py:  ## Format, lint, typecheck
+	# Lint
+	uvx ruff check --exclude "**/corpus/*/query/__init__.py" src/ tests/
+	@echo "Lint done."
+	# Format
+	uvx ruff format src/ tests/ --check
+	@echo "Format done."
+	# Typecheck
+	uvx ty check src/ tests/
+	uvx pyright src/ tests/
+	@echo "Typecheck done."
 
 define get-pypi-latest-ver
 $(shell curl -s "https://pypi.org/pypi/$(1)/json" | jq -r '.info.version')
@@ -56,15 +68,23 @@ build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*
 	uv build --no-sources -o dist/
 
+.PHONY: test
+test:  ##
+	uv run --env-file .env pytest --record-mode=once tests
+
 .PHONY: test-wheel
 test-wheel:  ## Test wheel
 	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.whl tests/smoke_test.py
-	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.whl --with pytest --with inline-snapshot pytest tests
+	uv run --isolated --no-project --python 3.12 \
+      --with ./dist/imandrax_tools-*.whl --with pytest --with inline-snapshot --with pytest-recording --with pytest-asyncio \
+      pytest tests
 
 .PHONY: test-source-dist
 test-source-dist:  ## Test source distribution
 	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.tar.gz tests/smoke_test.py
-	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.tar.gz --with pytest --with inline-snapshot pytest tests
+	uv run --isolated --no-project --python 3.12 \
+      --with ./dist/imandrax_tools-*.tar.gz --with pytest --with inline-snapshot --with pytest-recording --with \
+      pytest-asyncio pytest tests
 
 .PHONY: pre-release-test
 pre-release-test: build  ## Pre-release test (wheel and source distribution)
@@ -99,10 +119,10 @@ gen-widget-types-py2ts:  ## Generate the TS widget types from pydantic models
 build-widget-js-ts2py:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
 	cd widget-js && npm ci && npm run build
 
+.PHONY: check-widget-types
+check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type matches the pydantic model (fails if stale)
+		git diff --exit-code -- widget-js/src/generated || (echo "Worktree widget types are stale; Run \`make gen-widget-types-py2ts\`" && false)
+
 .PHONY: check-widget-js
 check-widget-js: build-widget-js-ts2py  ## Verify the committed JS bundles match a fresh build (fails if stale)
 	git diff --exit-code -- src/imandrax_tools/widget/static
-
-.PHONY: check-widget-types
-check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type matches the pydantic model (fails if stale)
-	git diff --exit-code -- widget-js/src/generated

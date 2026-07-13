@@ -1,0 +1,25 @@
+sm: |
+  type state = { x: int; y: int; }
+  type event = IncX of int | IncY of int | Swap
+
+  let is_valid (e : event) (state: state) = match e with
+    | IncX n -> n > 0 && state.x + n <= 5
+    | IncY n -> n > 0 && state.y + n <= 5
+    | Swap -> true
+
+  let step (e: event) (state: state) = match e with
+    | IncX n -> { state with x = state.x + n }
+    | IncY n -> { state with y = state.y + n }
+    | Swap -> { x = state.y; y = state.x }
+
+  let initial_state = { x = 0; y = 0; }
+tpl: |
+  type t = OnlyX | OnlyY | Anything
+  type c = SM.event
+
+  let concrete (t: t) (c: c) (_state: SM.state) = match t, c with
+    | OnlyX, SM.IncX _ -> true
+    | OnlyY, SM.IncY _ -> true
+    | Anything, _ -> true
+    | _ -> false
+message_flows: [TPL.OnlyX, TPL.Anything, TPL.OnlyY]

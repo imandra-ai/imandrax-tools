@@ -1,0 +1,59 @@
+root
+└───▶ ╭─ id=1, step_idx=0
+      │ invariant='{ locked: false; count: 0 }',
+      │ constraints=[
+      │   '(nth 0 events) is-a Some',
+      │   'destruct[Some|0] (nth 0 events) <> Inc',
+      │ ]
+      ╰───────────
+      ├───▶ ╭─ id=2, step_idx=1
+      │     │ invariant='{ locked: false; count: 1 }',
+      │     │ constraints=[
+      │     │   '(nth 1 events) is-a Some',
+      │     │   '(nth 0 events) is-a Some',
+      │     │   'destruct[Some|0] (nth 0 events) <> Inc',
+      │     │   'destruct[Some|0] (nth 1 events) = Inc',
+      │     │ ]
+      │     ╰───────────
+      │     ├───▶ ╭─ id=4, step_idx=2 [LEAF]
+      │     │     │ invariant='{ locked: false; count: 2 }',
+      │     │     │ constraints=[
+      │     │     │   '(nth 2 events) is-a Some',
+      │     │     │   '(nth 1 events) is-a Some',
+      │     │     │   '(nth 0 events) is-a Some',
+      │     │     │   'destruct[Some|0] (nth 0 events) <> Inc',
+      │     │     │   'destruct[Some|0] (nth 1 events) = Inc',
+      │     │     │   'destruct[Some|0] (nth 2 events) = Inc',
+      │     │     │ ]
+      │     │     ╰───────────
+      │     └───▶ ╭─ id=5, step_idx=2 [LEAF]
+      │           │ invariant='{ locked: true; count: 1 }',
+      │           │ constraints=[
+      │           │   '(nth 2 events) is-a Some',
+      │           │   '(nth 1 events) is-a Some',
+      │           │   '(nth 0 events) is-a Some',
+      │           │   'destruct[Some|0] (nth 0 events) <> Inc',
+      │           │   'destruct[Some|0] (nth 1 events) = Inc',
+      │           │   'destruct[Some|0] (nth 2 events) <> Inc',
+      │           │ ]
+      │           ╰───────────
+      └───▶ ╭─ id=3, step_idx=1
+            │ invariant='{ locked: true; count: 0 }',
+            │ constraints=[
+            │   '(nth 1 events) is-a Some',
+            │   '(nth 0 events) is-a Some',
+            │   'destruct[Some|0] (nth 0 events) <> Inc',
+            │   'destruct[Some|0] (nth 1 events) <> Inc',
+            │ ]
+            ╰───────────
+            └───▶ ╭─ id=6, step_idx=2 [LEAF]
+                  │ invariant='{ locked: false; count: 0 }',
+                  │ constraints=[
+                  │   '(nth 2 events) is-a Some',
+                  │   '(nth 1 events) is-a Some',
+                  │   '(nth 0 events) is-a Some',
+                  │   'destruct[Some|0] (nth 0 events) <> Inc',
+                  │   'destruct[Some|0] (nth 2 events) <> Inc',
+                  │   'destruct[Some|0] (nth 1 events) <> Inc',
+                  │ ]
+                  ╰───────────

@@ -12,7 +12,7 @@ type FunDecomp = xtype.Mir_Fun_decomp  # = Common_Fun_decomp_t_poly[Term, Type]
 type Sequent = xtype.Common_Sequent_t_poly[xtype.Mir_Term]
 type PO_res = xtype.Tasks_PO_res_Shallow
 type PO_task = xtype.Tasks_PO_task_Mir
-type ProofObligation = xtype.Common_Proof_obligation_t_poly
+type ProofObligation = xtype.Common_Proof_obligation_t_poly[Term, Type]
 
 __all__ = (
     'AssocList',

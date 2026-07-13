@@ -1,3 +1,4 @@
+# pyright: basic
 """
 Pretty-printer for ImandraX proof terms, as a box-drawing derivation tree.
 

@@ -1,0 +1,18 @@
+sm: |
+  type state = { tag: int }
+  type event = A | B
+
+  let is_valid (_e: event) (_state: state) = true
+
+  let step (e: event) (state: state) =
+    match e with
+    | A -> { tag = state.tag + 1 }
+    | B -> { tag = state.tag - 1 }
+
+  let initial_state = { tag = 0 }
+tpl: |
+  type t = Any
+  type c = SM.event
+
+  let concrete (_t: t) (_c: c) (_state: SM.state) = true
+message_flows: [TPL.Any, TPL.Any, TPL.Any]

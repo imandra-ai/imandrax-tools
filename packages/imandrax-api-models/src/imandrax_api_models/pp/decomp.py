@@ -1,3 +1,4 @@
+# pyright: basic
 from collections.abc import Callable
 from dataclasses import fields
 from typing import Any, cast

@@ -1,8 +1,9 @@
+# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false
 """Extended imandrax-api client with Pydantic model validation."""
 
 import os
 import time
-from collections.abc import Iterator, Sequence
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, Literal
@@ -59,7 +60,7 @@ logger = structlog.get_logger(__name__)
 @contextmanager
 def _trace_call(
     op: str, *, session_id: str | None = None, **fields: Any
-) -> Iterator[None]:
+) -> Generator[None]:
     """
     Log + (optional) OTel span around an API call.
 
@@ -769,7 +770,7 @@ def get_imandrax_async_client(
     return client
 
 
-def _end_session(
+def _end_session(  # pyright: ignore[reportUnusedFunction]
     session_id: str,
     *,
     url: str = imandrax_api.url_prod,

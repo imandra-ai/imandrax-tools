@@ -1,6 +1,4 @@
 from imandrax_api_models import Error, ErrorMessage, EvalRes, Location, Position
-from inline_snapshot import snapshot
-
 from imandrax_tools.iml_eval_corpus.common import Loc
 from imandrax_tools.iml_eval_corpus.corpus import check_all
 from imandrax_tools.iml_eval_corpus.corpus.infix_op_missing_paren.query import (
@@ -11,6 +9,7 @@ from imandrax_tools.iml_eval_corpus.corpus.nested_rec.query import (
     NestedRecursiveFunctionDiag,
 )
 from imandrax_tools.iml_eval_corpus.format import format_diagnostics
+from inline_snapshot import snapshot
 
 IML = """\
 let build_fib (f : int list) (i : int) (n : int) : int list =

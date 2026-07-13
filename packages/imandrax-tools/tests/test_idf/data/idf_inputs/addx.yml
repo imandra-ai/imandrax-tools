@@ -1,0 +1,39 @@
+# State machine:
+# a counter that starts at 0, each event adds a strictly positive integer to it.
+# the running total must stay <= 10
+sm: |
+  type state = {
+    counter: int;
+    hitTen: bool;
+  }
+  type event = AddX of int
+
+  let is_valid (AddX x : event) (state: state) =
+    x > 0 && state.counter + x <= 10
+
+  let step (AddX x : event) (state: state) =
+    {
+      counter = state.counter + x;
+      hitTen = state.hitTen || state.counter + x = 10;
+    }
+
+  let initial_state =
+    {
+      counter = 0;
+      hitTen = false;
+    }
+# Template, the symbolic layer:
+# The symbolic event `t` matches any `AddX` event (with any integer payload)
+tpl: |
+  type t = AddX
+
+  type c = SM.event
+
+  let concrete (t: t) (c: c) (_state: SM.state) = match t, c with
+    | AddX, SM.AddX _ -> true
+    | _ -> false
+# A path of length 3, doing `AddX` three times
+message_flows:
+    - TPL.AddX
+    - TPL.AddX
+    - TPL.AddX

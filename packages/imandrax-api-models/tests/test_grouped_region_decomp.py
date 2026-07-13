@@ -1,30 +1,26 @@
-# ruff: noqa: F401
-import copy
 import os
 from functools import partial, reduce
 from pathlib import Path
 
 import imandrax_api
 import pytest
-from inline_snapshot import external_file, snapshot
+from inline_snapshot import snapshot
 
 from imandrax_api_models.client import ImandraXClient
-from imandrax_api_models.pp.xtype import to_string as xtype_to_string
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import (
     EnrichedDecomposeRes,
+    ForTest,
     Region,
     RegionGroup,
-    _eq_term_naive,
-    _eq_term_with_string_results,
-    _mir_regions_of_fun_decomp_artifact,
-    _stringified_term_map_of_region,
     eq_term_with_pp,
     get_leaf_groups,
     group_regions,
+    mir_regions_of_fun_decomp_artifact,
 )
 
-fence_py = lambda s: f'```python\n{s}\n```'
+
+def fence_py(s: str) -> str: return f'```python\n{s}\n```'  # fmt: skip
 
 
 @pytest.fixture
@@ -82,7 +78,7 @@ def enrich_decomp_res_props(edr: EnrichedDecomposeRes) -> None:
         # )
 
 
-def test_complex_decomp(decomp_res_six_swiss):
+def test_complex_decomp(decomp_res_six_swiss: DecomposeRes):
     edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_six_swiss)
     enrich_decomp_res_props(edr)
 
@@ -168,7 +164,7 @@ def test_complex_decomp(decomp_res_six_swiss):
 """)
 
 
-def test_simple_decomp(decomp_res_classify):
+def test_simple_decomp(decomp_res_classify: DecomposeRes):
     edr = EnrichedDecomposeRes.from_decomp_res(decomp_res_classify)
     enrich_decomp_res_props(edr)
 
@@ -208,16 +204,18 @@ def test_simple_decomp(decomp_res_classify):
     'decomp_res_fixture',
     ['decomp_res_classify', 'decomp_res_six_swiss'],
 )
-def test_region_group_constr_equivalence(decomp_res_fixture: str, request):
+def test_region_group_constr_equivalence(
+    decomp_res_fixture: str, request: pytest.FixtureRequest
+):
 
     decomp_res: DecomposeRes = request.getfixturevalue(decomp_res_fixture)
     assert decomp_res.artifact is not None
 
-    mir_regions = _mir_regions_of_fun_decomp_artifact(decomp_res.artifact)
+    mir_regions = mir_regions_of_fun_decomp_artifact(decomp_res.artifact)
     regions: list[Region] = [Region.from_mir_region(r) for r in mir_regions]
 
     stringified_term_map = reduce(
-        lambda acc, r: _stringified_term_map_of_region(r, acc),
+        lambda acc, r: ForTest.stringified_term_map_of_region(r, acc),
         mir_regions,
         {},
     )
@@ -226,10 +224,11 @@ def test_region_group_constr_equivalence(decomp_res_fixture: str, request):
     rgs2 = group_regions(
         regions,
         eq_term=partial(
-            _eq_term_with_string_results, stringified_term_map=stringified_term_map
+            ForTest.eq_term_with_string_results,
+            stringified_term_map=stringified_term_map,
         ),
     )
-    rgs3 = group_regions(regions, eq_term=_eq_term_naive)
+    rgs3 = group_regions(regions, eq_term=ForTest.eq_term_naive)
 
     assert _walk(rgs1) == _walk(rgs2)
     assert _walk(rgs1) == _walk(rgs3)

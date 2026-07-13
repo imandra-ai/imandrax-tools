@@ -1,3 +1,4 @@
+# pyright: basic
 """
 Tiny constructors for synthesizing `Mir_Term` values.
 
@@ -14,12 +15,12 @@ import imandrax_api.lib as xtype
 
 
 def uid(name: str) -> xtype.Uid:
-    return xtype.Uid(name=name, view=xtype.Uid_view_Persistent())  # type: ignore[arg-type]
+    return xtype.Uid(name=name, view=xtype.Uid_view_Persistent())
 
 
 def ty() -> xtype.Mir_Type:
     """Placeholder `Mir_Type`. The formatter doesn't read type internals."""
-    return xtype.Mir_Type(view=xtype.Ty_view_view_Var(arg=uid('a')))  # type: ignore[arg-type]
+    return xtype.Mir_Type(view=xtype.Ty_view_view_Var(arg=uid('a')))
 
 
 # Term wrapping

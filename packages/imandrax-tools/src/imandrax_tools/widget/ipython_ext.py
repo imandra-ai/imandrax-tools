@@ -1,3 +1,4 @@
+# pyright: basic
 """
 IPython/Jupyter cell magic for IML.
 

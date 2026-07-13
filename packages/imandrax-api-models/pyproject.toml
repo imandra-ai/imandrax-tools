@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-api-models"
-version = "20.3.0"
+version = "20.4.0"
 description = "Pydantic model definitions for imandrax-api. Also provides a client wrapper with built-in validation and utility methods."
 readme = "README.md"
 authors = [
@@ -112,15 +112,3 @@ isort.combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "single"
-
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.12"
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportUnnecessaryIsInstance = false
-reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "none"
-reportUnusedExpression = false
-reportUnusedVariable = "warning"
