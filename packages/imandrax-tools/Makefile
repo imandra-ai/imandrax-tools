@@ -11,12 +11,24 @@ help:  ## Show this help (usage: make help)
 		} \
 	}' $(MAKEFILE_LIST)
 
-.PHONY: check
-check:  ## Format, lint, typecheck
+.PHONY: check-all
+check-all: ## Run all checks (Python, Py2TS, TS2Py)
+	@make check-py
+	@make check-widget-types
+	@make check-widget-js
+
+.PHONY: check-py
+check-py:  ## Format, lint, typecheck
+	# Lint
 	uvx ruff check src/
+	@echo "Lint done."
+	# Format
 	uvx ruff format src/ --check
+	@echo "Format done."
+	# Typecheck
 	uvx ty check src/
-	uvx pyright check src/
+	uvx pyright src/
+	@echo "Typecheck done."
 
 define get-pypi-latest-ver
 $(shell curl -s "https://pypi.org/pypi/$(1)/json" | jq -r '.info.version')
@@ -99,10 +111,10 @@ gen-widget-types-py2ts:  ## Generate the TS widget types from pydantic models
 build-widget-js-ts2py:  ## Build the anywidget JS bundles into the package tree (src/imandrax_tools/widget/static)
 	cd widget-js && npm ci && npm run build
 
+.PHONY: check-widget-types
+check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type matches the pydantic model (fails if stale)
+		git diff --exit-code -- widget-js/src/generated || (echo "Worktree widget types are stale; Run \`make gen-widget-types-py2ts\`" && false)
+
 .PHONY: check-widget-js
 check-widget-js: build-widget-js-ts2py  ## Verify the committed JS bundles match a fresh build (fails if stale)
 	git diff --exit-code -- src/imandrax_tools/widget/static
-
-.PHONY: check-widget-types
-check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type matches the pydantic model (fails if stale)
-	git diff --exit-code -- widget-js/src/generated

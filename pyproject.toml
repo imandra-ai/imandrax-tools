@@ -39,6 +39,9 @@ docs = [
 ]
 
 [tool.pyright]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
 reportMissingTypeStubs = false
 
 [tool.ty.rules]

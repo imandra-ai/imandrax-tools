@@ -30,8 +30,7 @@ export interface StepView {
 /**
  * One region node in the decomposition graph.
  *
- * Flattens what used to be a (header, body) pair: the header fields
- * (`id`/`is_root`/`is_leaf`/`step_idx`) let the graph place and style the node
+ * the header fields let the graph place and style the node
  * card; the body fields feed the detail panel when the node is clicked.
  */
 export interface RegionNodeView {
@@ -51,7 +50,7 @@ export interface RegionNodeView {
   model_eval: string | null;
 }
 /**
- * A parent -> child link between region nodes (root has `src_id == 0`).
+ * A parent -> child link between region nodes.
  */
 export interface Edge {
   src_id: number;
