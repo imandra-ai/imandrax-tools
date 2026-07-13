@@ -68,15 +68,23 @@ build: sync-corpus  ## Build
 	rm -rf ./dist/imandrax_tools-*
 	uv build --no-sources -o dist/
 
+.PHONY: test
+test:  ##
+	uv run --env-file .env pytest --record-mode=once tests
+
 .PHONY: test-wheel
 test-wheel:  ## Test wheel
 	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.whl tests/smoke_test.py
-	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.whl --with pytest --with inline-snapshot --with pytest-recording --with pytest-asyncio pytest tests
+	uv run --isolated --no-project --python 3.12 \
+      --with ./dist/imandrax_tools-*.whl --with pytest --with inline-snapshot --with pytest-recording --with pytest-asyncio \
+      pytest tests
 
 .PHONY: test-source-dist
 test-source-dist:  ## Test source distribution
 	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.tar.gz tests/smoke_test.py
-	uv run --isolated --no-project --python 3.12 --with ./dist/imandrax_tools-*.tar.gz --with pytest --with inline-snapshot --with pytest-recording --with pytest-asyncio pytest tests
+	uv run --isolated --no-project --python 3.12 \
+      --with ./dist/imandrax_tools-*.tar.gz --with pytest --with inline-snapshot --with pytest-recording --with \
+      pytest-asyncio pytest tests
 
 .PHONY: pre-release-test
 pre-release-test: build  ## Pre-release test (wheel and source distribution)
