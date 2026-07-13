@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Self, TypedDict
+from typing import Any, NotRequired, Self, TypedDict
 
 import imandrax_api.lib as xtype
 from pydantic import BaseModel, Field
@@ -41,7 +41,7 @@ class RegionStat(TypedDict):
     invariant: str
     model: dict[str, str] | str | None
     model_eval: str | None
-    other: dict[str, Any] | None
+    other: NotRequired[dict[str, Any]]
 
 
 # TODO: now we are ready to replace RegionStr with Region completely in simple_api,py
@@ -76,16 +76,20 @@ class Region:
 
         if not _IGNORE_REGION_OTHER_FIELDS:
             other = self.other
+            return RegionStat(
+                constraints=constraints,
+                invariant=invariant,
+                model=model,
+                model_eval=model_eval,
+                other=other,
+            )
         else:
-            other = None
-
-        return RegionStat(
-            constraints=constraints,
-            invariant=invariant,
-            model=model,
-            model_eval=model_eval,
-            other=other,
-        )
+            return RegionStat(
+                constraints=constraints,
+                invariant=invariant,
+                model=model,
+                model_eval=model_eval,
+            )
 
     def non_group_stat(self) -> RegionNonGroupStat:
         """
