@@ -213,7 +213,7 @@ def _parse_region(
     return id, string_res, other
 
 
-def _mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
+def mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
     import imandrax_api.lib as xtype
 
     xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)

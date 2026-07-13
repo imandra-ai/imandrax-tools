@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
+from types import SimpleNamespace
 from typing import Annotated, Any, Self, TypedDict
 
 import imandrax_api.lib as xtype
@@ -14,16 +15,16 @@ from pydantic import BaseModel, Field, PlainSerializer, model_validator
 from imandrax_api_models.proto_models import DecomposeRes
 
 from ._common import (  # noqa: F401
-    AssocList,
+    AssocList,  # pyright: ignore[reportUnusedImport]
     JSONArray,
     JSONObject,
-    JSONValue,
+    JSONValue,  # pyright: ignore[reportUnusedImport]
     term_to_string,
 )
 from ._region import (
     Region,
     RegionNonGroupStat,
-    _mir_regions_of_fun_decomp_artifact,
+    mir_regions_of_fun_decomp_artifact,
 )
 
 
@@ -52,8 +53,8 @@ class EnrichedDecomposeRes(DecomposeRes):
     def populate_region_groups(self) -> Self:
         if self.region_groups or self.artifact is None:
             return self
-        mir_regions: list[xtype.Mir_Region_Region] = (
-            _mir_regions_of_fun_decomp_artifact(self.artifact)
+        mir_regions: list[xtype.Mir_Region_Region] = mir_regions_of_fun_decomp_artifact(
+            self.artifact
         )
 
         regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
@@ -466,38 +467,40 @@ def _loop_group_regions(
 # ====================
 
 
-def _stringified_term_map_of_region(
-    r: xtype.Mir_Region_Region, base: dict[int, str] | None = None
-) -> dict[int, str]:
-    # MIR terms are unhashable (they contain lists), so key the map by object
-    # identity (`id`). This maps each concrete term instance to its server-side
-    # string, keeping this grouping strategy independent of the structural
-    # `_term_key` used by `eq_term_naive`.
-    out = base or {}
+class ForTest(SimpleNamespace):
+    @staticmethod
+    def stringified_term_map_of_region(
+        r: xtype.Mir_Region_Region, base: dict[int, str] | None = None
+    ) -> dict[int, str]:
+        # MIR terms are unhashable (they contain lists), so key the map by object
+        # identity (`id`). This maps each concrete term instance to its server-side
+        # string, keeping this grouping strategy independent of the structural
+        # `_term_key` used by `eq_term_naive`.
+        out = base or {}
 
-    constraints_str = xtype.unwrap_region_str(r).constraints_str
-    assert constraints_str is not None
-    for c, s in zip(r.constraints, constraints_str):
-        out[id(c)] = s
+        constraints_str = xtype.unwrap_region_str(r).constraints_str
+        assert constraints_str is not None
+        for c, s in zip(r.constraints, constraints_str):
+            out[id(c)] = s
 
-    return out
+        return out
 
+    @staticmethod
+    def eq_term_with_string_results(
+        left: xtype.Mir_Term,
+        right: xtype.Mir_Term,
+        stringified_term_map: dict[int, str],
+    ) -> bool:
+        l = stringified_term_map[id(left)]
+        r = stringified_term_map[id(right)]
+        return l == r
 
-def _eq_term_with_string_results(
-    left: xtype.Mir_Term,
-    right: xtype.Mir_Term,
-    stringified_term_map: dict[int, str],
-) -> bool:
-    l = stringified_term_map[id(left)]
-    r = stringified_term_map[id(right)]
-    return l == r
-
-
-def _eq_term_naive(
-    left: xtype.Mir_Term,
-    right: xtype.Mir_Term,
-) -> bool:
-    return _term_key(left) == _term_key(right)
+    @staticmethod
+    def eq_term_naive(
+        left: xtype.Mir_Term,
+        right: xtype.Mir_Term,
+    ) -> bool:
+        return _term_key(left) == _term_key(right)
 
 
 def _term_key(obj: object) -> str:

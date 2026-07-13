@@ -9,7 +9,7 @@ import imandrax_api_models.pp.pretty as Pp
 from imandrax_api_models import DecomposeRes
 from imandrax_api_models.region_decomp._region import (
     Region,
-    _mir_regions_of_fun_decomp_artifact,
+    mir_regions_of_fun_decomp_artifact,
     mk_stablized_id_map,
 )
 
@@ -144,7 +144,7 @@ def build_idf_tree(decomp_res_by_step: list[DecomposeRes]) -> RegionNode:
 
     mir_regions_by_step: list[list[xtype.Mir_Region_Region]] = [
         (
-            _mir_regions_of_fun_decomp_artifact(art)
+            mir_regions_of_fun_decomp_artifact(art)
             if art is not None  #
             else raise_()
         )
