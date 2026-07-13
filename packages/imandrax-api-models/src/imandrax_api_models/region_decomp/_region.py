@@ -36,7 +36,7 @@ class RegionNonGroupStat(BaseModel):
     model_eval: str | None = Field(default=None)
 
 
-class RegionStat(TypedDict):
+class RegionStat(TypedDict):  # :< JSONObject
     constraints: list[str]
     invariant: str
     model: dict[str, str] | str | None

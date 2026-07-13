@@ -42,8 +42,10 @@ docs = [
 typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
+reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
 reportUnusedImport = false  # handled by ty
+reportUnusedVariable = "warning"
 
 [tool.ty.rules]
 invalid-return-type = "ignore"

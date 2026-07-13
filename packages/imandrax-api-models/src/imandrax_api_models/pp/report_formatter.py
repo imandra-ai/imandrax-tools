@@ -1,3 +1,4 @@
+# pyright: basic
 """
 Pretty-printer for ImandraX reports, as a box-drawing event tree.
 

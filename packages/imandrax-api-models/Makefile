@@ -13,14 +13,21 @@ help:  ## Show this help (usage: make help)
 
 .PHONY: typecheck-ty
 typecheck-ty:  # Typecheck with ty
-	uvx ty check
+	uvx ty check src/ tests/
 
 .PHONY: typecheck-pyright
 typecheck-pyright:  # Typecheck with pyright
-	uvx pyright -p pyproject.toml src/ tests/
+	uvx pyright src/ tests/
 
 .PHONY: typecheck
 typecheck: typecheck-ty typecheck-pyright  ## Typecheck with ty and pyright
+
+.PHONY: check
+check:  ## All checks
+	uvx ruff check src/ tests/ --no-fix
+	uvx ruff format src/ tests/ --check
+	@make typecheck
+
 
 .PHONY: test
 test:  ## Run tests

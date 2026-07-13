@@ -1,3 +1,4 @@
+# pyright: basic
 """Pretty-printer for ImandraX MIR `Term`s."""
 
 from __future__ import annotations

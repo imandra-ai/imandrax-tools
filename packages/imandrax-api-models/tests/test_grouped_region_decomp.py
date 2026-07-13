@@ -204,7 +204,9 @@ def test_simple_decomp(decomp_res_classify: DecomposeRes):
     'decomp_res_fixture',
     ['decomp_res_classify', 'decomp_res_six_swiss'],
 )
-def test_region_group_constr_equivalence(decomp_res_fixture: str, request):
+def test_region_group_constr_equivalence(
+    decomp_res_fixture: str, request: pytest.FixtureRequest
+):
 
     decomp_res: DecomposeRes = request.getfixturevalue(decomp_res_fixture)
     assert decomp_res.artifact is not None

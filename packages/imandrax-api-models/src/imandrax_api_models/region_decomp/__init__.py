@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
 from types import SimpleNamespace
-from typing import Annotated, Any, Self, TypedDict
+from typing import Annotated, Any, Self, TypedDict, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
@@ -14,17 +14,32 @@ from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
 from imandrax_api_models.proto_models import DecomposeRes
 
-from ._common import (  # noqa: F401
-    AssocList,  # pyright: ignore[reportUnusedImport]
+from ._common import (
+    AssocList as AssocList,
     JSONArray,
     JSONObject,
-    JSONValue,  # pyright: ignore[reportUnusedImport]
+    JSONValue as JSONValue,
     term_to_string,
 )
 from ._region import (
     Region,
     RegionNonGroupStat,
     mir_regions_of_fun_decomp_artifact,
+)
+
+__all__ = (
+    'Region',
+    'RegionNonGroupStat',
+    'mir_regions_of_fun_decomp_artifact',
+    'EnrichedDecomposeRes',
+    'RegionGroup',
+    'RegionGroupView',
+    'eq_term_with_pp',
+    'rgs_of_mir_fun_decomp',
+    'group_regions',
+    'get_leaf_groups',
+    'render_region_groups',
+    'ForTest',
 )
 
 
@@ -79,7 +94,7 @@ class EnrichedDecomposeRes(DecomposeRes):
             assert leaf_group.region is not None, 'Leaf group must be concrete'
             d['label_path'] = '.'.join(map(str, leaf_group.label_path))
             d['weight'] = leaf_group.weight
-            d |= leaf_group.region.stat()
+            d |= cast(JSONObject, leaf_group.region.stat())
             ds.append(d)
         return ds
 

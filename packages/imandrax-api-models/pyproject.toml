@@ -112,15 +112,3 @@ isort.combine-as-imports = true
 
 [tool.ruff.format]
 quote-style = "single"
-
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
-pythonVersion = "3.12"
-typeCheckingMode = "strict"
-reportMissingTypeStubs = false
-reportUnnecessaryIsInstance = false
-reportUnnecessaryTypeIgnoreComment = true
-reportUnusedImport = "none"
-reportUnusedExpression = false
-reportUnusedVariable = "warning"

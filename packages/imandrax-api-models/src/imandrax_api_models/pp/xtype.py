@@ -1,5 +1,5 @@
 # ruff: noqa: F403, F405, D417
-# pyright: reportUnusedExpression=false
+# pyright: basic
 # ruff: noqa: RUF100, F401
 """
 ImandraX API type printer.

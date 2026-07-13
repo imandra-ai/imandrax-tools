@@ -1,3 +1,4 @@
+# pyright: basic
 # ai-disclosure: autonomous
 """
 Pretty-printer for ImandraX models (counter-models / instances).
