@@ -41,7 +41,7 @@ def status_emoji_of_art(kind: str, xval: Any) -> str | None:
             if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
                 if 'success' in type(xval.res).__name__:  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
                     return STATUS_EMOJI['success']
-                elif isinstance(xval.res, xtype.Tasks_PO_res_error_No_proof):  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
+                elif isinstance(xval.res, xtype.Tasks_PO_res_error_No_proof):  # pyright: ignore[reportUnknownMemberType]
                     return STATUS_EMOJI['warning']
                 else:
                     return STATUS_EMOJI['error']

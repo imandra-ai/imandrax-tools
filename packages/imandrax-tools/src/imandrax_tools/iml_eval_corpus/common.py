@@ -46,7 +46,7 @@ class NoLoc:
 
 
 class BaseDiag(BaseModel):
-    rule: BaseRule
+    rule: ClassVar[BaseRule]
     loc: Loc | NoLoc
 
     @computed_field

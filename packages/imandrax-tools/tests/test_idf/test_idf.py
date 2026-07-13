@@ -138,7 +138,7 @@ let target_2 events =
 @pytest.mark.asyncio
 @pytest.mark.vcr
 @pytest.mark.parametrize('name, sm, tpl, message_flows', [*inputs()])
-async def test_build_tree(name, sm, tpl, message_flows):
+async def test_build_tree(name: str, sm: str, tpl: str, message_flows: list[str]):
     async with get_imandrax_async_client() as c:
         _tag, steps_or_err = await iter_decomp(
             c,

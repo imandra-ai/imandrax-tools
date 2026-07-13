@@ -67,10 +67,10 @@ class RegionDecompWidget(anywidget.AnyWidget):
     _esm = _DIST / 'region_decomp.js'
 
     # Synced to JS (the `region_decomp.js` bundle reads `data`)
-    data = traitlets.List().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    data = traitlets.List().tag(sync=True)
 
     # Non-JS fallback
-    decomp_res = traitlets.Any()  # pyright: ignore[reportAssignmentType]
+    decomp_res = traitlets.Any()
 
     @classmethod
     def from_decomp_res(cls, decomp_res: EnrichedDecomposeRes | DecomposeRes) -> Self:
@@ -98,10 +98,10 @@ class IDFWidget(anywidget.AnyWidget):
     _esm = _DIST / 'idf.js'
 
     # Synced to JS (the `idf.js` bundle reads `data` -- a serialized `View`).
-    data = traitlets.Dict().tag(sync=True)  # pyright: ignore[reportAssignmentType]
+    data = traitlets.Dict().tag(sync=True)
 
     # Non-JS fallback
-    view = traitlets.Any()  # pyright: ignore[reportAssignmentType]
+    view = traitlets.Any()
 
     @classmethod
     def from_view(cls, view: IDFView) -> Self:

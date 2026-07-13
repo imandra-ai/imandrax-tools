@@ -20,7 +20,7 @@ check-all: ## Run all checks (Python, Py2TS, TS2Py)
 .PHONY: check-py
 check-py:  ## Format, lint, typecheck
 	# Lint
-	uvx ruff check src/ tests/
+	uvx ruff check --exclude "**/corpus/*/query/__init__.py" src/ tests/
 	@echo "Lint done."
 	# Format
 	uvx ruff format src/ tests/ --check
