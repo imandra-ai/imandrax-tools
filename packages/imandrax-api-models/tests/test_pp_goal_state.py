@@ -2,8 +2,11 @@ import imandrax_api.lib as xtype
 import pytest
 from inline_snapshot import snapshot
 
-import imandrax_tools.pp.pretty as Pp
-from imandrax_tools.pp.goal_state import goal_state_doc_of_po_res, po_res_of_art_zip
+import imandrax_api_models.pp.pretty as Pp
+from imandrax_api_models.pp.goal_state import (
+    goal_state_doc_of_po_res,
+    po_res_of_art_zip,
+)
 
 IML = """\
 (* Number of subsets of a (finite) set in Imandra, rep'd as lists.
@@ -71,6 +74,7 @@ def po_res_list() -> list[xtype.Tasks_PO_res_Shallow]:
     return [po_res_of_art_zip(zip.art_zip) for zip in po_res_zips]
 
 
+@pytest.mark.vcr
 def test_goal_state_pp(po_res_list: list[xtype.Tasks_PO_res_Shallow]):
     snapshots: list[str] = []
     for i, po_res in enumerate(po_res_list):

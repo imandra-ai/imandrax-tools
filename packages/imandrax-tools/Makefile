@@ -20,14 +20,14 @@ check-all: ## Run all checks (Python, Py2TS, TS2Py)
 .PHONY: check-py
 check-py:  ## Format, lint, typecheck
 	# Lint
-	uvx ruff check src/
+	uvx ruff check src/ tests/
 	@echo "Lint done."
 	# Format
-	uvx ruff format src/ --check
+	uvx ruff format src/ tests/ --check
 	@echo "Format done."
 	# Typecheck
-	uvx ty check src/
-	uvx pyright src/
+	uvx ty check src/ tests/
+	uvx pyright src/ tests/
 	@echo "Typecheck done."
 
 define get-pypi-latest-ver
