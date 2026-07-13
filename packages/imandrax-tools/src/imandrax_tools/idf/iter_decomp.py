@@ -1,3 +1,5 @@
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+# ^ Reason: imandrax_api.bindings is untyped
 from __future__ import annotations
 
 import textwrap
@@ -122,9 +124,10 @@ async def merge_decompose(
         d2 = from_artifact(art)
         d = merge(d, d2)
 
-    simple_client: simple_api_twirp_async.AsyncSimpleClient = c._client
+    # pyright ignore note: will be removed until this funciton is upstreamed
+    simple_client: simple_api_twirp_async.AsyncSimpleClient = c._client  # pyright: ignore[reportPrivateUsage]
     req = simple_api_pb2.DecomposeReqFull(
-        session=c._sesh,
+        session=c._sesh,  # pyright: ignore[reportPrivateUsage]
         decomp=d,
     )
     if string_results is not None:
@@ -132,7 +135,7 @@ async def merge_decompose(
     res = await simple_client.decompose_full(
         ctx=c.mk_context(),
         request=req,
-        timeout=c._timeout,
+        timeout=c._timeout,  # pyright: ignore[reportPrivateUsage]
     )
     return res
 

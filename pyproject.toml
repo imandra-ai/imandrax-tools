@@ -43,6 +43,7 @@ typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
 reportMissingTypeStubs = false
+reportUnusedImport = false  # handled by ty
 
 [tool.ty.rules]
 invalid-return-type = "ignore"

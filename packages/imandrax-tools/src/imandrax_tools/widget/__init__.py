@@ -1,3 +1,4 @@
+# pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownVariableType=false
 """
 anywidget-based rendering of ImandraX results.
 
@@ -37,7 +38,7 @@ class TasksWidget(anywidget.AnyWidget):
     _esm = _DIST / 'task.js'
 
     # Synced to JS (the `task.js` bundle reads `task_entries`).
-    task_entries = traitlets.List().tag(sync=True)
+    task_entries = traitlets.List(traitlets.Dict()).tag(sync=True)
 
     # Non-JS fallback, not synced b/c a pydantic model is not
     # JSON-serialisable over the comm, and the front end never reads it.

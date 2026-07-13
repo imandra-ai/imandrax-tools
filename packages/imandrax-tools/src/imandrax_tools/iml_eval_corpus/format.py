@@ -1,7 +1,4 @@
-# ruff: noqa: RUF100, F401
-from imandrax_api_models.context_utils import format_code_snippet_with_loc
-
-from .common import BaseDiag, NoLoc
+from .common import BaseDiag
 
 
 def format_diagnostics(diags: list[BaseDiag], code: str | None) -> str:
