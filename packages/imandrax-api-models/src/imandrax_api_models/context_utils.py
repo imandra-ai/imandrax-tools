@@ -300,7 +300,7 @@ def format_eval_res(
             out['desc'] = desc.rstrip('; ')
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
-                out['msg_errors'] = _format_unstructured_msg_errors(errs_in_eval_msg)
+                out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
             return out
         case False, True:
             out['desc'] = 'Eval: error in eval messages'
