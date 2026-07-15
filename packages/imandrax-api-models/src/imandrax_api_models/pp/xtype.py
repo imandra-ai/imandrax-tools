@@ -417,7 +417,7 @@ class Printer:
                         else None,
                     )
                 else:
-                    sym_info = f'{v.from_sym}#{v.count}'
+                    sym_info = f'{v.from_sym}#{v.count}' if v.count > 0 else v.from_sym
                     po_descr = v.po.descr
                     return python_obj(
                         'POTask',
