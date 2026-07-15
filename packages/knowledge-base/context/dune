@@ -1,13 +1,47 @@
+; ./src/
+; ====================
+
+(rule
+  (alias context-src)
+  (mode (promote (until-clean) (into src)))
+  (action
+    (copy# ../reference_prelude/prelude.yaml prelude.yaml)
+  )
+)
+
+(rule
+  (alias context-src)
+  (mode (promote (until-clean) (into src)))
+  (action
+    (copy# ../reference_tactics/tactics.yaml tactics.yaml)
+  )
+)
+
+; constants
+(rule
+  (alias context-src)
+  (mode (promote (until-clean) (into src)))
+  (action
+    (progn
+      (copy# ../constants/iml_caveats.yaml iml_caveats.yaml)
+      (copy# ../constants/quickstart_examples.yaml quickstart_examples.yaml)
+      (copy# ../constants/short_iml_101.yaml short_iml_101.yaml)
+      (copy# ../constants/tactic_combinators.yaml tactic_combinators.yaml)
+    )
+  )
+)
+
+; ./context.yaml
+; ====================
+
 (rule
  (targets context.yaml)
+ (alias default)
  (mode
   (promote (until-clean)))
  (deps
   (source_tree src)
-  src/iml_caveats.yaml
-  src/prelude.yaml
-  src/quickstart_examples.yaml
-  src/tactics.yaml
+  (alias context-src)
  )
  (action
   (with-stdout-to

@@ -4,6 +4,7 @@ ImandraX / IML knowledge base for agentic usage.
 
 Outputs:
 - `context.yaml` will be generated to be used by Jinja. Expected to be used as `jinja -d context.yaml template.jinja`.
+  - built from `./reference_*` and `./constants/`
 - `iml_eval_corpus.json`
 
 `dune` manages the build process.

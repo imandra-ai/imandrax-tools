@@ -80,7 +80,7 @@ Along with `SKILL.md` (this file), we have the following markdown materials:
 │   │   └── top-level.md
 │   ├── all-prelude-module-signatures.md # Signatures of all modules in IML prelude
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
-│   └── tactics.md # Complete reference for all proof tactics
+│   └── tactics.md # Reference for proof tactics
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the `codelogician-lite` CLI to interact with ImandraX and access additional features.
 ├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
