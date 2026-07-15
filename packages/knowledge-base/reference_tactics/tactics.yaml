@@ -1,4 +1,4 @@
-tactics:
+# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.pytactics:
 - name: quote_term
   tac_id: fn.tac.quote_term
   signature: '''a -> ''a term'
@@ -576,3 +576,4 @@ notations:
       - '[%use foo x y z]'
       description: Note the notation [[%use foo x y z]] handles term quoting automatically.
       description_md: Note the notation `[%use foo x y z]` handles term quoting automatically.
+

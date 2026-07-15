@@ -4,7 +4,8 @@
 # dependencies = ["pyyaml"]
 # ///
 # pyright: basic
-"""Extract tactics documentation from prelude.iml.
+"""
+Extract tactics documentation from prelude.iml.
 
 Requirements
 ============
@@ -70,7 +71,8 @@ import yaml
 
 
 def ocamldoc_to_markdown(doc: str) -> str:
-    """Convert OCaml doc comment syntax to markdown.
+    """
+    Convert OCaml doc comment syntax to markdown.
 
     - [code] -> `code`
     - {i text} -> *text* (italic)
@@ -80,7 +82,7 @@ def ocamldoc_to_markdown(doc: str) -> str:
     Preserves content already inside backticks.
     """
     if not doc:
-        return ""
+        return ''
 
     result = doc
 
@@ -89,27 +91,27 @@ def ocamldoc_to_markdown(doc: str) -> str:
         output = []
         i = 0
         while i < len(text):
-            if text[i] == "`":
+            if text[i] == '`':
                 # Skip content inside backticks
                 j = i + 1
-                while j < len(text) and text[j] != "`":
+                while j < len(text) and text[j] != '`':
                     j += 1
                 output.append(text[i : j + 1])
                 i = j + 1
-            elif text[i] == "[":
+            elif text[i] == '[':
                 # Find matching ]
                 depth = 1
                 j = i + 1
                 while j < len(text) and depth > 0:
-                    if text[j] == "[":
+                    if text[j] == '[':
                         depth += 1
-                    elif text[j] == "]":
+                    elif text[j] == ']':
                         depth -= 1
                     j += 1
                 if depth == 0:
                     # Found matching bracket
                     inner = text[i + 1 : j - 1]
-                    output.append("`" + inner + "`")
+                    output.append('`' + inner + '`')
                     i = j
                 else:
                     output.append(text[i])
@@ -117,21 +119,21 @@ def ocamldoc_to_markdown(doc: str) -> str:
             else:
                 output.append(text[i])
                 i += 1
-        return "".join(output)
+        return ''.join(output)
 
     result = replace_code_brackets(result)
 
     # Convert {i text} to *text*
-    result = re.sub(r"\{i\s+([^}]+)\}", r"*\1*", result)
+    result = re.sub(r'\{i\s+([^}]+)\}', r'*\1*', result)
 
     # Convert {b text} to **text**
-    result = re.sub(r"\{b\s+([^}]+)\}", r"**\1**", result)
+    result = re.sub(r'\{b\s+([^}]+)\}', r'**\1**', result)
 
     # Convert {e text} to *text*
-    result = re.sub(r"\{e\s+([^}]+)\}", r"*\1*", result)
+    result = re.sub(r'\{e\s+([^}]+)\}', r'*\1*', result)
 
     # Replace Unicode ellipsis with ASCII
-    result = result.replace("\u2026", "...")
+    result = result.replace('\u2026', '...')
 
     return result
 
@@ -143,7 +145,8 @@ def count_tactic_attributes(content: str) -> int:
 
 
 def extract_notations(tactics: list[dict]) -> dict[str, dict]:
-    """Extract notation documentation from tactic docstrings.
+    """
+    Extract notation documentation from tactic docstrings.
 
     Looks for patterns like [[%skip ...]] or `[%skip ...]` in documentation.
 
@@ -158,20 +161,20 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
     # Patterns to find notations:
     # 1. [[%...]] - double brackets in OCamldoc
     # 2. `[%...]` - backtick style
-    double_bracket_pattern = re.compile(r"\[\[%(\w+)([^\]]*)\]\]")
-    backtick_pattern = re.compile(r"`\[%(\w+)([^\]`]*)\]`")
+    double_bracket_pattern = re.compile(r'\[\[%(\w+)([^\]]*)\]\]')
+    backtick_pattern = re.compile(r'`\[%(\w+)([^\]`]*)\]`')
 
     # Step 1: Collect all notations with source info
     # Key: notation_name, Value: {tactic_name: {"patterns": [...], "paragraphs": [...]}}
     all_notations: dict[str, dict[str, dict]] = {}
 
     for tac in tactics:
-        doc = tac["documentation"]
+        doc = tac['documentation']
         if not doc:
             continue
 
         # Split into paragraphs (separated by blank lines) for extraction
-        paragraphs = re.split(r"\n\s*\n", doc)
+        paragraphs = re.split(r'\n\s*\n', doc)
 
         for para in paragraphs:
             notation_names_in_para: list[str] = []
@@ -181,7 +184,7 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
             for match in double_bracket_pattern.finditer(para):
                 notation_name = match.group(1)
                 args = match.group(2)
-                pattern = f"[%{notation_name}{args}]"
+                pattern = f'[%{notation_name}{args}]'
                 if notation_name not in notation_names_in_para:
                     notation_names_in_para.append(notation_name)
                 if notation_name not in patterns_in_para:
@@ -193,7 +196,7 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
             for match in backtick_pattern.finditer(para):
                 notation_name = match.group(1)
                 args = match.group(2)
-                pattern = f"[%{notation_name}{args}]"
+                pattern = f'[%{notation_name}{args}]'
                 if notation_name not in notation_names_in_para:
                     notation_names_in_para.append(notation_name)
                 if notation_name not in patterns_in_para:
@@ -203,21 +206,21 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
 
             # Record findings
             if notation_names_in_para:
-                cleaned_para = " ".join(para.split())
+                cleaned_para = ' '.join(para.split())
                 for notation_name in notation_names_in_para:
                     if notation_name not in all_notations:
                         all_notations[notation_name] = {}
-                    if tac["name"] not in all_notations[notation_name]:
-                        all_notations[notation_name][tac["name"]] = {
-                            "patterns": [],
-                            "paragraphs": [],
+                    if tac['name'] not in all_notations[notation_name]:
+                        all_notations[notation_name][tac['name']] = {
+                            'patterns': [],
+                            'paragraphs': [],
                         }
-                    entry = all_notations[notation_name][tac["name"]]
+                    entry = all_notations[notation_name][tac['name']]
                     for p in patterns_in_para.get(notation_name, []):
-                        if p not in entry["patterns"]:
-                            entry["patterns"].append(p)
-                    if cleaned_para not in entry["paragraphs"]:
-                        entry["paragraphs"].append(cleaned_para)
+                        if p not in entry['patterns']:
+                            entry['patterns'].append(p)
+                    if cleaned_para not in entry['paragraphs']:
+                        entry['paragraphs'].append(cleaned_para)
 
     # Step 2: Dedupe - assign each notation to primary source tactic
     # Prefer tactic whose name matches the notation name, else first occurrence
@@ -236,26 +239,26 @@ def extract_notations(tactics: list[dict]) -> dict[str, dict]:
 
     for notation_name, primary_tactic in notation_to_primary.items():
         if primary_tactic not in notations_by_tactic:
-            notations_by_tactic[primary_tactic] = {"notations": []}
+            notations_by_tactic[primary_tactic] = {'notations': []}
 
         # Merge data from all tactics that mention this notation
         all_patterns = []
         all_paragraphs = []
         for tactic_name, data in all_notations[notation_name].items():
-            for p in data["patterns"]:
+            for p in data['patterns']:
                 if p not in all_patterns:
                     all_patterns.append(p)
-            for para in data["paragraphs"]:
+            for para in data['paragraphs']:
                 if para not in all_paragraphs:
                     all_paragraphs.append(para)
 
-        description = "\n\n".join(all_paragraphs)
-        notations_by_tactic[primary_tactic]["notations"].append(
+        description = '\n\n'.join(all_paragraphs)
+        notations_by_tactic[primary_tactic]['notations'].append(
             {
-                "name": notation_name,
-                "patterns": all_patterns,
-                "description": description,
-                "description_md": ocamldoc_to_markdown(description),
+                'name': notation_name,
+                'patterns': all_patterns,
+                'description': description,
+                'description_md': ocamldoc_to_markdown(description),
             }
         )
 
@@ -270,7 +273,7 @@ def extract_tactics(content: str) -> list[dict]:
     # We'll find each [@@builtin.tac "fn.tac.*"] and work backwards to get the definition
     tac_pattern = re.compile(r'\[@@builtin\.tac\s+"(fn\.tac\.[^"]+)"\]')
 
-    lines = content.split("\n")
+    lines = content.split('\n')
 
     for i, line in enumerate(lines):
         match = tac_pattern.search(line)
@@ -288,29 +291,29 @@ def extract_tactics(content: str) -> list[dict]:
         combined_lines = line
 
         # If the let is not on this line, search backwards
-        if "let " not in line:
+        if 'let ' not in line:
             for j in range(i - 1, max(i - 20, -1), -1):
-                combined_lines = lines[j] + "\n" + combined_lines
-                if "let " in lines[j]:
+                combined_lines = lines[j] + '\n' + combined_lines
+                if 'let ' in lines[j]:
                     let_line_idx = j
                     break
 
         # Extract name and signature from the let binding
         # Pattern: let name : signature = ...
         # The signature can span multiple lines before the = sign
-        let_match = re.search(r"let\s+(\w+)\s*:\s*(.+?)\s*=", combined_lines, re.DOTALL)
+        let_match = re.search(r'let\s+(\w+)\s*:\s*(.+?)\s*=', combined_lines, re.DOTALL)
         if not let_match:
             # Some might not have explicit type annotation
-            let_match = re.search(r"let\s+(\w+)\s*=", combined_lines)
+            let_match = re.search(r'let\s+(\w+)\s*=', combined_lines)
             if let_match:
                 name = let_match.group(1)
-                signature = "(inferred)"
+                signature = '(inferred)'
             else:
                 continue
         else:
             name = let_match.group(1)
             # Clean up signature - remove newlines and extra spaces
-            signature = re.sub(r"\s+", " ", let_match.group(2)).strip()
+            signature = re.sub(r'\s+', ' ', let_match.group(2)).strip()
 
         # Now search backwards from the let line for doc comments
         doc_lines = []
@@ -323,19 +326,19 @@ def extract_tactics(content: str) -> list[dict]:
                 continue
 
             # Check if we're in or entering a doc comment
-            if stripped.endswith("*)") and "(**" in stripped:
+            if stripped.endswith('*)') and '(**' in stripped:
                 # Single-line doc comment
-                doc_match = re.search(r"\(\*\*\s*(.*?)\s*\*\)", stripped)
+                doc_match = re.search(r'\(\*\*\s*(.*?)\s*\*\)', stripped)
                 if doc_match:
                     doc_lines.insert(0, doc_match.group(1))
                 break
-            elif stripped.endswith("*)"):
+            elif stripped.endswith('*)'):
                 in_doc = True
                 # Get content before *)
                 content_part = stripped[:-2].strip()
                 if content_part:
                     doc_lines.insert(0, content_part)
-            elif stripped.startswith("(**"):
+            elif stripped.startswith('(**'):
                 # Start of doc comment
                 content_part = stripped[3:].strip()
                 if content_part:
@@ -347,15 +350,15 @@ def extract_tactics(content: str) -> list[dict]:
                 # No doc comment found, stop searching
                 break
 
-        documentation = "\n".join(doc_lines).strip() if doc_lines else ""
+        documentation = '\n'.join(doc_lines).strip() if doc_lines else ''
 
         tactics.append(
             {
-                "name": name,
-                "tac_id": tac_id,
-                "signature": signature,
-                "documentation": documentation,
-                "documentation_md": ocamldoc_to_markdown(documentation),
+                'name': name,
+                'tac_id': tac_id,
+                'signature': signature,
+                'documentation': documentation,
+                'documentation_md': ocamldoc_to_markdown(documentation),
             }
         )
 
@@ -369,19 +372,23 @@ def str_representer(dumper: yaml.Dumper, data: str):
     Note: PyYAML refuses to use literal block style for strings with trailing
     whitespace on any line, so we strip trailing whitespace to enable literal blocks.
     """
-    if "\n" in data:
+    if '\n' in data:
         # Strip trailing whitespace from each line to allow literal block style
-        data = "\n".join(line.rstrip() for line in data.split("\n"))
-        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+        data = '\n'.join(line.rstrip() for line in data.split('\n'))
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 
 yaml.add_representer(str, str_representer)
 
 
-def main(output_path: Path, prelude_path: Path | None = None, verbose: bool = False):
+def main(
+    output_path: Path | None,
+    prelude_path: Path | None = None,
+    verbose: bool = False,
+):
     if prelude_path is None:
-        prelude_path = Path(__file__).parent / "prelude.iml"
+        prelude_path = Path(__file__).parent / 'prelude.iml'
     content = prelude_path.read_text()
 
     # Count expected tactics and extract them
@@ -390,7 +397,7 @@ def main(output_path: Path, prelude_path: Path | None = None, verbose: bool = Fa
 
     # Assert that we extracted all tactics
     assert len(tactics) == expected_count, (
-        f"Expected {expected_count} tactics but extracted {len(tactics)}"
+        f'Expected {expected_count} tactics but extracted {len(tactics)}'
     )
 
     # Extract notations from tactic documentation
@@ -402,11 +409,11 @@ def main(output_path: Path, prelude_path: Path | None = None, verbose: bool = Fa
 
     if verbose:
         for i, tac in enumerate(tactics, 1):
-            print(f"{i}. `{tac['name']}`")
+            print(f'{i}. `{tac["name"]}`')
             # print(f"Tactic ID: {tac['tac_id']}")
-            print(f"- Signature: `{tac['signature']}`")
-            if tac["documentation"]:
-                print(f"- Doc: {tac['documentation_md']}")
+            print(f'- Signature: `{tac["signature"]}`')
+            if tac['documentation']:
+                print(f'- Doc: {tac["documentation_md"]}')
             print()
             # print("-" * 80)
 
@@ -423,25 +430,29 @@ def main(output_path: Path, prelude_path: Path | None = None, verbose: bool = Fa
 
     # Save as YAML
     output = {
-        "tactics": tactics,
-        "notations": notations,
+        'tactics': tactics,
+        'notations': notations,
     }
-    output_path.write_text(yaml.dump(output, default_flow_style=False, sort_keys=False))
+    out = yaml.dump(output, default_flow_style=False, sort_keys=False)
+    if output_path is None:
+        print(out)
+    else:
+        output_path.write_text(out)
     # print(f"\nSaved to {output_path}")
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Extract tactics documentation from prelude.iml"
+        description='Extract tactics documentation from prelude.iml'
     )
-    parser.add_argument("prelude", nargs="?", type=Path, help="Path to prelude.iml")
-    parser.add_argument("-o", "--output", type=Path, help="Output YAML path")
+    parser.add_argument('prelude', nargs='?', type=Path, help='Path to prelude.iml')
+    parser.add_argument('-o', '--output', type=Path, help='Output YAML path')
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Print each tactic to stdout"
+        '-v', '--verbose', action='store_true', help='Print each tactic to stdout'
     )
     args = parser.parse_args()
 
-    output_path = args.output or Path(__file__).parent / "tactics.yaml"
+    output_path = args.output
     main(output_path, prelude_path=args.prelude, verbose=args.verbose)

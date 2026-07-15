@@ -6,11 +6,14 @@
  (targets tactics.yaml)
  (deps extraction_tactic_docs_from_iml_prelude.py prelude.iml)
  (action
-  (run
-   uv
-   run
-   --script
-   extraction_tactic_docs_from_iml_prelude.py
-   prelude.iml
-   -o
-   %{targets})))
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo
+     "# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.py")
+    (run
+     uv
+     run
+     --script
+     extraction_tactic_docs_from_iml_prelude.py
+     prelude.iml)))))
