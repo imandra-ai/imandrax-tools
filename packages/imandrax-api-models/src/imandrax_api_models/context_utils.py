@@ -164,11 +164,12 @@ def format_error_msg(
     error_msg: ErrorMessage,
     iml_src: str | None = None,
     max_backtrace_len: int = 0,
-) -> dict[str, Any]:
+) -> JSONObject:
+    res: dict[str, Any] = {'msg': error_msg.msg}
+
     locs: list[Location] = error_msg.locs or []
     locs = [loc for loc in locs if (loc.start is not None and loc.stop is not None)]
 
-    res: dict[str, Any] = {}
     if locs:
         # TODO: handle multiple locations
         start, stop = locs[0].start, locs[0].stop

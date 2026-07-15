@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.4.1] - 26-07-15
+- FIX(api-resp/pp): add missing error message source
+
 ## [20.4.0] - 26-07-13
 - FEAT(pp): multiline_text, box_left, tree configs
 - REFA(decomp): factor out non-grouping related types
