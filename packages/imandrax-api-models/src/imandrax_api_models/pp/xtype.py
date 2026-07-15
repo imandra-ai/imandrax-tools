@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from functools import partial
-from typing import Any, Literal, assert_never, cast
+from typing import Any, Literal, TypeGuard, assert_never, cast
 
 import imandrax_api.lib as xtype
 
@@ -76,7 +76,9 @@ class PrinterConfig:
     summarize_po_task: bool = False
     """Show PO task as a summarized string. Useful in success case"""
     hide_po_res_success_cases: bool = False
-    """Replace body of success cases with `...`"""
+    """Replace body of Tasks_po_res_success_* cases with `...`"""
+    hide_po_res_sub_res_when_succeed: bool = True
+    """Hide Tasks_PO_res_shallow_poly.sub_res field when .res is a success case"""
     report_expand_payloads: bool = False
     """render full models/SMT proofs in reports"""
     concise_region_repr: bool = True
@@ -122,6 +124,26 @@ def Goal2doc(v: Goal, ty2doc: Callable[[xtype.Mir_Type], Doc]) -> Doc:
     )
     # return hcat(text('<'), text('Goal'), text(' '), goal_doc, text('>'))
     return python_obj('Goal', [(None, python_quote(goal_doc, single_quote=False))])
+
+
+def _is_tasks_po_res_success(
+    v: Any,
+) -> TypeGuard[
+    xtype.Tasks_PO_res_success_Proof
+    | xtype.Tasks_PO_res_success_Instance
+    | xtype.Tasks_PO_res_success_Verified_upto
+    | xtype.Tasks_PO_res_success_Test_ok
+]:
+    if isinstance(
+        v,
+        xtype.Tasks_PO_res_success_Proof
+        | xtype.Tasks_PO_res_success_Instance
+        | xtype.Tasks_PO_res_success_Verified_upto
+        | xtype.Tasks_PO_res_success_Test_ok,
+    ):
+        return True
+    else:
+        return False
 
 
 class Printer:
@@ -296,13 +318,18 @@ class Printer:
                 return text(f'VerifyKind.{name}')
             # PO res
             case xtype.Tasks_PO_res_shallow_poly():
-                ignore_fields = (
-                    ['report'] if not self.config.show_po_res_report else None
-                )
+                ignore_fields = []
+                if not self.config.show_po_res_report:
+                    ignore_fields += ['report']
+                if (
+                    self.config.hide_po_res_sub_res_when_succeed
+                    and _is_tasks_po_res_success(v.res)
+                ):
+                    ignore_fields += ['sub_res']
                 return dataclass2doc(
                     v,
                     with_name='PORes',
-                    ignore_fields=ignore_fields,
+                    ignore_fields=ignore_fields if ignore_fields else None,
                     filter_p=lambda _, v: not (isinstance(v, list) and len(v) == 0),
                 )
             case (
