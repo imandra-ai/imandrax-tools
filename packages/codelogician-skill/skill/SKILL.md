@@ -53,7 +53,7 @@ Along with `SKILL.md` (this file), we have the following markdown materials:
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
 │   ├── contingency-corner.md # Documentations that are unlikley to be useful for file-system-based agents.
-│   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage.
+│   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
 │   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
