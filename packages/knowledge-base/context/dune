@@ -12,5 +12,8 @@
  (action
   (with-stdout-to
    %{targets}
-   (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline literal)
+   (progn
+    (echo "# DO NOT EDIT: Auto-generated from ./src/ via dump-of-fs\n")
+    (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline literal)
+   )
    )))

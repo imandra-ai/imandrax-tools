@@ -1,4 +1,5 @@
-# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.pytactics:
+# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.py
+tactics:
 - name: quote_term
   tac_id: fn.tac.quote_term
   signature: '''a -> ''a term'

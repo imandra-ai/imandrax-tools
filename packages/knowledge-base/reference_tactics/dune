@@ -10,7 +10,7 @@
    %{targets}
    (progn
     (echo
-     "# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.py")
+     "# DO NOT EDIT: Auto-generated from prelude.iml via extraction_tactic_docs_from_iml_prelude.py\n")
     (run
      uv
      run

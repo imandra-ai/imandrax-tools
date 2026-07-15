@@ -1,0 +1,7 @@
+content: |
+  - `@>`: `t @> t'` expects `t` to produce exactly one sub-goal, and uses `t'` to prove this subgoal.
+  - `<|>`: `t1 <|> t2` is the `or tactical` which applies `t1` and uses its result if
+      it succeeds, and otherwise applies `t2` if `t1` had failed
+  - `@>>|`: `t1 @>>| t2` applies `t1` and then applies `t2` to all `t1`-generated subgoals.
+  - `@>|`: `t @>| [t1; t2; ...; tn]` expects `t` to produce `n` subgoals, and , and uses `t_i` to solve the `i`-th goal.
+  - monadic map `( let+ )` and monadic bind `( let* )` exists as well
