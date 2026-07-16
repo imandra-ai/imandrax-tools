@@ -20,7 +20,7 @@ from pathlib import Path
 import pydantic2ts
 from imandrax_api_models.region_decomp import RegionGroupView
 from imandrax_tools.idf.viz_view import View as IDFView
-from imandrax_tools.widget._tasks import TaskEntry
+from imandrax_tools.widget_types import TaskEntry
 
 # The models pydantic2ts emits when it imports this module as `--module`.
 __all__ = ['RegionGroupView', 'TaskEntry', 'IDFView']

@@ -27,7 +27,7 @@ from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
 from imandrax_tools.idf.viz_view import View as IDFView
-from imandrax_tools.widget._tasks import HasTasks, collect_tasks_artifacts
+from imandrax_tools.widget_types import HasTasks, collect_tasks_artifacts
 
 _DIST = Path(__file__).parent / 'static'
 

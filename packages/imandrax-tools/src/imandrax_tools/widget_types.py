@@ -1,23 +1,21 @@
-"""Tasks widget related utilities"""
+"""Widget related types, defined without optional dependencies required"""
 
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Protocol, assert_never
+from typing import TYPE_CHECKING, Any, Protocol, assert_never
 
 import imandrax_api.lib as xtype
 from imandrax_api_models import Task
-from imandrax_api_models.client import (
-    ImandraXAsyncClient,
-    ImandraXClient,
-    async_get_task_artifacts,
-    get_task_artifacts,
-)
 from imandrax_api_models.pp.xtype import (
     config_items_of_art,
     to_string as string_of_xtype,
 )
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
+
 
 STATUS_EMOJI = {
     'success': '✅',
@@ -92,6 +90,13 @@ def collect_tasks_artifacts(
     tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
 ) -> list[TaskEntry]:
     """Fetch + decode + pretty-print artifacts for each task into trait data."""
+    from imandrax_api_models.client import (
+        ImandraXAsyncClient,
+        ImandraXClient,
+        async_get_task_artifacts,
+        get_task_artifacts,
+    )
+
     match c:
         case ImandraXClient():
             return [_mk_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
