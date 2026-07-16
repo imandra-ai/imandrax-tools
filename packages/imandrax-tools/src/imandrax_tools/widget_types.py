@@ -65,7 +65,15 @@ class TaskEntry(BaseModel):
     artifacts: list[ArtifactEntry]
 
 
-def _mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
+def mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
+    """
+    Create a `TaskEntry` from a `Task` and a dictionary of artifact kind to xvalue.
+
+    Args:
+        task: the task to create an entry for.
+        artifacts: A dictionary of artifact kind to xvalue.
+
+    """
     config_items: dict[str, Any] = {}
     for a_kind, xval in artifacts.items():
         # NOTE: simple right-win merge. Conflicts are not handled.
@@ -99,14 +107,14 @@ def collect_tasks_artifacts(
 
     match c:
         case ImandraXClient():
-            return [_mk_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
+            return [mk_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
         case ImandraXAsyncClient() as ac:
 
             async def _gather() -> list[TaskEntry]:
                 artifacts = await asyncio.gather(
                     *[async_get_task_artifacts(t, ac) for t in tasks]
                 )
-                return [_mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
+                return [mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
 
             return asyncio.run(_gather())
         case _:
