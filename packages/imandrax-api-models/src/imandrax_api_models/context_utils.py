@@ -160,6 +160,19 @@ def _format_unstructured_msg_errors(
     return out
 
 
+def format_location(loc: Location) -> str:
+    start = loc.start
+    end = loc.start
+
+    def string_of_pos(pos_opt: Position | None) -> str:
+        if pos_opt is None:
+            return '?'
+        else:
+            return f'{pos_opt.line}:{pos_opt.col}'
+
+    return f'{string_of_pos(start)}-{string_of_pos(end)}'
+
+
 def format_error_msg(
     error_msg: ErrorMessage,
     iml_src: str | None = None,
@@ -175,11 +188,7 @@ def format_error_msg(
         start, stop = locs[0].start, locs[0].stop
         start = cast(Position, start)
         stop = cast(Position, stop)
-        location = {
-            'start': start.model_dump(),
-            'stop': stop.model_dump(),
-        }
-        res['location'] = location
+        res['location'] = format_location(locs[0])
 
         if iml_src is not None:
             start_pos = (start.line, start.col)
