@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.4.2] - 26-07-16
+- ENH(api-resp/pp): tweaks
+
 ## [20.4.1] - 26-07-15
 - FIX(api-resp/pp): add missing error message source
 
