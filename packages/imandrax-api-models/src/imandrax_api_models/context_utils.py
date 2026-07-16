@@ -322,8 +322,11 @@ def format_eval_res(
         data: JSONObject = {
             'success': eval_result.success,
             'value_as_ocaml': eval_result.value_as_ocaml,
-            'errors': format_errors(eval_result.errors, [], iml_src, max_errors=1),
         }
+        if eval_result.errors:
+            data['errors'] = format_errors(
+                eval_result.errors, [], iml_src, max_errors=1
+            )
         out[f'eval_result_{i}'] = data
     for i, decomp_res in enumerate(eval_res.decomp_results, 1):
         if not process_decomp:
