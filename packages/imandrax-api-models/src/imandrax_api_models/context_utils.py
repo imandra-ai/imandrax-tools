@@ -384,7 +384,7 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
     return out
 
 
-def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> dict[str, Any]:
+def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> JSONObject:
     d: dict[str, Any] = {}
     if len(decomp_res.region_groups) > 0:
         enriched_regions = decomp_res.regions_with_group_info()
