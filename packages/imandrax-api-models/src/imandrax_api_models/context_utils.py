@@ -301,29 +301,32 @@ def format_eval_res(
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
                 out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
-            return out
+
         case False, True:
             out['desc'] = 'Eval: error in eval messages'
-            return {'msg_errors': _format_unstructured_msg_errors(errs_in_eval_msg)}
+            out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
         case False, False:
             out['desc'] = 'Eval succeed'
-            for i, eval_result in enumerate(eval_res.eval_results, 1):
-                data: JSONObject = {
-                    'success': eval_result.success,
-                    'value_as_ocaml': eval_result.value_as_ocaml,
-                }
-                out[f'eval_result_{i}'] = data
-            for i, decomp_res in enumerate(eval_res.decomp_results, 1):
-                if not process_decomp:
-                    out[f'decomp_result_{i}'] = decomp_res.model_dump(mode='json')
-                else:
-                    out[f'decomp_result_{i}'] = format_enriched_decomp_res(
-                        EnrichedDecomposeRes.from_decomp_res(decomp_res)
-                    )
 
-            if len(out.keys()) == 1 and 'desc' in out:
-                return out['desc']
-            return out
+    # Pack .eval_results and .decomp_results
+    for i, eval_result in enumerate(eval_res.eval_results, 1):
+        data: JSONObject = {
+            'success': eval_result.success,
+            'value_as_ocaml': eval_result.value_as_ocaml,
+            'errors': format_errors(eval_result.errors, [], iml_src, max_errors=1),
+        }
+        out[f'eval_result_{i}'] = data
+    for i, decomp_res in enumerate(eval_res.decomp_results, 1):
+        if not process_decomp:
+            out[f'decomp_result_{i}'] = decomp_res.model_dump(mode='json')
+        else:
+            out[f'decomp_result_{i}'] = format_enriched_decomp_res(
+                EnrichedDecomposeRes.from_decomp_res(decomp_res)
+            )
+
+    if len(out.keys()) == 1 and 'desc' in out:
+        return out['desc']
+    return out
 
 
 # ====================
