@@ -330,7 +330,9 @@ def format_eval_res(
         out[f'eval_result_{i}'] = data
     for i, decomp_res in enumerate(eval_res.decomp_results, 1):
         if not process_decomp:
-            out[f'decomp_result_{i}'] = decomp_res.model_dump(mode='json')
+            out[f'decomp_result_{i}'] = remove_fields_rec(
+                decomp_res.model_dump(mode='json'), replace_with=('right', '<hidden>')
+            )
         else:
             out[f'decomp_result_{i}'] = format_enriched_decomp_res(
                 EnrichedDecomposeRes.from_decomp_res(decomp_res)
@@ -382,7 +384,9 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
             out[f'error_{i}'] = format_error(err)
     else:
         out['res_type'] = vg_res.res_type
-        out['res'] = vg_res.res.model_dump(mode='json')
+        out['res'] = remove_fields_rec(
+            vg_res.res.model_dump(mode='json'), replace_with=('right', '<hidden>')
+        )
 
     return out
 
