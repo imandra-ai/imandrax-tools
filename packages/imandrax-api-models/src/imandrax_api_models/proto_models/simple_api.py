@@ -50,8 +50,10 @@ class DecomposeReq(BaseModel):
 
 
 class DecomposeResProto(BaseModel):
-    artifact: Art | None = Field(default=None)
-    err: Empty | None = Field(default=None)
+    # oneof_res
+    artifact: Art | None = Field(default=None, exclude_if=lambda v: v is None)
+    err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
+    # oneof_res
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None)
 
@@ -294,12 +296,16 @@ class CounterSat(BaseModel):
 
 
 class PO_Res(BaseModel):
-    unknown: StringMsg | None = Field(default=None)
-    err: Empty | None = Field(default=None)
-    proof: Proved | None = Field(default=None)
-    instance: CounterSat | None = Field(default=None)
-    verified_upto: Verified_upto | None = Field(default=None)
-    test_ok: Test_ok | None = Field(default=None)
+    # oneof_res
+    unknown: StringMsg | None = Field(default=None, exclude_if=lambda v: v is None)
+    err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
+    proof: Proved | None = Field(default=None, exclude_if=lambda v: v is None)
+    instance: CounterSat | None = Field(default=None, exclude_if=lambda v: v is None)
+    verified_upto: Verified_upto | None = Field(
+        default=None, exclude_if=lambda v: v is None
+    )
+    test_ok: Test_ok | None = Field(default=None, exclude_if=lambda v: v is None)
+    # /oneof_res
 
     errors: list[Error] = Field(default_factory=lambda: [])
     task: Task | None = Field(default=None, description='the ID of the task')
