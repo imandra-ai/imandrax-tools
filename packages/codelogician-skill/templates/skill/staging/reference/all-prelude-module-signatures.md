@@ -7,123 +7,65 @@ Now we'll go through the signatures of modules in IML Prelude.
 
 <top-level>
 top-level (readily available, no need to quantify with module name)
-
   val +. : real -> real -> real  (*  [+.] is addition for reals  *)
-
   type int = <logic_core_builtin>  (*  Builtin integer type, using arbitrary precision integers. This type is an alias to {!Z.t} (using Zarith). NOTE: here Imandra diverges from normal OCaml, where integers width is bounded by native machine integers. "Normal" OCaml integers have type {!Caml.Int.t} and can be entered using the 'i' suffix: [0i]  *)
-
   type nonrec bool = <logic_core_builtin>  (*  Builtin boolean type.  *)
-
   val || : bool -> bool -> bool  (*  [||] is the boolean OR operator  *)
-
   val && : bool -> bool -> bool  (*  [&&] is the boolean AND operator  *)
-
   type nonrec unit = | ()  (*  Unit type with single constructor [()]  *)
-
   val = : 'a -> 'a -> bool  (*  Equality. Must be applied to non-function types.  *)
-
   val <> : 'a -> 'a -> bool  (*  [<>] is the inequality operator  *)
-
   val not : bool -> bool  (*  [not] is the boolean NOT operator  *)
-
   val ==> : bool -> bool -> bool  (*  [==>] is logical implication  *)
-
   val <== : bool -> bool -> bool  (*  [<==] is reverse logical implication  *)
-
   val <==> : bool -> bool -> bool  (*  [<==>] is logical equivalence  *)
-
   val + : int -> int -> int  (*  [+] is integer addition  *)
-
   val const : 'a -> 'b -> 'a  (*  [const x y] returns [x]. In other words, [const x] is the constant function that always returns [x].  *)
-
   val >= : int -> int -> bool  (*  [>=] is greater than or equal comparison for integers  *)
-
   val mk_nat : int -> int  (*  [mk_nat x] converts integer [x] to natural number by returning [x] if non-negative, 0 otherwise  *)
-
   type nonrec option = | None | Some of 'a  (*  Option type representing optional values  *)
-
   type list = | [] | :: of 'a * 'a list  (*  List type with empty list [] and cons :: constructors  *)
-
   type nonrec float = <logic_core_builtin>  (*  Floating point number type  *)
-
   type nonrec real = <logic_core_builtin>  (*  Real number type  *)
-
   type nonrec string = <logic_core_builtin>  (*  String type  *)
-
   val < : int -> int -> bool  (*  [<] is less than comparison for integers  *)
-
   val <= : int -> int -> bool  (*  [<=] is less than or equal comparison for integers  *)
-
   val > : int -> int -> bool  (*  [>] is greater than comparison for integers  *)
-
   val min : int -> int -> int  (*  [min x y] returns the minimum of integers [x] and [y]  *)
-
   val max : int -> int -> int  (*  [max x y] returns the maximum of integers [x] and [y]  *)
-
   val <. : real -> real -> bool  (*  [<.] is less than comparison for reals  *)
-
   val <=. : real -> real -> bool  (*  [<=.] is less than or equal comparison for reals  *)
-
   val >. : real -> real -> bool  (*  [>.] is greater than comparison for reals  *)
-
   val >=. : real -> real -> bool  (*  [>=.] is greater than or equal comparison for reals  *)
-
   val min_r : real -> real -> real  (*  [min_r x y] returns the minimum of reals [x] and [y]  *)
-
   val max_r : real -> real -> real  (*  [max_r x y] returns the maximum of reals [x] and [y]  *)
-
   val ~- : int -> int  (*  [~- x] returns the negation of integer [x]  *)
-
   val abs : int -> int  (*  [abs x] returns the absolute value of integer [x]  *)
-
   val - : int -> int -> int  (*  [-] is integer subtraction  *)
-
   val ~+ : int -> int  (*  [~+ x] returns [x] unchanged (unary plus)  *)
-
   val * : int -> int -> int  (*  [*] is integer multiplication  *)
-
   val / : int -> int -> int  (*  Euclidian division on integers, see http://smtlib.cs.uiowa.edu/theories-Ints.shtml  *)
-
   val mod : int -> int -> int  (*  Euclidian remainder on integers  *)
-
   val compare : int -> int -> int  (*  Total order, if x = y then 0 else if x < y then -1 else 1  *)
-
   type result = | Ok of 'a | Error of 'b  (*  Result type, representing either a successful result [Ok x] or an error [Error x].  *)
-
   type either = | Left of 'a | Right of 'b  (*  A familiar type for Haskellers  *)
-
   val |> : 'a -> ('a -> 'b) -> 'b  (*  Pipeline operator. [x |> f] is the same as [f x], but it composes nicely: [ x |> f |> g |> h] can be more readable than [h(g(f x))].  *)
-
   val @@ : ('a -> 'b) -> 'a -> 'b  (*  Right-associative application operator. [f @@ x] is the same as [f x], but it binds to the right: [f @@ g @@ h @@ x] is the same as [f (g (h x))] but with fewer parentheses.  *)
-
   val id : 'a -> 'a  (*  Identity function. [id x = x] always holds.  *)
-
   val %> : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c  (*  Mathematical composition operator. [f %> g] is [fun x -> g (f x)]  *)
-
   val -. : real -> real -> real  (*  [-.] is subtraction for reals  *)
-
   val ~-. : real -> real  (*  [~-.] is negation for reals  *)
-
   val *. : real -> real -> real  (*  [*.] is multiplication for reals  *)
-
   val /. : real -> real -> real  (*  [/.] is division for reals  *)
-
   val @ : 'a list -> 'a list -> 'a list  (*  Infix alias to {!List.append}  *)
-
   val ^ : String.t -> String.t -> String.t  (*  Alias to {!String.append}  *)
-
   val succ : int -> int  (*  [succ x] returns the successor of integer [x]  *)
-
   val pred : int -> int  (*  [pred x] returns the predecessor of integer [x]  *)
-
   val fst : ('a * 'b) -> 'a  (*  [fst (x,y)] returns the first component [x] of pair [(x,y)]  *)
-
   val snd : ('a * 'b) -> 'b  (*  [snd (x,y)] returns the second component [y] of pair [(x,y)]  *)
-
   val -- : int list -> int list -> int list  (*  Alias to {!List.(--)}
 - Note: `end` is not included in the generated list of `(start -- end)`.
 - Example: `(1--3) (* gives [1;2] *)`  *)
-
 </top-level>
 
 

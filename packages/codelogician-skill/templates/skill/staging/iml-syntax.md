@@ -1,9 +1,9 @@
 ---
-name: iml-syntax
-description: IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
+name: iml-language-guide
+description: IML language guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
 ---
 
-# IML Syntax Guide
+# IML Language Guide
 
 ## Standard Library Differences with OCaml
 

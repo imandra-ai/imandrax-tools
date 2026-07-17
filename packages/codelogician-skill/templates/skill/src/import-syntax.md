@@ -1,6 +1,6 @@
 ---
 name: import-syntax
-description: Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.
+description: Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
 ---
 
 # Import Syntax
