@@ -18,7 +18,7 @@ description: Practical tips for writing proofs in IML.
 - Avoid inline lambdas in proofs. Use named functions instead.
 - Automated tactics are not a silver bullet. They (e.g. `auto`) might not be suitable for every tasks. Resort to manual tactics for surgical proof control.
 - Sometimes `auto` can give confusing goal states.
-- Do not permulate tactics: it's a strongly discouraged anti-pattern to attemp trial-and-error on tactics. Permulating tactics one-by-one is the most likely way to get yourself into a vicious cycle. You will see sligthly different goal states every time but you won't make any progress. When this happens, it's better to reflect and lay out your thoughts and plans in prose first. Track what works and what is dead ends somewhere, revise your plan as you go along.
+- Do not permulate tactics: it's a strongly discouraged anti-pattern to attempt trial-and-error on tactics. Permulating tactics one-by-one is the most likely way to get yourself into a vicious cycle. You will see sligthly different goal states every time but you won't make any progress. When this happens, it's better to reflect and lay out your thoughts and plans in prose first. Track what works and what is dead ends somewhere, revise your plan as you go along.
 - Choose tactics wisely: we have a variety of tactics to choose from. Some are more suitable for certain tasks than others. See [tactics reference](./../reference/tactics.md) for more details.
 - Tips for writing verification-friendly code:
     - Avoid higher order functions if you can! E.g. `List.map`, `List.filter`, `List.fold_left`, and etc.
