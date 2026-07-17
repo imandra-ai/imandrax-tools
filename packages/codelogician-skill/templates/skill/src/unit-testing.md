@@ -1,11 +1,11 @@
 ---
 name: unit-testing
-description: Writing unit tests in IML using verify with ground_eval and expand. Very useful for incrementally building up IML projects.
+description: Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
 ---
 
 # Unit Testing in IML
 
-Unit testing in IML is done via `verify` combined with the `ground_eval` tactic. This lets you assert concrete, fully-determined facts and have ImandraX prove them by direct evaluation — no SMT solving or induction needed.
+Unit testing in IML is can be done via `verify` combined with the `ground_eval` tactic. This lets you assert concrete, fully-determined facts and have ImandraX prove them by direct evaluation.
 
 ## Basic pattern
 

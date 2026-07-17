@@ -25,4 +25,4 @@ This syntax makes definitions from the imported file available with quantified n
 
 ## Evaluating IML with Imports in `codelogician` CLI
 
-When evaluating a IML file which has imports inside in `check`, `check-vg`, or `check-decomp`, the CodeLogician CLI will resolve the imports and aggregate all the IML files into a monolithic IML file in topological order.
+When evaluating a IML file which has imports inside in `check`, `check-vg`, `check-decomp`, etc., the CodeLogician CLI will resolve the imports and aggregate all the IML files into a monolithic IML file in topological order.
