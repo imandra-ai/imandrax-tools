@@ -12,6 +12,8 @@ from typing import Any, Literal, assert_never, cast, get_args
 from imandrax_api_models import (
     DecomposeRes,
     Error,
+    ErrorKind,
+    ErrorKindParsingError,
     ErrorMessage,
     EvalOutput,
     EvalRes,
@@ -211,7 +213,14 @@ def format_error(
 ) -> JSONObject:
     out: dict[str, Any] = {}
 
-    out['err_kind'] = error.kind
+    err_kind: str = error.kind
+    # '{ Kind.name = "TacticEvalErr" }' -> 'TacticEvalErr'
+    try:
+        err_kind = ErrorKind.from_proto_kind_exn(err_kind).value
+    except ErrorKindParsingError:
+        pass
+    out['kind'] = err_kind
+
     if error.msg is not None:
         out['msg'] = format_error_msg(error.msg, iml_src)
 
@@ -379,7 +388,7 @@ def remove_fields_rec(
 def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
     out: JSONObject = {}
     if vg_res.errors:
-        out['description'] = 'VG has errors'
+        out['description'] = f'VG has {len(vg_res.errors)} error(s)'
         for i, err in enumerate(vg_res.errors, 1):
             out[f'error_{i}'] = format_error(err)
     else:
