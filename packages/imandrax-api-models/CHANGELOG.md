@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- FIX(logging-utils): redirect logs to stderr
 
 ## [20.4.2] - 26-07-16
 - ENH(api-resp/pp): tweaks

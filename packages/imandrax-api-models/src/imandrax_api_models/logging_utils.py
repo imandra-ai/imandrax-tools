@@ -1,4 +1,5 @@
 import logging
+import sys
 import time
 from typing import Any, Literal
 
@@ -172,6 +173,6 @@ def configure_logging(
         processors=processors,
         wrapper_class=structlog.make_filtering_bound_logger(min_level),
         context_class=dict,
-        logger_factory=NamedPrintLoggerFactory(),
+        logger_factory=NamedPrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=False,
     )
