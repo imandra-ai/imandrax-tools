@@ -400,6 +400,29 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
     return out
 
 
+def format_decomp_res(decomp_res: DecomposeRes | EnrichedDecomposeRes) -> JSONObject:
+    d: dict[str, Any] = {}
+    if len(decomp_res.errors) > 0:
+        d['description'] = 'Decomp failed'
+        d['errors'] = [format_error(e) for e in decomp_res.errors]
+    elif decomp_res.regions_str is None:
+        d['description'] = (
+            'Decomp succeeded with no parsed region:'
+            'Please investigate artifact and task details'
+        )
+    else:
+        from pydantic_core import to_jsonable_python
+
+        d['description'] = (
+            f'Decomp succeeded with {len(decomp_res.regions_str)} regions'
+        )
+        # NOTE: this will be deprecated soon with the removal of RegionStr
+        d['stringified_regions'] = [
+            to_jsonable_python(r) for r in decomp_res.regions_str
+        ]
+    return d
+
+
 def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> JSONObject:
     d: dict[str, Any] = {}
     if len(decomp_res.region_groups) > 0:
@@ -407,11 +430,8 @@ def format_enriched_decomp_res(decomp_res: EnrichedDecomposeRes) -> JSONObject:
         d['description'] = f'Decomp succeeded with {len(enriched_regions)} regions'
         d['regions'] = enriched_regions
     else:
-        d['description'] = 'Decomp failed'
-        d |= remove_fields_rec(
-            decomp_res.model_dump(exclude={'regions_str', 'region_groups'})
-        )
-
+        # NOTE: this path will no longer be needed once we consolidate EnrichedDecomposeRes and DecomposeRes
+        d |= format_decomp_res(decomp_res)
     return d
 
 
@@ -431,8 +451,6 @@ type FormattableModel = (
 
 def jsonable_of_model(model: FormattableModel) -> JSONValue:
     """Dispatch to the appropriate string representation for the given model."""
-    from pydantic_core import to_jsonable_python
-
     match model:
         case EvalOutput():
             return format_eval_output(model)
@@ -450,7 +468,7 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
             except Exception:
-                return remove_fields_rec(to_jsonable_python(model))
+                return format_decomp_res(model)
         case ErrorMessage():
             return format_error_msg(model)
         case _:

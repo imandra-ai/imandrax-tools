@@ -3,10 +3,11 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- ENH(api-resp-pp): improve VG res and Decomp res formatting
 - FIX(logging-utils): redirect logs to stderr
 
 ## [20.4.2] - 26-07-16
-- ENH(api-resp/pp): tweaks
+- ENH(api-resp-pp): tweaks
 
 ## [20.4.1] - 26-07-15
 - FIX(api-resp/pp): add missing error message source
