@@ -1,9 +1,24 @@
 ---
 name: iml-language-guide
-description: IML language guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
+description: IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
 ---
 
 # IML Language Guide
+
+Rougly speaking: IML has OCaml syntax, but:
+- it has its own prelude instead of OCaml standard library (see below and [all-prelude-module-signatures.md](./reference/all-prelude-module-signatures.md))
+- it's pure (no exceptions and other side effects)
+- it has a few special syntaxes and built-in annotations to trigger different ImandraX tasks (verification, region decomposition, etc.))
+    - syntax: `verify`, `instance`, `lemma`, `theorem`, `axiom`, `test`, `eval`. They all have the same grammar rule as `let`!
+    - built-in-annotations: 
+        - `[@@measure <measure-function>]`: annotation for termination measure (when default measure is not sufficient)
+        - `[@@decomp top <decomp-args> ()]`: attached to a function definition to trigger region decomposition
+        - `[@@by <tactic>]`, `[@@rw]`, `[@@fc]`, ...: for tactic-based proofs, installing rewrite rules, installing forward chaining rules, etc.
+
+How ImandraX works with IML on a high level:
+- ImandraX typechecks IML code.
+- ImandraX spawns tasks (proof-obligations (including termination proving), region decomposition, eval, etc.) from IML and processes them.
+- ImandraX returns the results of the tasks to the user.
 
 ## Standard Library Differences with OCaml
 

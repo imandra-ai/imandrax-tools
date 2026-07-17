@@ -71,23 +71,7 @@
     {
       "name": "measure_type_err",
       "repro": "let m (n : int) : int = n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
-      "err_msg": {
-        "msg": "Expression is expected to have type `Ordinal.t`,\nbut its inferred type is `int`.\nThe subtypes `Ordinal.t` and `int` do not match.",
-        "locs": [
-          {
-            "file": "<none>",
-            "start": {
-              "line": 5,
-              "col": 12
-            },
-            "stop": {
-              "line": 5,
-              "col": 14
-            }
-          }
-        ],
-        "backtrace": null
-      },
+      "err_msg": null,
       "is_po_err": false,
       "solution": "let m (n : int) : Ordinal.t = Ordinal.of_int n\n\nlet rec f (n : int) : int =\n  if n <= 0 then 0 else f (n - 1)\n[@@measure m n]\n",
       "explanation": "Termination measures (`[@@measure ...]`) expects a function that returns an ordinal value (`Ordinal.t`). Consider using functions like `Ordinal.of_int` to obtain Ordinal.t."
@@ -107,11 +91,7 @@
     {
       "name": "nested_rec",
       "repro": "let build_fib (f : int list) (i : int) (n : int) : int list =\n  let non_rec_irrelevant_f x = x + 1\n  in\n  let rec helper curr_f curr_i =\n    if curr_i > n then\n      curr_f\n    else\n      match (List.nth (curr_i - 1) curr_f, List.nth (curr_i - 2) curr_f) with\n      | (Some prev1, Some prev2) ->\n          let new_f = curr_f @ [prev1 + prev2] in\n          helper new_f (curr_i + 1)\n      | _ -> curr_f\n  in\n  helper f i\n",
-      "err_msg": {
-        "msg": "Goal is counter-satisfiable.",
-        "locs": [],
-        "backtrace": null
-      },
+      "err_msg": null,
       "is_po_err": true,
       "solution": null,
       "explanation": "Recursive functions (`let rec`) nested inside another definition make termination proofs harder, since a measure attribute cannot be attached to the inner binding. Lift the inner `let rec` to a top-level definition and pass any captured arguments explicitly.\n"
@@ -119,11 +99,7 @@
     {
       "name": "opaque_attr_on_type",
       "repro": "type t [@@opaque]\n\n\ntype tt = t\n",
-      "err_msg": {
-        "msg": "Bug: CIR.Type.Def.mk_l: uid `t` must be 'to_be_rewritten'.",
-        "locs": [],
-        "backtrace": "Raised at Stdlib__Map.Make.find in file \"map.ml\", line 141, characters 10-25\nCalled from Imandrax_typing__Type.Subst.find in file \"src/typing/type.ml\", line 482, characters 13-35\n"
-      },
+      "err_msg": null,
       "is_po_err": false,
       "solution": null,
       "explanation": "The `[@@opaque]` attribute can only be attached to a value binding (e.g.\n`let f : t -> t = () [@@opaque]`), not to a type declaration. \n\nDrop the attribute from the type and, if you need an opaque value of that\ntype, attach `[@@opaque]` to a `let` binding instead:\n\n```iml\ntype t\n\nlet mk : unit -> t = () [@@opaque]\n```\n"

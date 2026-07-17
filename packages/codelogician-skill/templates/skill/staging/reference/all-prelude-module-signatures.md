@@ -1,6 +1,6 @@
 ---
 name: all-prelude-module-signatures
-description: Signatures of all modules in IML prelude
+description: Signatures of all modules in IML prelude. For a quick scan of what is available by default in IML.
 ---
 
 Now we'll go through the signatures of modules in IML Prelude.

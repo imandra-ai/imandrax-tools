@@ -26,6 +26,7 @@
    "reference/prelude"                              "Module-level API docs"
    "error-fix-data"                                 "Data for common error and fix"
    "extended-prelude"                               ""
+   "verification"                                   "Verification guide"
    })
 
 # ── PEG grammars ────────────────────────────────────────────────────

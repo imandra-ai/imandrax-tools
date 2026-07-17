@@ -1,5 +1,5 @@
 ---
-name: unit-testing
+name: software-unit-testing
 description: Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
 ---
 

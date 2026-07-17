@@ -1,6 +1,6 @@
 ---
-name: verification-with-verify-and-instance
-description: Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
+name: basic-verification-with-verify-and-instance
+description: Basic verification (prove a property or find a counter-example) with `verify` and `instance` commands.
 ---
 
 - `verify <func>`: takes a function representing a goal and attempts to prove it.

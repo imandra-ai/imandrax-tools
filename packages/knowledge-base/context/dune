@@ -34,6 +34,8 @@
 ; ./context.yaml
 ; ====================
 
+; sometimes this gave me "resolving root src: No such file or directory" error
+; after a dune clean. doing a second dune build fixed it.
 (rule
  (targets context.yaml)
  (alias default)

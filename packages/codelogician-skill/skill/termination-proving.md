@@ -1,8 +1,7 @@
 ---
 name: termination-proving
-description: Termination proving using [@@measure ...] and the Ordinal module 
+description: Termination proving using [@@measure ...] and the Ordinal module. Every `let rec` definition triggers a termination proving task. Read this when the default termination proving heuristics fail.
 tag:
-  - advanced
   - termination-proving
 ---
 
@@ -10,7 +9,8 @@ tag:
 
 Since IML serves as both a programming language and a logic, function termination must be provable:
 
-- For common recursion patterns, termination is proven automatically
+- *Every* `let rec` definition triggers a termination proving task. All recursive functions need to be *admitted* before they can be used. The admission includes proving termination.
+- For common recursion patterns, termination is proven automatically. (There exists a default measure.)
 - For complex cases, provide explicit termination measures using `[@@measure ...]`
 
 **Ordinals in Termination Proofs:**
