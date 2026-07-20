@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
 from types import SimpleNamespace
-from typing import Annotated, Any, Self, TypedDict, cast
+from typing import Annotated, Any, NamedTuple, Self, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
@@ -412,7 +412,7 @@ def _loop_group_regions(
     )
 
     # grouped: tuple[list[RegionGroup], list[RegionStr_]]
-    class Acc(TypedDict):
+    class Acc(NamedTuple):
         groups: list[RegionGroup]
         regions: list[Region]
         idx_path: list[int]
@@ -423,11 +423,29 @@ def _loop_group_regions(
         konstraint: xtype.Mir_Term_term,  # 'a
         # ) -> tuple[list[RegionGroup], list[RegionStr], list[int], list[str]]:
     ) -> Acc:
-        groups = acc['groups']
-        cur_regions = acc['regions']
-        idx_path = acc['idx_path']
-        constraint_path = acc['constraint_path']
+        """
+        Pulls out regions that satisfy `konstraint` and groups them.
 
+        Invariants:
+            # the region shrinks
+            len(__return__.regions) < len(acc.regions)
+            len(__return__.groups) == len(acc.groups) + 1
+
+        Args:
+            acc:
+                .groups: the accumulated groups so far
+                .regions: regions to be shrunk
+                .idx_path, .constraints_path: constants for the level
+            konstraint:
+                the constraint to split on
+
+        """
+        groups = acc.groups
+        cur_regions = acc.regions
+        idx_path = acc.idx_path
+        constraint_path = acc.constraint_path
+
+        # Partition regions into `has`/`without` based on _the_ constraint
         has: list[Region] = []
         without: list[Region] = []
         for r in cur_regions:
@@ -435,21 +453,17 @@ def _loop_group_regions(
                 has.append(r)
             else:
                 without.append(r)
-        i = len(groups) + 1
-        # # A constraint is non-discriminating (deserves no label index) only when
-        # # every region at this level carries it. `regions` here is the full level
-        # # input captured from the enclosing call; `cur_regions` is the shrinking
-        # # accumulator. Testing `without == []` (i.e. `cur_regions` minus `has`)
-        # # instead would also fire for the last group of a multi-way split -- its
-        # # leftover -- dropping that group's index so it duplicates the parent's
-        # # label_path.
-        # is_universal = all(term_in_list(konstraint, r.constraints) for r in regions)
-        # if is_universal and (not (len(has) == 1)):
+        # # A constraint is non-discriminating (deserves no label index) when every region at this level carries it.
+        # is_non_discriminating = all(
+        #     term_in_list(konstraint, r.constraints) for r in regions
+        # )
+        # if is_non_discriminting and (not (len(has) == 1)):
         if len(without) == 0 and (not (len(has) == 1)):
             new_idx_path = idx_path
         else:
-            new_idx_path: list[int] = [i, *idx_path]
-        new_constraint_path: list[xtype.Mir_Term_term] = [konstraint, *constraint_path]
+            i = len(groups) + 1  # level_index = sibling counts + 1
+            new_idx_path: list[int] = [*idx_path, i]
+        new_constraint_path: list[xtype.Mir_Term_term] = [*constraint_path, konstraint]
 
         if len(has) > 0:
             rg_children = _loop_group_regions(
@@ -460,9 +474,10 @@ def _loop_group_regions(
             )
             group: RegionGroup
             if len(rg_children) == 1:
+                # Promote
                 group = rg_children[0]
             else:
-                rg_constraints = new_constraint_path[::-1]
+                rg_constraints = new_constraint_path
                 rg_region: Region | None
                 if len(has) == 1:
                     rg_region = has[0]
@@ -473,20 +488,20 @@ def _loop_group_regions(
                     constraints=[term_to_string(c) for c in rg_constraints],
                     region=rg_region,
                     children=rg_children,
-                    label_path=new_idx_path[::-1],
+                    label_path=new_idx_path,
                     weight=rg_weight,
                 )
-            res = [group, *groups], without
+            new_groups, new_regions = [*groups, group], without
         else:
-            res = groups, without
+            new_groups, new_regions = groups, without
         # `idx_path` / `constraint_path` describe this level and must stay
         # constant across reduce iterations. Only the `has` branch (recursed
         # above) gets the extended `new_idx_path` / `new_constraint_path`; the
         # `without` regions handled by later iterations do not contain
         # `konstraint`, so it must not leak into their path.
         return Acc(
-            groups=res[0],
-            regions=res[1],
+            groups=new_groups,
+            regions=new_regions,
             idx_path=idx_path,
             constraint_path=constraint_path,
         )
@@ -497,7 +512,7 @@ def _loop_group_regions(
         idx_path=idx_path,
         constraint_path=constraint_path,
     )
-    return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
+    return reduce(loop, constraints_by_most_frequent, init).groups
 
 
 # For test
