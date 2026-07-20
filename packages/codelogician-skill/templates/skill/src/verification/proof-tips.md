@@ -1,14 +1,14 @@
 ---
-name: proof-tips
-description: Practical tips for writing proofs in IML.
+name: proof-notes-and-practices
+description: Notes and practical guidance for writing proofs in IML.
 ---
 
-# Factual Notes
+# Facts
 
 - When there's no tactic attached to a definition, `unroll` is used by default.
 - Known issue as of 26-07-20: `expand "f"` ignores module `open` and needs the qualified name. Alternatively, use `[%expand (f …)]`.
 
-# Tips
+# Practices
 
 - The auto tactic, `auto` as in `[@@by auto]`, is ImandraX's automated inductive waterfall proof strategy, which combines simplification and may decide to do induction. This is the most common way to prove a `theorem` in ImandraX automatically.
   - Simplification is in many ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
@@ -42,7 +42,7 @@ description: Practical tips for writing proofs in IML.
     - Primitive concepts for each concept.
     - If you are reasoning by enforcing predicates on some type, you are likely to need generalization rules!
 
-# Working Notes
+# Staging
 
 The validity of this section is not guaranteed. It is a work in progress.
 
