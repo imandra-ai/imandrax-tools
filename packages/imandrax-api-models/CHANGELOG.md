@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+## [20.4.3] - 26-07-16
+- FIX(decomp/grouping): fix duplicated label paths
 - ENH(api-resp-pp): improve VG res and Decomp res formatting
 - FIX(logging-utils): redirect logs to stderr
 

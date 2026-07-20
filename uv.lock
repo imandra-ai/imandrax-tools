@@ -898,7 +898,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.4.2"
+version = "20.4.3"
 source = { editable = "packages/imandrax-api-models" }
 dependencies = [
     { name = "devtools" },

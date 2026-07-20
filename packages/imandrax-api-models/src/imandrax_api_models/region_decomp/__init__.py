@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
 from types import SimpleNamespace
-from typing import Annotated, Any, Self, TypedDict, cast
+from typing import Annotated, Any, NamedTuple, Self, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
@@ -312,6 +312,44 @@ def _tree_lines(
 # ====================
 
 
+def _sort_terms_by_frequency(
+    terms: list[xtype.Mir_Term_term],
+    eq_term: Callable[[xtype.Mir_Term_term, xtype.Mir_Term_term], bool],
+) -> list[xtype.Mir_Term_term]:
+    """
+    Sort duplicate terms by frequency, breaking ties alphabetically.
+
+    Args:
+        terms: terms to sort, with duplicates
+
+    """
+    # Count occurrences of each distinct constraint (distinctness per `eq_term`).
+    # MIR terms are unhashable (they contain lists) and unorderable, so we can't
+    # key a dict on them or sort on them directly: dedup via `eq_term` into an
+    # assoc list, and use the pretty-printed form only as the sort tiebreak.
+
+    def mk_counter(
+        ls: list[xtype.Mir_Term_term],
+    ) -> list[tuple[xtype.Mir_Term_term, int]]:
+        counter: list[list[Any]] = []  # [representative_term, count]
+        for s in ls:
+            for entry in counter:
+                if eq_term(entry[0], s):
+                    entry[1] += 1
+                    break
+            else:
+                counter.append([s, 1])
+        return [(rep, n) for rep, n in counter]
+
+    counter = mk_counter(terms)
+    # Most frequent first, ties broken alphabetically.
+    assoc_list: list[tuple[xtype.Mir_Term_term, int]] = sorted(
+        counter, key=lambda kv: (-kv[1], term_to_string(kv[0]))
+    )
+    sorted_terms: list[xtype.Mir_Term_term] = [kv[0] for kv in assoc_list]
+    return sorted_terms
+
+
 def _loop_group_regions(
     idx_path: list[int],
     constraint_path: list[xtype.Mir_Term_term],
@@ -352,95 +390,93 @@ def _loop_group_regions(
       prepended for the `has` branch's recursion, never carried into later
       iterations, which process `without` regions that lack `konstraint`.
     - `acc['groups']` only grows: new groups are prepended when `has` is non-empty.
+
+    Args:
+        constraint_path: ancestor constraint path
+
     """
 
     def term_in_list(term: xtype.Mir_Term, terms: list[xtype.Mir_Term]) -> bool:
+        """`term in terms`, but using `eq_term` to compare b/c MIR is unhashable"""
         return any(eq_term(term, t) for t in terms)
 
     # all_constraints_with_dup
     constraints_: list[list[xtype.Mir_Term_term]] = [r.constraints for r in regions]
     constraints: list[xtype.Mir_Term_term] = [c for cs in constraints_ for c in cs]
     all_constraints_with_dup: list[xtype.Mir_Term_term] = [
-        # c for c in constraints if c not in constraint_path
-        c
-        for c in constraints
-        if not term_in_list(c, constraint_path)
+        c for c in constraints if not term_in_list(c, constraint_path)
     ]
 
-    # constraints_by_most_frequent
-    # Count occurrences of each distinct constraint (distinctness per `eq_term`).
-    # MIR terms are unhashable (they contain lists) and unorderable, so we can't
-    # key a dict on them or sort on them directly: dedup via `eq_term` into an
-    # assoc list, and use the pretty-printed form only as the sort tiebreak.
-    def mk_counter(
-        ls: list[xtype.Mir_Term_term],
-    ) -> list[tuple[xtype.Mir_Term_term, int]]:
-        counter: list[list[Any]] = []  # [representative_term, count]
-        for s in ls:
-            for entry in counter:
-                if eq_term(entry[0], s):
-                    entry[1] += 1
-                    break
-            else:
-                counter.append([s, 1])
-        return [(rep, n) for rep, n in counter]
-
-    counter = mk_counter(all_constraints_with_dup)
-    # Most frequent first, ties broken alphabetically.
-    assoc_list: list[tuple[xtype.Mir_Term_term, int]] = sorted(
-        counter, key=lambda kv: (-kv[1], term_to_string(kv[0]))
+    constraints_by_most_frequent: list[xtype.Mir_Term_term] = _sort_terms_by_frequency(
+        all_constraints_with_dup, eq_term
     )
-    constraints_by_most_frequent: list[xtype.Mir_Term_term] = [
-        kv[0] for kv in assoc_list
-    ]
 
     # grouped: tuple[list[RegionGroup], list[RegionStr_]]
-    class Acc(TypedDict):
+    class Acc(NamedTuple):
         groups: list[RegionGroup]
         regions: list[Region]
         idx_path: list[int]
         constraint_path: list[xtype.Mir_Term_term]
 
     def loop(
-        # 'acc
-        acc: Acc,
-        # groups: list[RegionGroup],
-        # regions: list[RegionStr],
-        # idx_path: list[int],
-        # constraint_path: list[str],
-        # 'a
-        konstraint: xtype.Mir_Term_term,
-    ) -> Acc:
+        acc: Acc,  # 'acc
+        konstraint: xtype.Mir_Term_term,  # 'a
         # ) -> tuple[list[RegionGroup], list[RegionStr], list[int], list[str]]:
-        groups = acc['groups']
-        regions = acc['regions']
-        idx_path = acc['idx_path']
-        constraint_path = acc['constraint_path']
+    ) -> Acc:
+        """
+        Pulls out regions that satisfy `konstraint` and groups them.
 
+        Invariants:
+            # the region shrinks
+            len(__return__.regions) < len(acc.regions)
+            len(__return__.groups) == len(acc.groups) + 1
+
+        Args:
+            acc:
+                .groups: the accumulated groups so far
+                .regions: regions to be shrunk
+                .idx_path, .constraints_path: constants for the level
+            konstraint:
+                the constraint to split on
+
+        """
+        groups = acc.groups
+        cur_regions = acc.regions
+        idx_path = acc.idx_path
+        constraint_path = acc.constraint_path
+
+        # Partition regions into `has`/`without` based on _the_ constraint
         has: list[Region] = []
         without: list[Region] = []
-        for r in regions:
-            # if konstraint in r.constraints:
+        for r in cur_regions:
             if term_in_list(konstraint, r.constraints):
                 has.append(r)
             else:
                 without.append(r)
-        i = len(groups) + 1
-        if len(without) == 0 and (not (len(has) == 1)):
+        # A constraint is non-discriminating (deserves no label index) when every region at this level carries it.
+        is_non_discriminating = all(
+            term_in_list(konstraint, r.constraints) for r in regions
+        )
+        if is_non_discriminating and (not (len(has) == 1)):
             new_idx_path = idx_path
         else:
-            new_idx_path: list[int] = [i, *idx_path]
-        new_constraint_path: list[xtype.Mir_Term_term] = [konstraint, *constraint_path]
+            i = len(groups) + 1  # level_index = sibling counts + 1
+            new_idx_path: list[int] = [*idx_path, i]
+        new_constraint_path: list[xtype.Mir_Term_term] = [*constraint_path, konstraint]
 
         if len(has) > 0:
             rg_children = _loop_group_regions(
-                new_idx_path, new_constraint_path, has, eq_term
+                new_idx_path,
+                new_constraint_path,
+                has,
+                eq_term,
             )
             group: RegionGroup
             if len(rg_children) == 1:
+                # Promote
                 group = rg_children[0]
             else:
-                rg_constraints = new_constraint_path[::-1]
+                rg_constraints = new_constraint_path
                 rg_region: Region | None
                 if len(has) == 1:
                     rg_region = has[0]
@@ -451,20 +487,20 @@ def _loop_group_regions(
                     constraints=[term_to_string(c) for c in rg_constraints],
                     region=rg_region,
                     children=rg_children,
-                    label_path=new_idx_path[::-1],
+                    label_path=new_idx_path,
                     weight=rg_weight,
                 )
-            res = [group, *groups], without
+            new_groups, new_regions = [*groups, group], without
         else:
-            res = groups, without
+            new_groups, new_regions = groups, without
         # `idx_path` / `constraint_path` describe this level and must stay
         # constant across reduce iterations. Only the `has` branch (recursed
         # above) gets the extended `new_idx_path` / `new_constraint_path`; the
         # `without` regions handled by later iterations do not contain
         # `konstraint`, so it must not leak into their path.
         return Acc(
-            groups=res[0],
-            regions=res[1],
+            groups=new_groups,
+            regions=new_regions,
             idx_path=idx_path,
             constraint_path=constraint_path,
         )
@@ -475,7 +511,7 @@ def _loop_group_regions(
         idx_path=idx_path,
         constraint_path=constraint_path,
     )
-    return reduce(loop, constraints_by_most_frequent, init)['groups'][::-1]
+    return reduce(loop, constraints_by_most_frequent, init).groups
 
 
 # For test

@@ -76,6 +76,11 @@ def enrich_decomp_res_props(edr: EnrichedDecomposeRes) -> None:
         # assert set(leaf_group.constraints) == set(leaf_group.region.constraints), (
         #     "Leaf group's constraints IS region's constraints"
         # )
+    label_paths: list[list[int]] = [leaf_group.label_path for leaf_group in leaf_groups]
+    label_paths_str = ['.'.join(map(str, path)) for path in label_paths]
+    assert len(label_paths_str) == len(set(label_paths_str)), (
+        'Label paths must be unique'
+    )
 
 
 def test_complex_decomp(decomp_res_six_swiss: DecomposeRes):
@@ -122,11 +127,11 @@ def test_complex_decomp(decomp_res_six_swiss: DecomposeRes):
 │   │   │   │   │   │   ├── [1.1.1.1.1.1.2.1.1.1] new_constraint='hd ob.sells.order_type <> Market' invariant='Some hd (tl ob.buys).order_price' is_leaf=True
 │   │   │   │   │   │   └── [1.1.1.1.1.1.3.1.1.1] new_constraint='hd ob.sells.order_type <> Market' invariant='Some hd ob.sells.order_price' is_leaf=True
 │   │   │   │   │   ├── [1.1.1.1.1.2.1] new_constraint='hd ob.buys.order_qty <> hd ob.sells.order_qty' invariant='None' is_leaf=True
-│   │   │   │   │   └── [1.1.1.1.1] new_constraint='hd ob.sells.order_type <> Market' n_leaf_regions=3
-│   │   │   │   │       ├── [1.1.1.1.1.1] new_constraint='hd ob.buys.order_time > hd ob.sells.order_time' n_leaf_regions=2
-│   │   │   │   │       │   ├── [1.1.1.1.1.1.1.1] new_constraint='hd ob.buys.order_qty <> hd ob.sells.order_qty' invariant='None' is_leaf=True
-│   │   │   │   │       │   └── [1.1.1.1.1.1.2] new_constraint='hd ob.buys.order_qty > hd ob.sells.order_qty' invariant='Some hd ob.sells.order_price' is_leaf=True
-│   │   │   │   │       └── [1.1.1.1.1.2] new_constraint='hd ob.buys.order_time <= hd ob.sells.order_time' invariant='Some hd ob.sells.order_price' is_leaf=True
+│   │   │   │   │   └── [1.1.1.1.1.3] new_constraint='hd ob.sells.order_type <> Market' n_leaf_regions=3
+│   │   │   │   │       ├── [1.1.1.1.1.3.1] new_constraint='hd ob.buys.order_time > hd ob.sells.order_time' n_leaf_regions=2
+│   │   │   │   │       │   ├── [1.1.1.1.1.3.1.1.1] new_constraint='hd ob.buys.order_qty <> hd ob.sells.order_qty' invariant='None' is_leaf=True
+│   │   │   │   │       │   └── [1.1.1.1.1.3.1.2] new_constraint='hd ob.buys.order_qty > hd ob.sells.order_qty' invariant='Some hd ob.sells.order_price' is_leaf=True
+│   │   │   │   │       └── [1.1.1.1.1.3.2] new_constraint='hd ob.buys.order_time <= hd ob.sells.order_time' invariant='Some hd ob.sells.order_price' is_leaf=True
 │   │   │   │   ├── [1.1.1.1.2] new_constraint='hd ob.buys.order_type <> Market' n_leaf_regions=5
 │   │   │   │   │   ├── [1.1.1.1.2.1] new_constraint='hd ob.buys.order_time > hd ob.sells.order_time' n_leaf_regions=4
 │   │   │   │   │   │   ├── [1.1.1.1.2.1.1] new_constraint='hd ob.sells.order_qty <= hd ob.buys.order_qty' n_leaf_regions=3
