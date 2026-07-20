@@ -24,9 +24,20 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
 
 ## Getting started
 
-- [IML Language Guide](./iml-syntax.md): how to write IML (essential)
+- [IML Language Guide](./iml-language-guide.md): how to write IML (essential)
 - [codelogician-cli.md](./codelogician-cli.md): the most common way for a coding agent to interact with ImandraX (essential)
 - [module-import-syntax.md](./import-syntax.md): modular development with IML
+
+## Proving theorems? Read the verification guides first
+
+For any non-trivial proof work (a `theorem`/`lemma` that plain `auto` does not close), read these BEFORE writing IML — hard proofs are usually won or lost at the statement:
+
+1. [verification/statement-engineering.md](./verification/statement-engineering.md): how to state theorems and choose encodings so they are provable (witness functions, division-free forms, executable predicates, ...)
+2. [verification/proof-method.md](./verification/proof-method.md): the session loop, the `[%use]`-chain workhorse, lemma-ladder architecture, antipatterns
+3. [verification/induction-control.md](./verification/induction-control.md): when the default induction gives the wrong cases or a useless IH
+4. [verification/arithmetic-playbook.md](./verification/arithmetic-playbook.md): nonlinear arithmetic, division, `mod`, int/real bridges
+
+A fully annotated expert proof showing the method end-to-end: [examples/binomial_expert_annotated.iml](./examples/binomial_expert_annotated.iml). A ready-made congruence lemma library: [extended-prelude/mod_theorems.iml](./extended-prelude/mod_theorems.iml).
 
 
 ## Full list of references in skill directory
@@ -62,7 +73,11 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Reference for proof tactics
 ├── verification/ # Verification guide
+│   ├── arithmetic-playbook.md # Making arithmetic goals go through in ImandraX - the generalize-then-nonlin recipe, isolating nonlinear steps into micro-lemmas, the div_mod normal form for divisibility, a reusable mod-theorems vocabulary, int/real bridges, and inequality-combination lemmas. Read this whenever a goal involves multiplication of variables, division, mod, or mixed int/real reasoning.
+│   ├── induction-control.md # Controlling induction in ImandraX - custom induction schemes via skeleton recursive functions and induction ~id, the anchor trick, pinned-variable induction, _aux-then-specialize, generalizing before inducting, and step lemmas that take induction hypotheses as premises. Read this when the default induction gives the wrong cases or an unusable IH.
+│   ├── proof-method.md # The end-to-end method for proving a non-trivial theorem in ImandraX - the session loop, the [%use] forward-instantiation workhorse, lemma-ladder architecture, calibration of effort, and the antipatterns to avoid. Read this when starting any theorem that plain auto does not close.
 │   ├── proof-notes-and-practices.md # Notes and practical guidance for writing proofs in IML.
+│   ├── statement-engineering.md # How to state theorems and choose encodings so they are provable in ImandraX. Witness functions instead of existentials, division-free forms, executable predicates, totalization, and more. Read this BEFORE formalizing any non-trivial property — a hard proof is usually won or lost at the statement.
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.

@@ -55,9 +55,10 @@ There's a wide range of tactics ranging from highly automated (`auto`, `unroll`,
 The auto tactic, `auto` as in `[@@by auto]`, is ImandraX's flagship automated inductive waterfall proof strategy, which combines simplification
 (including automatic subgoaling, conditional rewriting and forward-chaining
 using previously proved lemmas, decision procedures for datatypes and
-arithmetic, etc.), and may decide to do induction. This is the most common way to prove a `theorem` in Imandra.
-  - Simplification is in may ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
-  - For this reason, making good use of rewrite rules (`[@@rw]`) in order to control simplification is perhaps the MOST POWERFUL tool ImandraX gives us. Thus it's important to spend as much time as possible teaching ImandraX a good set of rules to apply.
+arithmetic, etc.), and may decide to do induction. This is the most common *closer* for a `theorem` in Imandra.
+  - Simplification is in many ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
+  - Rewrite rules (`[@@rw]`) control simplification and, well-chosen, can make whole classes of goals close automatically — but see the calibration note below: in practice most lemmas are fed to proofs explicitly via `[%use]`, and only a *small, deliberately shaped* set of lemmas is installed as rules.
+  - In expert practice `auto` almost never carries a hard proof alone: the dominant proof shape is a `[@@by]` script of explicitly instantiated lemmas (`intros @> [%use lemma args] @> ... @> auto`) with `auto` doing the final propositional/arithmetic glue. See [proof-method.md](./proof-method.md).
 
 #### `auto` with more fine-grained control: `induct`
 
@@ -85,6 +86,43 @@ domain.
 - `[@@fc]`: install theorem as a forward chaining rule
 - `[@@elim]` or `[@@elimination]`: install theorem as an elimination rule
 - `[@@gen]` or `[@@generalization]`: install theorem as a generalization rule
+
+**Calibration — which lemmas to install, and which to `[%use]`.** In expert
+proof corpora, most lemmas get *no* rule class: they are instantiated explicitly
+with `[%use lemma args]` where needed. Installing everything as `[@@rw]` is a
+known antipattern — rules whose guards the simplifier cannot relieve simply never
+fire (the annotations become decoration), and badly shaped rules (e.g. bare
+associativity/commutativity) destabilize `auto` across the whole file.
+
+Lemma shapes that make **good `[@@rw]` rules**:
+- oriented, unconditional (or trivially-guarded) *equations*, rewriting a more
+  complex form to a simpler one;
+- typically structural/homomorphism facts inductions need silently:
+  `len_append`, `prod_list_append`, `mem_append = (mem x y || mem x z)`,
+  `all_p_append`, membership characterizations, small evaluation facts.
+- A conditional equation whose guard is itself a hard proof obligation will not
+  fire under the plain simplifier — keep it un-installed and `[%use]` it.
+
+Lemma shapes that make **good `[@@fc]` rules**:
+- implications whose conclusion is an *inequality/sign/membership fact* —
+  useless as rewrites but valuable as extra hypotheses for the arithmetic
+  procedures: `a_count_nonneg`, `sum_psd`, `len_cons_ge_1`, monotone membership
+  propagation. Optionally mark the matching subterm with `[@trigger]`:
+  ```iml
+  theorem odds_len_1 x =
+    x <> [] && List.tl x <> []
+    ==> (List.length (odds x) [@trigger]) < List.length x
+  [@@by induct ~on_fun:[%id odds] ()] [@@fc]
+  ```
+- `[@@fc]` fires globally: after adding one, re-check the whole file.
+
+Everything else — arithmetic facts, mod/congruence lemmas, bridge lemmas, crux
+identities — is `[%use]`d at the point of need. See
+[proof-method.md](./proof-method.md) for the `[%use]`-chain workflow.
+Related discipline: once a function has characteristic lemmas, add
+`[@@disable f, ...]` on downstream proofs so the waterfall reasons through the
+lemmas instead of unfolding the definition (see the tactics reference,
+"Additional proof forms and attributes").
 
 # Other Common Tactics
 

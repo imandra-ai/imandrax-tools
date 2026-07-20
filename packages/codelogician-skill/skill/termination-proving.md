@@ -119,6 +119,66 @@ let rec left_pad c n xs =
 - Include only the arguments that affect the measure
 
 
+# Expert idioms
+
+Recurring measure/termination patterns from expert proof corpora:
+
+**`max 0 e` guard.** Ints can be negative; ordinals can't. Whenever the
+decreasing quantity could dip below zero on bad inputs, guard it — this is the
+standard idiom, used on nearly every int-recursion:
+
+```iml
+let rec real_pow (g : real) (n : int) : real =
+  if n <= 0 then 1.0 else Real.(g * real_pow g (n - 1))
+[@@measure Ordinal.of_int (max 0 n)]
+```
+
+**Upward recursion.** Measure by distance to the bound:
+`[@@measure Ordinal.of_int (List.length l + 1 - k)]` for a function recursing
+on `k + 1` up to `List.length l`.
+
+**Lexicographic measures.** `Ordinal.pair` (see [ordinal.md](./reference/ordinal.md)):
+`[@@measure Ordinal.pair (Ordinal.of_int (List.length p)) (Ordinal.of_int (List.length cands))]`.
+Note: prefer extracting a *named measure function* over a complex inline
+expression — inline `Ordinal.pair` under an explicit `[@@by]` tactic has been
+observed to trigger internal errors, and a named function is reusable in lemmas
+about the measure.
+
+**Lemma-assisted admission (`[@@by]` on the definition).** A `[@@by]` attached
+to a `let rec` is the tactic for its termination proof obligation. When the
+decrease isn't syntactic, prove supporting lemmas *first* and `[%use]` them in
+the admission script:
+
+```iml
+lemma len_remove_lt x p = List.mem x p ==> List.length (remove x p) < List.length p
+[@@by auto]
+
+let rec perms_aux (candidates : int list) (p : int list) : int list list = ...
+[@@measure Ordinal.pair (Ordinal.of_int (List.length p))
+                        (Ordinal.of_int (List.length candidates))]
+[@@by [%use len_remove_lt (List.hd candidates) p] @> simplify () @>>| auto]
+```
+
+This is how functions with data-dependent decrease (e.g. recursing on `n / d`)
+get admitted: the expert corpus admits `prime_factors` with a six-`[%use]`
+termination script.
+
+**Defensive unreachable guards.** When the decrease only holds under invariants
+the admission check can't see, add an early-return branch that makes termination
+trivial, and *refute that branch later* in the correctness proof:
+
+```iml
+let rec descent_loop (m : int) (q : sq4) : sq4 =
+  let mp = next_m m q in
+  if mp <= 0 || mp >= m then q   (* unreachable under correct hypotheses *)
+  else descent_loop mp (descent_q m q)
+[@@measure Ordinal.of_int (max 0 m)]
+```
+
+The correctness theorem then proves `mp` is always in range, so the guard branch
+never fires on valid inputs. This cleanly separates "it terminates" from "it's
+correct". (Similarly: guard inputs, e.g. gcd returning `0` on negatives.)
+
 # Last resort to bypass verification completely
 As a **last resort**, `[@@no_validate]` disable verification for a function completely:
 
