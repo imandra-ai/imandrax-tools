@@ -6,6 +6,7 @@ description: Practical tips for writing proofs in IML.
 # Factual Notes
 
 - When there's no tactic attached to a definition, `unroll` is used by default.
+- Known issue as of 26-07-20: `expand "f"` ignores module `open` and needs the qualified name. Alternatively, use `[%expand (f …)]`.
 
 # Tips
 
@@ -34,9 +35,23 @@ description: Practical tips for writing proofs in IML.
     - Try proving something a little stronger, with another variable, and you may be surprised.
     - You can sometimes tell if you are in this situation because the induction gets stuck at a point where you have no hypothesis.
     - If having trouble proving things involving an accumulator, you may need many lemmas about it.
-    - Sometimes it is better to reason directly with the function using an accumulator, wrather than reasoning on a function that starts with accumulator 0.
+    - Sometimes it is better to reason directly with the function using an accumulator, rather than reasoning on a function that starts with accumulator 0.
     - Similarly, it can be better to use the function with the accumulator in your measures, rather than wrapping it.
     - Encode properties as functions rather than as properties of data structures.
     - The more that is there "by law" the less you have to derive.
     - Primitive concepts for each concept.
     - If you are reasoning by enforcing predicates on some type, you are likely to need generalization rules!
+
+# Working Notes
+
+The validity of this section is not guaranteed. It is a work in progress.
+
+- Two simplifiers, different behavior:
+    - the **quick** `simp` / `simp_all` (quick simplifier) does not unfold recursive definitions. 
+    - The full waterfall simplifier (`simplify ()` and the simplification stage inside `auto`) does. Note that the waterfall's speculative expansion is heuristic/bounded (to exploit IHs), so `expand` / `unroll` remain the tools when you need a definite unfold.
+- `expand` only unfolds functions ImandraX tracks as unfoldable occurrences (recursive defs / named applications). A non-recursive `let f a b g = …` isn't one, so `expand` fails with "Could not find occurrence of function …" — and you don't need it, because `auto`/the waterfall inline non-recursive `let`s automatically.
+- Installing facts: `[@@rw]` vs `[@@fc]` vs `[%use]`:
+  - Default to `[@@rw]` (oriented equalities) -- local, predictable, the workhorse.
+  - Reach for `[@@fc]` only when a fact must trigger off a matching hypothesis pattern; it fires globally, so re-check the whole file after adding one.
+  - Installed rules only feed the waterfall (`auto`/`simplify ()`/admission-with-[@@by]) -- not a bare `simp`, and not the default `[@@measure]` tactic (empty basis).
+  - Need a fact at exactly one goal? Inject it with `[%use lemma args]` instead of installing a global rule.
