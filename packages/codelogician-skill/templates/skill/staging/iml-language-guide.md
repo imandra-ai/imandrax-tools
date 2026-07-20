@@ -20,15 +20,12 @@ How ImandraX works with IML on a high level:
 - ImandraX spawns tasks (proof-obligations (including termination proving), region decomposition, eval, etc.) from IML and processes them.
 - ImandraX returns the results of the tasks to the user.
 
-## Standard Library Differences with OCaml
+## IML Prelude vs OCaml Standard Library
 
-OCaml standard library modules are either **unavailable** or have **different signatures** in IML:
+OCaml standard library modules are unavailable in IML. Instead, IML has its own prelude with different signatures.
 
-- **Example**: `List.nth` in OCaml has signature `'a list -> int -> 'a`, while in IML it's `int -> 'a list -> 'a option`.
-  - Parameter order is reversed (index first, then list)
-  - Return type uses `option` since IML is pure and cannot raise exceptions for invalid indices
-
-**Available modules** in IML include: `Int`, `LChar`, `LString`, `List`, `Map`, `Multiset`, `Option`, `Real`, `Result`, `Set`, and `String` — all with IML-specific signatures.
+- Example: `List.nth` in OCaml has signature `'a list -> int -> 'a`, while in IML it's `int -> 'a list -> 'a option`. They have different parameter order and return type.
+- Available modules in IML prelude include: `Int`, `LChar`, `LString`, `List`, `Map`, `Multiset`, `Option`, `Real`, `Result`, `Set`, and `String`. See [all-prelude-module-signatures.md](./reference/all-prelude-module-signatures.md) for details.
 
 ## Numerical Representation and Precision
 
@@ -48,10 +45,10 @@ let circle_area (d : real) : real =
 
 **Key points**:
 - `3.14159` has type `real`, not `float`
-- Real arithmetic: `+.`, `-.`, `*.`, `/.`
-- Integer arithmetic: `+`, `-`, `*`, `/`
-- For equality, both real and integers use `=`. `=.` does not exist.
-- Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
+- Real arithmetic: `( +. )`, `( -. )`, `( *. )`, `( /. )` are operators with signatures `real -> real -> real`.
+- Integer arithmetic: `( + )`, `( - )`, `( * )`, `( / )` are operators with signatures `int -> int -> int`.
+- Gotcha: However, `( = ) : 'a -> 'a -> bool` is polymorphic and can be used for both real and integer equality. `( =. )` does not exist.
+- Tip: Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
 
 **Conversion functions:**
 - `Real.of_int : int -> real`

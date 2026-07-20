@@ -38,7 +38,6 @@ Along with `SKILL.md` (this file), we have the following materials:
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
-│   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
 │   └── unit-testing.md # Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
 ├── error-fix-data/ # Data for common error and fix
@@ -63,10 +62,11 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Reference for proof tactics
 ├── verification/ # Verification guide
+│   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
-├── iml-syntax.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
+├── iml-language-guide.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
 ├── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module. Every `let rec` definition triggers a termination proving task. Read this when the default termination proving heuristics fail.

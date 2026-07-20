@@ -1,6 +1,6 @@
 ; Top-level staging rules:
 ;   - copy plain .md files from ../src/
-;   - render iml-syntax.md from iml-syntax.md.jinja
+;   - render iml-language-guide.md from iml-language-guide.md.jinja
 ;   - assemble SKILL.md from SKILL.pt1.md1 + janet-generated tree
 
 (copy_files
@@ -14,9 +14,9 @@
  (mode
   (promote (until-clean)))
  (deps
-  (:tpl ../src/iml-syntax.md.jinja)
+  (:tpl ../src/iml-language-guide.md.jinja)
   (:ctx %{project_root}/../knowledge-base/context/context.yaml))
- (target iml-syntax.md)
+ (target iml-language-guide.md)
  (action
   (bash "jinja -d %{ctx} -o %{target} %{tpl}")))
 

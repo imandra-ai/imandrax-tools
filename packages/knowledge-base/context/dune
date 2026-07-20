@@ -1,55 +1,84 @@
 ; ./src/
 ; ====================
+;
+; Stage the source YAML fragments into a real ./src/ build subdirectory (and
+; promote them back into the source tree for inspection). These rules live in a
+; (subdir src ...) block so their targets sit inside src/ in the build dir --
+; dump-of-fs below reads that directory. 
 
-(rule
-  (alias context-src)
-  (mode (promote (until-clean) (into src)))
-  (action
-    (copy# ../reference_prelude/prelude.yaml prelude.yaml)
-  )
-)
+; The old approach copied the files flat
+; with (promote (into src)), which only redirects the promotion destination and
+; left the build dir without a src/ directory; dump-of-fs then relied on
+; (source_tree src) mirroring a *previously promoted* src/, so the very first
+; build after `dune clean` failed with "resolving root src: No such file".
 
-(rule
-  (alias context-src)
-  (mode (promote (until-clean) (into src)))
+(subdir
+ src
+ (rule
+  (target prelude.yaml)
+  (mode
+   (promote (until-clean)))
   (action
-    (copy# ../reference_tactics/tactics.yaml tactics.yaml)
-  )
-)
-
-; constants
-(rule
-  (alias context-src)
-  (mode (promote (until-clean) (into src)))
+   (copy# ../../reference_prelude/prelude.yaml prelude.yaml)))
+ (rule
+  (target tactics.yaml)
+  (mode
+   (promote (until-clean)))
   (action
-    (progn
-      (copy# ../constants/iml_caveats.yaml iml_caveats.yaml)
-      (copy# ../constants/quickstart_examples.yaml quickstart_examples.yaml)
-      (copy# ../constants/short_iml_101.yaml short_iml_101.yaml)
-      (copy# ../constants/tactic_combinators.yaml tactic_combinators.yaml)
-    )
-  )
-)
+   (copy# ../../reference_tactics/tactics.yaml tactics.yaml)))
+ ; constants
+ (rule
+  (target iml_caveats.yaml)
+  (mode
+   (promote (until-clean)))
+  (action
+   (copy# ../../constants/iml_caveats.yaml iml_caveats.yaml)))
+ (rule
+  (target quickstart_examples.yaml)
+  (mode
+   (promote (until-clean)))
+  (action
+   (copy# ../../constants/quickstart_examples.yaml quickstart_examples.yaml)))
+ (rule
+  (target short_iml_101.yaml)
+  (mode
+   (promote (until-clean)))
+  (action
+   (copy# ../../constants/short_iml_101.yaml short_iml_101.yaml)))
+ (rule
+  (target tactic_combinators.yaml)
+  (mode
+   (promote (until-clean)))
+  (action
+   (copy# ../../constants/tactic_combinators.yaml tactic_combinators.yaml))))
 
 ; ./context.yaml
 ; ====================
 
-; sometimes this gave me "resolving root src: No such file or directory" error
-; after a dune clean. doing a second dune build fixed it.
 (rule
  (targets context.yaml)
  (alias default)
  (mode
   (promote (until-clean)))
  (deps
-  (source_tree src)
-  (alias context-src)
- )
+  src/prelude.yaml
+  src/tactics.yaml
+  src/iml_caveats.yaml
+  src/quickstart_examples.yaml
+  src/short_iml_101.yaml
+  src/tactic_combinators.yaml)
  (action
   (with-stdout-to
    %{targets}
    (progn
     (echo "# DO NOT EDIT: Auto-generated from ./src/ via dump-of-fs\n")
-    (run dump-of-fs src  --no-default-ignore --ignore dune --format yaml --yaml-multiline literal)
-   )
-   )))
+    (run
+     dump-of-fs
+     src
+     --no-default-ignore
+     --ignore
+     dune
+     --format
+     yaml
+     --yaml-multiline
+     literal)))))

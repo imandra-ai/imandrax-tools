@@ -11,8 +11,8 @@ description: Reference for proof tactics
 {% for tactic in tactics.tactics -%}
 
 {{ loop.index }}. `{{ tactic.name }}`
-- Signature: {{ tactic.signature }}
+- Signature: `{{ tactic.signature }}`
 {%- if tactic.documentation_md %}
-- Doc: {{ tactic.documentation_md }}
-{%- endif %}
-{%- endfor %}
+- Doc: {{ tactic.documentation_md }}{% endif %}
+
+{% endfor %}
