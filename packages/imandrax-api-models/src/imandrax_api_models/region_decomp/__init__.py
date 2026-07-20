@@ -454,11 +454,11 @@ def _loop_group_regions(
             else:
                 without.append(r)
         # # A constraint is non-discriminating (deserves no label index) when every region at this level carries it.
-        # is_non_discriminating = all(
-        #     term_in_list(konstraint, r.constraints) for r in regions
-        # )
-        # if is_non_discriminting and (not (len(has) == 1)):
-        if len(without) == 0 and (not (len(has) == 1)):
+        is_non_discriminating = all(
+            term_in_list(konstraint, r.constraints) for r in regions
+        )
+        # if len(without) == 0 and (not (len(has) == 1)):
+        if is_non_discriminating and (not (len(has) == 1)):
             new_idx_path = idx_path
         else:
             i = len(groups) + 1  # level_index = sibling counts + 1
