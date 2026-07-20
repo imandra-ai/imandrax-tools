@@ -62,7 +62,7 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Reference for proof tactics
 ├── verification/ # Verification guide
-│   ├── proof-tips.md # Practical tips for writing proofs in IML.
+│   ├── proof-notes-and-practices.md # Notes and practical guidance for writing proofs in IML.
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
