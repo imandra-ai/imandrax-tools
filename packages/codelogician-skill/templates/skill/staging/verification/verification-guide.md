@@ -40,6 +40,8 @@ Commands that will trigger verification:
 
 ## Tactics
 
+> This section is general usage guide for tactics. Refer to [reference/tactics.md](./reference/tactics.md) for the full details of tactics.
+
 Based on the `by` annotation (`[@@by auto]`), ImandraX allows users to structure proofs through a combination of smaller tactics and more sophisticated tacticals, enabling modular, reusable proof strategies. 
 
 A tactic takes a goal and either:
@@ -55,9 +57,10 @@ There's a wide range of tactics ranging from highly automated (`auto`, `unroll`,
 The auto tactic, `auto` as in `[@@by auto]`, is ImandraX's flagship automated inductive waterfall proof strategy, which combines simplification
 (including automatic subgoaling, conditional rewriting and forward-chaining
 using previously proved lemmas, decision procedures for datatypes and
-arithmetic, etc.), and may decide to do induction. This is the most common way to prove a `theorem` in Imandra.
-  - Simplification is in may ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
-  - For this reason, making good use of rewrite rules (`[@@rw]`) in order to control simplification is perhaps the MOST POWERFUL tool ImandraX gives us. Thus it's important to spend as much time as possible teaching ImandraX a good set of rules to apply.
+arithmetic, etc.), and may decide to do induction. This is the most common *closer* for a `theorem` in Imandra.
+  - Simplification is in many ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
+  - Rewrite rules (`[@@rw]`) control simplification and, well-chosen, can make whole classes of goals close automatically — but see the calibration note below: in practice most lemmas are fed to proofs explicitly via `[%use]`, and only a *small, deliberately shaped* set of lemmas is installed as rules.
+  - In expert practice `auto` almost never carries a hard proof alone: the dominant proof shape is a `[@@by]` script of explicitly instantiated lemmas (`intros @> [%use lemma args] @> ... @> auto`) with `auto` doing the final propositional/arithmetic glue. See [proof-method.md](./proof-method.md).
 
 #### `auto` with more fine-grained control: `induct`
 
@@ -86,9 +89,14 @@ domain.
 - `[@@elim]` or `[@@elimination]`: install theorem as an elimination rule
 - `[@@gen]` or `[@@generalization]`: install theorem as a generalization rule
 
-# Other Common Tactics
+NOTE: don't rush to install everything as `[@@rw]` — rules whose guards the simplifier cannot relieve simply never
+fire (the annotations become decoration), and badly shaped rules (e.g. bare
+associativity/commutativity) destabilize `auto` across the whole file.. For targeted usage, use 
+`[%use lemma args]` to instantiate the lemma where needed.
 
-### `intros`
+### Other Common Tactics
+
+#### `intros`
 
 `intros` takes a goal with implications and conjunctions `H |- (A && B) ==> C` and returns the new goal `H, A, B |- C`. This is typically the first tactic in a chain when the goal has premises that need to be introduced as hypotheses.
 
@@ -96,7 +104,7 @@ domain.
 lemma foo x y = x > 0 && y > 0 ==> x + y > 0 [@@by intros @> auto]
 ```
 
-### `simp` / `simplify`
+#### `simp` / `simplify`
 
 Apply simplification to the goal. There are several variants:
 
@@ -113,7 +121,7 @@ lemma foo x y = List.length (List.rev (x @ y)) = List.length x + List.length y
   [@@by [%simp rev_len, len_append]]
 ```
 
-### `unroll`
+#### `unroll`
 
 `unroll n` performs bounded model checking via SMT, unrolling recursive definitions up to `n` steps. This is useful for goals that can be discharged by finite exploration.
 
@@ -125,7 +133,7 @@ verify (fun x -> x < 10 ==> f x >= 0) [@@by unroll 100]
 [@@by unroll ~smt:"z3" 50]
 ```
 
-### Arithmetic Decision Procedures
+#### Arithmetic Decision Procedures
 
 - `arith` - Decision procedure for linear (real and integer) arithmetic
 - `nonlin ()` - SMT solver with non-linear arithmetic enabled
@@ -136,7 +144,7 @@ lemma linear_example x y = x + y >= x [@@by intros @> arith]
 lemma quadratic_example x = x * x >= 0 [@@by nonlin ()]
 ```
 
-### `cases`
+#### `cases`
 
 `[%cases t1, t2, ..., tk]` performs case analysis on boolean conditions, generating k+1 subgoals: one for each case (with the case as hypothesis) and one for when all cases are false.
 
@@ -145,7 +153,7 @@ lemma abs_nonneg x = abs x >= 0
   [@@by [%cases x >= 0] @>| [auto; auto]]
 ```
 
-### `expand`
+#### `expand`
 
 `[%expand "f"]` unfolds the definition of function `f`. Use `[%expand (f x y)]` to expand a specific application.
 
@@ -156,7 +164,7 @@ lemma square_pos x = x <> 0 ==> square x > 0
   [@@by intros @> [%expand "square"] @> nonlin ()]
 ```
 
-### `use`
+#### `use`
 
 `[%use lemma_name args]` instantiates a previously proven theorem and adds it as a hypothesis to the current goal.
 
@@ -166,7 +174,6 @@ lemma pow_pos_helper b n = b > 0 ==> pow b n > 0 [@@by auto]
 lemma foo x = x > 0 ==> pow x 5 + 1 > 1
   [@@by intros @> [%use pow_pos_helper x 5] @> auto]
 ```
-
 
 ### Composing Tactics
 To compose tactics, use the following operators:

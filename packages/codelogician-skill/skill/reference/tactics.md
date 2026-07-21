@@ -319,10 +319,9 @@ compute ground subterms mid-proof. Commonly chained: `esimp @> simplify ()`.
 
 `generalize [%t (a / b)] "q"` ≡ `generalize (quote_term (a / b)) "q"`.
 
-## Tactics are first-class OCaml values
+## Tactics are first-class values
 
 Bind and reuse them:
-
 ```iml
 let crush = Tactic.unroll 10   (* file-level house closer *)
 
@@ -376,4 +375,4 @@ let rec prime_factors (n:int) : int list = ...
    @> simplify () @> arith]
 ```
 
-See `termination-proving.md` for measures, `[@@adm]`, and related idioms.
+See [[termination-proving.md]] for more details on measures, `[@@adm]`, and related idioms.

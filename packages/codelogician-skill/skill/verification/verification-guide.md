@@ -40,6 +40,8 @@ Commands that will trigger verification:
 
 ## Tactics
 
+> This section is general usage guide for tactics. Refer to [reference/tactics.md](./reference/tactics.md) for the full details of tactics.
+
 Based on the `by` annotation (`[@@by auto]`), ImandraX allows users to structure proofs through a combination of smaller tactics and more sophisticated tacticals, enabling modular, reusable proof strategies. 
 
 A tactic takes a goal and either:
@@ -87,46 +89,14 @@ domain.
 - `[@@elim]` or `[@@elimination]`: install theorem as an elimination rule
 - `[@@gen]` or `[@@generalization]`: install theorem as a generalization rule
 
-**Calibration — which lemmas to install, and which to `[%use]`.** In expert
-proof corpora, most lemmas get *no* rule class: they are instantiated explicitly
-with `[%use lemma args]` where needed. Installing everything as `[@@rw]` is a
-known antipattern — rules whose guards the simplifier cannot relieve simply never
+NOTE: don't rush to install everything as `[@@rw]` — rules whose guards the simplifier cannot relieve simply never
 fire (the annotations become decoration), and badly shaped rules (e.g. bare
-associativity/commutativity) destabilize `auto` across the whole file.
+associativity/commutativity) destabilize `auto` across the whole file.. For targeted usage, use 
+`[%use lemma args]` to instantiate the lemma where needed.
 
-Lemma shapes that make **good `[@@rw]` rules**:
-- oriented, unconditional (or trivially-guarded) *equations*, rewriting a more
-  complex form to a simpler one;
-- typically structural/homomorphism facts inductions need silently:
-  `len_append`, `prod_list_append`, `mem_append = (mem x y || mem x z)`,
-  `all_p_append`, membership characterizations, small evaluation facts.
-- A conditional equation whose guard is itself a hard proof obligation will not
-  fire under the plain simplifier — keep it un-installed and `[%use]` it.
+### Other Common Tactics
 
-Lemma shapes that make **good `[@@fc]` rules**:
-- implications whose conclusion is an *inequality/sign/membership fact* —
-  useless as rewrites but valuable as extra hypotheses for the arithmetic
-  procedures: `a_count_nonneg`, `sum_psd`, `len_cons_ge_1`, monotone membership
-  propagation. Optionally mark the matching subterm with `[@trigger]`:
-  ```iml
-  theorem odds_len_1 x =
-    x <> [] && List.tl x <> []
-    ==> (List.length (odds x) [@trigger]) < List.length x
-  [@@by induct ~on_fun:[%id odds] ()] [@@fc]
-  ```
-- `[@@fc]` fires globally: after adding one, re-check the whole file.
-
-Everything else — arithmetic facts, mod/congruence lemmas, bridge lemmas, crux
-identities — is `[%use]`d at the point of need. See
-[proof-method.md](./proof-method.md) for the `[%use]`-chain workflow.
-Related discipline: once a function has characteristic lemmas, add
-`[@@disable f, ...]` on downstream proofs so the waterfall reasons through the
-lemmas instead of unfolding the definition (see the tactics reference,
-"Additional proof forms and attributes").
-
-# Other Common Tactics
-
-### `intros`
+#### `intros`
 
 `intros` takes a goal with implications and conjunctions `H |- (A && B) ==> C` and returns the new goal `H, A, B |- C`. This is typically the first tactic in a chain when the goal has premises that need to be introduced as hypotheses.
 
@@ -134,7 +104,7 @@ lemmas instead of unfolding the definition (see the tactics reference,
 lemma foo x y = x > 0 && y > 0 ==> x + y > 0 [@@by intros @> auto]
 ```
 
-### `simp` / `simplify`
+#### `simp` / `simplify`
 
 Apply simplification to the goal. There are several variants:
 
@@ -151,7 +121,7 @@ lemma foo x y = List.length (List.rev (x @ y)) = List.length x + List.length y
   [@@by [%simp rev_len, len_append]]
 ```
 
-### `unroll`
+#### `unroll`
 
 `unroll n` performs bounded model checking via SMT, unrolling recursive definitions up to `n` steps. This is useful for goals that can be discharged by finite exploration.
 
@@ -163,7 +133,7 @@ verify (fun x -> x < 10 ==> f x >= 0) [@@by unroll 100]
 [@@by unroll ~smt:"z3" 50]
 ```
 
-### Arithmetic Decision Procedures
+#### Arithmetic Decision Procedures
 
 - `arith` - Decision procedure for linear (real and integer) arithmetic
 - `nonlin ()` - SMT solver with non-linear arithmetic enabled
@@ -174,7 +144,7 @@ lemma linear_example x y = x + y >= x [@@by intros @> arith]
 lemma quadratic_example x = x * x >= 0 [@@by nonlin ()]
 ```
 
-### `cases`
+#### `cases`
 
 `[%cases t1, t2, ..., tk]` performs case analysis on boolean conditions, generating k+1 subgoals: one for each case (with the case as hypothesis) and one for when all cases are false.
 
@@ -183,7 +153,7 @@ lemma abs_nonneg x = abs x >= 0
   [@@by [%cases x >= 0] @>| [auto; auto]]
 ```
 
-### `expand`
+#### `expand`
 
 `[%expand "f"]` unfolds the definition of function `f`. Use `[%expand (f x y)]` to expand a specific application.
 
@@ -194,7 +164,7 @@ lemma square_pos x = x <> 0 ==> square x > 0
   [@@by intros @> [%expand "square"] @> nonlin ()]
 ```
 
-### `use`
+#### `use`
 
 `[%use lemma_name args]` instantiates a previously proven theorem and adds it as a hypothesis to the current goal.
 
@@ -204,7 +174,6 @@ lemma pow_pos_helper b n = b > 0 ==> pow b n > 0 [@@by auto]
 lemma foo x = x > 0 ==> pow x 5 + 1 > 1
   [@@by intros @> [%use pow_pos_helper x 5] @> auto]
 ```
-
 
 ### Composing Tactics
 To compose tactics, use the following operators:

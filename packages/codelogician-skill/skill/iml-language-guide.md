@@ -29,36 +29,31 @@ OCaml standard library modules are unavailable in IML. Instead, IML has its own 
 
 ## Numerical Representation and Precision
 
-IML uses arbitrary precision arithmetic with different numerical type interpretations:
+IML defaults to arbitrary-precision arithmetic: a float-like literal such as
+`3.14159` is a `real`, represented exactly as `314159/100000`, not a floating-point
+approximation. (Machine floats do exist, in a separate module, but `real` is the
+default and the right choice for most modeling.) The two default numeric types,
+`real` and `int`, each carry their own set of operators.
 
-```iml
-(* Float-like literals are type `real` (arbitrary precision) *)
-let pi = 3.14159
-(* val pi : real = 314159/100000 *)
-
-(* Real arithmetic uses different operators *)
-let circle_area (d : real) : real =
-  let r = d /. 2.0 in
-  pi *. r *. r
-(* val circle_area : real -> real = <fun> *)
-```
-
-**Key points**:
+Notes:
 - `3.14159` has type `real`, not `float`
 - Real arithmetic: `( +. )`, `( -. )`, `( *. )`, `( /. )` are operators with signatures `real -> real -> real`.
 - Integer arithmetic: `( + )`, `( - )`, `( * )`, `( / )` are operators with signatures `int -> int -> int`.
 - Gotcha: However, `( = ) : 'a -> 'a -> bool` is polymorphic and can be used for both real and integer equality. `( =. )` does not exist.
 - Tip: Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
+- Conversion functions:
+    - `Real.of_int : int -> real`
+    - `Real.to_int : real -> int`
 
-**Conversion functions:**
-- `Real.of_int : int -> real`
-- `Real.to_int : real -> int`
+## String, Logic-mode character, and Logic-mode string
+- Logic-mode character `LChar.t` is 8-bit character.
+- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
+  - `{l|...|l}` creates a `LString.t` literal
 
-## Error Handling Approach
+## Error Handling 
 
 IML is a pure language with no exceptions:
-
-- The `failwith` function available in OCaml **cannot be used** in IML
+- The OCaml's `failwith` function isn not available in IML.
 - Instead, either:
   - Transform partial functions into total functions
   - Use monadic error handling with `Result` or `Option` modules
@@ -71,12 +66,6 @@ Unlike OCaml, IML restricts function representation in composite types:
 - For state transition modeling, define:
   - A dedicated event type (with parameterized constructors if needed)
   - A step function that applies events to states
-
-## String, Logic-mode character, and Logic-mode string
-
-- Logic-mode character `LChar.t` is 8-bit character.
-- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
-  - `{l|...|l}` creates a `LString.t` literal
 
 ## Examples
 
@@ -107,8 +96,7 @@ let circle_area (d : real) : real =
 
 ### Example 2
 ```iml
-(* Note: `int` is the type for integers (arbitrary precision).
-   Idiomatic IML: plain first-order recursion over lists. *)
+(* Note: `int` is the type for integers (arbitrary precision). *)
 let rec count_negatives (row : int list) : int =
   match row with
   | [] -> 0
@@ -142,7 +130,8 @@ let is_divisor (n : int) (d : int) : bool =
   n mod d = 0
 (* val is_divisor : int -> int -> bool = <fun> *)
 (* Operations unavailable in IML (like square root) can be stubbed with
-   `[@@opaque]`: a typed placeholder that lets the code compile. *)
+   `[@@opaque]`: a typed placeholder that lets the code compile.
+   But note that it hinders verification so should be avoided unless necessary. *)
 let sqrt : real -> real = () [@@opaque]
 (* val sqrt : real -> real = <fun> *)
 (* Conversion between `int` and `real`: `Real.of_int` and `Real.to_int`. *)
@@ -179,54 +168,52 @@ let sum_matrix_element_absolute_difference (n : int) : int =
 ### Example 5
 ```iml
 (* Note:
-   - for operations that are unavailable in IML, `[@@opaque]` can be attached
-     to a dummy implementation with the correct type signature. Such an
-     implementation can be used to bypass unavailable functions during compilation.
-   - Examples of unavailable operations: bitwise operations (e.g., `land`, `lxor`),
-     irrational arithmetic (e.g., square root, exponentiation), random.
+   - `min : 'a -> 'a -> 'a` and `abs : int -> int` are available at top level.
+   - There is no `max_int` in IML (ints are arbitrary-precision), so instead of a
+     magic sentinel for "no result", return an `int option` and use `None`.
 *)
-let xor : int -> int -> int = () [@@opaque]
-(* val xor : int -> int -> int = <fun> *)
-(* Minimum xor of `a` against every element of `rest`: *)
-let rec min_xor_with (a : int) (rest : int list) : int =
+(* Smallest absolute difference between `a` and every element of `rest`.
+   `None` when `rest` is empty (no element to compare against). *)
+let rec min_abs_diff_with (a : int) (rest : int list) : int option =
   match rest with
-  | [] -> 999999
-  | b :: more -> min (xor a b) (min_xor_with a more)
-(* val min_xor_with : int -> int list -> int = <fun> *)
-(* Minimum xor over all pairs drawn from the list: *)
-let rec minimum_xor_pair (arr : int list) : int =
+  | [] -> None
+  | b :: more ->
+    let d = abs (a - b) in
+    (match min_abs_diff_with a more with
+     | None -> Some d
+     | Some m -> Some (min d m))
+(* val min_abs_diff_with : int -> int list -> int option = <fun> *)
+(* Smallest absolute difference over all pairs drawn from the list.
+   `None` when there are fewer than two elements (no pair exists). *)
+let rec min_abs_diff_pair (arr : int list) : int option =
   match arr with
-  | [] -> 999999
-  | a :: rest -> min (min_xor_with a rest) (minimum_xor_pair rest)
-(* val minimum_xor_pair : int list -> int = <fun> *)
+  | [] | [_] -> None
+  | a :: rest ->
+    (match min_abs_diff_with a rest, min_abs_diff_pair rest with
+     | None, r | r, None -> r
+     | Some x, Some y -> Some (min x y))
+(* val min_abs_diff_pair : int list -> int option = <fun> *)
 ```
 
 ### Example 6
 ```iml
-(* Another example using `[@@opaque]`: random numbers don't exist in pure IML. *)
-let random_int : int -> int = () [@@opaque]
-(* val random_int : int -> int = <fun> *)
+(* Termination is on the shrinking list, not the index `i` (which could be
+   negative), so guide ImandraX with an explicit `[@@measure ...]`. *)
 (* Replace the element at index i (0-based), leaving the list unchanged if
    the index is out of range: *)
 let rec set_nth (i : int) (v : 'a) (l : 'a list) : 'a list =
   match l with
   | [] -> []
   | x :: rest -> if i = 0 then v :: rest else x :: set_nth (i - 1) v rest
+[@@measure Ordinal.of_int (List.length l)]
 (* val set_nth : int -> 'a -> 'a list -> 'a list = <fun> *)
+(* Swap the elements at indices i and j; matching a pair of `List.nth`
+   results handles the out-of-range cases in one shot. *)
 let swap_elements (l : 'a list) (i : int) (j : int) : 'a list =
   match List.nth i l, List.nth j l with
   | Some xi, Some xj -> set_nth i xj (set_nth j xi l)
   | _ -> l
 (* val swap_elements : 'a list -> int -> int -> 'a list = <fun> *)
-let rec shuffle_helper (state : int list) (i : int) : int list =
-  if i <= 0 then state
-  else
-    let j = random_int (i + 1) in
-    shuffle_helper (swap_elements state i j) (i - 1)
-(* val shuffle_helper : int list -> int -> int list = <fun> *)
-let shuffle_a_given_array (arr : int list) : int list =
-  shuffle_helper arr (List.length arr - 1)
-(* val shuffle_a_given_array : int list -> int list = <fun> *)
 ```
 
 ### Example 7

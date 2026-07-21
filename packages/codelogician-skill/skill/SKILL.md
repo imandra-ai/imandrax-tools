@@ -22,23 +22,13 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-## Getting started
+## Next steps
 
-- [IML Language Guide](./iml-language-guide.md): how to write IML (essential)
+- [IML Language Guide](./iml-language-guide.md): how to write IML (essential for getting started)
 - [codelogician-cli.md](./codelogician-cli.md): the most common way for a coding agent to interact with ImandraX (essential)
 - [module-import-syntax.md](./import-syntax.md): modular development with IML
-
-## Proving theorems? Read the verification guides first
-
-For any non-trivial proof work (a `theorem`/`lemma` that plain `auto` does not close), read these BEFORE writing IML — hard proofs are usually won or lost at the statement:
-
-1. [verification/statement-engineering.md](./verification/statement-engineering.md): how to state theorems and choose encodings so they are provable (witness functions, division-free forms, executable predicates, ...)
-2. [verification/proof-method.md](./verification/proof-method.md): the session loop, the `[%use]`-chain workhorse, lemma-ladder architecture, antipatterns
-3. [verification/induction-control.md](./verification/induction-control.md): when the default induction gives the wrong cases or a useless IH
-4. [verification/arithmetic-playbook.md](./verification/arithmetic-playbook.md): nonlinear arithmetic, division, `mod`, int/real bridges
-
-A fully annotated expert proof showing the method end-to-end: [examples/binomial_expert_annotated.iml](./examples/binomial_expert_annotated.iml). A ready-made congruence lemma library: [extended-prelude/mod_theorems.iml](./extended-prelude/mod_theorems.iml).
-
+- [verification/*.md](./verification/): for any non-trivial proof work (a `theorem`/`lemma` that plain `auto` does not close)
+    - [examples/binomial_expert_annotated.iml](./examples/binomial_expert_annotated.iml): A fully annotated expert proof showing the proof method end-to-end
 
 ## Full list of references in skill directory
 
@@ -48,13 +38,14 @@ Along with `SKILL.md` (this file), we have the following materials:
 ./
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
+│   ├── bypass-verification-completely.md # Last resort to bypass verification completely using `[@@no_validate]`. Don't use this unless you absolutely have the reason to.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
 │   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
 │   └── unit-testing.md # Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
 ├── error-fix-data/ # Data for common error and fix
 │   └── README.md # IML error and fixes database. Provides `error_corpus.json`, a collection of common IML errors and their fixes. Search it using jq or grep to find relevant errors and their fixes.
 ├── extended-prelude/
-│   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Mostly as a reference for implementing your own. Can also be copied into your project and then imported.
+│   └── README.md # Additional prelude-like general purpose modules for reference, including `Int_conv`, `LChar_utils`, etc. Mostly as a reference for implementing your own. Can also be copied into your project and then imported.
 ├── reference/ # Language and API reference
 │   ├── prelude/ # Module-level API docs
 │   │   ├── Int.md
@@ -81,6 +72,7 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
 ├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
+├── eval-command.md # The `eval <expr>` syntax evaluates a closed IML expression and prints its value. Use it for quick REPL-style sanity checks while developing IML.
 ├── iml-language-guide.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
