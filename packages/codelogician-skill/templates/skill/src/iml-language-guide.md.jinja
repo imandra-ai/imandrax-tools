@@ -29,36 +29,31 @@ OCaml standard library modules are unavailable in IML. Instead, IML has its own 
 
 ## Numerical Representation and Precision
 
-IML uses arbitrary precision arithmetic with different numerical type interpretations:
+IML defaults to arbitrary-precision arithmetic: a float-like literal such as
+`3.14159` is a `real`, represented exactly as `314159/100000`, not a floating-point
+approximation. (Machine floats do exist, in a separate module, but `real` is the
+default and the right choice for most modeling.) The two default numeric types,
+`real` and `int`, each carry their own set of operators.
 
-```iml
-(* Float-like literals are type `real` (arbitrary precision) *)
-let pi = 3.14159
-(* val pi : real = 314159/100000 *)
-
-(* Real arithmetic uses different operators *)
-let circle_area (d : real) : real =
-  let r = d /. 2.0 in
-  pi *. r *. r
-(* val circle_area : real -> real = <fun> *)
-```
-
-**Key points**:
+Notes:
 - `3.14159` has type `real`, not `float`
 - Real arithmetic: `( +. )`, `( -. )`, `( *. )`, `( /. )` are operators with signatures `real -> real -> real`.
 - Integer arithmetic: `( + )`, `( - )`, `( * )`, `( / )` are operators with signatures `int -> int -> int`.
 - Gotcha: However, `( = ) : 'a -> 'a -> bool` is polymorphic and can be used for both real and integer equality. `( =. )` does not exist.
 - Tip: Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
+- Conversion functions:
+    - `Real.of_int : int -> real`
+    - `Real.to_int : real -> int`
 
-**Conversion functions:**
-- `Real.of_int : int -> real`
-- `Real.to_int : real -> int`
+## String, Logic-mode character, and Logic-mode string
+- Logic-mode character `LChar.t` is 8-bit character.
+- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
+  - `{l|...|l}` creates a `LString.t` literal
 
-## Error Handling Approach
+## Error Handling 
 
 IML is a pure language with no exceptions:
-
-- The `failwith` function available in OCaml **cannot be used** in IML
+- The OCaml's `failwith` function isn not available in IML.
 - Instead, either:
   - Transform partial functions into total functions
   - Use monadic error handling with `Result` or `Option` modules
@@ -71,12 +66,6 @@ Unlike OCaml, IML restricts function representation in composite types:
 - For state transition modeling, define:
   - A dedicated event type (with parameterized constructors if needed)
   - A step function that applies events to states
-
-## String, Logic-mode character, and Logic-mode string
-
-- Logic-mode character `LChar.t` is 8-bit character.
-- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
-  - `{l|...|l}` creates a `LString.t` literal
 
 ## Examples
 
