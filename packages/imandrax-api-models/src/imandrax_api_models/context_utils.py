@@ -164,7 +164,7 @@ def _format_unstructured_msg_errors(
 
 def format_location(loc: Location) -> str:
     start = loc.start
-    end = loc.start
+    end = loc.stop
 
     def string_of_pos(pos_opt: Position | None) -> str:
         if pos_opt is None:
