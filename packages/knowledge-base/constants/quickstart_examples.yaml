@@ -86,54 +86,49 @@ content:
       (* val sum_matrix_element_absolute_difference : int -> int = <fun> *)
     - |
       (* Note:
-         - for operations that are unavailable in IML, `[@@opaque]` can be attached
-           to a dummy implementation with the correct type signature. Such an
-           implementation can be used to bypass unavailable functions during compilation.
-         - Examples of unavailable operations: bitwise operations (e.g., `land`, `lxor`),
-           irrational arithmetic (e.g., square root, exponentiation), random.
+         - `min : 'a -> 'a -> 'a` and `abs : int -> int` are available at top level.
+         - There is no `max_int` in IML (ints are arbitrary-precision), so instead of a
+           magic sentinel for "no result", return an `int option` and use `None`.
       *)
-      let xor : int -> int -> int = () [@@opaque]
-      (* val xor : int -> int -> int = <fun> *)
-      (* Minimum xor of `a` against every element of `rest`: *)
-      let rec min_xor_with (a : int) (rest : int list) : int =
+      (* Smallest absolute difference between `a` and every element of `rest`.
+         `None` when `rest` is empty (no element to compare against). *)
+      let rec min_abs_diff_with (a : int) (rest : int list) : int option =
         match rest with
-        | [] -> 999999
-        | b :: more -> min (xor a b) (min_xor_with a more)
-      (* val min_xor_with : int -> int list -> int = <fun> *)
-      (* Minimum xor over all pairs drawn from the list: *)
-      let rec minimum_xor_pair (arr : int list) : int =
+        | [] -> None
+        | b :: more ->
+          let d = abs (a - b) in
+          (match min_abs_diff_with a more with
+           | None -> Some d
+           | Some m -> Some (min d m))
+      (* val min_abs_diff_with : int -> int list -> int option = <fun> *)
+      (* Smallest absolute difference over all pairs drawn from the list.
+         `None` when there are fewer than two elements (no pair exists). *)
+      let rec min_abs_diff_pair (arr : int list) : int option =
         match arr with
-        | [] -> 999999
-        | a :: rest -> min (min_xor_with a rest) (minimum_xor_pair rest)
-      (* val minimum_xor_pair : int list -> int = <fun> *)
+        | [] | [_] -> None
+        | a :: rest ->
+          (match min_abs_diff_with a rest, min_abs_diff_pair rest with
+           | None, r | r, None -> r
+           | Some x, Some y -> Some (min x y))
+      (* val min_abs_diff_pair : int list -> int option = <fun> *)
     - |
-      (* Another example using `[@@opaque]`: random numbers don't exist in pure IML. *)
-      let random_int : int -> int = () [@@opaque]
-      (* val random_int : int -> int = <fun> *)
-      (* Replace the element at index i (0-based), leaving the list unchanged if
-         the index is out of range: *)
       (* Termination is on the shrinking list, not the index `i` (which could be
          negative), so guide ImandraX with an explicit `[@@measure ...]`. *)
+      (* Replace the element at index i (0-based), leaving the list unchanged if
+         the index is out of range: *)
       let rec set_nth (i : int) (v : 'a) (l : 'a list) : 'a list =
         match l with
         | [] -> []
         | x :: rest -> if i = 0 then v :: rest else x :: set_nth (i - 1) v rest
       [@@measure Ordinal.of_int (List.length l)]
       (* val set_nth : int -> 'a -> 'a list -> 'a list = <fun> *)
+      (* Swap the elements at indices i and j; matching a pair of `List.nth`
+         results handles the out-of-range cases in one shot. *)
       let swap_elements (l : 'a list) (i : int) (j : int) : 'a list =
         match List.nth i l, List.nth j l with
         | Some xi, Some xj -> set_nth i xj (set_nth j xi l)
         | _ -> l
       (* val swap_elements : 'a list -> int -> int -> 'a list = <fun> *)
-      let rec shuffle_helper (state : int list) (i : int) : int list =
-        if i <= 0 then state
-        else
-          let j = random_int (i + 1) in
-          shuffle_helper (swap_elements state i j) (i - 1)
-      (* val shuffle_helper : int list -> int -> int list = <fun> *)
-      let shuffle_a_given_array (arr : int list) : int list =
-        shuffle_helper arr (List.length arr - 1)
-      (* val shuffle_a_given_array : int list -> int list = <fun> *)
     - |
       (* Character and String:
          - IML supports logic-mode character `LChar.t` and logic-mode string `LString.t`.
