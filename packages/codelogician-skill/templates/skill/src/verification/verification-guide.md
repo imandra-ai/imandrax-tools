@@ -55,9 +55,10 @@ There's a wide range of tactics ranging from highly automated (`auto`, `unroll`,
 The auto tactic, `auto` as in `[@@by auto]`, is ImandraX's flagship automated inductive waterfall proof strategy, which combines simplification
 (including automatic subgoaling, conditional rewriting and forward-chaining
 using previously proved lemmas, decision procedures for datatypes and
-arithmetic, etc.), and may decide to do induction. This is the most common way to prove a `theorem` in Imandra.
-  - Simplification is in may ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
-  - For this reason, making good use of rewrite rules (`[@@rw]`) in order to control simplification is perhaps the MOST POWERFUL tool ImandraX gives us. Thus it's important to spend as much time as possible teaching ImandraX a good set of rules to apply.
+arithmetic, etc.), and may decide to do induction. This is the most common *closer* for a `theorem` in Imandra.
+  - Simplification is in many ways the most important part of the waterfall, and the step that most often causes a clause to evaporate or the goal to be refuted
+  - Rewrite rules (`[@@rw]`) control simplification and, well-chosen, can make whole classes of goals close automatically — but see the calibration note below: in practice most lemmas are fed to proofs explicitly via `[%use]`, and only a *small, deliberately shaped* set of lemmas is installed as rules.
+  - In expert practice `auto` almost never carries a hard proof alone: the dominant proof shape is a `[@@by]` script of explicitly instantiated lemmas (`intros @> [%use lemma args] @> ... @> auto`) with `auto` doing the final propositional/arithmetic glue. See [proof-method.md](./proof-method.md).
 
 #### `auto` with more fine-grained control: `induct`
 
@@ -85,6 +86,11 @@ domain.
 - `[@@fc]`: install theorem as a forward chaining rule
 - `[@@elim]` or `[@@elimination]`: install theorem as an elimination rule
 - `[@@gen]` or `[@@generalization]`: install theorem as a generalization rule
+
+NOTE: don't rush to install everything as `[@@rw]` — rules whose guards the simplifier cannot relieve simply never
+fire (the annotations become decoration), and badly shaped rules (e.g. bare
+associativity/commutativity) destabilize `auto` across the whole file.. For targeted usage, use 
+`[%use lemma args]` to instantiate the lemma where needed.
 
 # Other Common Tactics
 
