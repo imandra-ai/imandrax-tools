@@ -387,13 +387,14 @@ def remove_fields_rec(
 
 def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
     out: JSONObject = {}
-    if vg_res.errors:
+    # Note: in the case of refuted / unknown, `TacticEvalError` still exists
+    # in .errors. We ignore them in this case.
+    if (vg_res.res_type not in ('refuted', 'unknown')) and len(vg_res.errors) > 0:
         out['description'] = f'VG has {len(vg_res.errors)} error(s)'
         for i, err in enumerate(vg_res.errors, 1):
             out[f'error_{i}'] = format_error(err)
     else:
-        out['res_type'] = vg_res.res_type
-        out['res'] = remove_fields_rec(
+        out[vg_res.res_type] = remove_fields_rec(
             vg_res.res.model_dump(mode='json'), replace_with=('right', '<hidden>')
         )
 
