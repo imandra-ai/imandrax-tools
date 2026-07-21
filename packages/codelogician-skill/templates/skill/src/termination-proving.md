@@ -16,32 +16,9 @@ Since IML serves as both a programming language and a logic, function terminatio
 **Ordinals in Termination Proofs:**
 Termination measures in IML must return values of type `Ordinal.t`. This type represents ordinals up to ε₀ in Cantor Normal Form, providing a well-founded ordering essential for proving termination. When defining measures, you can use functions like `Ordinal.of_int` to convert integers to ordinals, or construct more complex ordinals for nested recursion.
 
-**Example with explicit measure:**
-```iml
-let left_pad_measure n xs =
-  Ordinal.of_int (n - List.length xs)
+# Examples and Recipes
 
-let rec left_pad c n xs =
-  if List.length xs >= n then
-    xs
-  else
-    left_pad c n (c :: xs)
-[@@measure left_pad_measure n xs]
-```
-
-The measure shows that `n - List.length xs` decreases with each recursive call and remains non-negative, proving termination. The `Ordinal.of_int` function converts this integer difference to an ordinal value that Imandra can use to establish a well-founded ordering.
-
-Note that `[@@measure ...]` can only be used for top-level functions, i.e., functions that are not defined within other functions.
-
-
-# More examples and practical tips
-
-# How to Prove Termination
-
-This guide shows you how to prove that your recursive functions terminate. Use this when ImandraX rejects a function due to termination concerns.
-
-## Quick Decision Tree
-
+Quick Decision Tree:
 ```
 Is your function rejected for termination?
 ├─ Does it use structural recursion on datatypes?
@@ -49,12 +26,12 @@ Is your function rejected for termination?
 ├─ Does it have simple decreasing integer arguments?
 │   └─ Should work automatically. Verify the decrease.
 ├─ Do arguments decrease lexicographically?
-│   └─ Use [@@adm arg1, arg2, ...]
+│   └─ Use `[@@adm arg1, arg2, ...]`
 └─ Need custom measure?
-    └─ Use [@@measure fn arg1 arg2 ...]
+    └─ Use `[@@measure fn arg1 arg2 ...]`
 ```
 
-## Approach 1: Rely on Automatic Detection
+## Example: Rely on Default Measure
 
 ImandraX handles these automatically:
 
@@ -76,7 +53,7 @@ let rec countdown x =
 
 NOTE: When no custom measure is given, ImandraX's heuristics will select the first argument that is tested in every branch, i.e., automatic measure synthesis will try a measure with a single argument.
 
-## Approach 2: Lexicographic Ordering with @@adm
+## Example: Lexicographic Ordering with `[@@adm]`
 
 Use when multiple arguments decrease in order:
 
@@ -88,36 +65,35 @@ let rec ackermann m n =
 [@@adm m, n]
 ```
 
-This tells ImandraX: "m decreases first; when m stays the same, n decreases."
+- `[@@adm m, n]` tells ImandraX: "m decreases first; when m stays the same, n decreases."
+- When to use:
+    - Multiple recursive calls with different decreasing patterns
+    - Nested recursion (like Ackermann)
+    - Arguments that decrease in a specific priority order
 
-**When to use:**
-- Multiple recursive calls with different decreasing patterns
-- Nested recursion (like Ackermann)
-- Arguments that decrease in a specific priority order
+## Example: Custom Measure with `[@@measure]`
 
-## Approach 3: Custom Measure with @@measure
-
-Use when you need to compute a decreasing quantity:
-
-**Step 1:** Define a measure function returning `Ordinal.t`:
 ```iml
+(* First define a measure function returning `Ordinal.t` *)
 let left_pad_measure n xs =
   Ordinal.of_int (n - List.length xs)
-```
 
-**Step 2:** Attach the measure to your function:
-```iml
 let rec left_pad c n xs =
   if List.length xs >= n then xs
   else left_pad c n (c :: xs)
 [@@measure left_pad_measure n xs]
+(* Then attach the measure to the function *)
 ```
 
-**Key points:**
-- Measure function must return `Ordinal.t`
-- Use `Ordinal.of_int` to convert integers
-- Include only the arguments that affect the measure
+Here `n - List.length xs` decreases with each recursive call and stays
+non-negative; `Ordinal.of_int` maps it to an ordinal, giving ImandraX the
+well-founded ordering it needs.
 
+## Gotchas
+
+- Measure function must return `Ordinal.t`
+- `[@@measure ...]` works only on top-level functions (not those defined inside another function). In addition, it's generally discouraged to define nested recursive functions in IML.
+- Refer to [[reference/ordinal.md]] for more details on the `Ordinal` module (constants, combinators, etc.).
 
 # Idioms
 
