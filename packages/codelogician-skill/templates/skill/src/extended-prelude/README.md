@@ -1,12 +1,20 @@
 ---
 name: extended-prelude
-description: Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Mostly as a reference for implementing your own. Can also be copied into your project and then imported.
+description: Additional prelude-like general purpose modules for reference, including `Int_conv`, `LChar_utils`, etc. Mostly as a reference for implementing your own. Can also be copied into your project and then imported.
 ---
 
 # Extended prelude
 
-This directory contains additional prelude functions, general purpose utilities. Including `Int_conv`, `LChar_utils`, etc.
+This directory contains additional prelude-like general purpose modules, including:
+- `Int_conv` - integer/string conversion utilities.
+- `LChar_utils` - logic-mode character utilities.
+- `Mod_theorems` - congruence/divisibility lemma library for `mod` operations.
 
-They are not part of the standard IML prelude which is loaded by default.
+NOTE: They are not part of the standard IML prelude which is loaded by default.
 
-The recommended way to use these utility modules / functions is to copy paste the whole directory into your project and then import the modules you need.
+## Contents
+
+- `int_conv.iml`: integer/string conversion utilities.
+- `lchar_utils.iml`: logic-mode character utilities.
+- `mod_theorems.iml`: a congruence/divisibility lemmas library for `mod`
+- ...
