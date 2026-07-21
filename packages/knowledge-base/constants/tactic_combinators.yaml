@@ -1,6 +1,9 @@
 content: |
   - `@>`: `t @> t'` expects `t` to produce exactly one sub-goal, and uses `t'` to prove this subgoal.
+    - Note: if left tactic has multiple subgoals (e.g. `induction` / `lift_ifs` / `[%cases]`), this will error with `TacticEvalErr: @>: expected first tactic to return exactly one goal`.
   - `<|>`: `t1 <|> t2` is the `or tactical` which applies `t1` and uses its result if it succeeds, and otherwise applies `t2` if `t1` had failed
+    - Note: this can be unreliable around `auto` -- `auto` often succeeds-with-subgoals instead of erroring, so the fallback never runs.
   - `@>>|`: `t1 @>>| t2` applies `t1` and then applies `t2` to all `t1`-generated subgoals.
   - `@>|`: `t @>| [t1; t2; ...; tn]` expects `t` to produce `n` subgoals, and , and uses `t_i` to solve the `i`-th goal.
+    - Note: it depends on goal order
   - monadic map `( let+ )` and monadic bind `( let* )` exists as well

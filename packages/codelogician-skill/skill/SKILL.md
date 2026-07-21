@@ -10,7 +10,7 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
 - IML (Imandra Modeling Language), a formalized Higher-Order subset of OCaml extended with theorem proving tactics and verification annotations. ImandraX is the reasoning engine that powers IML.
 - Verification: a process of proving a goal (some properties) or finding a counter-example if the goal is not satisfied. The process can be fully automated or interactive (guided with tactics).
 - Region decomposition is a powerful feature of ImandraX for analyzing the state-space of functions. It automatically partitions a function’s input domain into disjoint regions, each characterized by a set of constraints and a corresponding simplified invariant behavior of the function within that region. Test cases can be further generated from these regions.
-- `codelogician` / `codelogician-lite` CLI: the preferred way for file-system-based agents to interact with ImandraX through LLM-friendly interface.
+- `codelogician` / `codelogician-lite` CLI: the preferred way for coding agents to interact with ImandraX through a LLM-friendly interface.
 
 ## Typical workflow when working with IML
 - Write IML code, corresponding to your specification or program to be verified / tested. Admit IML code with ImandraX and correct type errors if any.
@@ -22,48 +22,30 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-- To type-check, invoke verification, or invoke region decomposition, you pass your IML code to ImandraX via `codelogician-lite` CLI. `codelogician-lite` CLI is designed to be used by file-system-based agents with a LLM-friendly interface.
-  - The most important and frequently used subcommand is `check [IML-FILE]`, which tries to type-check and admit all structures in the file.
-  - Use `check-vg` / `check-decomp` with `--index` option to pass specific VGs or decompositions to check (after `check` emits no errors).
+## Next steps
 
+- [IML Language Guide](./iml-language-guide.md): how to write IML (essential for getting started)
+- [codelogician-cli.md](./codelogician-cli.md): the most common way for a coding agent to interact with ImandraX (essential)
+- [module-import-syntax.md](./import-syntax.md): modular development with IML
+- [verification/*.md](./verification/): for any non-trivial proof work (a `theorem`/`lemma` that plain `auto` does not close)
+    - [examples/binomial_expert_annotated.iml](./examples/binomial_expert_annotated.iml): A fully annotated expert proof showing the proof method end-to-end
 
-## Getting started
+## Full list of references in skill directory
 
-To get started up to speed with IML, read the top-level guide on [IML syntax](iml-syntax.md) and the `codelogician-lite` CLI ([codelogician-cli.md](codelogician-cli.md)). That should be enough to equipped you with the knowledge to write IML code and learn-by-doing. 
-
-Check out import syntax for modular development.
-
-Only when encountering tasks related to verification, region-decomp, or tactic-based proofs, refer to corresponding guides.
-
-Tips: 
-- A tip for explorative development is to use heredoc to pass a IML snippet to `check` for quick testing. For example:
-```bash
-cat <<'EOF' | codelogician-lite check -
-let f x = x + 1
-EOF
-```
-  - Note: stdin `check` doesn't support import syntax
-
-## More in-depth references in skill directory
-
-Along with `SKILL.md` (this file), we have the following markdown materials:
+Along with `SKILL.md` (this file), we have the following materials:
 
 ```tree
 ./
 ├── advanced/ # Advanced topics and tips
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
-│   ├── contingency-corner.md # Documentations that are unlikley to be useful for file-system-based agents.
-│   ├── full-verification-guide.md # Full verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
+│   ├── bypass-verification-completely.md # Last resort to bypass verification completely using `[@@no_validate]`. Don't use this unless you absolutely have the reason to.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
-│   ├── proof-tips.md # Practical tips for writing proofs in IML.
 │   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
-│   └── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module
+│   └── unit-testing.md # Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
 ├── error-fix-data/ # Data for common error and fix
 │   └── README.md # IML error and fixes database. Provides `error_corpus.json`, a collection of common IML errors and their fixes. Search it using jq or grep to find relevant errors and their fixes.
-├── examples/ # Worked examples
-│   └── basic-iml-syntax.md
 ├── extended-prelude/
-│   └── README.md # Additional prelude functions, general purpose utilities. Including Int_conv, LChar_utils, etc. Copy paste the whole directory into your project and then import the modules you need.
+│   └── README.md # Additional prelude-like general purpose modules for reference, including `Int_conv`, `LChar_utils`, etc. Mostly as a reference for implementing your own. Can also be copied into your project and then imported.
 ├── reference/ # Language and API reference
 │   ├── prelude/ # Module-level API docs
 │   │   ├── Int.md
@@ -78,16 +60,24 @@ Along with `SKILL.md` (this file), we have the following markdown materials:
 │   │   ├── Set.md
 │   │   ├── String.md
 │   │   └── top-level.md
-│   ├── all-prelude-module-signatures.md # Signatures of all modules in IML prelude
+│   ├── all-prelude-module-signatures.md # Signatures of all modules in IML prelude. For a quick scan of what is available by default in IML.
 │   ├── ordinal.md # Reference for ordinals used in termination proofs
 │   └── tactics.md # Reference for proof tactics
+├── verification/ # Verification guide
+│   ├── arithmetic-playbook.md # Making arithmetic goals go through in ImandraX - the generalize-then-nonlin recipe, isolating nonlinear steps into micro-lemmas, the div_mod normal form for divisibility, a reusable mod-theorems vocabulary, int/real bridges, and inequality-combination lemmas. Read this whenever a goal involves multiplication of variables, division, mod, or mixed int/real reasoning.
+│   ├── induction-control.md # Controlling induction in ImandraX - custom induction schemes via skeleton recursive functions and induction ~id, the anchor trick, pinned-variable induction, _aux-then-specialize, generalizing before inducting, and step lemmas that take induction hypotheses as premises. Read this when the default induction gives the wrong cases or an unusable IH.
+│   ├── proof-method.md # The end-to-end method for proving a non-trivial theorem in ImandraX - the session loop, the [%use] forward-instantiation workhorse, lemma-ladder architecture, calibration of effort, and the antipatterns to avoid. Read this when starting any theorem that plain auto does not close.
+│   ├── proof-notes-and-practices.md # Notes and practical guidance for writing proofs in IML.
+│   ├── statement-engineering.md # How to state theorems and choose encodings so they are provable in ImandraX. Witness functions instead of existentials, division-free forms, executable predicates, totalization, and more. Read this BEFORE formalizing any non-trivial property — a hard proof is usually won or lost at the statement.
+│   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
-├── codelogician-cli.md # Guide for using the `codelogician-lite` CLI to interact with ImandraX and access additional features.
-├── iml-syntax.md # IML syntax guide, highlighting its difference with OCaml, some examples, and tips and pitfalls.
-├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Also useful to separate (1) types and functions definition from (2) VGs and region-decompositions.
+├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
+├── eval-command.md # The `eval <expr>` syntax evaluates a closed IML expression and prints its value. Use it for quick REPL-style sanity checks while developing IML.
+├── iml-language-guide.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
+├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
-├── unit-testing.md # Writing unit tests in IML using verify with ground_eval and expand. Very useful for incrementally building up IML projects.
-└── verification-with-verify-and-instance.md # Verify (prove a goal or find a counter-example) using `verify` and `instance` commands
+├── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module. Every `let rec` definition triggers a termination proving task. Read this when the default termination proving heuristics fail.
+└── verification-with-verify-and-instance.md # Basic verification (prove a property or find a counter-example) with `verify` and `instance` commands.
 ```
 
 Note: there are some *.iml examples and *.json files as well that are not shown in the tree. Find them yourself if needed.

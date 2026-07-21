@@ -7,161 +7,147 @@ content:
     evaluation.
     These comments are only for educational purposes. They teach you about the thinking
     process of writing IML code but they might not desired to exist when writing IML code.
+
+    The examples use plain first-order recursive style (explicit `let rec` + `match`
+    instead of `List.fold_left`/`List.map` with lambdas). This is idiomatic IML, and it
+    also keeps the code easy for ImandraX to reason about should you later want to
+    verify properties of it.
   examples:
     - |
-      (* Float-like literal is interpreted as type `real`, arbitary precision real number. *)
+      (* A float-like literal is interpreted as type `real`: an arbitrary-precision real number. *)
       let pi = 3.14159
       (* val pi : real = 314159/100000 *)
-      (* Arithemetic for real:
-      - multiplication `*.`
-      - division `/.`
-      - etc *)
+      (* Arithmetic for `real` uses dotted operators: `+.`, `-.`, `*.`, `/.` *)
       let circle_area (d : real) : real =
-      let r = d /. 2.0 in
-      pi *. r *. r
+        let r = d /. 2.0 in
+        pi *. r *. r
       (* val circle_area : real -> real = <fun> *)
     - |
-      (* Note: `int` is the type for integers. *)
-      let count_negatives_in_row (row : int list) : int =
-          List.fold_left (fun acc num -> if num < 0 then acc + 1 else acc) 0 row
-        (* val count_negatives_in_row : int list -> int = <fun> *)
-        let x = count_negatives_in_row [-1; -2; -3; 4; 5]
-        (* val x : int = 3 *)
-        (* Note:
-          - `List.nth: int -> 'a list -> 'a option`, NOT returning 'a as in OCaml
-          - That's why we need binding operator `let+` and `let*` from `Option` module
-        *)
-        let count_negative_numbers_in_a_column_wise_row_wise_sorted_matrix
-            (m : int list list)
-            (n : int)
-            (cols : int)
-            : int option =
-          List.fold_left
-            (fun acc i ->
-              (* import Option module locally to use `let*`. could also be imported at the beginning by `open Option` *)
-              let open Option in
-              let* acc_val = acc in
-              let+ row_count = map count_negatives_in_row (List.nth i m) in
-              acc_val + row_count)
-            (Some 0)
-            (0 -- (n - 1))
-        (* val count_negative_numbers_in_a_column_wise_row_wise_sorted_matrix :
-          int list list -> int -> int -> int option = <fun> *)
+      (* Note: `int` is the type for integers (arbitrary precision). *)
+      let rec count_negatives (row : int list) : int =
+        match row with
+        | [] -> 0
+        | x :: rest -> (if x < 0 then 1 else 0) + count_negatives rest
+      (* val count_negatives : int list -> int = <fun> *)
+      let x = count_negatives [-1; -2; -3; 4; 5]
+      (* val x : int = 3 *)
+      (* Note:
+         - `List.nth : int -> 'a list -> 'a option` — argument order differs from OCaml,
+           and it returns an `option` instead of raising an exception.
+         - Handle the option with `match` ... *)
+      let count_negatives_in_row (m : int list list) (i : int) : int option =
+        match List.nth i m with
+        | None -> None
+        | Some row -> Some (count_negatives row)
+      (* val count_negatives_in_row : int list list -> int -> int option = <fun> *)
+      (* ... or with the binding operators `let*` / `let+` from the `Option` module: *)
+      let count_negatives_in_row' (m : int list list) (i : int) : int option =
+        let open Option in
+        let+ row = List.nth i m in
+        count_negatives row
+      (* val count_negatives_in_row' : int list list -> int -> int option = <fun> *)
     - |
       (* Note:
-      - integer division and modulo in IML: `mod: int -> int -> int`. And `/`.
+         - integer division and modulo in IML: `/` and `mod : int -> int -> int`.
       *)
-      let is_divisor (n : int) (divisor : int) : bool =
-          n mod divisor = 0
-        (* val is_divisor : int -> int -> bool = <fun> *)
-        let add_divisors (n : int) (divisor : int) (current_sum : int) : int =
-          if divisor = n / divisor then
-            current_sum + divisor
-          else
-            current_sum + divisor + n / divisor
-        (* val add_divisors : int -> int -> int -> int = <fun> *)
-        let sqrt : real -> real = () [@@opaque]
-        (* val sqrt : real -> real = <fun> *)
-        (* Note:
-        - conversion between `int` and `real`: `Real.of_int` and `Real.to_int`.
-        *)
-        let sum_of_all_proper_divisors_of_a_natural_number (num : int) : int =
-          let calculate_sum_of_divisors (n : int) (limit : int) : int =
-            List.fold_left
-              (fun acc i ->
-                if is_divisor n i then
-                  acc + add_divisors n i 0
-                else
-                  acc)
-              0
-              (2 -- limit)
-          in
-          let limit = Real.to_int (Real.of_int num |> sqrt) in
-          calculate_sum_of_divisors num limit + 1
-        (* val sum_of_all_proper_divisors_of_a_natural_number : int -> int = <fun> *)
+      let is_divisor (n : int) (d : int) : bool =
+        n mod d = 0
+      (* val is_divisor : int -> int -> bool = <fun> *)
+      (* Operations unavailable in IML (like square root) can be stubbed with
+         `[@@opaque]`: a typed placeholder that lets the code compile.
+         But note that it hinders verification so should be avoided unless necessary. *)
+      let sqrt : real -> real = () [@@opaque]
+      (* val sqrt : real -> real = <fun> *)
+      (* Conversion between `int` and `real`: `Real.of_int` and `Real.to_int`. *)
+      let rec sum_divisors_upto (n : int) (d : int) : int =
+        if d < 2 then 0
+        else if is_divisor n d then
+          let q = n / d in
+          (if d = q then d else d + q) + sum_divisors_upto n (d - 1)
+        else
+          sum_divisors_upto n (d - 1)
+      (* val sum_divisors_upto : int -> int -> int = <fun> *)
+      let sum_of_proper_divisors (num : int) : int =
+        let limit = Real.to_int (sqrt (Real.of_int num)) in
+        1 + sum_divisors_upto num limit
+      (* val sum_of_proper_divisors : int -> int = <fun> *)
     - |
       (* Another example with conversion between `real` and `int`. *)
-      let sum_of_first_n_numbers (n: int) : real =
+      let sum_of_first_n_numbers (n : int) : real =
         (Real.of_int n *. (Real.of_int n +. 1.0)) /. 2.0
       (* val sum_of_first_n_numbers : int -> real = <fun> *)
-      let sum_of_squares_of_first_n_numbers (n: int) : real =
+      let sum_of_squares_of_first_n_numbers (n : int) : real =
         (Real.of_int n *. (Real.of_int n +. 1.0) *. (2.0 *. Real.of_int n +. 1.0)) /. 6.0
       (* val sum_of_squares_of_first_n_numbers : int -> real = <fun> *)
-      let sum_matrix_element_absolute_difference_row_column_numbers_2 (n: int) : int =
+      let sum_matrix_element_absolute_difference (n : int) : int =
         let sum_first_n = sum_of_first_n_numbers n in
         let sum_squares_n = sum_of_squares_of_first_n_numbers n in
         (sum_first_n +. sum_squares_n) |> Real.to_int
-      (* val sum_matrix_element_absolute_difference_row_column_numbers_2 : int -> int = <fun> *)
+      (* val sum_matrix_element_absolute_difference : int -> int = <fun> *)
     - |
       (* Note:
-      - for opeartions that is unavailable in IML, `[@@opaque]` can be attached
-        to a dummy implementation with correct type signature. Such implementation
-        can be used to bypass unavailable functions during compilation.
-      - Example of unavailable operations: bitwise operations (e.g., `land`, `lxor`),
-        irrational arithmetic (e.g., square root, exponentiation), random.
+         - `min : 'a -> 'a -> 'a` and `abs : int -> int` are available at top level.
+         - There is no `max_int` in IML (ints are arbitrary-precision), so instead of a
+           magic sentinel for "no result", return an `int option` and use `None`.
       *)
-      let xor : int -> int -> int = () [@@opaque]
-      (* val xor : int -> int -> int = <fun> *)
-      let rec helper state pairs =
-        match pairs with
-        | [] -> state
-        | (a, b) :: rest ->
-          let new_state = min state (xor a b) in
-          helper new_state rest
-      (* val helper : int -> (int * int) list -> int = <fun> *)
-      let find_minimum_xor (arr : int list) : int =
-        let initial_state = 999999 in
-        let pairs = List.monoid_product arr arr |> List.filter (fun (a, b) -> a < b) in
-        helper initial_state pairs
-      (* val find_minimum_xor : int list -> int = <fun> *)
-      let minimum_xor_value_pair (arr : int list) : int =
-        let sorted_arr = List.sort ~leq:(fun a b -> a <= b) arr in
-        find_minimum_xor sorted_arr
-      (* val minimum_xor_value_pair : int list -> int = <fun> *)
+      (* Smallest absolute difference between `a` and every element of `rest`.
+         `None` when `rest` is empty (no element to compare against). *)
+      let rec min_abs_diff_with (a : int) (rest : int list) : int option =
+        match rest with
+        | [] -> None
+        | b :: more ->
+          let d = abs (a - b) in
+          (match min_abs_diff_with a more with
+           | None -> Some d
+           | Some m -> Some (min d m))
+      (* val min_abs_diff_with : int -> int list -> int option = <fun> *)
+      (* Smallest absolute difference over all pairs drawn from the list.
+         `None` when there are fewer than two elements (no pair exists). *)
+      let rec min_abs_diff_pair (arr : int list) : int option =
+        match arr with
+        | [] | [_] -> None
+        | a :: rest ->
+          (match min_abs_diff_with a rest, min_abs_diff_pair rest with
+           | None, r | r, None -> r
+           | Some x, Some y -> Some (min x y))
+      (* val min_abs_diff_pair : int list -> int option = <fun> *)
     - |
-      (* Another example using `[@@opaque]` *)
-      open Option
-      let random_int : int -> int = () [@@opaque]
-      (* val random_int : int -> int = <fun> *)
-      let swap_elements lst i j =
-        let get_i = List.nth i lst in
-        let get_j = List.nth j lst in
-        List.mapi (fun idx x ->
-          if idx = i then
-            get_j |> get_or ~default:x
-          else if idx = j then
-            get_i |> get_or ~default:x
-          else
-            x
-        ) lst
+      (* Termination is on the shrinking list, not the index `i` (which could be
+         negative), so guide ImandraX with an explicit `[@@measure ...]`. *)
+      (* Replace the element at index i (0-based), leaving the list unchanged if
+         the index is out of range: *)
+      let rec set_nth (i : int) (v : 'a) (l : 'a list) : 'a list =
+        match l with
+        | [] -> []
+        | x :: rest -> if i = 0 then v :: rest else x :: set_nth (i - 1) v rest
+      [@@measure Ordinal.of_int (List.length l)]
+      (* val set_nth : int -> 'a -> 'a list -> 'a list = <fun> *)
+      (* Swap the elements at indices i and j; matching a pair of `List.nth`
+         results handles the out-of-range cases in one shot. *)
+      let swap_elements (l : 'a list) (i : int) (j : int) : 'a list =
+        match List.nth i l, List.nth j l with
+        | Some xi, Some xj -> set_nth i xj (set_nth j xi l)
+        | _ -> l
       (* val swap_elements : 'a list -> int -> int -> 'a list = <fun> *)
-      let shuffle_a_given_array (arr : int list) : int list =
-        let rec helper state i =
-          if i <= 0 then
-            state
-          else
-            let j = random_int (i + 1) in
-            let state = swap_elements state i j in
-            helper state (i - 1)
-        in
-        helper arr (List.length arr - 1)
-      (* val shuffle_a_given_array : int list -> int list = <fun> *)
     - |
       (* Character and String:
-      - IML supports logic-mode character `LChar.t` and logic-mode string `LString.t`.
-      - `{l|...|l}` is used to create a logic-mode string, `LString.t`, aka, `LChar.t list`.
-      - To create a logic-mode character, `LChar.t`, you can use list operations on `LString.t`, eg `List.hd {l|...|l}`.
+         - IML supports logic-mode character `LChar.t` and logic-mode string `LString.t`.
+         - `{l|...|l}` is used to create a logic-mode string, `LString.t`, aka `LChar.t list`.
+         - To create a logic-mode character, `LChar.t`, you can use list operations on
+           `LString.t`, e.g. `List.hd {l|...|l}`.
       *)
-      let char_0: LChar.t = List.hd {l|0|l}
-      let char_1: LChar.t = List.hd {l|1|l}
-      (* val char_0 : LChar.t = '0'
-      val char_1 : LChar.t = '1' *)
+      let char_0 : LChar.t = List.hd {l|0|l}
+      (* val char_0 : LChar.t = '0' *)
+      let rec count_zeros (s : LString.t) : int =
+        match s with
+        | [] -> 0
+        | ch :: rest -> (if ch = char_0 then 1 else 0) + count_zeros rest
+      (* val count_zeros : LString.t -> int = <fun> *)
       let count_bits (s : LString.t) : int * int =
-        let zeros = List.fold_left (fun acc ch -> if ch = char_0 then acc + 1 else acc) 0 s in
-        let ones = List.length s - zeros in
-        (zeros, ones)
+        let zeros = count_zeros s in
+        (zeros, List.length s - zeros)
       (* val count_bits : LString.t -> int * int = <fun> *)
-      let change_bits_can_made_one_flip (s : LString.t) : bool =
+      let can_be_made_uniform_with_one_flip (s : LString.t) : bool =
         let zeros, ones = count_bits s in
         zeros = 1 || ones = 1
-      (* val change_bits_can_made_one_flip : LString.t -> bool = <fun> *)
+      (* val can_be_made_uniform_with_one_flip : LString.t -> bool = <fun> *)

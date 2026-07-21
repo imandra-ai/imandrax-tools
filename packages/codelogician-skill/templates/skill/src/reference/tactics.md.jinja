@@ -11,8 +11,97 @@ description: Reference for proof tactics
 {% for tactic in tactics.tactics -%}
 
 {{ loop.index }}. `{{ tactic.name }}`
-- Signature: {{ tactic.signature }}
+- Signature: `{{ tactic.signature }}`
 {%- if tactic.documentation_md %}
-- Doc: {{ tactic.documentation_md }}
-{%- endif %}
-{%- endfor %}
+- Doc: {{ tactic.documentation_md }}{% endif %}
+
+{% endfor %}
+
+# Additional proof forms and attributes
+
+Forms used pervasively in expert proofs that are not in the tactic list above.
+
+## `[%have name := fact by (tactic)]` — structured forward step
+
+Proves `fact` on the spot with the given sub-tactic and adds it to the goal as a
+named hypothesis. Lets a long proof read like a paper proof: a sequence of named,
+locally-discharged facts.
+
+```iml
+[@@by intros
+   @> [%have p_div_m := m mod p = 0 by ([%use prime_div_sq p m] @> auto)]
+   @> [%have p_ge_2  := p >= 2      by auto]
+   @> nonlin ()]
+```
+
+The `by (...)` sub-proof can use any tactic expression (`[%use]`, `[%simp_only]`,
+`arith`, `nonlin ()`, ...). Also useful for micro-rewrites the simplifier won't
+perform: `[%have rew := 2*m*m = 2*(m*m) by (nonlin ())]`.
+
+## `esimp` — evaluation-oriented simplification
+
+Simplifies by evaluation/computation; useful to expose `let`-bound tuple
+components (e.g. a `let (u, v) = bezout_sub a b in ...` in the goal) and to
+compute ground subterms mid-proof. Commonly chained: `esimp @> simplify ()`.
+
+## `[%t ...]` — quote_term shorthand
+
+`generalize [%t (a / b)] "q"` ≡ `generalize (quote_term (a / b)) "q"`.
+
+## Tactics are first-class values
+
+Bind and reuse them:
+```iml
+let crush = Tactic.unroll 10   (* file-level house closer *)
+
+theorem descent_loop_correct p m q = ...
+[@@by
+  let close_sub = intros @> [%subgoal ...] @>| [ ...; crush ] in
+  induction ~id:[%id descent_ind] () @>>| close_sub]
+```
+
+Plain `let` inside a `[@@by]` block can also name terms for instantiations:
+`let (u, v) = bezout_sub a b in [%use mod_mul_preserves_zero u a k] @> ...`.
+
+## `[@@disable f, g, ...]` — freeze definitions for one proof
+
+Attribute on a lemma/theorem: the listed function definitions are not unfolded
+during that proof, so the prover must reason through previously proven lemmas
+about them. Essential once a function has its characteristic-lemma API, and to
+stop `auto` diverging into a case-explosion or nested-recursion unfold:
+
+```iml
+theorem descent_loop_correct p m q = ...
+[@@by induction ~id:[%id descent_ind] () @>>| close_sub]
+[@@disable c_mod, descent_q, centered, sum2]
+```
+
+Works on prelude functions too (e.g. `[@@disable List.mem]`). Counterpart:
+`[%simp_only f, g]` *unfolds only* the listed definitions at a chosen point.
+
+## `[@trigger]` — forward-chaining trigger annotation
+
+Marks the subterm of a `[@@fc]` rule that should pattern-match hypotheses to
+fire the rule:
+
+```iml
+theorem odds_len_1 x =
+  x <> [] && List.tl x <> []
+  ==> (List.length (odds x) [@trigger]) < List.length x
+[@@by induct ~on_fun:[%id odds] ()] [@@fc]
+```
+
+## `[@@by ...]` on a `let rec` — proving the termination obligation
+
+A `[@@by]` attached to a recursive *definition* is the tactic for its
+termination proof obligation (usually next to `[@@measure ...]`). Nontrivial
+termination goals can `[%use]` previously proven lemmas:
+
+```iml
+let rec prime_factors (n:int) : int list = ...
+[@@measure Ordinal.of_int (max 0 n)]
+[@@by [%use sd_le_n n] @> [%use div_smaller n (small_divisor_from 2 n)]
+   @> simplify () @> arith]
+```
+
+See [[termination-proving.md]] for more details on measures, `[@@adm]`, and related idioms.

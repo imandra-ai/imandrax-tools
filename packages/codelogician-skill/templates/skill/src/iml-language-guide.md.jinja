@@ -1,0 +1,79 @@
+---
+name: iml-language-guide
+description: IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
+---
+
+# IML Language Guide
+
+Rougly speaking: IML has OCaml syntax, but:
+- it has its own prelude instead of OCaml standard library (see below and [all-prelude-module-signatures.md](./reference/all-prelude-module-signatures.md))
+- it's pure (no exceptions and other side effects)
+- it has a few special syntaxes and built-in annotations to trigger different ImandraX tasks (verification, region decomposition, etc.))
+    - syntax: `verify`, `instance`, `lemma`, `theorem`, `axiom`, `test`, `eval`. They all have the same grammar rule as `let`!
+    - built-in-annotations: 
+        - `[@@measure <measure-function>]`: annotation for termination measure (when default measure is not sufficient)
+        - `[@@decomp top <decomp-args> ()]`: attached to a function definition to trigger region decomposition
+        - `[@@by <tactic>]`, `[@@rw]`, `[@@fc]`, ...: for tactic-based proofs, installing rewrite rules, installing forward chaining rules, etc.
+
+How ImandraX works with IML on a high level:
+- ImandraX typechecks IML code.
+- ImandraX spawns tasks (proof-obligations (including termination proving), region decomposition, eval, etc.) from IML and processes them.
+- ImandraX returns the results of the tasks to the user.
+
+## IML Prelude vs OCaml Standard Library
+
+OCaml standard library modules are unavailable in IML. Instead, IML has its own prelude with different signatures.
+
+- Example: `List.nth` in OCaml has signature `'a list -> int -> 'a`, while in IML it's `int -> 'a list -> 'a option`. They have different parameter order and return type.
+- Available modules in IML prelude include: `Int`, `LChar`, `LString`, `List`, `Map`, `Multiset`, `Option`, `Real`, `Result`, `Set`, and `String`. See [all-prelude-module-signatures.md](./reference/all-prelude-module-signatures.md) for details.
+
+## Numerical Representation and Precision
+
+IML defaults to arbitrary-precision arithmetic: a float-like literal such as
+`3.14159` is a `real`, represented exactly as `314159/100000`, not a floating-point
+approximation. (Machine floats do exist, in a separate module, but `real` is the
+default and the right choice for most modeling.) The two default numeric types,
+`real` and `int`, each carry their own set of operators.
+
+Notes:
+- `3.14159` has type `real`, not `float`
+- Real arithmetic: `( +. )`, `( -. )`, `( *. )`, `( /. )` are operators with signatures `real -> real -> real`.
+- Integer arithmetic: `( + )`, `( - )`, `( * )`, `( / )` are operators with signatures `int -> int -> int`.
+- Gotcha: However, `( = ) : 'a -> 'a -> bool` is polymorphic and can be used for both real and integer equality. `( =. )` does not exist.
+- Tip: Default to `real` when modeling. The solver handles it more efficiently due to continuous geometry. Use `int` when the quantity is inherently discrete (counters, indices, sequence numbers) or when divisibility/modular properties are part of the spec itself. 
+- Conversion functions:
+    - `Real.of_int : int -> real`
+    - `Real.to_int : real -> int`
+
+## String, Logic-mode character, and Logic-mode string
+- Logic-mode character `LChar.t` is 8-bit character.
+- Logic-mode string `LString.t` is a type alias for `LChar.t list`.
+  - `{l|...|l}` creates a `LString.t` literal
+
+## Error Handling 
+
+IML is a pure language with no exceptions:
+- The OCaml's `failwith` function isn not available in IML.
+- Instead, either:
+  - Transform partial functions into total functions
+  - Use monadic error handling with `Result` or `Option` modules
+
+## Type System Constraints
+
+Unlike OCaml, IML restricts function representation in composite types:
+
+- Functions **cannot** be part of algebraic data types, records, or tuples
+- For state transition modeling, define:
+  - A dedicated event type (with parameterized constructors if needed)
+  - A step function that applies events to states
+
+## Examples
+
+{{ quickstart_examples.content.overview }}
+{% for eg in quickstart_examples.content.examples -%}
+### Example {{ loop.index }}
+```iml
+{{ eg -}}
+```
+
+{% endfor -%}
