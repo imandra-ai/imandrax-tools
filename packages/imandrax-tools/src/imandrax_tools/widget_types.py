@@ -67,10 +67,10 @@ class TaskEntry(BaseModel):
 
 def mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
     """
-    Create a `TaskEntry` from a `Task` and a dictionary of artifact kind to xvalue.
+    _
 
     Args:
-        task: the task to create an entry for.
+        task: _
         artifacts: A dictionary of artifact kind to xvalue.
 
     """

@@ -246,6 +246,19 @@ class Printer:
             case _:
                 assert_never(a)
 
+    @staticmethod
+    def overview_of_Tasks_PO_task_t_poly(
+        v: xtype.Tasks_PO_task_t_poly[xtype.Mir_Term, xtype.Mir_Type],
+        fold_sym_if_exists: bool = False,
+    ) -> str:
+        sym = v.from_sym
+        po_descr = v.po.descr
+        if fold_sym_if_exists and sym in po_descr:
+            return po_descr
+        else:
+            sym_info = f'{sym}#{v.count}' if v.count > 0 else sym
+            return f'{sym_info}: {po_descr}'
+
     # --------------------
 
     def value2doc(self, v: Any) -> Doc:
@@ -417,11 +430,9 @@ class Printer:
                         else None,
                     )
                 else:
-                    sym_info = f'{v.from_sym}#{v.count}' if v.count > 0 else v.from_sym
-                    po_descr = v.po.descr
+                    po_task_title = self.overview_of_Tasks_PO_task_t_poly(v)
                     return python_obj(
-                        'POTask',
-                        [(None, python_quote(text(f'{sym_info}: {po_descr}')))],
+                        'POTask', [(None, python_quote(text(po_task_title)))]
                     )
             case xtype.Common_Proof_obligation_t_poly():
                 rows: AssocList[Doc] = []
