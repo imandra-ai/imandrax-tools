@@ -40,6 +40,8 @@ Commands that will trigger verification:
 
 ## Tactics
 
+> This section is general usage guide for tactics. Refer to [reference/tactics.md](./reference/tactics.md) for the full details of tactics.
+
 Based on the `by` annotation (`[@@by auto]`), ImandraX allows users to structure proofs through a combination of smaller tactics and more sophisticated tacticals, enabling modular, reusable proof strategies. 
 
 A tactic takes a goal and either:
@@ -92,9 +94,9 @@ fire (the annotations become decoration), and badly shaped rules (e.g. bare
 associativity/commutativity) destabilize `auto` across the whole file.. For targeted usage, use 
 `[%use lemma args]` to instantiate the lemma where needed.
 
-# Other Common Tactics
+### Other Common Tactics
 
-### `intros`
+#### `intros`
 
 `intros` takes a goal with implications and conjunctions `H |- (A && B) ==> C` and returns the new goal `H, A, B |- C`. This is typically the first tactic in a chain when the goal has premises that need to be introduced as hypotheses.
 
@@ -102,7 +104,7 @@ associativity/commutativity) destabilize `auto` across the whole file.. For targ
 lemma foo x y = x > 0 && y > 0 ==> x + y > 0 [@@by intros @> auto]
 ```
 
-### `simp` / `simplify`
+#### `simp` / `simplify`
 
 Apply simplification to the goal. There are several variants:
 
@@ -119,7 +121,7 @@ lemma foo x y = List.length (List.rev (x @ y)) = List.length x + List.length y
   [@@by [%simp rev_len, len_append]]
 ```
 
-### `unroll`
+#### `unroll`
 
 `unroll n` performs bounded model checking via SMT, unrolling recursive definitions up to `n` steps. This is useful for goals that can be discharged by finite exploration.
 
@@ -131,7 +133,7 @@ verify (fun x -> x < 10 ==> f x >= 0) [@@by unroll 100]
 [@@by unroll ~smt:"z3" 50]
 ```
 
-### Arithmetic Decision Procedures
+#### Arithmetic Decision Procedures
 
 - `arith` - Decision procedure for linear (real and integer) arithmetic
 - `nonlin ()` - SMT solver with non-linear arithmetic enabled
@@ -142,7 +144,7 @@ lemma linear_example x y = x + y >= x [@@by intros @> arith]
 lemma quadratic_example x = x * x >= 0 [@@by nonlin ()]
 ```
 
-### `cases`
+#### `cases`
 
 `[%cases t1, t2, ..., tk]` performs case analysis on boolean conditions, generating k+1 subgoals: one for each case (with the case as hypothesis) and one for when all cases are false.
 
@@ -151,7 +153,7 @@ lemma abs_nonneg x = abs x >= 0
   [@@by [%cases x >= 0] @>| [auto; auto]]
 ```
 
-### `expand`
+#### `expand`
 
 `[%expand "f"]` unfolds the definition of function `f`. Use `[%expand (f x y)]` to expand a specific application.
 
@@ -162,7 +164,7 @@ lemma square_pos x = x <> 0 ==> square x > 0
   [@@by intros @> [%expand "square"] @> nonlin ()]
 ```
 
-### `use`
+#### `use`
 
 `[%use lemma_name args]` instantiates a previously proven theorem and adds it as a hypothesis to the current goal.
 
@@ -172,7 +174,6 @@ lemma pow_pos_helper b n = b > 0 ==> pow b n > 0 [@@by auto]
 lemma foo x = x > 0 ==> pow x 5 + 1 > 1
   [@@by intros @> [%use pow_pos_helper x 5] @> auto]
 ```
-
 
 ### Composing Tactics
 To compose tactics, use the following operators:
