@@ -22,12 +22,13 @@ description: Use IML (Imandra Modeling Language) / ImandraX to reason about soft
     - Use `[@@decomp top <decomp-args> ()]` attached to function definitions to invoke region decomposition.
     - Generate test cases (Python or TypeScript) from regions with subcommands in `codelogician` CLI.
 
-## Getting started
+## Next steps
 
-- [IML Language Guide](./iml-syntax.md): how to write IML (essential)
+- [IML Language Guide](./iml-language-guide.md): how to write IML (essential for getting started)
 - [codelogician-cli.md](./codelogician-cli.md): the most common way for a coding agent to interact with ImandraX (essential)
 - [module-import-syntax.md](./import-syntax.md): modular development with IML
-
+- [verification/*.md](./verification/): for any non-trivial proof work (a `theorem`/`lemma` that plain `auto` does not close)
+    - [examples/binomial_expert_annotated.iml](./examples/binomial_expert_annotated.iml): A fully annotated expert proof showing the proof method end-to-end
 
 ## Full list of references in skill directory
 
