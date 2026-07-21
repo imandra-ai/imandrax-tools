@@ -173,7 +173,7 @@ def test_verify_src(c: Client):
     _ = c.eval_src(IML_CODE)
     verify_res_msg = c.verify_src(VERIFY_SRC)
     verify_res = VerifyRes.model_validate(verify_res_msg)
-    assert verify_res.model_dump() == snapshot(
+    assert verify_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'proved': {
                 'proof_pp': """\
@@ -199,7 +199,7 @@ def test_verify_src(c: Client):
 """
             },
             'errors': [],
-            'task': None,
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -209,7 +209,7 @@ def test_verify_refuted(c: Client):
     _ = c.eval_src(IML_CODE)
     verify_res_msg = c.verify_src(VERIFY_SRC_REFUTED)
     verify_res = VerifyRes.model_validate(verify_res_msg)
-    assert verify_res.model_dump() == snapshot(
+    assert verify_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'refuted': {
                 'model': {
@@ -229,8 +229,25 @@ end
                     },
                 }
             },
-            'errors': [],
-            'task': None,
+            'errors': [
+                {
+                    'msg': {
+                        'msg': 'Goal is counter-satisfiable.',
+                        'locs': [
+                            {
+                                'file': '<none>',
+                                'start': {'line': 1, 'col': 1},
+                                'stop': {'line': 1, 'col': 26},
+                            }
+                        ],
+                        'backtrace': None,
+                    },
+                    'kind': '{ Kind.name = "TacticEvalErr" }',
+                    'stack': [],
+                    'process': 'imandrax-server',
+                }
+            ],
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -240,7 +257,7 @@ def test_instance_src(c: Client):
     _ = c.eval_src(IML_CODE)
     instance_res_msg = c.instance_src(VERIFY_SRC_REFUTED)
     instance_res = InstanceRes.model_validate(instance_res_msg)
-    assert instance_res.model_dump() == snapshot(
+    assert instance_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'unsat': {
                 'proof_pp': """\
@@ -266,7 +283,7 @@ def test_instance_src(c: Client):
 """
             },
             'errors': [],
-            'task': None,
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -281,7 +298,7 @@ def test_test_src(c: Client):
     _ = c.eval_src(iml)
     test_res_msg = c.qcheck_src(test_src)
     test_res = TestRes.model_validate(test_res_msg)
-    assert test_res.model_dump() == snapshot(
+    assert test_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'counter_example': {
                 'model': {
@@ -302,7 +319,7 @@ end
                 }
             },
             'errors': [],
-            'task': None,
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -321,26 +338,31 @@ def test_test_name(c: Client):
     _ = c.eval_src(iml)
     test_res_msg = c.test_name(test_name)
     test_res = TestRes.model_validate(test_res_msg)
-    # NOTE: we shouldn't really see a tactic eval error here.
-    assert test_res.model_dump() == snapshot(
+    assert test_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'err': {},
             'errors': [
                 {
                     'msg': {
                         'msg': 'Did not find a counter-example.',
-                        'locs': [],
+                        'locs': [
+                            {
+                                'file': '<none>',
+                                'start': {'line': 1, 'col': 1},
+                                'stop': {'line': 1, 'col': 47},
+                            }
+                        ],
                         'backtrace': """\
-Raised at Stdlib__Hashtbl.MakeSeeded.find in file "hashtbl.ml", line 391, characters 17-32
+Raised at Stdlib__Hashtbl.MakeSeeded.find in file "hashtbl.ml", line 399, characters 25-40
 Called from Imandrakit_twine__Decode.with_cache.(fun) in file "vendor/imandrakit/src/twine/decode.ml", line 711, characters 10-32
 """,
                     },
-                    'kind': '{ Kind.name = "TacticEvalErr" }',
+                    'kind': '{ Kind.name = "NoCounterExample" }',
                     'stack': [],
                     'process': 'imandrax-server',
                 }
             ],
-            'task': None,
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -349,7 +371,7 @@ def test_instance_unsat(c: Client):
     _ = c.eval_src(IML_CODE)
     instance_res_msg = c.instance_src(VERIFY_SRC)
     instance_res = InstanceRes.model_validate(instance_res_msg)
-    assert instance_res.model_dump() == snapshot(
+    assert instance_res.model_dump(exclude={'task': {'id': True}}) == snapshot(
         {
             'sat': {
                 'model': {
@@ -370,7 +392,7 @@ end
                 }
             },
             'errors': [],
-            'task': None,
+            'task': {'kind': TaskKind.TASK_CHECK_PO},
         }
     )
 
@@ -387,7 +409,6 @@ def test_decompose(c: Client):
                 'api_version': 'v20',
                 'storage': [],
             },
-            'err': None,
             'errors': [],
             'task': {
                 'id': {
