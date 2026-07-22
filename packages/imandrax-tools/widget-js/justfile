@@ -3,3 +3,6 @@ default:
 
 gen-ts-widget-types-from-py:
     uv run scripts/gen_py2ts_types.py
+
+gen-widget-input-fixtures refresh="false":
+    uv run --env-file .env scripts/gen_widget_input_fixtures {{ if refresh == "true" { "--refresh" } else { "" } }}
