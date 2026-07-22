@@ -462,9 +462,7 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
         case EvalRes():
             return format_eval_res(model)
         case EnrichedDecomposeRes():
-            return format_enriched_decomp_res(
-                EnrichedDecomposeRes.from_decomp_res(model)
-            )
+            return format_enriched_decomp_res(model)
         case DecomposeRes():
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
