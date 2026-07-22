@@ -3,89 +3,120 @@
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
 
-import { highlightRepr } from './highlight';
-import { ROOT_CLASS, TASK_STYLE } from './style';
-import type { Artifact, TaskData } from './types';
+import { highlightRepr } from "./highlight";
+import { ROOT_CLASS, TASK_STYLE } from "./style";
+import type { Artifact, TaskData } from "./types";
+
+const STATUS_EMOJI = {
+  success: "✅",
+  error: "❌",
+  warning: "⚠️",
+  info: "ℹ️",
+  in_progress: "🚧",
+  pending: "⏳",
+  running: "⏱️",
+  skipped: "⏭️",
+  unknown: "❓",
+  healthy: "🟢",
+  degraded: "🟡",
+  down: "🔴",
+};
+
+function status_emoji_of_art_repr(
+  art_kind: string,
+  repr: string,
+): string | undefined {
+  if (art_kind === "po_res") {
+    if (repr.includes("res=POSuccessProof")) {
+      return STATUS_EMOJI.success;
+    } else if (repr.includes("res=POErrorProof")) {
+      return STATUS_EMOJI.warning;
+    } else {
+      return STATUS_EMOJI.error;
+    }
+  }
+}
 
 function makeArtifact(art: Artifact): HTMLElement {
-  const details = document.createElement('details');
+  const details = document.createElement("details");
   details.className = `${ROOT_CLASS}-art`;
   details.open = true;
 
-  const summary = document.createElement('summary');
+  const summary = document.createElement("summary");
   summary.className = `${ROOT_CLASS}-summary`;
 
-  const kind = document.createElement('span');
+  const kind = document.createElement("span");
   kind.className = `${ROOT_CLASS}-art-kind`;
   kind.textContent = art.kind;
   summary.appendChild(kind);
 
   // Status icon sits right after the artifact-kind label.
-  if (art.icon) {
-    const icon = document.createElement('span');
+  const art_icon = status_emoji_of_art_repr(art.kind, art.repr);
+  if (art_icon) {
+    const icon = document.createElement("span");
     icon.className = `${ROOT_CLASS}-art-icon`;
-    icon.textContent = art.icon;
+    icon.textContent = art_icon;
     summary.appendChild(icon);
   }
 
-  const meta = document.createElement('span');
+  const meta = document.createElement("span");
   meta.className = `${ROOT_CLASS}-meta`;
-  meta.textContent = `${art.text.length.toLocaleString()} chars`;
+  meta.textContent = `${art.repr.length.toLocaleString()} chars`;
   summary.appendChild(meta);
 
-  const copy = document.createElement('button');
+  const copy = document.createElement("button");
   copy.className = `${ROOT_CLASS}-copy`;
-  copy.type = 'button';
-  copy.textContent = 'copy';
-  copy.addEventListener('click', (e) => {
+  copy.type = "button";
+  copy.textContent = "copy";
+  copy.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard?.writeText(art.text).then(() => {
-      copy.textContent = 'copied';
-      setTimeout(() => (copy.textContent = 'copy'), 1200);
+    navigator.clipboard?.writeText(art.repr).then(() => {
+      copy.textContent = "copied";
+      setTimeout(() => (copy.textContent = "copy"), 1200);
     });
   });
   summary.appendChild(copy);
   details.appendChild(summary);
 
-  const scroll = document.createElement('div');
+  const scroll = document.createElement("div");
   scroll.className = `${ROOT_CLASS}-scroll`;
-  const pre = document.createElement('pre');
+  const pre = document.createElement("pre");
   pre.className = `${ROOT_CLASS}-pre`;
-  pre.innerHTML = highlightRepr(art.text); // tokens are HTML-escaped by highlightRepr
+  pre.innerHTML = highlightRepr(art.repr); // tokens are HTML-escaped by highlightRepr
   scroll.appendChild(pre);
   details.appendChild(scroll);
   return details;
 }
 
 function makeTask(task: TaskData): HTMLElement {
-  const details = document.createElement('details');
+  const details = document.createElement("details");
   details.className = `${ROOT_CLASS}-task`;
   details.open = true;
 
-  const summary = document.createElement('summary');
+  const summary = document.createElement("summary");
   summary.className = `${ROOT_CLASS}-summary`;
 
-  const kind = document.createElement('span');
+  const kind = document.createElement("span");
   kind.className = `${ROOT_CLASS}-kind`;
   kind.textContent = task.kind;
   summary.appendChild(kind);
 
   if (task.id) {
-    const id = document.createElement('span');
+    const id = document.createElement("span");
     id.className = `${ROOT_CLASS}-id`;
     id.textContent = task.id;
     summary.appendChild(id);
   }
 
-  const meta = document.createElement('span');
+  const meta = document.createElement("span");
   meta.className = `${ROOT_CLASS}-meta`;
   const n = task.artifacts.length;
-  meta.textContent = `${n} artifact${n === 1 ? '' : 's'}`;
+  meta.textContent = `${n} artifact${n === 1 ? "" : "s"}`;
   summary.appendChild(meta);
   details.appendChild(summary);
 
-  const body = document.createElement('div');
+  const body = document.createElement("div");
   body.className = `${ROOT_CLASS}-body`;
   for (const art of task.artifacts) body.appendChild(makeArtifact(art));
   details.appendChild(body);
@@ -93,17 +124,17 @@ function makeTask(task: TaskData): HTMLElement {
 }
 
 export function drawTasks(el: HTMLElement, tasks: TaskData[]): void {
-  el.innerHTML = '';
+  el.innerHTML = "";
   el.classList.add(ROOT_CLASS);
 
-  const style = document.createElement('style');
+  const style = document.createElement("style");
   style.textContent = TASK_STYLE;
   el.appendChild(style);
 
   if (!tasks || tasks.length === 0) {
-    const empty = document.createElement('div');
+    const empty = document.createElement("div");
     empty.className = `${ROOT_CLASS}-placeholder`;
-    empty.textContent = 'No tasks.';
+    empty.textContent = "No tasks.";
     el.appendChild(empty);
     return;
   }
