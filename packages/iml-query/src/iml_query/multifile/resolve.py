@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
@@ -105,8 +106,19 @@ type _ResolveState = tuple[
 ]
 
 
+def os_path_reader(path: Path) -> str:
+    path_ = path.resolve()
+    if not path_.exists():
+        raise IMLModuleNotFoundError(str(path_))
+    return path_.read_text()
+
+
+type PathReader = Callable[[Path], str]
+
+
 def resolve(
     entry_path: Path,
+    path_reader: PathReader = os_path_reader,
 ) -> list[IMLModule] | IMLImportResolutionError:
     """
     Resolve all modules starting from an entry file.
@@ -114,10 +126,22 @@ def resolve(
     Returns a topologically sorted list of IMLModule (leaves first,
     entry module last), suitable for mk_monolith_iml.
     On failure, returns the error as a value.
+
+    Args:
+        entry_path: Path to the entry .iml file.
+        path_reader: Function mapping a resolved absolute path to its source
+            code. Defaults to reading from the filesystem; pass a custom reader
+            to resolve against a bundle of pre-loaded modules.
+
+    Raises:
+        IMLModuleNotFoundError: If the entry path or any imported module is not found.
+
+    Returns:
+        A topologically sorted list of IMLModule (leaves first,
+        entry module last), suitable for mk_monolith_iml.
+        On failure, returns the error as a value.
+
     """
-    entry_path = entry_path.resolve()
-    if not entry_path.exists():
-        return IMLModuleNotFoundError(str(entry_path))
 
     def loop(
         file_path: Path,
@@ -134,7 +158,10 @@ def resolve(
 
         in_progress = in_progress | {file_path}
 
-        iml_src = file_path.read_text()
+        try:
+            iml_src = path_reader(file_path)
+        except IMLModuleNotFoundError as err:
+            return err
         imports = parse_imports(iml_src)
         module_name = name_override or _module_name_from_path(file_path)
 
@@ -149,8 +176,6 @@ def resolve(
                 return NotImplementedImportError(imp_path)
 
             dep_path = (base_dir / imp_path).resolve()
-            if not dep_path.exists():
-                return IMLModuleNotFoundError(imp_path)
 
             dep_name: str | None = None
             if imp.import_name is not None:
@@ -190,9 +215,13 @@ class Library:
         self.modules = modules
 
     @classmethod
-    def from_entry_path(cls, entry_path: Path) -> Self:
+    def from_entry_path(
+        cls,
+        entry_path: Path,
+        path_reader: PathReader = os_path_reader,
+    ) -> Self:
         """Create a library from an entry file."""
-        result = resolve(entry_path)
+        result = resolve(entry_path, path_reader)
         if isinstance(result, IMLImportResolutionError):
             raise result
         return cls(modules=result)
