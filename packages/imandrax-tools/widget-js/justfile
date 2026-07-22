@@ -1,0 +1,5 @@
+default:
+    just --list
+
+gen-ts-widget-types-from-py:
+    uv run scripts/gen_py2ts_types.py

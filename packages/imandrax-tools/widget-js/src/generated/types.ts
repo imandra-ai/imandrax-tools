@@ -88,6 +88,8 @@ export interface TaskEntry {
 }
 export interface ArtifactEntry {
   kind: string;
-  text: string;
-  icon: string | null;
+  /**
+   * Pretty-printed imandrax_api.lib value
+   */
+  repr: string;
 }
