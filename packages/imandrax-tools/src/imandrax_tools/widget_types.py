@@ -11,7 +11,7 @@ from imandrax_api_models.pp.xtype import (
     config_items_of_art,
     to_string as string_of_xtype,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
@@ -55,7 +55,7 @@ class HasTasks(Protocol):
 
 class ArtifactEntry(BaseModel):
     kind: str
-    text: str
+    text: str = Field(description='Pretty-printed imandrax_api.lib value')
     icon: str | None
 
 
