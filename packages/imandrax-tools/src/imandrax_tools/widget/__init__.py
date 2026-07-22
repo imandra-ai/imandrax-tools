@@ -22,12 +22,13 @@ from typing import Any, Self
 import anywidget
 import traitlets
 from imandrax_api_models import CodeSnippetEvalResult, DecomposeRes, EvalRes
+from imandrax_api_models.artifacts import artifact_reprs_of_tasks, mk_task_entry
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 
 from imandrax_tools.idf.viz_view import View as IDFView
-from imandrax_tools.widget_types import HasTasks, collect_tasks_artifacts
+from imandrax_tools.widget_types import HasTasks
 
 _DIST = Path(__file__).parent / 'static'
 
@@ -48,7 +49,7 @@ class TasksWidget(anywidget.AnyWidget):
     def from_has_tasks(
         cls, obj: HasTasks, c: ImandraXClient | ImandraXAsyncClient
     ) -> Self:
-        entries = collect_tasks_artifacts(obj.tasks, c)
+        entries = artifact_reprs_of_tasks(obj.tasks, c)
         return cls(
             task_entries=[e.model_dump(mode='json') for e in entries],
             api_resp_with_tasks=obj,

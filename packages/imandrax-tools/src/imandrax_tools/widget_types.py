@@ -2,20 +2,9 @@
 
 from __future__ import annotations
 
-import asyncio
-from typing import TYPE_CHECKING, Any, Protocol, assert_never
+from typing import Protocol
 
-import imandrax_api.lib as xtype
 from imandrax_api_models import Task
-from imandrax_api_models.pp.xtype import (
-    config_items_of_art,
-    to_string as string_of_xtype,
-)
-from pydantic import BaseModel, Field
-
-if TYPE_CHECKING:
-    from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
-
 
 STATUS_EMOJI = {
     'success': '✅',
@@ -33,89 +22,16 @@ STATUS_EMOJI = {
 }
 
 
-def status_emoji_of_art(kind: str, xval: Any) -> str | None:
-    match kind, xval:
-        case 'po_res', _:
-            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
-                if 'success' in type(xval.res).__name__:  # pyright: ignore[reportUnknownArgumentType, reportUnknownMemberType]
-                    return STATUS_EMOJI['success']
-                elif isinstance(xval.res, xtype.Tasks_PO_res_error_No_proof):  # pyright: ignore[reportUnknownMemberType]
-                    return STATUS_EMOJI['warning']
-                else:
-                    return STATUS_EMOJI['error']
-            else:
-                return STATUS_EMOJI['unknown']
-        case _, _:
-            return None
+def status_emoji_of_art_repr(art_kind: str, repr: str) -> str | None:
+    if art_kind == 'po_res':
+        if 'res=POSuccessProof' in repr:
+            return STATUS_EMOJI['success']
+        elif 'res=POErrorNoProof' in repr:
+            return STATUS_EMOJI['warning']
+        else:
+            return STATUS_EMOJI['error']
+    return None
 
 
 class HasTasks(Protocol):
     tasks: list[Task]
-
-
-class ArtifactEntry(BaseModel):
-    kind: str
-    text: str = Field(description='Pretty-printed imandrax_api.lib value')
-    icon: str | None
-
-
-class TaskEntry(BaseModel):
-    id: str
-    kind: str
-    artifacts: list[ArtifactEntry]
-
-
-def mk_task_entry(task: Task, artifacts: dict[str, Any]) -> TaskEntry:
-    """
-    _
-
-    Args:
-        task: _
-        artifacts: A dictionary of artifact kind to xvalue.
-
-    """
-    config_items: dict[str, Any] = {}
-    for a_kind, xval in artifacts.items():
-        # NOTE: simple right-win merge. Conflicts are not handled.
-        config_items.update(config_items_of_art(a_kind, xval))
-
-    return TaskEntry(
-        # TODO: should we really allow empty task ids? shouldn't we raise a hard error here?
-        id=task.id.id if task.id else '',
-        kind=task.kind.value,
-        artifacts=[
-            ArtifactEntry(
-                kind=a_kind,
-                text=string_of_xtype(xval, **dict(config_items)),
-                icon=status_emoji_of_art(a_kind, xval),
-            )
-            for a_kind, xval in artifacts.items()
-        ],
-    )
-
-
-def collect_tasks_artifacts(
-    tasks: list[Task], c: ImandraXClient | ImandraXAsyncClient
-) -> list[TaskEntry]:
-    """Fetch + decode + pretty-print artifacts for each task into trait data."""
-    from imandrax_api_models.client import (
-        ImandraXAsyncClient,
-        ImandraXClient,
-        async_get_task_artifacts,
-        get_task_artifacts,
-    )
-
-    match c:
-        case ImandraXClient():
-            return [mk_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
-        case ImandraXAsyncClient() as ac:
-
-            async def _gather() -> list[TaskEntry]:
-                artifacts = await asyncio.gather(
-                    *[async_get_task_artifacts(t, ac) for t in tasks]
-                )
-                return [mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
-
-            return asyncio.run(_gather())
-        case _:
-            assert_never(c)
