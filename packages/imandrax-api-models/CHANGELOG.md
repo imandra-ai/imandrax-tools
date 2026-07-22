@@ -3,6 +3,9 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+## [20.4.5] - 26-07-22
+- PP: ignore duplicated TacticEvalErr in case of refuted and unknown VG
+
 ## [20.4.4] - 26-07-21
 - Miscellaneous pp tweaks
 
