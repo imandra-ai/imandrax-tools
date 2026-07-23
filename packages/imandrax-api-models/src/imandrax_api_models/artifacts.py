@@ -67,9 +67,11 @@ class TasksRepr(BaseModel):
     tasks: list[TaskEntry]
     other: JSONObject = Field(default_factory=dict)
 
-    def to_json(self) -> JSONObject:
+    def to_json(self, skip_task_without_artifacts: bool = False) -> JSONObject:
         res: JSONObject = {}
         for task in self.tasks:
+            if skip_task_without_artifacts and len(task.artifacts) == 0:
+                continue
             res[task.name] = [art.to_json() for art in task.artifacts]
         res |= self.other
         return res
@@ -106,19 +108,24 @@ def repr_tasks(
             proved_po_tasks.append(f'({i}) {po_task_overview}')
             continue
 
+        art_entries: list[ArtifactEntry] = []
         for a_kind, xval in art_kind_to_xval.items():
             xval_str = xtype_to_string(xval, summarize_po_task=True)
-            if task.id is None:
-                raise ValueError(f'Task {i} has no id')
-            task_repr = TaskEntry(
-                idx=i,
-                id=task.id.id,
-                kind=task.kind.value,
-                artifacts=[ArtifactEntry(kind=a_kind, repr=xval_str)],
-            )
-            tasks_repr.append(task_repr)
+            art_entries.append(ArtifactEntry(kind=a_kind, repr=xval_str))
 
-    return tasks_repr, {'proved_po_tasks': proved_po_tasks}
+        if task.id is None:
+            raise ValueError(f'Task {i} has no id')
+        task_repr = TaskEntry(
+            idx=i,
+            id=task.id.id,
+            kind=task.kind.value,
+            artifacts=art_entries,
+        )
+        tasks_repr.append(task_repr)
+
+    return tasks_repr, {'proved_po_tasks': proved_po_tasks} if len(
+        proved_po_tasks
+    ) > 0 else {}
 
 
 def mk_task_entry(task: Task, artifacts: Mapping[str, XValue]) -> TaskEntry:
@@ -164,9 +171,12 @@ def artifact_reprs_of_tasks(
         case ImandraXAsyncClient() as ac:
 
             async def _gather() -> list[TaskEntry]:
-                artifacts = await asyncio.gather(
-                    *[async_get_task_artifacts(t, ac) for t in tasks]
-                )
+                # `async_get_task_artifacts` no longer manages the client
+                # context, so hold the session open for the whole batch.
+                async with ac as c:
+                    artifacts = await asyncio.gather(
+                        *[async_get_task_artifacts(t, c) for t in tasks]
+                    )
                 return [mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
 
             return asyncio.run(_gather())
