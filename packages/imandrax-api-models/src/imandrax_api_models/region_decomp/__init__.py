@@ -10,7 +10,13 @@ from typing import Annotated, Any, NamedTuple, Self, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
-from pydantic import BaseModel, Field, PlainSerializer, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PlainSerializer,
+    computed_field,
+    model_validator,
+)
 
 from imandrax_api_models.proto_models import DecomposeRes
 
@@ -82,6 +88,13 @@ class EnrichedDecomposeRes(DecomposeRes):
     def from_decomp_res(cls, v: DecomposeRes) -> EnrichedDecomposeRes:
         return cls.model_validate(v.model_dump())
 
+    @computed_field(
+        description=(
+            'View of region groups (hierarchical info).'
+            'Pre-computed to bypass MIR-related computations after serialization.'
+        )
+    )
+    @property
     def region_group_views(self) -> list[RegionGroupView]:
         return [RegionGroupView.from_region_group(g) for g in self.region_groups]
 
