@@ -80,7 +80,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
             else EnrichedDecomposeRes.from_decomp_res(decomp_res)
         )
         return cls(
-            data=[v.model_dump(mode='json') for v in enriched.region_group_views],
+            data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
             decomp_res=enriched,
         )
 

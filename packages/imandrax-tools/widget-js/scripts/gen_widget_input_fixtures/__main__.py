@@ -4,7 +4,7 @@ Generate JS test fixtures for widgets from real API output.
 Each fixture is the *exact widget input* -- the list the Python side syncs to
 the frontend traitlet, not the raw API response:
 
-- decomp -> `EnrichedDecomposeRes.region_group_views`  (the `data` traitlet)
+- decomp -> `EnrichedDecomposeRes.region_group_views()`  (the `data` traitlet)
 - tasks  -> `collect_tasks_artifacts(eval_res.tasks, c)`  (the `task_entries` traitlet)
 
 Flag:
@@ -68,7 +68,7 @@ def decomp_widget_input(decompose_name: str, iml: str) -> list[dict[str, Any]]:
     c.eval_src(iml)
     decomp_res = c.decompose(name=decompose_name, string_results=True, prune=True)
     enriched = EnrichedDecomposeRes.from_decomp_res(decomp_res)
-    return [v.model_dump(mode='json') for v in enriched.region_group_views]
+    return [v.model_dump(mode='json') for v in enriched.region_group_views()]
 
 
 def tasks_widget_input(iml: str) -> list[dict[str, Any]]:
