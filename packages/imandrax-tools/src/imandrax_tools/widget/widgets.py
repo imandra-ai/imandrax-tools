@@ -7,6 +7,7 @@ Widgets are backed by JS bundles under `widget/static`:
 Each widget also overrides `_repr_mimebundle_` to fall back to a `text/plain`
 pretty-print when there is nothing to render (no tasks / decomposition errors).
 """
+# TODO: have a more systematic way to handle failed case (api resp)
 
 from __future__ import annotations
 
@@ -16,7 +17,7 @@ from typing import Any, Self
 import anywidget
 import traitlets
 from imandrax_api_models import DecomposeRes
-from imandrax_api_models.artifacts import artifact_reprs_of_tasks
+from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
@@ -48,6 +49,10 @@ class TasksWidget(anywidget.AnyWidget):
             task_entries=[e.model_dump(mode='json') for e in entries],
             api_resp_with_tasks=obj,
         )
+
+    @classmethod
+    def from_tasks_repr(cls, obj: TasksRepr) -> Self:
+        return cls(task_entries=[e.model_dump(mode='json') for e in obj.tasks])
 
     def _repr_mimebundle_(self, **kwargs: Any) -> Any:
         if len(self.task_entries) == 0:
