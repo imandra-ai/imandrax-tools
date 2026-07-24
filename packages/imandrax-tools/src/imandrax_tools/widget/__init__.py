@@ -22,7 +22,7 @@ from typing import Any, Self
 import anywidget
 import traitlets
 from imandrax_api_models import CodeSnippetEvalResult, DecomposeRes, EvalRes
-from imandrax_api_models.artifacts import artifact_reprs_of_tasks, mk_task_entry
+from imandrax_api_models.artifacts import artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import string_of_model as xapi_to_string
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
