@@ -459,6 +459,7 @@ type FormattableModel = (
     | Error
     | ErrorMessage
     | EvalRes
+    | DecomposeRes_
     | DecomposeRes
     | EnrichedDecomposeRes
 )
@@ -477,6 +478,8 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
             return format_error(model)
         case EvalRes():
             return format_eval_res(model)
+        case DecomposeRes_():
+            return format_decomp_res_(model)
         case EnrichedDecomposeRes():
             return format_enriched_decomp_res(model)
         case DecomposeRes():
