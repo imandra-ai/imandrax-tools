@@ -20,7 +20,7 @@ from imandrax_api_models import DecomposeRes
 from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import string_of_model as xapi_to_string
-from imandrax_api_models.region_decomp import EnrichedDecomposeRes
+from imandrax_api_models.region_decomp import DecomposeRes_, EnrichedDecomposeRes
 
 from imandrax_tools.idf.viz_view import View as IDFView
 from imandrax_tools.widget_types import HasTasks
@@ -82,6 +82,16 @@ class RegionDecompWidget(anywidget.AnyWidget):
         return cls(
             data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
             decomp_res=enriched,
+        )
+
+    @classmethod
+    def from_decomp_res_(cls, decomp_res: DecomposeRes_) -> Self:
+        region_group_views = decomp_res.artifact
+        if not isinstance(region_group_views, list):
+            raise ValueError('Regions are not parsed')
+        return cls(
+            data=[r.model_dump(mode='json') for r in region_group_views],
+            decomp_res=decomp_res,
         )
 
     def _repr_mimebundle_(self, **kwargs: Any) -> Any:
