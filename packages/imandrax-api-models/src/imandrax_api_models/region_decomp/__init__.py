@@ -1,4 +1,13 @@
-"""Post-processing (hierarchical grouping) for region decomposition."""
+"""
+Post-processing (hierarchical grouping) for region decomposition.
+
+On different "stat":
+    - region and group carry different information. They have overlaps.
+    - thus, three _distinct_ stats can be computed:
+        - pure region stat (without hierarchical info provided by the group)
+        - pure group stat (pure hierarchical info)
+        - overlapped stat (info that is both region and group): constraint
+"""
 
 from __future__ import annotations
 
@@ -91,9 +100,8 @@ class EnrichedDecomposeRes(DecomposeRes):
         ds: JSONArray = []
         for leaf_group in leaf_groups:
             d: JSONObject = {}
+            d |= leaf_group.pure_group_stat()
             assert leaf_group.region is not None, 'Leaf group must be concrete'
-            d['label_path'] = '.'.join(map(str, leaf_group.label_path))
-            d['weight'] = leaf_group.weight
             d |= cast(JSONObject, leaf_group.region.stat())
             ds.append(d)
         return ds
@@ -146,6 +154,12 @@ class RegionGroup(BaseModel):
     children: list[RegionGroup] = Field(
         default_factory=lambda: [], description='Sub-groups under this node.'
     )
+
+    def pure_group_stat(self) -> JSONObject:
+        d: JSONObject = {}
+        d['label_path'] = '.'.join(map(str, self.label_path))
+        d['weight'] = self.weight
+        return d
 
     def n_regions(self) -> int:
         """Total regions in this subtree, including self."""
