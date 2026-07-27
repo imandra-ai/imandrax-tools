@@ -5,6 +5,9 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 */
 
+export type JSONValue = string | number | boolean | JSONObject | JSONArray | null;
+export type JSONArray = JSONValue[];
+
 /**
  * The IDF widget entry model: the layered region graph the JS renders.
  */
@@ -57,15 +60,22 @@ export interface Edge {
   dst_id: number;
 }
 /**
- * The single source of truth for the shape the JS region-decomp widget consumes
- *
  * RegionGroup but with `region` replaced with `region_stat`
  */
 export interface RegionGroupView {
-  label_path: number[];
+  /**
+   * Full accumulated constraint path from root to this node (root-first).`constraints[-1]` is the constraint introduced at this node's own level.
+   */
   constraints: string[];
+  /**
+   * Positional index path from root to this node (root-first, 1-indexed).Each element is the sibling index at that depth. Displayed as e.g. `1.2.3`.Levels where a constraint applies to all regions are skipped, so the pathlength may be shorter than the tree depth.
+   */
+  label_path: number[];
+  /**
+   * Number of regions in the partition at this node's level.
+   */
   weight: number;
-  region_stat?: RegionNonGroupStat | null;
+  region?: RegionNonGroupStat | null;
   children?: RegionGroupView[];
 }
 /**
@@ -81,10 +91,15 @@ export interface RegionNonGroupStat {
     | null;
   model_eval?: string | null;
 }
+/**
+ * Repr for one single task
+ */
 export interface TaskEntry {
+  idx?: number | null;
   id: string;
   kind: string;
   artifacts: ArtifactEntry[];
+  other?: JSONObject;
 }
 export interface ArtifactEntry {
   kind: string;
@@ -92,4 +107,7 @@ export interface ArtifactEntry {
    * Pretty-printed imandrax_api.lib value
    */
   repr: string;
+}
+export interface JSONObject {
+  [k: string]: JSONValue;
 }
