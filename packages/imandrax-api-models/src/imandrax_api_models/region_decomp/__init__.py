@@ -15,13 +15,14 @@ from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
 from types import SimpleNamespace
-from typing import Annotated, Any, NamedTuple, Self, cast
+from typing import Annotated, Any, NamedTuple, Protocol, Self, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
 from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
 from imandrax_api_models.proto_models import DecomposeRes
+from imandrax_api_models.proto_models.simple_api import Art, DecomposeResProto
 
 from ._common import (
     AssocList as AssocList,
@@ -59,6 +60,54 @@ def eq_term_with_pp(left: xtype.Mir_Term, right: xtype.Mir_Term) -> bool:
 def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
     regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
     return group_regions(regions)
+
+
+class DecomposeRes_(DecomposeResProto):
+    # - This class will replace DecomposeRes, EnrichedDecomposeRes
+    # - It removs artifact after it's parsed
+    # - carry groups
+    # - RegionGroupView will be the only type representing parsed regions
+    #   - by then, it should be renamed to without the `View` suffix
+    # - types in ._region needs a unifying cleanup as well
+    artifact: list[RegionGroupView] | Art | None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
+        default=None, exclude_if=lambda v: v is None
+    )
+
+    @property
+    def regions(self) -> JSONArray | None:
+        if not isinstance(self.artifact, list):
+            return None
+        groups = self.artifact
+        leaf_groups = get_leaf_groups(groups)
+        ds: JSONArray = []
+        for leaf_group in leaf_groups:
+            d: JSONObject = {}
+            d |= leaf_group.pure_group_stat()
+            assert leaf_group.region is not None, 'Never: Leaf group must be concrete'
+            region_non_group_stat = leaf_group.region
+            d |= cast(JSONObject, region_non_group_stat)
+            ds.append(d)
+        return ds
+
+    @staticmethod
+    def decode_artifact(art: Art) -> list[RegionGroupView]:
+        mir_regions: list[xtype.Mir_Region_Region] = mir_regions_of_fun_decomp_artifact(
+            art
+        )
+        regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
+        region_groups = group_regions(regions)
+        region_group_views = [
+            RegionGroupView.from_region_group(g) for g in region_groups
+        ]
+        return region_group_views
+
+    @classmethod
+    def from_decomp_res(cls, v: DecomposeResProto) -> Self:
+        if v.artifact is None:
+            return cls(artifact=None)
+        return cls(artifact=cls.decode_artifact(v.artifact))
+
+    # TODO: backward-compatible methods: iml_test_cases, test_docstrs
 
 
 class EnrichedDecomposeRes(DecomposeRes):
@@ -230,8 +279,14 @@ class RegionGroupView(RegionGroup):
         )
 
 
-def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
-    leaves: list[RegionGroup] = []
+class HasChildren(Protocol):
+    children: list[Self]
+
+
+def get_leaf_groups[T: HasChildren](
+    groups: Sequence[T],
+) -> Sequence[T]:
+    leaves: list[T] = []
     for group in groups:
         if not group.children:
             leaves.append(group)
