@@ -161,41 +161,34 @@ class RegionGroup(BaseModel):
         d['weight'] = self.weight
         return d
 
-    def n_regions(self) -> int:
+    def _n_regions(self) -> int:
         """Total regions in this subtree, including self."""
-        return 1 + sum(c.n_regions() for c in self.children)
+        return 1 + sum(c._n_regions() for c in self.children)
 
-    def n_descendant_regions(self) -> int:
+    def _n_descendant_regions(self) -> int:
         """Total descendant regions in this subtree, excluding self."""
-        return self.n_regions() - 1
+        return self._n_regions() - 1
 
-    def n_leaf_regions(self) -> int:
+    def _n_leaf_regions(self) -> int:
         """Total leaf regions in this subtree, counting self if no children."""
         if not self.children:
             return 1
-        return sum(c.n_leaf_regions() for c in self.children)
+        return sum(c._n_leaf_regions() for c in self.children)
 
-    def describe(self) -> JSONObject:
+    def _describe(self) -> JSONObject:
         d: JSONObject = {}
         d['label_path'] = '.'.join(map(str, self.label_path))
         d['constraints'] = self.constraints
         d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
         d['weight'] = self.weight
-        d['n_leaf_regions'] = self.n_leaf_regions()
+        d['n_leaf_regions'] = self._n_leaf_regions()
         if (r := self.region) is not None:
             d['region'] = r.non_group_stat().model_dump(exclude_none=True)
         return d
 
-    def to_json_dict(self) -> JSONObject:
-        """Serialize to a d3-hierarchy-compatible dict, recursing into children."""
-        d = self.describe()
-        if self.children:
-            d['children'] = [c.to_json_dict() for c in self.children]
-        return d
-
     def repr_line(self) -> str:
         """One-line representation of the region group."""
-        d = self.describe()
+        d = self._describe()
         parts: list[str] = []
         parts.append(f'[{d["label_path"]}]')
         parts.append(f"new_constraint='{d['introduced_constraint']}'")
@@ -307,7 +300,7 @@ def _tree_lines(
     child_prefix = prefix + ('    ' if is_last else '│   ')
     if depth_limit is not None and depth_limit <= 0 and group.children:
         lines.append(
-            f'{child_prefix}└── ... ({len(group.children)} children, {group.n_descendant_regions()} descendants)'
+            f'{child_prefix}└── ... ({len(group.children)} children, {group._n_descendant_regions()} descendants)'  # pyright: ignore[reportPrivateUsage]
         )
         return
     next_limit = None if depth_limit is None else depth_limit - 1
