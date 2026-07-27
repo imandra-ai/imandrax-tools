@@ -287,7 +287,8 @@ class RegionGroupView(RegionGroup):
 
 
 class HasChildren(Protocol):
-    children: list[Self]
+    @property
+    def children(self) -> Sequence[HasChildren]: ...
 
 
 def get_leaf_groups[T: HasChildren](
@@ -298,7 +299,9 @@ def get_leaf_groups[T: HasChildren](
         if not group.children:
             leaves.append(group)
         else:
-            leaves.extend(get_leaf_groups(group.children))
+            # A node's children are the same concrete type as the node itself,
+            # which the structural `HasChildren` bound can't express.
+            leaves.extend(cast(Sequence[T], get_leaf_groups(group.children)))
     return leaves
 
 
