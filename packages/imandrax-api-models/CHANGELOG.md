@@ -3,6 +3,12 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+## [20.5.0] - 26-07-27
+- add `TasksRepr` for task widget serialization
+- add unify task repr (upstream from `imandrax_tools.widget`)
+- FIX(client): get artifact incorrectly enter and close async context
+- unify DecomposeRes type: avoid serialization issue with MIR regions, carry one representation of parsed region (and group)
+
 ## [20.4.5] - 26-07-22
 - PP: ignore duplicated TacticEvalErr in case of refuted and unknown VG
 
