@@ -63,14 +63,14 @@ describe("task", () => {
     );
     expect(kinds).toEqual(admitRec[0].artifacts.map((a) => a.kind));
     expect(el.querySelector(".imdx-task-pre").textContent).toBe(
-      admitRec[0].artifacts[0].text,
+      admitRec[0].artifacts[0].repr,
     );
   });
 
   it("shows an artifact's status icon when present, and omits it otherwise", () => {
     const arts = render(admitRec).querySelectorAll(".imdx-task-art");
-    // po_task has no icon; po_res carries one (see fixture).
-    expect(admitRec[0].artifacts.map((a) => a.icon)).toEqual([null, "✅"]);
+    // Icons are computed in TS from the artifact repr: po_task gets none;
+    // po_res whose repr carries res=POSuccessProof resolves to ✅.
     expect(arts[0].querySelector(".imdx-task-art-icon")).toBeNull();
     expect(arts[1].querySelector(".imdx-task-art-icon").textContent).toBe("✅");
   });
@@ -83,7 +83,7 @@ describe("task", () => {
     expect(pre.querySelector(".t-attr")).not.toBeNull(); // from_sym=
     expect(pre.querySelector(".t-str")).not.toBeNull(); // 'len_append'
     // ...but the concatenated text is still byte-for-byte the original.
-    expect(pre.textContent).toBe(longProof[0].artifacts[0].text);
+    expect(pre.textContent).toBe(longProof[0].artifacts[0].repr);
   });
 
   it("tolerates an empty task list", () => {

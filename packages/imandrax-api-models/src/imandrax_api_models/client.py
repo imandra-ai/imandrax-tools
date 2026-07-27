@@ -896,18 +896,18 @@ async def async_get_task_artifacts(
     xtype = imandrax_api.lib
     twine = imandrax_api.lib.twine
 
-    async with c as c:
-        art_kinds = (await c.list_artifacts(task)).kinds
-        art_kinds = _sort_artifact_kinds(art_kinds)
+    # NOTE: we don't do `async with c ...` here b/c on __aexit__ aiohttp session will be closed.
+    art_kinds = (await c.list_artifacts(task)).kinds
+    art_kinds = _sort_artifact_kinds(art_kinds)
 
-        # artifact-kind -> xvalue decoded from artifact
-        xvalues: dict[str, Any] = {}
-        for art_kind in art_kinds:
-            if art_kind in exclude_artifact_kinds:
-                continue
-            art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
-            d = twine.Decoder(art.data)
-            x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
-            xvalues[art_kind] = x_value
+    # artifact-kind -> xvalue decoded from artifact
+    xvalues: dict[str, Any] = {}
+    for art_kind in art_kinds:
+        if art_kind in exclude_artifact_kinds:
+            continue
+        art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
+        d = twine.Decoder(art.data)
+        x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
+        xvalues[art_kind] = x_value
 
     return xvalues

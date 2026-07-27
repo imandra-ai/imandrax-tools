@@ -12,7 +12,7 @@
     "dev": "esbuild src/region_decomp/index.ts --bundle --format=esm --watch --outfile=../src/imandrax_tools/widget/static/region_decomp.js",
     "dev:task": "esbuild src/task/index.ts --bundle --format=esm --watch --outfile=../src/imandrax_tools/widget/static/task.js",
     "dev:idf": "esbuild src/idf/index.ts --bundle --format=esm --watch --outfile=../src/imandrax_tools/widget/static/idf.js",
-    "gallery": "node scripts/gallery/build_gallery.mjs",
+    "build:gallery": "node scripts/gallery/build_gallery.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

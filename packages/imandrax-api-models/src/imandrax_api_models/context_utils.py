@@ -10,6 +10,7 @@ from collections.abc import Collection, MutableMapping, MutableSequence
 from typing import Any, Literal, assert_never, cast, get_args
 
 from imandrax_api_models import (
+    Art,
     DecomposeRes,
     Error,
     ErrorKind,
@@ -22,7 +23,7 @@ from imandrax_api_models import (
     Position,
     VerifyRes,
 )
-from imandrax_api_models.region_decomp import EnrichedDecomposeRes
+from imandrax_api_models.region_decomp import DecomposeRes_, EnrichedDecomposeRes
 
 type JSONValue = str | int | float | bool | None | JSONObject | JSONArray
 type JSONObject = MutableMapping[str, JSONValue]
@@ -401,6 +402,26 @@ def format_vg_res(vg_res: VerifyRes | InstanceRes) -> JSONObject:
     return out
 
 
+def format_decomp_res_(decomp_res: DecomposeRes_) -> JSONObject:
+    d: dict[str, Any] = {}
+    if len(decomp_res.errors) > 0:
+        d['description'] = 'Decomp failed'
+        d['errors'] = [format_error(e) for e in decomp_res.errors]
+    elif isinstance(decomp_res.artifact, None | Art):
+        d['description'] = (
+            'Decomp succeeded with no parsed region:'
+            'Please investigate artifact and task details'
+        )
+    else:
+        regions = decomp_res.regions
+        assert regions is not None, (
+            'Never: decoded artifact should make regions non-None'
+        )
+        d['description'] = f'Decomp succeeded with {len(regions)} regions'
+        d['regions'] = regions
+    return d
+
+
 def format_decomp_res(decomp_res: DecomposeRes | EnrichedDecomposeRes) -> JSONObject:
     d: dict[str, Any] = {}
     if len(decomp_res.errors) > 0:
@@ -443,6 +464,7 @@ type FormattableModel = (
     | Error
     | ErrorMessage
     | EvalRes
+    | DecomposeRes_
     | DecomposeRes
     | EnrichedDecomposeRes
 )
@@ -461,10 +483,10 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
             return format_error(model)
         case EvalRes():
             return format_eval_res(model)
+        case DecomposeRes_():
+            return format_decomp_res_(model)
         case EnrichedDecomposeRes():
-            return format_enriched_decomp_res(
-                EnrichedDecomposeRes.from_decomp_res(model)
-            )
+            return format_enriched_decomp_res(model)
         case DecomposeRes():
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))

@@ -1,4 +1,13 @@
-"""Post-processing (hierarchical grouping) for region decomposition."""
+"""
+Post-processing (hierarchical grouping) for region decomposition.
+
+On different "stat":
+    - region and group carry different information. They have overlaps.
+    - thus, three _distinct_ stats can be computed:
+        - pure region stat (without hierarchical info provided by the group)
+        - pure group stat (pure hierarchical info)
+        - overlapped stat (info that is both region and group): constraint
+"""
 
 from __future__ import annotations
 
@@ -6,13 +15,14 @@ from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
 from types import SimpleNamespace
-from typing import Annotated, Any, NamedTuple, Self, cast
+from typing import Annotated, Any, NamedTuple, Protocol, Self, cast
 
 import imandrax_api.lib as xtype
 from devtools import pformat
 from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
 from imandrax_api_models.proto_models import DecomposeRes
+from imandrax_api_models.proto_models.simple_api import Art, DecomposeResProto
 
 from ._common import (
     AssocList as AssocList,
@@ -50,6 +60,61 @@ def eq_term_with_pp(left: xtype.Mir_Term, right: xtype.Mir_Term) -> bool:
 def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
     regions = [Region.from_mir_region(r) for r in fun_decomp.regions]
     return group_regions(regions)
+
+
+class DecomposeRes_(DecomposeResProto):
+    # - This class will replace DecomposeRes, EnrichedDecomposeRes
+    # - It removs artifact after it's parsed
+    # - carry groups
+    # - RegionGroupView will be the only type representing parsed regions
+    #   - by then, it should be renamed to without the `View` suffix
+    # - types in ._region needs a unifying cleanup as well
+    artifact: list[RegionGroupView] | Art | None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
+        default=None, exclude_if=lambda v: v is None
+    )
+
+    @property
+    def regions(self) -> JSONArray | None:
+        if not isinstance(self.artifact, list):
+            return None
+        groups = self.artifact
+        leaf_groups = get_leaf_groups(groups)
+        ds: JSONArray = []
+        for leaf_group in leaf_groups:
+            d: JSONObject = {}
+
+            # Pure group
+            d |= leaf_group.pure_group_stat()
+
+            # Constraints (both group and region)
+            d['constraints'] = leaf_group.constraints
+
+            # Pure region
+            assert leaf_group.region is not None, 'Never: Leaf group must be concrete'
+            region_non_group_stat = leaf_group.region
+            d |= cast(JSONObject, region_non_group_stat)
+            ds.append(d)
+        return ds
+
+    @staticmethod
+    def decode_artifact(art: Art) -> list[RegionGroupView]:
+        mir_regions: list[xtype.Mir_Region_Region] = mir_regions_of_fun_decomp_artifact(
+            art
+        )
+        regions = [Region.from_mir_region(mir_r) for mir_r in mir_regions]
+        region_groups = group_regions(regions)
+        region_group_views = [
+            RegionGroupView.from_region_group(g) for g in region_groups
+        ]
+        return region_group_views
+
+    @classmethod
+    def from_decomp_res(cls, v: DecomposeResProto) -> Self:
+        if v.artifact is None:
+            return cls(artifact=None)
+        return cls(artifact=cls.decode_artifact(v.artifact))
+
+    # TODO: backward-compatible methods: iml_test_cases, test_docstrs
 
 
 class EnrichedDecomposeRes(DecomposeRes):
@@ -91,9 +156,8 @@ class EnrichedDecomposeRes(DecomposeRes):
         ds: JSONArray = []
         for leaf_group in leaf_groups:
             d: JSONObject = {}
+            d |= leaf_group.pure_group_stat()
             assert leaf_group.region is not None, 'Leaf group must be concrete'
-            d['label_path'] = '.'.join(map(str, leaf_group.label_path))
-            d['weight'] = leaf_group.weight
             d |= cast(JSONObject, leaf_group.region.stat())
             ds.append(d)
         return ds
@@ -147,41 +211,40 @@ class RegionGroup(BaseModel):
         default_factory=lambda: [], description='Sub-groups under this node.'
     )
 
-    def n_regions(self) -> int:
+    def pure_group_stat(self) -> JSONObject:
+        d: JSONObject = {}
+        d['label_path'] = '.'.join(map(str, self.label_path))
+        d['weight'] = self.weight
+        return d
+
+    def _n_regions(self) -> int:
         """Total regions in this subtree, including self."""
-        return 1 + sum(c.n_regions() for c in self.children)
+        return 1 + sum(c._n_regions() for c in self.children)
 
-    def n_descendant_regions(self) -> int:
+    def _n_descendant_regions(self) -> int:
         """Total descendant regions in this subtree, excluding self."""
-        return self.n_regions() - 1
+        return self._n_regions() - 1
 
-    def n_leaf_regions(self) -> int:
+    def _n_leaf_regions(self) -> int:
         """Total leaf regions in this subtree, counting self if no children."""
         if not self.children:
             return 1
-        return sum(c.n_leaf_regions() for c in self.children)
+        return sum(c._n_leaf_regions() for c in self.children)
 
-    def describe(self) -> JSONObject:
+    def _describe(self) -> JSONObject:
         d: JSONObject = {}
         d['label_path'] = '.'.join(map(str, self.label_path))
         d['constraints'] = self.constraints
         d['introduced_constraint'] = self.constraints[-1] if self.constraints else ''
         d['weight'] = self.weight
-        d['n_leaf_regions'] = self.n_leaf_regions()
+        d['n_leaf_regions'] = self._n_leaf_regions()
         if (r := self.region) is not None:
             d['region'] = r.non_group_stat().model_dump(exclude_none=True)
         return d
 
-    def to_json_dict(self) -> JSONObject:
-        """Serialize to a d3-hierarchy-compatible dict, recursing into children."""
-        d = self.describe()
-        if self.children:
-            d['children'] = [c.to_json_dict() for c in self.children]
-        return d
-
     def repr_line(self) -> str:
         """One-line representation of the region group."""
-        d = self.describe()
+        d = self._describe()
         parts: list[str] = []
         parts.append(f'[{d["label_path"]}]')
         parts.append(f"new_constraint='{d['introduced_constraint']}'")
@@ -197,20 +260,11 @@ class RegionGroup(BaseModel):
         return ' '.join(parts)
 
 
-class RegionGroupView(BaseModel):
-    """
-    The single source of truth for the shape the JS region-decomp widget consumes
+class RegionGroupView(RegionGroup):
+    """RegionGroup but with `region` replaced with `region_stat`"""
 
-    RegionGroup but with `region` replaced with `region_stat`
-    """
-
-    # Widget node contract
-
-    label_path: list[int]
-    constraints: list[str]
-    weight: int
-    region_stat: RegionNonGroupStat | None = Field(default=None)
-    children: list[RegionGroupView] = Field(default_factory=lambda: [])
+    region: RegionNonGroupStat | None = Field(default=None)  # pyright: ignore[reportIncompatibleVariableOverride]
+    children: list[RegionGroupView] = Field(default_factory=lambda: [])  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @classmethod
     def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:
@@ -227,18 +281,27 @@ class RegionGroupView(BaseModel):
             label_path=rg.label_path,
             constraints=rg.constraints,
             weight=rg.weight,
-            region_stat=(rg.region.non_group_stat() if rg.region is not None else None),
+            region=(rg.region.non_group_stat() if rg.region is not None else None),
             children=[cls.from_region_group(c) for c in rg.children],
         )
 
 
-def get_leaf_groups(groups: list[RegionGroup]) -> list[RegionGroup]:
-    leaves: list[RegionGroup] = []
+class HasChildren(Protocol):
+    @property
+    def children(self) -> Sequence[HasChildren]: ...
+
+
+def get_leaf_groups[T: HasChildren](
+    groups: Sequence[T],
+) -> Sequence[T]:
+    leaves: list[T] = []
     for group in groups:
         if not group.children:
             leaves.append(group)
         else:
-            leaves.extend(get_leaf_groups(group.children))
+            # A node's children are the same concrete type as the node itself,
+            # which the structural `HasChildren` bound can't express.
+            leaves.extend(cast(Sequence[T], get_leaf_groups(group.children)))
     return leaves
 
 
@@ -293,7 +356,7 @@ def _tree_lines(
     child_prefix = prefix + ('    ' if is_last else '│   ')
     if depth_limit is not None and depth_limit <= 0 and group.children:
         lines.append(
-            f'{child_prefix}└── ... ({len(group.children)} children, {group.n_descendant_regions()} descendants)'
+            f'{child_prefix}└── ... ({len(group.children)} children, {group._n_descendant_regions()} descendants)'  # pyright: ignore[reportPrivateUsage]
         )
         return
     next_limit = None if depth_limit is None else depth_limit - 1

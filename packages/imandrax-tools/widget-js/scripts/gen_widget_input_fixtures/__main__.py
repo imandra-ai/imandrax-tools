@@ -21,11 +21,11 @@ from typing import Any, Literal, cast
 
 import imandrax_api
 import yaml
+from imandrax_api_models.artifacts import artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXClient, get_imandrax_async_client
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
 from imandrax_tools.idf.iter_decomp import Step, iter_decomp
 from imandrax_tools.idf.viz_view import View
-from imandrax_tools.widget._tasks import collect_tasks_artifacts
 
 CURR_DIR = Path(__file__).resolve().parents[0]
 PKG_JSON_DIR = CURR_DIR.parents[1]
@@ -75,7 +75,7 @@ def tasks_widget_input(iml: str) -> list[dict[str, Any]]:
     """The `TasksWidget.task_entries` traitlet: a `TaskEntry` list."""
     c = _client()
     eval_res = c.eval_src(iml)
-    entries = collect_tasks_artifacts(eval_res.tasks, c)
+    entries = artifact_reprs_of_tasks(eval_res.tasks, c)
     return [e.model_dump(mode='json') for e in entries]
 
 

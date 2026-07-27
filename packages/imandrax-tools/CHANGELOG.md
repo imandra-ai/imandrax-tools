@@ -4,6 +4,12 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.4.0] - 2026-07-27
+- REFA!(widget/tasks): switch to unified task repr type and constructor
+- widget/decomp: add constructor for unified decomp res type (`DecomposeRes_`)
+- REFA(widget): split modules
+- FEAT(widget): HTML embed utils
+
 ## [20.3.1] - 2026-07-16
 - widget interface type tweaks
 
