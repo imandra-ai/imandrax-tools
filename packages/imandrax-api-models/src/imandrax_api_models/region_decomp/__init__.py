@@ -204,20 +204,11 @@ class RegionGroup(BaseModel):
         return ' '.join(parts)
 
 
-class RegionGroupView(BaseModel):
-    """
-    The single source of truth for the shape the JS region-decomp widget consumes
+class RegionGroupView(RegionGroup):
+    """RegionGroup but with `region` replaced with `region_stat`"""
 
-    RegionGroup but with `region` replaced with `region_stat`
-    """
-
-    # Widget node contract
-
-    label_path: list[int]
-    constraints: list[str]
-    weight: int
-    region_stat: RegionNonGroupStat | None = Field(default=None)
-    children: list[RegionGroupView] = Field(default_factory=lambda: [])
+    region: RegionNonGroupStat | None = Field(default=None)  # pyright: ignore[reportIncompatibleVariableOverride]
+    children: list[RegionGroupView] = Field(default_factory=lambda: [])  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @classmethod
     def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:
@@ -234,7 +225,7 @@ class RegionGroupView(BaseModel):
             label_path=rg.label_path,
             constraints=rg.constraints,
             weight=rg.weight,
-            region_stat=(rg.region.non_group_stat() if rg.region is not None else None),
+            region=(rg.region.non_group_stat() if rg.region is not None else None),
             children=[cls.from_region_group(c) for c in rg.children],
         )
 
