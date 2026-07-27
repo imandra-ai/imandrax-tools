@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-27
+- support lazy IML reader for resolving (and joining) dependencies
+
 ## [0.12.0] - 2026-06-21
 - FEAT!: for multi-modular collection, dependencies and entry module are returned in separate
 
