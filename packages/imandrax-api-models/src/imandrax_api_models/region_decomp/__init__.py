@@ -82,7 +82,14 @@ class DecomposeRes_(DecomposeResProto):
         ds: JSONArray = []
         for leaf_group in leaf_groups:
             d: JSONObject = {}
+
+            # Pure group
             d |= leaf_group.pure_group_stat()
+
+            # Constraints (both group and region)
+            d['constraints'] = leaf_group.constraints
+
+            # Pure region
             assert leaf_group.region is not None, 'Never: Leaf group must be concrete'
             region_non_group_stat = leaf_group.region
             d |= cast(JSONObject, region_non_group_stat)

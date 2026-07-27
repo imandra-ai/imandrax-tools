@@ -413,7 +413,12 @@ def format_decomp_res_(decomp_res: DecomposeRes_) -> JSONObject:
             'Please investigate artifact and task details'
         )
     else:
-        d['regions'] = decomp_res.regions
+        regions = decomp_res.regions
+        assert regions is not None, (
+            'Never: decoded artifact should make regions non-None'
+        )
+        d['description'] = f'Decomp succeeded with {len(regions)} regions'
+        d['regions'] = regions
     return d
 
 
