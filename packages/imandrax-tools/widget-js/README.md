@@ -9,6 +9,9 @@ attaches to a result type's `_repr_mimebundle_`.
 Widgets:
 - `TasksWidget`: `EvalRes`, `CodeSnippetEvalResult`
 - `RegionDecompWidget`: `EnrichedDecomposeRes` / `DecomposeRes`
+- `JsonableWidget`: any `JSONValue` (the general-purpose fallback) — Python renders
+  it with `yaml_utils.to_yaml_str` and syncs the resulting *string*; the front end
+  recovers the fold structure from indentation.
 
 ## Development
 
