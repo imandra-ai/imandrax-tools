@@ -4,8 +4,10 @@ Generate JS test fixtures for widgets from real API output.
 Each fixture is the *exact widget input* -- the list the Python side syncs to
 the frontend traitlet, not the raw API response:
 
-- decomp -> `EnrichedDecomposeRes.region_group_views()`  (the `data` traitlet)
-- tasks  -> `collect_tasks_artifacts(eval_res.tasks, c)`  (the `task_entries` traitlet)
+- decomp   -> `EnrichedDecomposeRes.region_group_views()`  (the `data` traitlet)
+- tasks    -> `collect_tasks_artifacts(eval_res.tasks, c)`  (the `task_entries` traitlet)
+- jsonable -> `to_yaml_str(<any JSONValue>)`  (the `yaml_str` traitlet), derived
+  offline from the fixtures above -- no API call of its own
 
 Flag:
     --refresh: force re-calling the API and regenerating the fixture
@@ -24,6 +26,7 @@ import yaml
 from imandrax_api_models.artifacts import artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXClient, get_imandrax_async_client
 from imandrax_api_models.region_decomp import EnrichedDecomposeRes
+from imandrax_api_models.yaml_utils import to_yaml_str
 from imandrax_tools.idf.iter_decomp import Step, iter_decomp
 from imandrax_tools.idf.viz_view import View
 
@@ -36,6 +39,15 @@ OUT_DIR = PKG_JSON_DIR / 'test/fixtures/inputs/'
 IDF_INPUTS_DIR = PKG_JSON_DIR.parent / 'tests/test_idf/data/idf_inputs'
 # Which of those to emit widget fixtures for (name -> fixture stem `idf.<name>`).
 IDF_FIXTURES = ['addx', 'choose', 'xy_template']
+
+# `JsonableWidget` accepts any `JSONValue`, so its fixtures are derived from the
+# widget inputs generated above rather than from a fresh API call: read one back
+# and run it through the same dumper the widget uses. Values are stems of files in
+# OUT_DIR; keys are the `jsonable.<name>` fixture stem.
+JSONABLE_FIXTURES = {
+    'tasks': 'tasks.admit_rec.iml',
+    'decomp': 'decomp.simple.classify.iml',
+}
 
 # ====================
 # Fixture sources are named `<widget_type>.<name>.<additional_data>.iml`
@@ -132,6 +144,22 @@ def main() -> None:
         widget_input = idf_widget_input(name)
         out_path.write_text(json.dumps(widget_input, indent=2))
         print(f'[idf.{name}] wrote {out_path.relative_to(PKG_JSON_DIR)}')
+
+    # Jsonable fixtures: a single YAML *string*, derived from the fixtures above.
+    for name, source_stem in JSONABLE_FIXTURES.items():
+        out_path = OUT_DIR / f'jsonable.{name}.iml.widget_input.json'
+        src_path = OUT_DIR / f'{source_stem}.widget_input.json'
+        if not src_path.exists():
+            print(f'[jsonable.{name}] skipped: {source_stem} not generated yet')
+            continue
+        if not (refresh or not out_path.exists()):
+            print(
+                f'[jsonable.{name}] using cached {out_path.relative_to(PKG_JSON_DIR)}'
+            )
+            continue
+        yaml_str = to_yaml_str(json.loads(src_path.read_text()))
+        out_path.write_text(json.dumps(yaml_str, indent=2))
+        print(f'[jsonable.{name}] wrote {out_path.relative_to(PKG_JSON_DIR)}')
 
 
 if __name__ == '__main__':

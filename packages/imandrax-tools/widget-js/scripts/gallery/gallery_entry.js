@@ -3,6 +3,7 @@
 // hovers, zoom) when opened directly from the filesystem — no server needed.
 
 import { drawGraph } from "../../src/idf/graph";
+import { drawJsonable } from "../../src/jsonable/view";
 import { drawTreemap } from "../../src/region_decomp/treemap";
 import { drawTasks } from "../../src/task/view";
 
@@ -17,6 +18,9 @@ const TABS = [
   { type: "decomp", label: "Region Decomposition", draw: drawTreemap },
   { type: "idf", label: "IDF", draw: drawGraph },
   { type: "tasks", label: "Tasks", draw: drawTasks },
+  // `jsonable` fixtures are a YAML string rather than an object -- `drawJsonable`
+  // takes it as-is, same as the traitlet the Python side syncs.
+  { type: "jsonable", label: "Jsonable", draw: drawJsonable },
 ];
 
 const wrap = document.querySelector(".wrap");
