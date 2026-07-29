@@ -67,6 +67,10 @@ class TasksRepr(BaseModel):
     tasks: list[TaskEntry]
     other: JSONObject = Field(default_factory=dict)
 
+    @property
+    def is_nil(self) -> bool:
+        return len(self.tasks) == 0
+
     def to_json(self, skip_task_without_artifacts: bool = False) -> JSONObject:
         res: JSONObject = {}
         for task in self.tasks:
