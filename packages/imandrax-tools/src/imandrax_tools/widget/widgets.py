@@ -17,7 +17,7 @@ from typing import Any, Self
 
 import anywidget
 import traitlets
-from imandrax_api_models import DecomposeRes
+from imandrax_api_models import Art, DecomposeRes
 from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import (
@@ -70,13 +70,11 @@ class TasksWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'task.js'
 
-    task_entries = traitlets.List(traitlets.Dict()).tag(sync=True)
+    task_entries = traitlets.List(
+        traitlets.Dict(), allow_none=True, default_value=None
+    ).tag(sync=True)
     pre = traitlets.Unicode('').tag(sync=True)
     post = traitlets.Unicode('').tag(sync=True)
-
-    # Provenance for introspection, not synced b/c a pydantic model is not
-    # JSON-serialisable over the comm, and the front end never reads it.
-    api_resp_with_tasks = traitlets.Any()
 
     @classmethod
     def from_has_tasks(
@@ -91,7 +89,6 @@ class TasksWidget(anywidget.AnyWidget):
             task_entries=[e.model_dump(mode='json') for e in entries],
             pre=pre,
             post=post,
-            api_resp_with_tasks=obj,
         )
 
     @classmethod
@@ -108,12 +105,9 @@ class RegionDecompWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'region_decomp.js'
 
-    data = traitlets.List().tag(sync=True)
+    data = traitlets.List(allow_none=True, default_value=None).tag(sync=True)
     pre = traitlets.Unicode('').tag(sync=True)
     post = traitlets.Unicode('').tag(sync=True)
-
-    # Provenance for introspection; not synced (see `TasksWidget`).
-    decomp_res = traitlets.Any()
 
     @classmethod
     def from_decomp_res(
@@ -131,26 +125,38 @@ class RegionDecompWidget(anywidget.AnyWidget):
             data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
             pre=pre,
             post=post,
-            decomp_res=enriched,
         )
 
     @classmethod
     def from_decomp_res_(
         cls, decomp_res: DecomposeRes_, pre: str = '', post: str = ''
     ) -> Self:
+        """
+        _
+
+        Raises:
+            TypeError
+                If the artifact is not a list of region group views.
+
+        """
         region_group_views = decomp_res.artifact
-        if region_group_views is not None and not isinstance(region_group_views, list):
-            raise ValueError('Regions are not parsed')
-        return cls(
-            data=[r.model_dump(mode='json') for r in region_group_views or []],
-            pre=pre,
-            post=post,
-            decomp_res=decomp_res,
-        )
+        match region_group_views:
+            case None:
+                raise TypeError('Artifact is None')
+            case Art():
+                raise TypeError('Regions are not parsed from artifact')
+            case _:
+                return cls(
+                    data=[r.model_dump(mode='json') for r in region_group_views],
+                    pre=pre,
+                    post=post,
+                )
 
 
 class IDFWidget(anywidget.AnyWidget):
     """Two-panel graph of an iterative-decomposition (IDF) region tree."""
+
+    # TODO: add the same pre and post slots. remove view
 
     _esm = _DIST / 'idf.js'
 
