@@ -80,8 +80,8 @@ _YDumper.add_representer(
 )
 
 
-def to_yaml_str(v: Any) -> str:
+def to_yaml_str(v: Any, **kwargs: Any) -> str:
     if isinstance(v, str):
         return v
 
-    return yaml.dump(v, Dumper=_YDumper, sort_keys=False, allow_unicode=True)
+    return yaml.dump(v, Dumper=_YDumper, sort_keys=False, allow_unicode=True, **kwargs)
