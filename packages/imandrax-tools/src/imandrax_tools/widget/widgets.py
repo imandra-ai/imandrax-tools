@@ -19,13 +19,50 @@ import traitlets
 from imandrax_api_models import DecomposeRes
 from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
-from imandrax_api_models.context_utils import string_of_model as xapi_to_string
+from imandrax_api_models.context_utils import (
+    FormattableModel,
+    JSONValue,
+    jsonable_of_model,
+    string_of_model as xapi_to_string,
+)
 from imandrax_api_models.region_decomp import DecomposeRes_, EnrichedDecomposeRes
+from imandrax_api_models.yaml_utils import to_yaml_str
 
 from imandrax_tools.idf.viz_view import View as IDFView
 from imandrax_tools.widget_types import HasTasks
 
 _DIST = Path(__file__).parent / 'static'
+
+
+class JsonableWidget(anywidget.AnyWidget):
+    """
+    Collapsible, syntax-highlighted view of any JSON-able value, shown as YAML.
+
+    The general-purpose widget: anything that can be reduced to a `JSONValue`
+    (`context_utils.jsonable_of_model`, a `model_dump(mode='json')`, a plain
+    dict) can be displayed.
+
+    Python-side owns the formatting: the value is rendered by a yaml dumper
+    (e.g. `yaml_utils.to_yaml_str`)
+
+    Current behavior: The frontend recovers the fold structure from indentation.
+    """
+
+    _esm = _DIST / 'jsonable.js'
+
+    label = traitlets.Unicode('').tag(sync=True)
+    yaml_str = traitlets.Unicode().tag(sync=True)
+
+    @classmethod
+    def from_json_value(cls, v: JSONValue, label: str = '') -> Self:
+        return cls(label=label, yaml_str=to_yaml_str(v))
+
+    @classmethod
+    def from_api_model(cls, model: FormattableModel, label: str = '') -> Self:
+        return cls(label=label, yaml_str=to_yaml_str(jsonable_of_model(model)))
+
+    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
+        return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
 
 
 class TasksWidget(anywidget.AnyWidget):
