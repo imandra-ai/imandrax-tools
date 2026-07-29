@@ -1,8 +1,9 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
 
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
+import yaml
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
@@ -59,3 +60,28 @@ def basemodel_representer(dumper: Dumper, data: BaseModel):
 ImandraXAPIModelDumper.add_representer(str, str_representer)
 ImandraXAPIModelDumper.add_multi_representer(Enum, enum_representer)
 ImandraXAPIModelDumper.add_multi_representer(BaseModel, basemodel_representer)
+
+
+# ====================
+
+
+class _YDumper(Dumper):
+    pass
+
+
+# Merge representers
+# Multiple inheritance resolve representer to the first parent, so we do it manually.
+_YDumper.yaml_representers = {**ImandraXAPIModelDumper.yaml_representers}
+_YDumper.yaml_multi_representers = {**ImandraXAPIModelDumper.yaml_multi_representers}
+# Emit tuples as plain sequences instead of `!!python/tuple`.
+_YDumper.add_representer(
+    tuple,
+    lambda dumper, data: dumper.represent_sequence('tag:yaml.org,2002:seq', list(data)),
+)
+
+
+def to_yaml_str(v: Any) -> str:
+    if isinstance(v, str):
+        return v
+
+    return yaml.dump(v, Dumper=_YDumper, sort_keys=False, allow_unicode=True)
