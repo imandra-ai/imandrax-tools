@@ -4,10 +4,11 @@ anywidget-based rendering of ImandraX results.
 
 Widgets are backed by JS bundles under `widget/static`:
 
-Each widget also overrides `_repr_mimebundle_` to fall back to a `text/plain`
-pretty-print when there is nothing to render (no tasks / decomposition errors).
+Some widgets carry optional `pre` / `post` YAML
+panels (rendered by the same front end as `JsonableWidget`).
+
+`IDFWidget` still uses the older `_repr_mimebundle_` text fallback.
 """
-# TODO: have a more systematic way to handle failed case (api resp)
 
 from __future__ import annotations
 
@@ -23,7 +24,6 @@ from imandrax_api_models.context_utils import (
     FormattableModel,
     JSONValue,
     jsonable_of_model,
-    string_of_model as xapi_to_string,
 )
 from imandrax_api_models.region_decomp import DecomposeRes_, EnrichedDecomposeRes
 from imandrax_api_models.yaml_utils import to_yaml_str
@@ -70,32 +70,37 @@ class TasksWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'task.js'
 
-    # Synced to JS (the `task.js` bundle reads `task_entries`).
     task_entries = traitlets.List(traitlets.Dict()).tag(sync=True)
+    pre = traitlets.Unicode('').tag(sync=True)
+    post = traitlets.Unicode('').tag(sync=True)
 
-    # Non-JS fallback, not synced b/c a pydantic model is not
+    # Provenance for introspection, not synced b/c a pydantic model is not
     # JSON-serialisable over the comm, and the front end never reads it.
     api_resp_with_tasks = traitlets.Any()
 
     @classmethod
     def from_has_tasks(
-        cls, obj: HasTasks, c: ImandraXClient | ImandraXAsyncClient
+        cls,
+        obj: HasTasks,
+        c: ImandraXClient | ImandraXAsyncClient,
+        pre: str = '',
+        post: str = '',
     ) -> Self:
         entries = artifact_reprs_of_tasks(obj.tasks, c)
         return cls(
             task_entries=[e.model_dump(mode='json') for e in entries],
+            pre=pre,
+            post=post,
             api_resp_with_tasks=obj,
         )
 
     @classmethod
-    def from_tasks_repr(cls, obj: TasksRepr) -> Self:
-        return cls(task_entries=[e.model_dump(mode='json') for e in obj.tasks])
-
-    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
-        if len(self.task_entries) == 0:
-            return {'text/plain': xapi_to_string(self.api_resp_with_tasks)}
-        else:
-            return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
+    def from_tasks_repr(cls, obj: TasksRepr, pre: str = '', post: str = '') -> Self:
+        return cls(
+            task_entries=[e.model_dump(mode='json') for e in obj.tasks],
+            pre=pre,
+            post=post,
+        )
 
 
 class RegionDecompWidget(anywidget.AnyWidget):
@@ -103,14 +108,20 @@ class RegionDecompWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'region_decomp.js'
 
-    # Synced to JS (the `region_decomp.js` bundle reads `data`)
     data = traitlets.List().tag(sync=True)
+    pre = traitlets.Unicode('').tag(sync=True)
+    post = traitlets.Unicode('').tag(sync=True)
 
-    # Non-JS fallback
+    # Provenance for introspection; not synced (see `TasksWidget`).
     decomp_res = traitlets.Any()
 
     @classmethod
-    def from_decomp_res(cls, decomp_res: EnrichedDecomposeRes | DecomposeRes) -> Self:
+    def from_decomp_res(
+        cls,
+        decomp_res: EnrichedDecomposeRes | DecomposeRes,
+        pre: str = '',
+        post: str = '',
+    ) -> Self:
         enriched = (
             decomp_res
             if isinstance(decomp_res, EnrichedDecomposeRes)
@@ -118,25 +129,24 @@ class RegionDecompWidget(anywidget.AnyWidget):
         )
         return cls(
             data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
+            pre=pre,
+            post=post,
             decomp_res=enriched,
         )
 
     @classmethod
-    def from_decomp_res_(cls, decomp_res: DecomposeRes_) -> Self:
+    def from_decomp_res_(
+        cls, decomp_res: DecomposeRes_, pre: str = '', post: str = ''
+    ) -> Self:
         region_group_views = decomp_res.artifact
-        if not isinstance(region_group_views, list):
+        if region_group_views is not None and not isinstance(region_group_views, list):
             raise ValueError('Regions are not parsed')
         return cls(
-            data=[r.model_dump(mode='json') for r in region_group_views],
+            data=[r.model_dump(mode='json') for r in region_group_views or []],
+            pre=pre,
+            post=post,
             decomp_res=decomp_res,
         )
-
-    def _repr_mimebundle_(self, **kwargs: Any) -> Any:
-        if self.decomp_res.errors:
-            return {'text/plain': xapi_to_string(self.decomp_res)}
-        else:
-            # Only resolve to JS if there are no errors.
-            return anywidget.AnyWidget._repr_mimebundle_(self, **kwargs)
 
 
 class IDFWidget(anywidget.AnyWidget):
