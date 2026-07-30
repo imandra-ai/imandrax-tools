@@ -3,6 +3,10 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.5.1] - 26-07-30
+- FEAT(yaml-utils): add general to-yaml-str dump function (upstream)
+
 ## [20.5.0] - 26-07-27
 - add `TasksRepr` for task widget serialization
 - add unify task repr (upstream from `imandrax_tools.widget`)
