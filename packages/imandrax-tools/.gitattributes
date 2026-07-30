@@ -1,2 +1,7 @@
 # Built anywidget JS bundles (source of truth: widget-js/src, built via `make build-widget-js`).
 src/imandrax_tools/widget/static/*.js linguist-generated=true -diff
+
+# TS widget types generated from the pydantic models by `make gen-widget-types-py2ts`.
+# Kept diffable, unlike the bundles: the change is readable and worth reviewing when
+# a model changes.
+widget-js/src/generated/*.ts linguist-generated=true
