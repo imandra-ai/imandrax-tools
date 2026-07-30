@@ -95,6 +95,24 @@ describe("jsonable/fold", () => {
     expect(foldYaml(WITH_BLOCK)[0].children[1].text).toBe("  count: 2");
   });
 
+  it("does not read a scalar merely ending in `-|` as a block header", () => {
+    // PyYAML emits such a value unquoted, and `|`/`>` only opens a block when the
+    // `:`/`-` before it is followed by whitespace -- otherwise `kind: b` would be
+    // swallowed into an opaque block body.
+    for (const value of ["a-|", "x->", "b-|-"]) {
+      const [item] = foldYaml(`items:\n- name: ${value}\n  kind: b\n`)[0].children;
+      expect(item.block).toEqual([]);
+      expect(item.children.map((c) => c.text)).toEqual(["  kind: b"]);
+    }
+  });
+
+  it("puts a blank line trailing a block after the fold, not inside it", () => {
+    const [root] = foldYaml("a:\n  p: |\n    body\n\n  q: 1\n");
+    expect(root.children.map((c) => c.text)).toEqual(["  p: |", "", "  q: 1"]);
+    expect(root.children[0].block).toEqual(["    body"]);
+    expect(root.children[0].children).toEqual([]);
+  });
+
   it("counts the lines a fold hides", () => {
     expect(hiddenLineCount(foldYaml(DOC)[0])).toBe(7); // 2 items + 5 nested lines
     expect(hiddenLineCount(foldYaml(WITH_BLOCK)[0])).toBe(5); // 2 keys + 3 block lines

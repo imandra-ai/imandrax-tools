@@ -42,7 +42,8 @@ def register_tasks_widget(c: ImandraXClient | ImandraXAsyncClient) -> None:
         # panel is dropped (not left to say "No tasks.") because the YAML now in
         # `pre` reports the task list along with everything else.
         if not widget.task_entries:
-            widget.task_entries = None
+            # `allow_none=True` on the traitlet, which the stubs do not model.
+            widget.task_entries = None  # type: ignore
             widget.pre = _yaml_of(cast(FormattableModel, self))
         return widget._repr_mimebundle_(**kwargs)
 
@@ -63,8 +64,15 @@ def register_region_decomp_widget() -> None:
         self: DecomposeRes | EnrichedDecomposeRes, **kwargs: Any
     ) -> Any:
         widget = RegionDecompWidget.from_decomp_res(self)
-        if not widget.data:
-            widget.data = None
+        has_regions = bool(widget.data)
+        if not has_regions:
+            # Nothing to lay out: drop the panel, the YAML carries the whole result.
+            # `allow_none=True` on the traitlet, which the stubs do not model.
+            widget.data = None  # type: ignore
+        # `pre` is keyed off the errors too, not just off the panel: a result can
+        # report errors *and* still lay out region groups, and those errors would
+        # otherwise go unreported -- the `text/plain` fallback used to show them.
+        if self.errors or not has_regions:
             widget.pre = _yaml_of(self)
         return widget._repr_mimebundle_(**kwargs)
 

@@ -4,7 +4,9 @@
 //
 // A null `task_entries` drops the tasks panel, leaving a widget that is only its
 // `pre` / `post` slots -- how a failed eval renders. An empty array still draws
-// the panel, whose own "No tasks." says the eval ran and produced nothing.
+// the panel, whose own "No tasks." reports that there is nothing in it; note that
+// `nb_hooks` never sends `[]`, collapsing it to null, so that only happens for a
+// widget constructed directly.
 
 import { drawStacked } from '../common/stack';
 import type { TaskData } from './types';

@@ -37,7 +37,12 @@ const EMPTY_KEY = /:[ \t]*(?:#.*)?$/;
 // A block-scalar header: `|`/`>` with optional chomping (`-`/`+`) and explicit
 // indentation indicator, standing alone as the line's value (so `re: a|b` and
 // `filter: x > 0` are not mistaken for one). A trailing comment is legal there.
-const BLOCK_HEADER = /(?:^|[:-])[ \t]*[|>][+-]?\d{0,2}[ \t]*(?:#.*)?$/;
+//
+// The `:`/`-` that introduces the value must be followed by whitespace, which
+// YAML requires anyway (`key: |`, `- |`). Without that, a plain scalar merely
+// *ending* in `-|` or `->` (`name: a-|`) would read as a header and swallow the
+// keys that follow it into an opaque block body.
+const BLOCK_HEADER = /(?:^[ \t]*|[:-][ \t]+)[|>][+-]?\d{0,2}[ \t]*(?:#.*)?$/;
 
 function indentOf(line: string): number {
   return /^ */.exec(line)![0].length;
@@ -130,6 +135,10 @@ export function foldYaml(yaml: string): YamlNode[] {
       n.block.pop();
       i--;
     }
+    // Everything nested under a block header was just consumed as its body, so
+    // the node can take no children -- close it, and the blank lines handed back
+    // above land after the fold rather than inside it.
+    stack.pop();
   }
 
   return roots;

@@ -5,7 +5,9 @@
 //
 // A null `data` drops the treemap, leaving a widget that is only its `pre` /
 // `post` slots -- how a decomposition that errored renders. An empty array still
-// draws the treemap, whose own "No regions." says it ran and found none.
+// draws the treemap, whose own "No regions." reports that it holds none; note that
+// `nb_hooks` never sends `[]`, collapsing it to null, so that only happens for a
+// widget constructed directly.
 
 import { drawStacked } from '../common/stack';
 import { drawTreemap } from './treemap';
