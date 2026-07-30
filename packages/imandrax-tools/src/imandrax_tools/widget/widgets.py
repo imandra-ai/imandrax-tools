@@ -105,7 +105,9 @@ class RegionDecompWidget(anywidget.AnyWidget):
 
     _esm = _DIST / 'region_decomp.js'
 
-    data = traitlets.List(allow_none=True, default_value=None).tag(sync=True)
+    data = traitlets.List(traitlets.Any(), allow_none=True, default_value=None).tag(
+        sync=True
+    )
     pre = traitlets.Unicode('').tag(sync=True)
     post = traitlets.Unicode('').tag(sync=True)
 
