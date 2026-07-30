@@ -69,8 +69,6 @@ class _YDumper(Dumper):
     pass
 
 
-# Merge representers
-# Multiple inheritance resolve representer to the first parent, so we do it manually.
 _YDumper.yaml_representers = {**ImandraXAPIModelDumper.yaml_representers}
 _YDumper.yaml_multi_representers = {**ImandraXAPIModelDumper.yaml_multi_representers}
 # Emit tuples as plain sequences instead of `!!python/tuple`.
