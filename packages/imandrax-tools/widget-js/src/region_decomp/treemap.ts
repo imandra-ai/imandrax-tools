@@ -201,6 +201,16 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
   tiles.className = `${ROOT_CLASS}-tiles`;
   main.append(topbar, tiles);
 
+  // A forest with no groups still lays out (synthetic root, no tiles), so say so
+  // rather than leaving the tiles pane blank. Callers that want no panel at all
+  // pass `null` -- see the widget adapter.
+  if (!root.children || root.children.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = `${ROOT_CLASS}-placeholder`;
+    empty.textContent = 'No regions.';
+    tiles.appendChild(empty);
+  }
+
   const divider = document.createElement('div');
   divider.className = `${ROOT_CLASS}-divider`;
   const detail = document.createElement('div');

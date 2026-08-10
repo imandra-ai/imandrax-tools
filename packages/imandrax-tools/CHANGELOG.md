@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.5.0] - 2026-07-30
+- widget: add jsonable general widget
+- widget: replace plain text fallback with new pre/post slots in existing widgets
+
 ## [20.4.0] - 2026-07-27
 - REFA!(widget/tasks): switch to unified task repr type and constructor
 - widget/decomp: add constructor for unified decomp res type (`DecomposeRes_`)
