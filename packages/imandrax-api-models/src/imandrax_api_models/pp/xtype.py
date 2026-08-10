@@ -17,6 +17,7 @@ from typing import Any, Literal, TypeGuard, assert_never, cast
 
 import imandrax_api.lib as xtype
 
+from .._rec_limit import raise_rec_limit
 from . import pretty as Pp
 from ._common import *
 from ._common import fmt_duration
@@ -260,8 +261,11 @@ class Printer:
             return f'{sym_info}: {po_descr}'
 
     # --------------------
-
     def value2doc(self, v: Any) -> Doc:
+        with raise_rec_limit():
+            return self._value2doc(v)
+
+    def _value2doc(self, v: Any) -> Doc:
         dataclass2doc = partial(
             self.dataclass2doc,
             unwrap_single_arg=self.config.unwrap_single_arg_dataclass,

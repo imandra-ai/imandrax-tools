@@ -11,6 +11,7 @@ from typing import Any, Literal
 import imandrax_api
 import structlog
 
+from ._rec_limit import raise_rec_limit
 from .trace_utils import (
     otel_trace as _otel_trace,
     set_span_attrs,
@@ -875,7 +876,8 @@ def get_task_artifacts(
             continue
         art: Art = c.get_artifact(task=task, kind=art_kind).art
         d = twine.Decoder(art.data)
-        x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
+        with raise_rec_limit():
+            x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
         xvalues[art_kind] = x_value
 
     return xvalues
@@ -907,7 +909,8 @@ async def async_get_task_artifacts(
             continue
         art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
         d = twine.Decoder(art.data)
-        x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
+        with raise_rec_limit():
+            x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
         xvalues[art_kind] = x_value
 
     return xvalues
