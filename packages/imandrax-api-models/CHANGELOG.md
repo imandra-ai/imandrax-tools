@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.5.2] - 26-08-10
+- raise recursion limit when decoding terms
+
 ## [20.5.1] - 26-07-30
 - FEAT(yaml-utils): add general to-yaml-str dump function (upstream)
 
