@@ -72,6 +72,7 @@ class TasksRepr(BaseModel):
         return len(self.tasks) == 0
 
     def to_json(self, skip_task_without_artifacts: bool = False) -> JSONObject:
+        # (task-name -> art-kind -> art-repr) | other-info
         res: JSONObject = {}
         for task in self.tasks:
             if skip_task_without_artifacts and len(task.artifacts) == 0:
