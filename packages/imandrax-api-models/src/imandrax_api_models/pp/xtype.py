@@ -100,7 +100,7 @@ def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
 
 def Sequent2doc(v: Sequent) -> Doc:
     inner = Sequent2doc_raw(v)
-    inner = hcat(text("'"), inner, text("'"))
+    inner = python_quote(inner)
     return python_obj('Sequent', [(None, inner)])
 
 
