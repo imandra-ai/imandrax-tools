@@ -718,6 +718,7 @@ def get_imandrax_api_key() -> str | None:
 def get_imandrax_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
+    timeout: int | None = None,
     session_id: str | None = None,
     create_if_not_found: bool = False,
 ) -> ImandraXClient:
@@ -732,13 +733,21 @@ def get_imandrax_client(
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
 
-    client = ImandraXClient(
-        url=url,
-        auth_token=imandrax_api_key,
-        timeout=300,
-        session_id=session_id,
-        create_if_not_found=create_if_not_found,
-    )
+    if timeout is not None:
+        client = ImandraXClient(
+            url=url,
+            auth_token=imandrax_api_key,
+            timeout=timeout,
+            session_id=session_id,
+            create_if_not_found=create_if_not_found,
+        )
+    else:
+        client = ImandraXClient(
+            url=url,
+            auth_token=imandrax_api_key,
+            session_id=session_id,
+            create_if_not_found=create_if_not_found,
+        )
     logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
 
@@ -746,6 +755,7 @@ def get_imandrax_client(
 def get_imandrax_async_client(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
+    timeout: int | None = None,
     session_id: str | None = None,
     create_if_not_found: bool = False,
 ) -> ImandraXAsyncClient:
@@ -760,13 +770,21 @@ def get_imandrax_async_client(
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
 
-    client = ImandraXAsyncClient(
-        url=url,
-        auth_token=imandrax_api_key,
-        timeout=300,
-        session_id=session_id,
-        create_if_not_found=create_if_not_found,
-    )
+    if timeout is not None:
+        client = ImandraXAsyncClient(
+            url=url,
+            auth_token=imandrax_api_key,
+            timeout=timeout,
+            session_id=session_id,
+            create_if_not_found=create_if_not_found,
+        )
+    else:
+        client = ImandraXAsyncClient(
+            url=url,
+            auth_token=imandrax_api_key,
+            session_id=session_id,
+            create_if_not_found=create_if_not_found,
+        )
     logger.info('imandrax_client_initialized', url=url, session_id=session_id)
     return client
 
