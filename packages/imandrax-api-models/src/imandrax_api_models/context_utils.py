@@ -268,7 +268,7 @@ def format_errors(
     out: list[JSONValue] = []
     omitted_count = {'non_po': 0, 'po': 0}
 
-    def fmt_omitted(omitted_count: dict[str, int]) -> str:
+    def fmt_omitted_count(omitted_count: dict[str, int]) -> str:
         if omitted_count['non_po'] == 0 and omitted_count['po'] == 0:
             return ''
         if omitted_count['non_po'] == 0:
@@ -283,7 +283,7 @@ def format_errors(
         # Early return if non-PO errors exist
         omitted_count['non_po'] = max(0, n_non_po - max_errors)
         omitted_count['po'] = n_po
-        if omitted_str := fmt_omitted(omitted_count):
+        if omitted_str := fmt_omitted_count(omitted_count):
             out.append(omitted_str)
         return out
     else:
@@ -293,7 +293,7 @@ def format_errors(
             out.append(err_disp)
         if n_po > max_errors:
             omitted_count['po'] = n_po - max_errors
-            if omitted_str := fmt_omitted(omitted_count):
+            if omitted_str := fmt_omitted_count(omitted_count):
                 out.append(omitted_str)
         return out
 
@@ -331,7 +331,7 @@ def format_eval_res(
                 desc += f'{n_po_err} PO errors'
             out['desc'] = desc.rstrip('; ')
             # Both non-PO and PO
-            out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
+            out['errors'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
                 out['msgs_with_error'] = _format_unstructured_msg_errors(
                     errs_in_eval_msg
