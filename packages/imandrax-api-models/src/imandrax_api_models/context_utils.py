@@ -105,7 +105,7 @@ def format_eval_output(eval_output: EvalOutput, error_limit: int = 1) -> JSONObj
     return out
 
 
-def _extract_internal_error(msg: str, max_len: int = 300) -> str:
+def _extract_internal_error(msg: str, max_len: int = 400) -> str:
     """
     Extract error message from internal error, truncating if necessary.
 
@@ -333,7 +333,9 @@ def format_eval_res(
             # Both non-PO and PO
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
-                out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
+                out['msgs_with_error'] = _format_unstructured_msg_errors(
+                    errs_in_eval_msg
+                )
 
         case False, True:
             out['desc'] = 'Eval: error in eval messages'
