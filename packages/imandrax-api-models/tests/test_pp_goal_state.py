@@ -87,7 +87,7 @@ def test_goal_state_pp(po_res_list: list[xtype.Tasks_PO_res_Shallow]):
         [
             """\
 1 subgoal
-- ⊢length (x append y) = length x + length y\
+- ⊢ length (x append y) = length x + length y\
 """,
             "No goal state for i=1; got: msg='Proof found'",
             "No goal state for i=2; got: msg='Proof found'",

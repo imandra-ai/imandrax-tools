@@ -7,6 +7,7 @@ Most functions returns a JSON-serializable value, suitable to be further dumped 
 from __future__ import annotations
 
 from collections.abc import Collection, MutableMapping, MutableSequence
+from functools import partial
 from typing import Any, Literal, assert_never, cast, get_args
 
 from imandrax_api_models import (
@@ -104,7 +105,7 @@ def format_eval_output(eval_output: EvalOutput, error_limit: int = 1) -> JSONObj
     return out
 
 
-def _extract_internal_error(msg: str, max_len: int = 300) -> str:
+def _extract_internal_error(msg: str, max_len: int = 400) -> str:
     """
     Extract error message from internal error, truncating if necessary.
 
@@ -112,35 +113,41 @@ def _extract_internal_error(msg: str, max_len: int = 300) -> str:
         Error{ Kind.name = "LowerRirError" }:
           Lower-RIR.Term: Cannot make closure...
 
-    Returns the error kind and message, truncated before backtrace/context.
+    Returns the error kind, message, and any trailing backtrace/context, with
+    the whole thing capped at `max_len`.
     Falls back to truncated raw message if extraction fails.
     """
     import re
 
-    # Match Error{ Kind.name = "..." }: followed by the error message
+    # the original has lots of padding spaces from pretty-printing
+    def squash_ws(s: str) -> str:
+        return re.sub(r'\s+', ' ', s).strip()
+
+    # match Error{ Kind.name = "..." }: followed by the error message
     pattern = (
         r'Error\{\s*Kind\.name\s*=\s*"([^"]+)"\s*\}:\s*(.+?)(?=backtrace:|Context:|$)'
     )
-    match = re.search(pattern, msg, re.DOTALL)
+    match: re.Match[str] | None = re.search(pattern, msg, re.DOTALL)
     if match:
         kind = match.group(1)
-        error_text = match.group(2).strip()
-        # Clean up whitespace (the original has lots of padding spaces)
-        error_text = re.sub(r'\s+', ' ', error_text)
-        result = f'[{kind}] {error_text}'
+        result = f'[{kind}] {squash_ws(match.group(2))}'
+        # everything from `backtrace:` / `Context:` onwards
+        if tail := squash_ws(msg[match.end(2) :]):
+            result = f'{result} {tail}'
     else:
-        # Fallback: just clean up and truncate the raw message
-        result = re.sub(r'\s+', ' ', msg).strip()
+        # fallback to full message when extraction fails
+        result = squash_ws(msg)
 
     if len(result) > max_len:
-        result = result[: max_len - 3] + '...'
+        omitted_len = len(result) - max_len
+        result = result[:max_len] + f'… ({omitted_len} more chars)'
     return result
 
 
 def _format_unstructured_msg_errors(
     errs_in_eval_msg: list[str],
     max_msgs: int = 2,
-    max_len_per_msg: int = 500,
+    max_len_per_msg: int | None = None,
 ) -> JSONArray:
     """
     Render extracted error string blurbs from `eval_res.messages`.
@@ -150,8 +157,14 @@ def _format_unstructured_msg_errors(
     """
     seen: set[str] = set()
     extracted: list[str] = []
+
+    __extract_internal_error = (
+        partial(_extract_internal_error, max_len=max_len_per_msg)
+        if max_len_per_msg is not None
+        else _extract_internal_error
+    )
     for msg in errs_in_eval_msg:
-        e = _extract_internal_error(msg, max_len=max_len_per_msg)
+        e = __extract_internal_error(msg)
         if e in seen:
             continue
         seen.add(e)
@@ -255,7 +268,7 @@ def format_errors(
     out: list[JSONValue] = []
     omitted_count = {'non_po': 0, 'po': 0}
 
-    def fmt_omitted(omitted_count: dict[str, int]) -> str:
+    def fmt_omitted_count(omitted_count: dict[str, int]) -> str:
         if omitted_count['non_po'] == 0 and omitted_count['po'] == 0:
             return ''
         if omitted_count['non_po'] == 0:
@@ -270,7 +283,7 @@ def format_errors(
         # Early return if non-PO errors exist
         omitted_count['non_po'] = max(0, n_non_po - max_errors)
         omitted_count['po'] = n_po
-        if omitted_str := fmt_omitted(omitted_count):
+        if omitted_str := fmt_omitted_count(omitted_count):
             out.append(omitted_str)
         return out
     else:
@@ -280,7 +293,7 @@ def format_errors(
             out.append(err_disp)
         if n_po > max_errors:
             omitted_count['po'] = n_po - max_errors
-            if omitted_str := fmt_omitted(omitted_count):
+            if omitted_str := fmt_omitted_count(omitted_count):
                 out.append(omitted_str)
         return out
 
@@ -318,9 +331,11 @@ def format_eval_res(
                 desc += f'{n_po_err} PO errors'
             out['desc'] = desc.rstrip('; ')
             # Both non-PO and PO
-            out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
+            out['errors'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
-                out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
+                out['msgs_with_error'] = _format_unstructured_msg_errors(
+                    errs_in_eval_msg
+                )
 
         case False, True:
             out['desc'] = 'Eval: error in eval messages'

@@ -4,6 +4,12 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.5.5] - 26-08-12
+- revert [20.5.4]
+
+## [20.5.4] - 26-08-12
+- ENH(pp/errors): re-order error messages, non-PO errors, and PO errors; add backtrace for error messages
+
 ## [20.5.3] - 26-08-11
 - pp/goal-state: improve sequent representation
 

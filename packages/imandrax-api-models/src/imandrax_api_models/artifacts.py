@@ -84,6 +84,7 @@ class TasksRepr(BaseModel):
 
 def repr_tasks(
     arts: list[tuple[int, Task, Mapping[str, Any]]],
+    summarize_proved_po_tasks: bool = True,
 ) -> tuple[list[TaskEntry], JSONObject]:
     """
     Transforms the artifacts to printable JSON representation.
@@ -93,13 +94,16 @@ def repr_tasks(
 
     Args:
         arts: List of (task-index, task, art-kind -> xval map)
+        summarize_proved_po_tasks: Whether to summarize proved PO tasks into a single entry, hiding proof details
 
     """
     tasks_repr: list[TaskEntry] = []
     proved_po_tasks: JSONArray = []
     for i, task, art_kind_to_xval in arts:
+        # Proved PO tasks fast path
         if (
-            task.kind == TaskKind.TASK_CHECK_PO
+            summarize_proved_po_tasks
+            and task.kind == TaskKind.TASK_CHECK_PO
             and isinstance(
                 (po_res := art_kind_to_xval.get('po_res', None)),
                 xtype.Tasks_PO_res_shallow_poly,
