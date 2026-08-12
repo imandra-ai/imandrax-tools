@@ -285,6 +285,51 @@ def format_errors(
         return out
 
 
+def format_errors_(
+    non_po_errors: list[Error],
+    msgs_with_error: list[str],
+    po_errors: list[Error],
+    iml_src: str | None = None,
+    max_errors: int = 3,
+) -> JSONObject:
+    """
+    Format errors from non-PO errors, error messages, and PO errors.
+
+    - PO errors are omitted if any other two error types exist.
+    - max_errors caps the number of non-PO errors and PO errors returned.
+    - omitted errors will have their count reported
+    """
+    has_non_po = len(non_po_errors) > 0
+    has_err_msgs = len(msgs_with_error) > 0
+    has_po = len(po_errors) > 0
+
+    out: JSONObject = {}
+    match (has_non_po, has_err_msgs, has_po):
+        case (False, False, False):
+            # No errors
+            return {}
+        case (False, False, True):
+            # PO errors only
+            out['po_errors'] = [
+                format_error(e, iml_src) for e in po_errors[:max_errors]
+            ]
+            if len(po_errors) > max_errors:
+                out['omitted'] = f'omitted {len(po_errors) - max_errors} PO errors'
+            return out
+        case (True, _, _) | (_, True, _):
+            # Either non-PO erors or error messages
+            out['error_messages'] = _format_unstructured_msg_errors(msgs_with_error)
+            if has_non_po:
+                out['errors'] = [
+                    format_error(e, iml_src) for e in non_po_errors[:max_errors]
+                ]
+            if len(non_po_errors) > max_errors:
+                out['omitted'] = f'omitted {len(non_po_errors) - max_errors} errors'
+            return out
+        case _:
+            assert_never((has_non_po, has_err_msgs, has_po))
+
+
 def format_eval_res(
     eval_res: EvalRes,
     iml_src: str | None = None,
@@ -301,34 +346,31 @@ def format_eval_res(
         A JSON-serializable object (Mapping) or a string if "description" is the only field
 
     """
-    # Check additional error in messages
-    errs_in_eval_msg: list[str] = [
+    msgs_with_err: list[str] = [
         msg for msg in eval_res.messages if 'error' in msg.lower()
     ]
-    has_structured_err = eval_res.has_errors
-    has_err_in_eval_msg = len(errs_in_eval_msg) > 0
+    has_non_po = len(eval_res.errors) > 0
+    has_err_msgs = len(msgs_with_err) > 0
+    has_po = len(eval_res.po_errors) > 0
 
     out: JSONObject = {}
-    match (has_structured_err, has_err_in_eval_msg):
-        case True, _:
+    match (has_non_po, has_err_msgs, has_po):
+        case False, False, False:
+            desc = 'Eval succeed'
+        case _, True, _:
+            desc = 'Eval: error in messages'
+        case _, False, _:
             desc = 'Eval: '
             if n_no_po_err := len(eval_res.errors):
                 desc += f'{n_no_po_err} non-PO errors; '
             if n_po_err := len(eval_res.po_errors):
                 desc += f'{n_po_err} PO errors'
-            out['desc'] = desc.rstrip('; ')
-            # Both non-PO and PO
-            out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
-            if has_err_in_eval_msg:
-                out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
+        case _:
+            assert_never((has_non_po, has_err_msgs, has_po))
+    out['desc'] = desc
+    out |= format_errors_(eval_res.errors, msgs_with_err, eval_res.po_errors, iml_src)
 
-        case False, True:
-            out['desc'] = 'Eval: error in eval messages'
-            out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)
-        case False, False:
-            out['desc'] = 'Eval succeed'
-
-    # Pack .eval_results and .decomp_results
+    # Add .eval_results
     for i, eval_result in enumerate(eval_res.eval_results, 1):
         data: JSONObject = {
             'success': eval_result.success,
@@ -339,6 +381,8 @@ def format_eval_res(
                 eval_result.errors, [], iml_src, max_errors=1
             )
         out[f'eval_result_{i}'] = data
+
+    # Add .decomp_results
     for i, decomp_res in enumerate(eval_res.decomp_results, 1):
         if not process_decomp:
             out[f'decomp_result_{i}'] = remove_fields_rec(
@@ -350,7 +394,7 @@ def format_eval_res(
             )
 
     if len(out.keys()) == 1 and 'desc' in out:
-        return out['desc']
+        return cast(str, out['desc'])
     return out
 
 
