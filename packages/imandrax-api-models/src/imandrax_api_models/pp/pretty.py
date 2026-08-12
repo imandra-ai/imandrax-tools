@@ -568,6 +568,14 @@ def python_quote(
     indent: int = PYTHON_INDENT,
     single_quote: bool = True,
 ) -> Doc:
+    """
+    Quote a inner Doc with double quotes if it fits on a single line, otherwise use triple quotes.
+
+    Args:
+        indent (int): indentation when quoting multi-line content.
+        single_quote (bool): Whether to use single quotes for the single-line quote.
+
+    """
     q = flat_alt(text("'''"), text("'") if single_quote else text('"'))
     body = nest(indent, concat(linebreak, inner))
     return group(hcat(q, body, linebreak, q))

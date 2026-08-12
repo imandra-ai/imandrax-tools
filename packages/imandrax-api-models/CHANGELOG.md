@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.5.3] - 26-08-11
+- pp/goal-state: improve sequent representation
+
 ## [20.5.2] - 26-08-10
 - raise recursion limit when decoding terms
 

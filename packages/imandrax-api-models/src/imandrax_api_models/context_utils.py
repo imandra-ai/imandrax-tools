@@ -317,6 +317,7 @@ def format_eval_res(
             if n_po_err := len(eval_res.po_errors):
                 desc += f'{n_po_err} PO errors'
             out['desc'] = desc.rstrip('; ')
+            # Both non-PO and PO
             out['error'] = format_errors(eval_res.errors, eval_res.po_errors, iml_src)
             if has_err_in_eval_msg:
                 out['err_in_msg'] = _format_unstructured_msg_errors(errs_in_eval_msg)

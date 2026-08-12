@@ -20,7 +20,10 @@ def doc_of_labeled_term(labeled: tuple[None | str, xtype.Mir_Term]) -> Doc:
 def doc_of_sequent(sg: Sequent) -> Doc:
     hyps = Pp.punctuate(Pp.text(','), [doc_of_labeled_term(h) for h in sg.hyps])
     concls = Pp.punctuate(Pp.text(','), [doc_of_labeled_term(c) for c in sg.concls])
-    return Pp.hcat(hyps, Pp.text('⊢'), concls)
+    if not isinstance(hyps, Pp.Nil):
+        return Pp.vsep([hyps, Pp.text('⊢'), concls])
+    else:
+        return Pp.vsep([Pp.text('⊢'), concls])
 
 
 def doc_of_subgoals(ok: bool, subgoals: list[Sequent]) -> Doc:
