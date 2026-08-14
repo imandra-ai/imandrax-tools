@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 - decomp: extract `[@@timeout n]` from the decomposed binding into `DecompReqArgs['timeout']` (seconds, to be sent as `compute_timeout` in API). 
+- decomp: composite extraction (`extract_decomp_reqs_` / `decomp_capture_to_req_` / `get_decomp_reqs_`) parse the `<<` (merge) and `<|<` (compound merge) operators into `DecompReqArgs_`. Composed decomps now round-trip through `insert_decomp_req_`.
 
 ## [0.13.0] - 2026-07-27
 - support lazy IML reader for resolving (and joining) dependencies
