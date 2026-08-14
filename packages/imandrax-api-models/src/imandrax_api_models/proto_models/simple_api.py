@@ -1,3 +1,4 @@
+# ruff: noqa: PLW0642, RUF100
 from __future__ import annotations
 
 from enum import Enum

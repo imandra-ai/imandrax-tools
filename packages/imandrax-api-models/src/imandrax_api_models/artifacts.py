@@ -182,9 +182,9 @@ def artifact_reprs_of_tasks(
             async def _gather() -> list[TaskEntry]:
                 # `async_get_task_artifacts` no longer manages the client
                 # context, so hold the session open for the whole batch.
-                async with ac as c:
+                async with ac as c_:
                     artifacts = await asyncio.gather(
-                        *[async_get_task_artifacts(t, c) for t in tasks]
+                        *[async_get_task_artifacts(t, c_) for t in tasks]
                     )
                 return [mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
 
