@@ -684,17 +684,6 @@ def decomp_capture_to_req_(
 def extract_decomp_reqs_(
     iml: str, tree: Tree
 ) -> tuple[str, Tree, list[DecompReqArgs_], list[Range]]:
-    """
-    Composite counterpart of `extract_decomp_reqs`.
-
-    Unlike `extract_decomp_reqs` this understands the `<<` / `<|<` operators,
-    so a composed decomp round-trips through `insert_decomp_req_` instead of
-    raising `NotImplementedError`.
-
-    As with `extract_decomp_reqs`, only `[@@decomp ...]` is removed from the
-    returned source; any `[@@timeout n]` is lifted into the request *and* left
-    in place (see `_remove_decomp_reqs`).
-    """
     matches = run_query(
         mk_query(DECOMP_QUERY_SRC),
         node=tree.root_node,
