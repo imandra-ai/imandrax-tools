@@ -11,6 +11,7 @@ from iml_query.processing import (
     insert_instance_req,
 )
 from iml_query.processing.base import find_nested_rec
+from iml_query.processing.decomp import Top, apply_decomp, merge
 from iml_query.processing.test import (
     test_capture_to_req as capture_to_test_req,
 )
@@ -343,6 +344,29 @@ instance positive_predicate\
             'opaque_function': ['expensive_computation', 'external_api_call'],
         }
     )
+
+
+@pytest.mark.xfail(
+    reason='migration WIP until we have a serializable representation for `Decomp`'
+)
+def test_iml_outline_composed_decomp():
+    iml = """\
+let f x = x + 1
+
+let g x = if x > 0 then x else -x
+[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id f]]
+[@@timeout 90]
+"""
+    outline = iml_outline(iml)
+    assert outline['decompose_req'] == [
+        {
+            'name': 'g',
+            'decomp': merge(
+                Top(prune=True), apply_decomp(Top(ctx_simp=True), 'f')
+            ),
+            'timeout': 90,
+        }
+    ]
 
 
 def test_complex_decomp_parsing_detailed():
