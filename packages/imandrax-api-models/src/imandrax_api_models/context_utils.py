@@ -288,8 +288,8 @@ def format_errors(
         return out
     else:
         for err in po_errors[:max_errors]:
-            err_disp = format_error(err, iml_src)
-            err_disp['is_po'] = True
+            err_disp: JSONObject = {'is_po_error': True}
+            err_disp |= format_error(err, iml_src)
             out.append(err_disp)
         if n_po > max_errors:
             omitted_count['po'] = n_po - max_errors

@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.6.0] - 26-08-14
+- client: support passing timeout config
+
 ## [20.5.5] - 26-08-12
 - revert [20.5.4]
 
