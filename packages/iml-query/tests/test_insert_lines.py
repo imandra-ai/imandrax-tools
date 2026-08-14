@@ -46,9 +46,7 @@ let w = 4
     assert not tree4.root_node.has_error
 
     # Insert at the beginning of the file
-    iml5, tree5 = insert_lines(
-        iml4, tree4, lines=['let b = 0'], insert_after=-1
-    )
+    iml5, tree5 = insert_lines(iml4, tree4, lines=['let b = 0'], insert_after=-1)
     assert iml5 == snapshot("""\
 let b = 0
 let x = 1

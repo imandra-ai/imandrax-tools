@@ -59,9 +59,7 @@ let redundant_regions x =
     func_names: list[str] = []
     for _, capture in matches:
         if 'decomposed_func_name' in capture:
-            name = unwrap_bytes(capture['decomposed_func_name'][0].text).decode(
-                'utf-8'
-            )
+            name = unwrap_bytes(capture['decomposed_func_name'][0].text).decode('utf-8')
             func_names.append(name)
 
     assert func_names == snapshot(
@@ -91,9 +89,7 @@ def test_edge_cases_empty_content():
     # Test with just a simple expression
     iml_simple = 'let x = 42'
     tree_simple = parser.parse(bytes(iml_simple, encoding='utf8'))
-    matches_simple = run_query(
-        mk_query(VERIFY_QUERY_SRC), node=tree_simple.root_node
-    )
+    matches_simple = run_query(mk_query(VERIFY_QUERY_SRC), node=tree_simple.root_node)
     assert len(matches_simple) == 0
 
 
@@ -115,8 +111,7 @@ instance (fun x -> x > 0) [@@by auto]
 
     # verify_statement should be the full statement
     assert (
-        verify_capture.verify_statement.text
-        == b'verify (fun x y -> x > 0) [@@by auto]'
+        verify_capture.verify_statement.text == b'verify (fun x y -> x > 0) [@@by auto]'
     )
     # verify_expr should exclude the attribute
     assert verify_capture.verify_expr.text == b'(fun x y -> x > 0)'
@@ -126,9 +121,7 @@ instance (fun x -> x > 0) [@@by auto]
 
     # Test INSTANCE query (mirrors VERIFY query)
     # --------------------
-    instance_matches = run_query(
-        mk_query(INSTANCE_QUERY_SRC), node=tree.root_node
-    )
+    instance_matches = run_query(mk_query(INSTANCE_QUERY_SRC), node=tree.root_node)
     assert len(instance_matches) == 1
     instance_capture = InstanceCapture.from_ts_capture(instance_matches[0][1])
 

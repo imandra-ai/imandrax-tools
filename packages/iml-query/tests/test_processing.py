@@ -227,9 +227,7 @@ instance (fun x y -> x + y > 0 && x - y < 10)
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
-    new_iml, _new_tree, instance_reqs, _ranges = extract_instance_reqs(
-        iml, tree
-    )
+    new_iml, _new_tree, instance_reqs, _ranges = extract_instance_reqs(iml, tree)
 
     assert instance_reqs == snapshot(
         [
@@ -277,9 +275,7 @@ instance (fun x -> x > 0)
 """)
 
     # Insert second instance
-    final_iml, _final_tree = insert_instance_req(
-        new_iml, new_tree, 'positive_checker'
-    )
+    final_iml, _final_tree = insert_instance_req(new_iml, new_tree, 'positive_checker')
     assert final_iml == snapshot("""\
 let add_one (x: int) : int = x + 1
 
@@ -361,9 +357,7 @@ let g x = if x > 0 then x else -x
     assert outline['decompose_req'] == [
         {
             'name': 'g',
-            'decomp': merge(
-                Top(prune=True), apply_decomp(Top(ctx_simp=True), 'f')
-            ),
+            'decomp': merge(Top(prune=True), apply_decomp(Top(ctx_simp=True), 'f')),
             'timeout': 90,
         }
     ]
@@ -497,9 +491,7 @@ fun ys ->
 """,
                 },
             ],
-            'instance_reqs': [
-                {'hints': None, 'src': 'fun x -> x > 0 && x < 100'}
-            ],
+            'instance_reqs': [{'hints': None, 'src': 'fun x -> x > 0 && x < 100'}],
             'decomp_reqs': [
                 {
                     'name': 'conditional_fn',

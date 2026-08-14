@@ -203,9 +203,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     (#eq? @attr_id "id")
                 )
                 """)
-                assuming_matches = run_query(
-                    query=assuming_query, node=arg_node
-                )
+                assuming_matches = run_query(query=assuming_query, node=arg_node)
                 if assuming_matches:
                     payload_text = assuming_matches[0][1]['payload'][0].text
                     assert payload_text, 'Never: no assuming payload'
@@ -226,9 +224,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     )
                 )
                 """)
-                extension_matches = run_query(
-                    query=extension_query, node=arg_node
-                )
+                extension_matches = run_query(query=extension_query, node=arg_node)
                 if extension_matches:
                     ids: list[str] = []
                     for match in extension_matches:
@@ -256,16 +252,10 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     (constructor_name) @constructor
                 )
                 """)
-                constructor_matches = run_query(
-                    query=constructor_query, node=arg_node
-                )
+                constructor_matches = run_query(query=constructor_query, node=arg_node)
                 if constructor_matches:
-                    constructor_text = constructor_matches[0][1]['constructor'][
-                        0
-                    ].text
-                    assert constructor_text, (
-                        'Never: no lift_bool constructor text'
-                    )
+                    constructor_text = constructor_matches[0][1]['constructor'][0].text
+                    assert constructor_text, 'Never: no lift_bool constructor text'
                     lift_bool_value = constructor_text.decode('utf-8')
                     lift_bool_enum = [
                         'Default',
@@ -364,9 +354,7 @@ def _identifier_of_appl_expr_node(node: Node) -> str | None:
     for child in node.children:
         if child.type != 'extension':
             continue
-        attr_id = next(
-            (c for c in child.children if c.type == 'attribute_id'), None
-        )
+        attr_id = next((c for c in child.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
         if unwrap_bytes(attr_id.text).decode('utf8') != 'id':
@@ -419,8 +407,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
         operands = node.named_children
         if len(operands) != 3:
             raise DecompParsingError(
-                f'expected a binary decomp operator, got {len(operands)} '
-                'operands'
+                f'expected a binary decomp operator, got {len(operands)} operands'
             )
         lhs, operator, rhs = operands
         op = unwrap_bytes(operator.text).decode('utf8')
@@ -434,8 +421,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
                 return CompoundMerge(m=m, d1=d1)
             case _:
                 raise DecompParsingError(
-                    f'unsupported decomp operator `{op}`; '
-                    'expected `<<` or `<|<`'
+                    f'unsupported decomp operator `{op}`; expected `<<` or `<|<`'
                 )
 
     if node.type == 'parenthesized_expression':
@@ -444,9 +430,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
             raise DecompParsingError('empty parenthesized decomp expression')
         return _decomp_of_expr_node(inner)
 
-    raise DecompParsingError(
-        f'cannot parse `{node.type}` as a decomp expression'
-    )
+    raise DecompParsingError(f'cannot parse `{node.type}` as a decomp expression')
 
 
 def _decomp_of_decomp_attr_payload(node: Node) -> Decomp:
@@ -490,9 +474,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
         if attr_id is None:
             # `attribute_id` is not a named field in this grammar; fall back
             # to positional lookup among the children.
-            attr_id = next(
-                (c for c in attr.children if c.type == 'attribute_id'), None
-            )
+            attr_id = next((c for c in attr.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
         if unwrap_bytes(attr_id.text).decode('utf8') != 'timeout':
@@ -509,9 +491,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
             None,
         )
         if number is None:
-            raise DecompParsingError(
-                '`[@@timeout]` payload is not an integer literal'
-            )
+            raise DecompParsingError('`[@@timeout]` payload is not an integer literal')
         return int(unwrap_bytes(number.text).decode('utf8'))
 
     return None
@@ -578,13 +558,9 @@ def extract_decomp_reqs(
         node=root,
     )
 
-    decomp_captures = [
-        DecompCapture.from_ts_capture(capture) for _, capture in matches
-    ]
+    decomp_captures = [DecompCapture.from_ts_capture(capture) for _, capture in matches]
 
-    req_and_range = [
-        decomp_capture_to_req(capture) for capture in decomp_captures
-    ]
+    req_and_range = [decomp_capture_to_req(capture) for capture in decomp_captures]
     if not req_and_range:
         return iml, tree, [], []
     else:
@@ -689,13 +665,9 @@ def extract_decomp_reqs_(
         node=tree.root_node,
     )
 
-    decomp_captures = [
-        DecompCapture.from_ts_capture(capture) for _, capture in matches
-    ]
+    decomp_captures = [DecompCapture.from_ts_capture(capture) for _, capture in matches]
 
-    req_and_range = [
-        decomp_capture_to_req_(capture) for capture in decomp_captures
-    ]
+    req_and_range = [decomp_capture_to_req_(capture) for capture in decomp_captures]
     if not req_and_range:
         return iml, tree, [], []
 

@@ -16,9 +16,7 @@ def pp_import_capture(capture: ImportCapture) -> dict[str, str | None]:
     return {
         'import_stmt': pp_ts_node(capture.import_stmt),
         'import_path': pp_ts_node(capture.import_path),
-        'import_name': pp_ts_node(capture.import_name)
-        if capture.import_name
-        else None,
+        'import_name': pp_ts_node(capture.import_name) if capture.import_name else None,
     }
 
 

@@ -32,9 +32,7 @@ def find_func_definition(tree: Tree, function_name: str) -> Node | None:
     func_def: Node | None = None
     for _, capture in matches:
         function_name_node = capture['function_name'][0]
-        function_name_rhs = unwrap_bytes(function_name_node.text).decode(
-            'utf-8'
-        )
+        function_name_rhs = unwrap_bytes(function_name_node.text).decode('utf-8')
         if function_name_rhs == function_name:
             func_def = capture['function_definition'][0]
             break

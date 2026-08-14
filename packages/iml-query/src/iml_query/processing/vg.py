@@ -58,9 +58,7 @@ def instance_capture_to_req(
         req['hints'] = None
 
     expr_node = capture.instance_expr
-    instance_src = (
-        unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
-    )
+    instance_src = unwrap_bytes(capture.instance_expr.text).decode('utf-8').strip()
     # Remove parentheses
     if instance_src.startswith('(') and instance_src.endswith(')'):
         instance_src = instance_src[1:-1].strip()
@@ -88,9 +86,7 @@ def extract_verify_reqs(
         node=root,
     )
 
-    verify_captures = [
-        VerifyCapture.from_ts_capture(capture) for _, capture in matches
-    ]
+    verify_captures = [VerifyCapture.from_ts_capture(capture) for _, capture in matches]
     req_and_range: list[tuple[VerifyReqArgs, Range]] = [
         verify_capture_to_req(capture) for capture in verify_captures
     ]

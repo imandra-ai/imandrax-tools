@@ -46,9 +46,7 @@ class TestIMLOfTop:
         assert iml_of_top(Top(prune=True)) == snapshot('top ~prune:true ()')
 
     def test_iml_of_top_ctx_simp_false(self):
-        assert iml_of_top(Top(ctx_simp=False)) == snapshot(
-            'top ~ctx_simp:false ()'
-        )
+        assert iml_of_top(Top(ctx_simp=False)) == snapshot('top ~ctx_simp:false ()')
 
     def test_iml_of_top_empty_lists(self):
         # Empty basis / rule_specs should not produce empty `[]` labels
@@ -151,9 +149,7 @@ class TestTimeoutAttr:
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]
 [@@timeout 120]"""
-        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert reqs == [{'name': 'f', 'decomp': Top(), 'timeout': 120}]
         assert leftover == snapshot(
             'let f x = if x > 0 then (-1) else 1\n\n[@@timeout 120]'
@@ -165,9 +161,7 @@ let f x = if x > 0 then (-1) else 1
 let f x = if x > 0 then (-1) else 1
 [@@timeout 120]
 [@@decomp top ()]"""
-        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert reqs == [{'name': 'f', 'decomp': Top(), 'timeout': 120}]
         assert leftover == snapshot(
             'let f x = if x > 0 then (-1) else 1\n[@@timeout 120]\n'
@@ -177,9 +171,7 @@ let f x = if x > 0 then (-1) else 1
         iml = """\
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert reqs == [{'name': 'f', 'decomp': Top()}]
 
     def test_extract_timeout_with_labels(self):
@@ -187,9 +179,7 @@ let f x = if x > 0 then (-1) else 1
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ~prune:true ~ctx_simp:false ()]
 [@@timeout 7]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert reqs == [
             {
                 'name': 'f',
@@ -205,9 +195,7 @@ let rec g y = y
 [@@timeout 9]
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert reqs == [{'name': 'f', 'decomp': Top()}]
 
     def test_insert_always_emits_timeout(self):
@@ -255,9 +243,7 @@ class TestExtractDecompReq_:
         return parser.parse(bytes(iml, encoding='utf8'))
 
     def _extract_one(self, iml: str) -> DecompReqArgs_:
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         assert len(reqs) == 1
         return reqs[0]
 
@@ -272,9 +258,7 @@ class TestExtractDecompReq_:
         )
         assert req == {
             'name': 'f',
-            'decomp': merge(
-                Top(prune=True), apply_decomp(Top(ctx_simp=True), 'bar')
-            ),
+            'decomp': merge(Top(prune=True), apply_decomp(Top(ctx_simp=True), 'bar')),
         }
 
     def test_extract_nested_merge_is_left_associative(self):
@@ -290,9 +274,7 @@ class TestExtractDecompReq_:
         }
 
     def test_extract_compound_merge(self):
-        req = self._extract_one(
-            'let f x = x\n[@@decomp top () <|< top () [%id c]]'
-        )
+        req = self._extract_one('let f x = x\n[@@decomp top () <|< top () [%id c]]')
         assert req == {
             'name': 'f',
             'decomp': CompoundMerge(m=Top(), d1=apply_decomp(Top(), 'c')),
@@ -343,9 +325,7 @@ class TestExtractDecompReq_:
             ),
         ],
     )
-    def test_extract_rejects_malformed_payload(
-        self, iml: str, expected_msg: str
-    ):
+    def test_extract_rejects_malformed_payload(self, iml: str, expected_msg: str):
         with pytest.raises(DecompParsingError, match=re.escape(expected_msg)):
             extract_decomp_reqs_(iml, self._parse(iml))
 
@@ -371,10 +351,6 @@ class TestDecompReqRoundTrip_:
     )
     def test_round_trip_preserves_attr(self, attr: str):
         iml = f'let f x = x\n{attr}\n'
-        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
-            iml, self._parse(iml)
-        )
-        rebuilt, _ = insert_decomp_req_(
-            leftover, self._parse(leftover), reqs[0]
-        )
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
+        rebuilt, _ = insert_decomp_req_(leftover, self._parse(leftover), reqs[0])
         assert rebuilt.strip() == iml.strip()
