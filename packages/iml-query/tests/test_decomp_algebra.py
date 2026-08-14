@@ -1,12 +1,18 @@
+from __future__ import annotations
+
+import re
 from typing import TYPE_CHECKING
 
+import pytest
 from inline_snapshot import snapshot
 
 from iml_query.processing.decomp import (
+    CompoundMerge,
+    DecompParsingError,
     DecompReqArgs_,
     Top,
     apply_decomp,
-    extract_decomp_reqs,
+    extract_decomp_reqs_,
     iml_of_decomp,
     iml_of_lazy_ret,
     iml_of_top,
@@ -145,12 +151,12 @@ class TestTimeoutAttr:
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]
 [@@timeout 120]"""
-        leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
             iml, self._parse(iml)
         )
-        assert reqs == snapshot([{'name': 'f', 'timeout': 120}])
+        assert reqs == [{'name': 'f', 'decomp': Top(), 'timeout': 120}]
         assert leftover == snapshot(
-            'let f x = if x > 0 then (-1) else 1\n\n[@@timeout 120]\n'
+            'let f x = if x > 0 then (-1) else 1\n\n[@@timeout 120]'
         )
 
     def test_extract_timeout_before_decomp(self):
@@ -159,34 +165,38 @@ let f x = if x > 0 then (-1) else 1
 let f x = if x > 0 then (-1) else 1
 [@@timeout 120]
 [@@decomp top ()]"""
-        leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
             iml, self._parse(iml)
         )
-        assert reqs == snapshot([{'name': 'f', 'timeout': 120}])
+        assert reqs == [{'name': 'f', 'decomp': Top(), 'timeout': 120}]
         assert leftover == snapshot(
-            'let f x = if x > 0 then (-1) else 1\n[@@timeout 120]\n\n'
+            'let f x = if x > 0 then (-1) else 1\n[@@timeout 120]\n'
         )
 
     def test_extract_no_timeout(self):
         iml = """\
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
             iml, self._parse(iml)
         )
-        assert reqs == snapshot([{'name': 'f'}])
+        assert reqs == [{'name': 'f', 'decomp': Top()}]
 
     def test_extract_timeout_with_labels(self):
         iml = """\
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ~prune:true ~ctx_simp:false ()]
 [@@timeout 7]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
             iml, self._parse(iml)
         )
-        assert reqs == snapshot(
-            [{'name': 'f', 'prune': True, 'ctx_simp': False, 'timeout': 7}]
-        )
+        assert reqs == [
+            {
+                'name': 'f',
+                'decomp': Top(prune=True, ctx_simp=False),
+                'timeout': 7,
+            }
+        ]
 
     def test_timeout_on_other_binding_is_not_picked_up(self):
         """A `[@@timeout]` is scoped to its own binding, nothing else."""
@@ -195,10 +205,10 @@ let rec g y = y
 [@@timeout 9]
 let f x = if x > 0 then (-1) else 1
 [@@decomp top ()]"""
-        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
             iml, self._parse(iml)
         )
-        assert reqs == snapshot([{'name': 'f'}])
+        assert reqs == [{'name': 'f', 'decomp': Top()}]
 
     def test_insert_always_emits_timeout(self):
         iml = 'let foo x = x + 1\n'
@@ -230,3 +240,141 @@ let foo x = x + 1
 [@@decomp top ~prune:true () << top ~ctx_simp:true () [%id bar]]
 [@@timeout 45]
 """)
+
+
+class TestExtractDecompReq_:
+    """
+    Composite extraction: `extract_decomp_reqs_` understands `<<` and `<|<`.
+
+    The old `extract_decomp_reqs` raises `NotImplementedError` on these.
+    """
+
+    @staticmethod
+    def _parse(iml: str) -> tree_sitter.Tree:
+        parser = get_parser()
+        return parser.parse(bytes(iml, encoding='utf8'))
+
+    def _extract_one(self, iml: str) -> DecompReqArgs_:
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
+            iml, self._parse(iml)
+        )
+        assert len(reqs) == 1
+        return reqs[0]
+
+    def test_extract_bare_top(self):
+        req = self._extract_one('let f x = x\n[@@decomp top ~prune:true ()]')
+        assert req == {'name': 'f', 'decomp': Top(prune=True)}
+
+    def test_extract_merge(self):
+        req = self._extract_one(
+            'let f x = x\n'
+            '[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id bar]]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': merge(
+                Top(prune=True), apply_decomp(Top(ctx_simp=True), 'bar')
+            ),
+        }
+
+    def test_extract_nested_merge_is_left_associative(self):
+        req = self._extract_one(
+            'let f x = x\n'
+            '[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id a]'
+            ' << top () [%id b]]'
+        )
+        inner = merge(Top(prune=True), apply_decomp(Top(ctx_simp=True), 'a'))
+        assert req == {
+            'name': 'f',
+            'decomp': merge(inner, apply_decomp(Top(), 'b')),
+        }
+
+    def test_extract_compound_merge(self):
+        req = self._extract_one(
+            'let f x = x\n[@@decomp top () <|< top () [%id c]]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': CompoundMerge(m=Top(), d1=apply_decomp(Top(), 'c')),
+        }
+
+    def test_extract_does_not_confuse_basis_ids_with_merge_id(self):
+        """`~basis:[[%id g]]` also holds `[%id ...]`, but not the merge one."""
+        req = self._extract_one(
+            'let f x = x\n'
+            '[@@decomp top ~assuming:[%id g] ~basis:[[%id g]; [%id h]] ()'
+            ' << top () [%id d]]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': merge(
+                Top(assuming='g', basis=['g', 'h']),
+                apply_decomp(Top(), 'd'),
+            ),
+        }
+
+    def test_extract_with_timeout(self):
+        req = self._extract_one(
+            'let f x = x\n[@@decomp top () << top () [%id bar]]\n[@@timeout 60]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': merge(Top(), apply_decomp(Top(), 'bar')),
+            'timeout': 60,
+        }
+
+    @pytest.mark.parametrize(
+        ('iml', 'expected_msg'),
+        [
+            pytest.param(
+                'let f x = x\n[@@decomp top () << top ()]',
+                'must be applied to an `[%id ...]`',
+                id='rhs-missing-id',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () [%id z]]',
+                'not a decomp result',
+                id='payload-already-applied',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () >>> top () [%id z]]',
+                'unsupported decomp operator',
+                id='unsupported-operator',
+            ),
+        ],
+    )
+    def test_extract_rejects_malformed_payload(
+        self, iml: str, expected_msg: str
+    ):
+        with pytest.raises(DecompParsingError, match=re.escape(expected_msg)):
+            extract_decomp_reqs_(iml, self._parse(iml))
+
+
+class TestDecompReqRoundTrip_:
+    """`extract_decomp_reqs_` -> `insert_decomp_req_` preserves the decomp."""
+
+    @staticmethod
+    def _parse(iml: str) -> tree_sitter.Tree:
+        parser = get_parser()
+        return parser.parse(bytes(iml, encoding='utf8'))
+
+    @pytest.mark.parametrize(
+        'attr',
+        [
+            '[@@decomp top ()]',
+            '[@@decomp top ~prune:true ()]',
+            '[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id bar]]',
+            '[@@decomp top () << top () [%id a] << top () [%id b]]',
+            '[@@decomp top () <|< top () [%id c]]',
+            '[@@decomp top ~assuming:[%id g] ~basis:[[%id g]; [%id h]] ()]',
+        ],
+    )
+    def test_round_trip_preserves_attr(self, attr: str):
+        iml = f'let f x = x\n{attr}\n'
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
+            iml, self._parse(iml)
+        )
+        rebuilt, _ = insert_decomp_req_(
+            leftover, self._parse(leftover), reqs[0]
+        )
+        assert rebuilt.strip() == iml.strip()
