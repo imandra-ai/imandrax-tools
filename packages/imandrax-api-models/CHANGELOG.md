@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- client: expose `compute_timeout` on `decompose` (sync and async)
+- FIX(client): sync `decompose` accepted `assuming` but never forwarded it to the request
 
 ## [20.6.0] - 26-08-14
 - client: support passing timeout config
