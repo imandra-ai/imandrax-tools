@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run python3
+# ruff: noqa: BLE001, RUF100
 """Smoke tests for iml-query package."""
 
 import sys
@@ -22,9 +23,7 @@ def test_imports() -> None:
 
         print('✓ iml_query.processing imported')
     except ImportError as e:
-        raise AssertionError(
-            f'Failed to import iml_query.processing: {e}'
-        ) from e
+        raise AssertionError(f'Failed to import iml_query.processing: {e}') from e
 
     try:
         from iml_query import queries  # noqa: F401
@@ -139,7 +138,7 @@ let another_func z = z * 2
 
         # Verify structure
         if not isinstance(outline, dict):
-            raise AssertionError('iml_outline should return a dict')
+            raise TypeError('iml_outline should return a dict')
 
         expected_keys = {
             'verify_req',
@@ -157,9 +156,7 @@ let another_func z = z * 2
             len(outline['opaque_function']) != 1
             or 'func' not in outline['opaque_function'][0]
         ):
-            raise AssertionError(
-                'Opaque function not correctly extracted in outline'
-            )
+            raise AssertionError('Opaque function not correctly extracted in outline')
 
         if len(outline['verify_req']) != 1:
             raise AssertionError('Verify request not correctly extracted')

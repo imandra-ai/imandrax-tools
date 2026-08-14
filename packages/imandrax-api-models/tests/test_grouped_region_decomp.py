@@ -4,8 +4,6 @@ from pathlib import Path
 
 import imandrax_api
 import pytest
-from inline_snapshot import snapshot
-
 from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import (
@@ -18,6 +16,7 @@ from imandrax_api_models.region_decomp import (
     group_regions,
     mir_regions_of_fun_decomp_artifact,
 )
+from inline_snapshot import snapshot
 
 
 def fence_py(s: str) -> str: return f'```python\n{s}\n```'  # fmt: skip

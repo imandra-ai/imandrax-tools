@@ -44,9 +44,7 @@ VERIFY_QUERY_SRC = r"""
 @dataclass(slots=True, frozen=True)
 class VerifyCapture(BaseCapture):
     verify_statement: Node  # the entire `verify` statement
-    verify_expr: (
-        Node  # the expression after `verify`, excluding item attributes
-    )
+    verify_expr: Node  # the expression after `verify`, excluding item attributes
     verify_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
@@ -62,9 +60,7 @@ INSTANCE_QUERY_SRC = r"""
 @dataclass(slots=True, frozen=True)
 class InstanceCapture(BaseCapture):
     instance_statement: Node  # the entire `instance` statement
-    instance_expr: (
-        Node  # the expression after `instance`, excluding item attributes
-    )
+    instance_expr: Node  # the expression after `instance`, excluding item attributes
     instance_attr: Node | None = None  # e.g. `[@@by simp]`
 
 
