@@ -352,6 +352,65 @@ def _top_of_decomp_attr_payload(
     return _top_of_appl_expr_node(expect_appl)
 
 
+def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
+    """
+    Read `[@@timeout n]` off the same `let_binding` as `decomp_attr`.
+
+    `[@@decomp ...]` and `[@@timeout n]` are plain sibling `item_attribute`
+    nodes under one `let_binding`, and ImandraX does not care which comes
+    first, so we scan siblings rather than anchoring on order in the query.
+
+    Returns:
+        the timeout in seconds, or None if the binding carries no
+        `[@@timeout]` attribute.
+
+    """
+
+    def _descendants(node: Node) -> list[Node]:
+        """Collect `node` and all of its descendants, pre-order."""
+        out = [node]
+        for child in node.children:
+            out.extend(_descendants(child))
+        return out
+
+    binding = decomp_attr.parent
+    if binding is None:
+        return None
+
+    for attr in binding.children:
+        if attr.type != 'item_attribute':
+            continue
+        attr_id = attr.child_by_field_name('attribute_id')
+        if attr_id is None:
+            # `attribute_id` is not a named field in this grammar; fall back
+            # to positional lookup among the children.
+            attr_id = next(
+                (c for c in attr.children if c.type == 'attribute_id'), None
+            )
+        if attr_id is None:
+            continue
+        if unwrap_bytes(attr_id.text).decode('utf8') != 'timeout':
+            continue
+
+        number = next(
+            (
+                desc
+                for payload in attr.children
+                if payload.type == 'attribute_payload'
+                for desc in _descendants(payload)
+                if desc.type == 'number'
+            ),
+            None,
+        )
+        if number is None:
+            raise DecompParsingError(
+                '`[@@timeout]` payload is not an integer literal'
+            )
+        return int(unwrap_bytes(number.text).decode('utf8'))
+
+    return None
+
+
 class DecompReqArgs(TypedDict, total=False):
     """Decomp non-composite top expression + body function name."""
 
@@ -362,6 +421,14 @@ class DecompReqArgs(TypedDict, total=False):
     prune: bool | None
     ctx_simp: bool | None
     lift_bool: str | None
+    timeout: int | None
+    """`[@@timeout n]` on the decomposed binding, in seconds.
+
+    Send as `compute_timeout` on the decompose request. Note that in-source
+    this same attribute also budgets the binding's POs, so extraction leaves
+    it in place (see `_remove_decomp_reqs`) to keep the extracted and
+    whole-file paths equivalent.
+    """
 
 
 def decomp_capture_to_req(
@@ -371,6 +438,9 @@ def decomp_capture_to_req(
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
     req |= {k: v for k, v in asdict(req_labels).items() if v is not None}
+    timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
+    if timeout is not None:
+        req['timeout'] = timeout
     return (cast(DecompReqArgs, req), capture.decomp_attr.range)
 
 
@@ -379,7 +449,15 @@ def _remove_decomp_reqs(
     tree: Tree,
     captures: list[DecompCapture],
 ) -> tuple[str, Tree]:
-    """Remove decomp requests from IML code."""
+    """
+    Remove decomp requests from IML code.
+
+    Only `[@@decomp ...]` is removed. Any `[@@timeout n]` on the same binding
+    is deliberately left in place: in the whole-file path that attribute
+    budgets both the decomp and the binding's POs, so dropping it here would
+    silently give the POs a different (default) budget than they get when the
+    decomp request is left inline.
+    """
     decomp_attr_nodes = [capture.decomp_attr for capture in captures]
     new_iml, new_tree = delete_nodes(iml, tree, nodes=decomp_attr_nodes)
     return new_iml, new_tree
@@ -430,12 +508,16 @@ def insert_decomp_req(
             lift_bool=req.get('lift_bool'),
         )
     )
-    to_insert = f'[@@decomp {top_appl_text}]'
+    to_insert = [f'[@@decomp {top_appl_text}]']
+
+    timeout = req.get('timeout')
+    if timeout is not None:
+        to_insert.append(f'[@@timeout {timeout}]')
 
     new_iml, new_tree = insert_lines(
         iml,
         tree,
-        lines=[to_insert],
+        lines=to_insert,
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
@@ -450,6 +532,7 @@ class DecompReqArgs_(TypedDict, total=False):
 
     name: Required[str]
     decomp: Required[Decomp]
+    timeout: int | None
 
 
 def insert_decomp_req_(
@@ -464,12 +547,15 @@ def insert_decomp_req_(
     func_def_end_row = func_def_node.end_point[0]
 
     decomp_appl_text = iml_of_decomp(req['decomp'])
-    to_insert = f'[@@decomp {decomp_appl_text}]'
+    to_insert = [f'[@@decomp {decomp_appl_text}]']
+    timeout = req.get('timeout')
+    if timeout is not None:
+        to_insert.append(f'[@@timeout {timeout}]')
 
     new_iml, new_tree = insert_lines(
         iml,
         tree,
-        lines=[to_insert],
+        lines=to_insert,
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
