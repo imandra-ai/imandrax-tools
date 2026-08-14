@@ -352,6 +352,112 @@ def _top_of_decomp_attr_payload(
     return _top_of_appl_expr_node(expect_appl)
 
 
+def _identifier_of_appl_expr_node(node: Node) -> str | None:
+    """
+    Read the `[%id x]` a `top ... ()` application is applied to, if any.
+
+    Only direct children are considered: `~basis:[[%id x]]` and friends also
+    contain `[%id ...]` extensions, but those hang off a `labeled_argument`.
+    """
+    assert node.type == 'application_expression'
+
+    for child in node.children:
+        if child.type != 'extension':
+            continue
+        attr_id = next(
+            (c for c in child.children if c.type == 'attribute_id'), None
+        )
+        if attr_id is None:
+            continue
+        if unwrap_bytes(attr_id.text).decode('utf8') != 'id':
+            continue
+        payload = next(
+            (c for c in child.children if c.type == 'attribute_payload'), None
+        )
+        if payload is None:
+            raise DecompParsingError('`[%id ...]` has no payload')
+        return unwrap_bytes(payload.text).decode('utf8').strip()
+
+    return None
+
+
+def _lazy_ret_of_appl_expr_node(node: Node) -> LazyRet:
+    """Parse `top ... () [%id x]` — a `Decomp.m` applied to an identifier."""
+    if node.type != 'application_expression':
+        raise DecompParsingError(
+            'right operand of `<<` / `<|<` must be a `top ... () [%id ...]` '
+            f'application, got a `{node.type}`'
+        )
+
+    identifier = _identifier_of_appl_expr_node(node)
+    if identifier is None:
+        raise DecompParsingError(
+            'right operand of `<<` / `<|<` must be applied to an `[%id ...]`'
+        )
+    return LazyRet(m=_top_of_appl_expr_node(node), identifier=identifier)
+
+
+def _decomp_of_expr_node(node: Node) -> Decomp:
+    """
+    Parse a decomp algebra expression node into a `Decomp`.
+
+    Handles a bare `top ... ()` plus the `<<` (merge) and `<|<`
+    (compound merge) operators. Both are left-associative, so
+    `a << b << c` nests as `Merge(Merge(a, b), c)`.
+    """
+    if node.type == 'application_expression':
+        if _identifier_of_appl_expr_node(node) is not None:
+            # `[@@decomp ...]` wants a `Decomp.m`, not an already-applied
+            # `Decomp.ret`; an `[%id ...]` only belongs right of `<<` / `<|<`.
+            raise DecompParsingError(
+                'decomp payload is applied to an `[%id ...]`; expected a '
+                'decomp (`top ... ()`), not a decomp result'
+            )
+        return _top_of_appl_expr_node(node)
+
+    if node.type == 'infix_expression':
+        operands = node.named_children
+        if len(operands) != 3:
+            raise DecompParsingError(
+                f'expected a binary decomp operator, got {len(operands)} '
+                'operands'
+            )
+        lhs, operator, rhs = operands
+        op = unwrap_bytes(operator.text).decode('utf8')
+
+        m = _decomp_of_expr_node(lhs)
+        d1 = _lazy_ret_of_appl_expr_node(rhs)
+        match op:
+            case '<<':
+                return Merge(m=m, d1=d1)
+            case '<|<':
+                return CompoundMerge(m=m, d1=d1)
+            case _:
+                raise DecompParsingError(
+                    f'unsupported decomp operator `{op}`; '
+                    'expected `<<` or `<|<`'
+                )
+
+    if node.type == 'parenthesized_expression':
+        inner = next((c for c in node.named_children), None)
+        if inner is None:
+            raise DecompParsingError('empty parenthesized decomp expression')
+        return _decomp_of_expr_node(inner)
+
+    raise DecompParsingError(
+        f'cannot parse `{node.type}` as a decomp expression'
+    )
+
+
+def _decomp_of_decomp_attr_payload(node: Node) -> Decomp:
+    """Parse a `[@@decomp ...]` payload into a (possibly composite) `Decomp`."""
+    assert node.type == 'attribute_payload'
+
+    expression_item = node.children[0]
+    expr = expression_item.children[0]
+    return _decomp_of_expr_node(expr)
+
+
 def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
     """
     Read `[@@timeout n]` off the same `let_binding` as `decomp_attr`.
@@ -559,3 +665,51 @@ def insert_decomp_req_(
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
+
+
+def decomp_capture_to_req_(
+    capture: DecompCapture,
+) -> tuple[DecompReqArgs_, Range]:
+    """Composite counterpart of `decomp_capture_to_req`."""
+    req: DecompReqArgs_ = {
+        'name': unwrap_bytes(capture.decomposed_func_name.text).decode('utf8'),
+        'decomp': _decomp_of_decomp_attr_payload(capture.decomp_payload),
+    }
+    timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
+    if timeout is not None:
+        req['timeout'] = timeout
+    return req, capture.decomp_attr.range
+
+
+def extract_decomp_reqs_(
+    iml: str, tree: Tree
+) -> tuple[str, Tree, list[DecompReqArgs_], list[Range]]:
+    """
+    Composite counterpart of `extract_decomp_reqs`.
+
+    Unlike `extract_decomp_reqs` this understands the `<<` / `<|<` operators,
+    so a composed decomp round-trips through `insert_decomp_req_` instead of
+    raising `NotImplementedError`.
+
+    As with `extract_decomp_reqs`, only `[@@decomp ...]` is removed from the
+    returned source; any `[@@timeout n]` is lifted into the request *and* left
+    in place (see `_remove_decomp_reqs`).
+    """
+    matches = run_query(
+        mk_query(DECOMP_QUERY_SRC),
+        node=tree.root_node,
+    )
+
+    decomp_captures = [
+        DecompCapture.from_ts_capture(capture) for _, capture in matches
+    ]
+
+    req_and_range = [
+        decomp_capture_to_req_(capture) for capture in decomp_captures
+    ]
+    if not req_and_range:
+        return iml, tree, [], []
+
+    reqs, ranges = zip(*req_and_range)
+    new_iml, new_tree = _remove_decomp_reqs(iml, tree, decomp_captures)
+    return new_iml, new_tree, list(reqs), list(ranges)
