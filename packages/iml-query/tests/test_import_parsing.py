@@ -1,11 +1,10 @@
 """Tests for IML import statement parsing."""
 
-from inline_snapshot import snapshot
-from tree_sitter import Node
-
 from iml_query.multifile import parse_imports
 from iml_query.queries import ImportCapture
 from iml_query.tree_sitter_utils import unwrap_bytes
+from inline_snapshot import snapshot
+from tree_sitter import Node
 
 
 def pp_ts_node(node: Node) -> str:

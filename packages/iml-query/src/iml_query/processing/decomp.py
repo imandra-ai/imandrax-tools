@@ -120,7 +120,6 @@ from .utils import find_func_definition
 class DecompParsingError(Exception):
     """Exception raised when parsing decomp fails."""
 
-    pass
 
 
 @dataclass

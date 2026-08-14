@@ -41,21 +41,21 @@ from .vg import (
 
 __all__ = [
     'Nesting',
-    'resolve_nesting_definitions',
-    'update_top_definition',
-    'extract_verify_reqs',
-    'extract_instance_reqs',
-    'extract_test_reqs',
+    'eval_capture_to_src',
     'extract_decomp_reqs',
     'extract_decomp_reqs_',
+    'extract_instance_reqs',
+    'extract_test_reqs',
     'extract_type_decl_names',
-    'insert_verify_req',
-    'insert_instance_req',
-    'insert_test_req',
+    'extract_verify_reqs',
+    'iml_outline',
     'insert_decomp_req',
     'insert_decomp_req_',
-    'iml_outline',
-    'eval_capture_to_src',
+    'insert_instance_req',
+    'insert_test_req',
+    'insert_verify_req',
+    'resolve_nesting_definitions',
+    'update_top_definition',
 ]
 
 

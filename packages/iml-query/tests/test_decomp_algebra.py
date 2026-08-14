@@ -4,8 +4,6 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
-from inline_snapshot import snapshot
-
 from iml_query.processing.decomp import (
     CompoundMerge,
     DecompParsingError,
@@ -20,6 +18,7 @@ from iml_query.processing.decomp import (
     merge,
 )
 from iml_query.tree_sitter_utils import get_parser
+from inline_snapshot import snapshot
 
 if TYPE_CHECKING:
     import tree_sitter

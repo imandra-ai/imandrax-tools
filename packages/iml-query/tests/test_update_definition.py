@@ -1,11 +1,10 @@
-from inline_snapshot import snapshot
-
 from iml_query.processing import (
     update_top_definition,
 )
 from iml_query.tree_sitter_utils import (
     get_parser,
 )
+from inline_snapshot import snapshot
 
 
 def test_update_top_definition():

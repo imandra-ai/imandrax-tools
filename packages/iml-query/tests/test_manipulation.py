@@ -1,5 +1,3 @@
-from inline_snapshot import snapshot
-
 from iml_query.processing import (
     extract_decomp_reqs,
     extract_verify_reqs,
@@ -16,6 +14,7 @@ from iml_query.tree_sitter_utils import (
     mk_query,
     run_query,
 )
+from inline_snapshot import snapshot
 
 
 def top_of_decomp_args(decomp_args: DecompReqArgs) -> Top:

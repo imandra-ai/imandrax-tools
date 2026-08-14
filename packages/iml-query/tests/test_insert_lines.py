@@ -1,10 +1,9 @@
 # pyright: basic
-from inline_snapshot import snapshot
-
 from iml_query.tree_sitter_utils import (
     get_parser,
     insert_lines,
 )
+from inline_snapshot import snapshot
 
 
 def test_insert_lines_consecutive():

@@ -1,5 +1,3 @@
-from inline_snapshot import snapshot
-
 from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
@@ -15,6 +13,7 @@ from iml_query.tree_sitter_utils import (
     run_query,
     unwrap_bytes,
 )
+from inline_snapshot import snapshot
 
 
 def test_complex_decomp_with_composition():

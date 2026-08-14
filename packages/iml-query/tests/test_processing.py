@@ -1,6 +1,4 @@
 import pytest
-from inline_snapshot import snapshot
-
 from iml_query.processing import (
     Nesting,
     eval_capture_to_src,
@@ -36,6 +34,7 @@ from iml_query.tree_sitter_utils import (
     run_query,
     unwrap_bytes,
 )
+from inline_snapshot import snapshot
 
 
 def test_verify_node_to_req():
