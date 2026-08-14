@@ -1,4 +1,5 @@
 #!/usr/bin/env -S uv run python3
+# ruff: noqa: BLE001, RUF100
 """Smoke tests for iml-query package."""
 
 import sys
@@ -137,7 +138,7 @@ let another_func z = z * 2
 
         # Verify structure
         if not isinstance(outline, dict):
-            raise AssertionError('iml_outline should return a dict')
+            raise TypeError('iml_outline should return a dict')
 
         expected_keys = {
             'verify_req',

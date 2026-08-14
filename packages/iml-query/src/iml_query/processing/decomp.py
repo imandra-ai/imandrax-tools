@@ -121,7 +121,6 @@ class DecompParsingError(Exception):
     """Exception raised when parsing decomp fails."""
 
 
-
 @dataclass
 class Top:
     assuming: str | None = None
@@ -269,7 +268,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                         )
                     res['lift_bool'] = lift_bool_value
             case _:
-                assert 'False', 'Never'
+                assert False, 'Never'
 
     return Top(**res)
 

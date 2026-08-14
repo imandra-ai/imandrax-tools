@@ -166,7 +166,7 @@ def resolve(
         # Recursively resolve dependencies first (DFS)
         for imp in imports:
             imp_path: str = str(unwrap_bytes(imp.import_path.text), encoding='utf-8')
-            if imp_path.startswith('findlib:') or imp_path.startswith('dune:'):
+            if imp_path.startswith(('findlib:', 'dune:')):
                 return NotImplementedImportError(imp_path)
 
             dep_path = (base_dir / imp_path).resolve()
