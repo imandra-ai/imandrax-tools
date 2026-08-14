@@ -1,9 +1,12 @@
+from typing import TYPE_CHECKING
+
 from inline_snapshot import snapshot
 
 from iml_query.processing.decomp import (
     DecompReqArgs_,
     Top,
     apply_decomp,
+    extract_decomp_reqs,
     iml_of_decomp,
     iml_of_lazy_ret,
     iml_of_top,
@@ -11,6 +14,9 @@ from iml_query.processing.decomp import (
     merge,
 )
 from iml_query.tree_sitter_utils import get_parser
+
+if TYPE_CHECKING:
+    import tree_sitter
 
 
 class TestIMLOfTop:
@@ -118,3 +124,109 @@ let foo x = x + 1
             assert 'does_not_exist' in str(e)
         else:
             raise AssertionError('expected ValueError')
+
+
+class TestTimeoutAttr:
+    """
+    `[@@timeout n]` alongside `[@@decomp ...]` on the same binding.
+
+    In the whole-file path that one attribute budgets both the decomp and the
+    binding's POs, so extraction lifts it into the request and leaves it in
+    the source, keeping the extracted and whole-file paths equivalent.
+    """
+
+    @staticmethod
+    def _parse(iml: str) -> tree_sitter.Tree:
+        parser = get_parser()
+        return parser.parse(bytes(iml, encoding='utf8'))
+
+    def test_extract_timeout_after_decomp(self):
+        iml = """\
+let f x = if x > 0 then (-1) else 1
+[@@decomp top ()]
+[@@timeout 120]"""
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+            iml, self._parse(iml)
+        )
+        assert reqs == snapshot([{'name': 'f', 'timeout': 120}])
+        assert leftover == snapshot(
+            'let f x = if x > 0 then (-1) else 1\n\n[@@timeout 120]\n'
+        )
+
+    def test_extract_timeout_before_decomp(self):
+        """ImandraX ignores attribute order, so extraction must too."""
+        iml = """\
+let f x = if x > 0 then (-1) else 1
+[@@timeout 120]
+[@@decomp top ()]"""
+        leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+            iml, self._parse(iml)
+        )
+        assert reqs == snapshot([{'name': 'f', 'timeout': 120}])
+        assert leftover == snapshot(
+            'let f x = if x > 0 then (-1) else 1\n[@@timeout 120]\n\n'
+        )
+
+    def test_extract_no_timeout(self):
+        iml = """\
+let f x = if x > 0 then (-1) else 1
+[@@decomp top ()]"""
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+            iml, self._parse(iml)
+        )
+        assert reqs == snapshot([{'name': 'f'}])
+
+    def test_extract_timeout_with_labels(self):
+        iml = """\
+let f x = if x > 0 then (-1) else 1
+[@@decomp top ~prune:true ~ctx_simp:false ()]
+[@@timeout 7]"""
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+            iml, self._parse(iml)
+        )
+        assert reqs == snapshot(
+            [{'name': 'f', 'prune': True, 'ctx_simp': False, 'timeout': 7}]
+        )
+
+    def test_timeout_on_other_binding_is_not_picked_up(self):
+        """A `[@@timeout]` is scoped to its own binding, nothing else."""
+        iml = """\
+let rec g y = y
+[@@timeout 9]
+let f x = if x > 0 then (-1) else 1
+[@@decomp top ()]"""
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs(
+            iml, self._parse(iml)
+        )
+        assert reqs == snapshot([{'name': 'f'}])
+
+    def test_insert_always_emits_timeout(self):
+        iml = 'let foo x = x + 1\n'
+        req = DecompReqArgs_(name='foo', decomp=Top(prune=True), timeout=30)
+        new_iml, _ = insert_decomp_req_(iml, self._parse(iml), req)
+        assert new_iml == snapshot("""\
+let foo x = x + 1
+[@@decomp top ~prune:true ()]
+[@@timeout 30]
+""")
+
+    def test_insert_omits_timeout_when_absent(self):
+        iml = 'let foo x = x + 1\n'
+        req = DecompReqArgs_(name='foo', decomp=Top(prune=True))
+        new_iml, _ = insert_decomp_req_(iml, self._parse(iml), req)
+        assert new_iml == snapshot("""\
+let foo x = x + 1
+[@@decomp top ~prune:true ()]
+""")
+
+    def test_insert_emits_timeout_for_composed_decomp(self):
+        """The timeout rides on the binding, not on any one decomp term."""
+        iml = 'let foo x = x + 1\n'
+        d = merge(Top(prune=True), apply_decomp(Top(ctx_simp=True), 'bar'))
+        req = DecompReqArgs_(name='foo', decomp=d, timeout=45)
+        new_iml, _ = insert_decomp_req_(iml, self._parse(iml), req)
+        assert new_iml == snapshot("""\
+let foo x = x + 1
+[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id bar]]
+[@@timeout 45]
+""")
