@@ -161,12 +161,8 @@ class EvalOutput(BaseModel):
 
 class EvalRes(BaseModel):
     success: bool = Field()
-    messages: list[str] = Field(
-        default_factory=list, description='"normal" messages'
-    )
-    errors: list[Error] = Field(
-        default_factory=list, description='akin to stderr'
-    )
+    messages: list[str] = Field(default_factory=list, description='"normal" messages')
+    errors: list[Error] = Field(default_factory=list, description='akin to stderr')
 
     # All tasks started during eval
     tasks: list[Task] = Field(
