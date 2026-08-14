@@ -38,18 +38,18 @@ from ._region import (
 )
 
 __all__ = (
-    'Region',
-    'RegionNonGroupStat',
-    'mir_regions_of_fun_decomp_artifact',
     'EnrichedDecomposeRes',
+    'ForTest',
+    'Region',
     'RegionGroup',
     'RegionGroupView',
+    'RegionNonGroupStat',
     'eq_term_with_pp',
-    'rgs_of_mir_fun_decomp',
-    'group_regions',
     'get_leaf_groups',
+    'group_regions',
+    'mir_regions_of_fun_decomp_artifact',
     'render_region_groups',
-    'ForTest',
+    'rgs_of_mir_fun_decomp',
 )
 
 
@@ -121,7 +121,7 @@ class EnrichedDecomposeRes(DecomposeRes):
     """A `DecomposeRes` augmented with hierarchical region grouping."""
 
     region_groups: list[RegionGroup] = Field(
-        default_factory=lambda: [],
+        default_factory=list,
         description=(
             'Region groups grouped by constraints, containing child groups recursively.'
             ' Empty when no regions are available (decomposition error).'
@@ -208,7 +208,7 @@ class RegionGroup(BaseModel):
         description='The concrete region. Present iff at leaf nodes.',
     )
     children: list[RegionGroup] = Field(
-        default_factory=lambda: [], description='Sub-groups under this node.'
+        default_factory=list, description='Sub-groups under this node.'
     )
 
     def pure_group_stat(self) -> JSONObject:
@@ -264,7 +264,7 @@ class RegionGroupView(RegionGroup):
     """RegionGroup but with `region` replaced with `region_stat`"""
 
     region: RegionNonGroupStat | None = Field(default=None)  # pyright: ignore[reportIncompatibleVariableOverride]
-    children: list[RegionGroupView] = Field(default_factory=lambda: [])  # pyright: ignore[reportIncompatibleVariableOverride]
+    children: list[RegionGroupView] = Field(default_factory=list)  # pyright: ignore[reportIncompatibleVariableOverride]
 
     @classmethod
     def from_region_group(cls, rg: RegionGroup) -> RegionGroupView:

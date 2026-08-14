@@ -1,4 +1,3 @@
-# ruff: noqa: F403, F405
 from typing import Literal
 
 import imandrax_api.lib as xtype

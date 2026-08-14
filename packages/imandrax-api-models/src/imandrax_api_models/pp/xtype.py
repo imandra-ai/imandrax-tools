@@ -95,7 +95,7 @@ def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
         return Pp.text(repr(b))
     else:
         head = b[:limit]
-        return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
+        return Pp.text(f'<{len(b)} bytes: {head!r}...>')
 
 
 def Sequent2doc(v: Sequent) -> Doc:

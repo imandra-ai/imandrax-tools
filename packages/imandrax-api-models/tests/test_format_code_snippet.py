@@ -1,6 +1,5 @@
-from inline_snapshot import snapshot
-
 from imandrax_api_models.context_utils import format_code_snippet_with_loc
+from inline_snapshot import snapshot
 
 
 def test_single_line_error():
