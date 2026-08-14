@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- decomp: extract `[@@timeout n]` from the decomposed binding into `DecompReqArgs['timeout']` (seconds, to be sent as `compute_timeout` in API). 
 
 ## [0.13.0] - 2026-07-27
 - support lazy IML reader for resolving (and joining) dependencies
