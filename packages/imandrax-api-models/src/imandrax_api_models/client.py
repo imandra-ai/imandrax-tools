@@ -179,6 +179,7 @@ class ImandraXClient(imandrax_api.Client):
         ):
             res = super().decompose(
                 name=name,
+                assuming=assuming,
                 basis=basis,
                 rule_specs=rule_specs,
                 prune=prune,
