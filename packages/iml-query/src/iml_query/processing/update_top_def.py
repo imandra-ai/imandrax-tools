@@ -47,17 +47,13 @@ def update_top_definition(
         queries={'value_def': VALUE_DEFINITION_QUERY_SRC}, node=tree.root_node
     )
     value_defs: list[ValueDefCapture] = [
-        ValueDefCapture.from_ts_capture(capture)
-        for capture in matches['value_def']
+        ValueDefCapture.from_ts_capture(capture) for capture in matches['value_def']
     ]
     top_defs = [c for c in value_defs if c.is_top_level]
     matched_defs = [
         top_def
         for top_def in top_defs
-        if (
-            top_def_name
-            == unwrap_bytes(top_def.function_name.text).decode('utf-8')
-        )
+        if (top_def_name == unwrap_bytes(top_def.function_name.text).decode('utf-8'))
     ]
 
     if len(matched_defs) == 0:

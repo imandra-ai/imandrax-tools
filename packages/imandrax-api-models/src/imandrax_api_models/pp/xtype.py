@@ -95,7 +95,7 @@ def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
         return Pp.text(repr(b))
     else:
         head = b[:limit]
-        return Pp.text(f'<{len(b)} bytes: {repr(head)}...>')
+        return Pp.text(f'<{len(b)} bytes: {head!r}...>')
 
 
 def Sequent2doc(v: Sequent) -> Doc:
@@ -135,16 +135,13 @@ def _is_tasks_po_res_success(
     | xtype.Tasks_PO_res_success_Verified_upto
     | xtype.Tasks_PO_res_success_Test_ok
 ]:
-    if isinstance(
+    return isinstance(
         v,
         xtype.Tasks_PO_res_success_Proof
         | xtype.Tasks_PO_res_success_Instance
         | xtype.Tasks_PO_res_success_Verified_upto
         | xtype.Tasks_PO_res_success_Test_ok,
-    ):
-        return True
-    else:
-        return False
+    )
 
 
 class Printer:
@@ -159,8 +156,8 @@ class Printer:
     config: PrinterConfig
     debug: bool
 
-    def __init__(self, config: PrinterConfig = PrinterConfig(), debug: bool = False):
-        self.config = config
+    def __init__(self, config: PrinterConfig | None = None, debug: bool = False):
+        self.config = config or PrinterConfig()
         self.debug = debug
 
     def dataclass_row_docs(
@@ -294,7 +291,7 @@ class Printer:
                 return dataclass2doc(
                     v,
                     with_name='Error',
-                    filter_p=lambda k, v: False if k == 'stack' and v == [] else True,
+                    filter_p=lambda k, v: False if k == 'stack' and v == [] else True,  # noqa: SIM211
                 )
             case xtype.Error_Kind(name):
                 return python_quote(text(name))
@@ -581,7 +578,7 @@ def register_xtype_repr(**kwargs: Any) -> None:
     import inspect
 
     classes = []
-    for _name, obj in vars(xtype).items():
+    for obj in vars(xtype).values():
         if inspect.isclass(obj) and obj.__module__ == xtype.__name__:
             # The second filter is to exclude imported classes
             classes.append(obj)
@@ -598,7 +595,7 @@ def config_items_of_art(kind: str, xval: Any) -> list[tuple[str, Any]]:
     items = []
     match kind, xval:
         case 'po_res', _:
-            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):
+            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):  # noqa: SIM102
                 if isinstance(xval.res, xtype.Tasks_PO_res_success_Proof):  # pyright: ignore[reportUnknownMemberType]
                     items.append(('summarize_po_task', True))
 

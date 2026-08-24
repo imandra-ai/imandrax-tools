@@ -1,8 +1,7 @@
 """Test cases for extract_type_decl_names function."""
 
-from inline_snapshot import snapshot
-
 from iml_query.processing import extract_type_decl_names
+from inline_snapshot import snapshot
 
 
 def test_simple_type():

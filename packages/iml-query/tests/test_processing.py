@@ -1,6 +1,4 @@
 import pytest
-from inline_snapshot import snapshot
-
 from iml_query.processing import (
     Nesting,
     eval_capture_to_src,
@@ -11,6 +9,7 @@ from iml_query.processing import (
     insert_instance_req,
 )
 from iml_query.processing.base import find_nested_rec
+from iml_query.processing.decomp import Top, apply_decomp, merge
 from iml_query.processing.test import (
     test_capture_to_req as capture_to_test_req,
 )
@@ -35,6 +34,7 @@ from iml_query.tree_sitter_utils import (
     run_query,
     unwrap_bytes,
 )
+from inline_snapshot import snapshot
 
 
 def test_verify_node_to_req():
@@ -226,9 +226,7 @@ instance (fun x y -> x + y > 0 && x - y < 10)
     parser = get_parser()
     tree = parser.parse(bytes(iml, encoding='utf8'))
 
-    new_iml, _new_tree, instance_reqs, _ranges = extract_instance_reqs(
-        iml, tree
-    )
+    new_iml, _new_tree, instance_reqs, _ranges = extract_instance_reqs(iml, tree)
 
     assert instance_reqs == snapshot(
         [
@@ -276,9 +274,7 @@ instance (fun x -> x > 0)
 """)
 
     # Insert second instance
-    final_iml, _final_tree = insert_instance_req(
-        new_iml, new_tree, 'positive_checker'
-    )
+    final_iml, _final_tree = insert_instance_req(new_iml, new_tree, 'positive_checker')
     assert final_iml == snapshot("""\
 let add_one (x: int) : int = x + 1
 
@@ -343,6 +339,27 @@ instance positive_predicate\
             'opaque_function': ['expensive_computation', 'external_api_call'],
         }
     )
+
+
+@pytest.mark.xfail(
+    reason='migration WIP until we have a serializable representation for `Decomp`'
+)
+def test_iml_outline_composed_decomp():
+    iml = """\
+let f x = x + 1
+
+let g x = if x > 0 then x else -x
+[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id f]]
+[@@timeout 90]
+"""
+    outline = iml_outline(iml)
+    assert outline['decompose_req'] == [
+        {
+            'name': 'g',
+            'decomp': merge(Top(prune=True), apply_decomp(Top(ctx_simp=True), 'f')),
+            'timeout': 90,
+        }
+    ]
 
 
 def test_complex_decomp_parsing_detailed():
@@ -473,9 +490,7 @@ fun ys ->
 """,
                 },
             ],
-            'instance_reqs': [
-                {'hints': None, 'src': 'fun x -> x > 0 && x < 100'}
-            ],
+            'instance_reqs': [{'hints': None, 'src': 'fun x -> x > 0 && x < 100'}],
             'decomp_reqs': [
                 {
                     'name': 'conditional_fn',

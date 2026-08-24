@@ -880,7 +880,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.20.2"
+version = "0.20.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -888,7 +888,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/9f/a5d75c0a14f278b70ea9d3493cd63a29057960dac948d14b8ad3e9f243ae/imandrax_api-0.20.2-py3-none-any.whl", hash = "sha256:d7ce321080d6a3cc8d7395481fb4af4d29e0dbefbb5cbd1b9d11fde739f7fd13", size = 71077, upload-time = "2026-06-22T18:57:16.537Z" },
+    { url = "https://files.pythonhosted.org/packages/81/30/60f4327b2fc443e1e2610647763f7fee5598953f15c7b3f8ea973b057cfa/imandrax_api-0.20.2.1-py3-none-any.whl", hash = "sha256:b2ead77c57cfc32fe83517ac9bf1c74744038cbdf3d454c35ca4d00b33242377", size = 71284, upload-time = "2026-08-24T08:41:21.412Z" },
 ]
 
 [package.optional-dependencies]
@@ -898,7 +898,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.6.0"
+version = "20.7.0"
 source = { editable = "packages/imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
@@ -933,7 +933,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20.2" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20.2.1,<0.21" },
     { name = "iml-query", marker = "extra == 'client'", editable = "packages/iml-query" },
     { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.27" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'tracing'", specifier = ">=1.41.1" },

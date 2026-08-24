@@ -168,6 +168,7 @@ class ImandraXClient(imandrax_api.Client):
         lift_bool: Any | None = None,
         timeout: float | None = None,
         string_results: bool | None = None,
+        compute_timeout: int | None = None,
     ) -> DecomposeRes:
         with self._trace(
             'decompose',
@@ -176,9 +177,11 @@ class ImandraXClient(imandrax_api.Client):
             basis=basis,
             rule_specs=rule_specs,
             timeout=timeout,
+            compute_timeout=compute_timeout,
         ):
             res = super().decompose(
                 name=name,
+                assuming=assuming,
                 basis=basis,
                 rule_specs=rule_specs,
                 prune=prune,
@@ -186,6 +189,7 @@ class ImandraXClient(imandrax_api.Client):
                 lift_bool=lift_bool,
                 timeout=timeout,
                 string_results=string_results,
+                compute_timeout=compute_timeout,
             )
         return DecomposeRes.model_validate(res)
 
@@ -442,6 +446,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         lift_bool: Any | None = None,
         timeout: float | None = None,
         string_results: bool | None = None,
+        compute_timeout: int | None = None,
     ) -> DecomposeRes:
         with self._trace(
             'decompose',
@@ -450,6 +455,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             basis=basis,
             rule_specs=rule_specs,
             timeout=timeout,
+            compute_timeout=compute_timeout,
         ):
             res = await super().decompose(
                 name=name,
@@ -461,6 +467,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 lift_bool=lift_bool,
                 timeout=timeout,
                 string_results=string_results,
+                compute_timeout=compute_timeout,
             )
         return DecomposeRes.model_validate(res)
 

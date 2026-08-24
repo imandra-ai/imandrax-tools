@@ -20,9 +20,7 @@ def find_pyproject_dir(curr_path: Path, nth: int = 1) -> Path:
         curr_path = curr_path.parent
 
 
-def get_rich_str(
-    *renderables: RenderableType | object, plain: bool = True
-) -> str:
+def get_rich_str(*renderables: RenderableType | object, plain: bool = True) -> str:
     console = Console(
         record=True,
         width=80,

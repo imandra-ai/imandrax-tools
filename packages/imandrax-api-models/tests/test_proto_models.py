@@ -7,8 +7,6 @@ import pytest
 from dirty_equals import IsBytes, IsStr
 from google.protobuf.message import Message
 from imandrax_api import Client, url_dev, url_prod  # noqa: F401
-from inline_snapshot import snapshot
-
 from imandrax_api_models import (
     ArtifactListResult,
     ArtifactZip,
@@ -23,6 +21,7 @@ from imandrax_api_models import (
     TypecheckRes,
     VerifyRes,
 )
+from inline_snapshot import snapshot
 
 
 class IsArtifactData(IsBytes):

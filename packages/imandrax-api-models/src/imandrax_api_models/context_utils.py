@@ -506,7 +506,7 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
         case DecomposeRes():
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
-            except Exception:
+            except Exception:  # noqa: BLE001, RUF100
                 return format_decomp_res(model)
         case ErrorMessage():
             return format_error_msg(model)

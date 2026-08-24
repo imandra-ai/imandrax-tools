@@ -14,17 +14,16 @@ from typing import Any
 import dotenv
 import pytest
 from dirty_equals import IsStr
+from imandrax_api_models.client import (
+    ImandraXClient,
+    _client_session_id,  # pyright: ignore[reportPrivateUsage]
+    get_imandrax_client,
+)
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
-)
-
-from imandrax_api_models.client import (
-    ImandraXClient,
-    _client_session_id,  # pyright: ignore[reportPrivateUsage]
-    get_imandrax_client,
 )
 
 dotenv.load_dotenv()

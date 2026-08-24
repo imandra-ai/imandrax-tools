@@ -120,8 +120,6 @@ from .utils import find_func_definition
 class DecompParsingError(Exception):
     """Exception raised when parsing decomp fails."""
 
-    pass
-
 
 @dataclass
 class Top:
@@ -203,9 +201,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     (#eq? @attr_id "id")
                 )
                 """)
-                assuming_matches = run_query(
-                    query=assuming_query, node=arg_node
-                )
+                assuming_matches = run_query(query=assuming_query, node=arg_node)
                 if assuming_matches:
                     payload_text = assuming_matches[0][1]['payload'][0].text
                     assert payload_text, 'Never: no assuming payload'
@@ -226,9 +222,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     )
                 )
                 """)
-                extension_matches = run_query(
-                    query=extension_query, node=arg_node
-                )
+                extension_matches = run_query(query=extension_query, node=arg_node)
                 if extension_matches:
                     ids: list[str] = []
                     for match in extension_matches:
@@ -256,16 +250,10 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     (constructor_name) @constructor
                 )
                 """)
-                constructor_matches = run_query(
-                    query=constructor_query, node=arg_node
-                )
+                constructor_matches = run_query(query=constructor_query, node=arg_node)
                 if constructor_matches:
-                    constructor_text = constructor_matches[0][1]['constructor'][
-                        0
-                    ].text
-                    assert constructor_text, (
-                        'Never: no lift_bool constructor text'
-                    )
+                    constructor_text = constructor_matches[0][1]['constructor'][0].text
+                    assert constructor_text, 'Never: no lift_bool constructor text'
                     lift_bool_value = constructor_text.decode('utf-8')
                     lift_bool_enum = [
                         'Default',
@@ -280,7 +268,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                         )
                     res['lift_bool'] = lift_bool_value
             case _:
-                assert 'False', 'Never'
+                assert False, 'Never'
 
     return Top(**res)
 
@@ -352,6 +340,161 @@ def _top_of_decomp_attr_payload(
     return _top_of_appl_expr_node(expect_appl)
 
 
+def _identifier_of_appl_expr_node(node: Node) -> str | None:
+    """
+    Read the `[%id x]` a `top ... ()` application is applied to, if any.
+
+    Only direct children are considered: `~basis:[[%id x]]` and friends also
+    contain `[%id ...]` extensions, but those hang off a `labeled_argument`.
+    """
+    assert node.type == 'application_expression'
+
+    for child in node.children:
+        if child.type != 'extension':
+            continue
+        attr_id = next((c for c in child.children if c.type == 'attribute_id'), None)
+        if attr_id is None:
+            continue
+        if unwrap_bytes(attr_id.text).decode('utf8') != 'id':
+            continue
+        payload = next(
+            (c for c in child.children if c.type == 'attribute_payload'), None
+        )
+        if payload is None:
+            raise DecompParsingError('`[%id ...]` has no payload')
+        return unwrap_bytes(payload.text).decode('utf8').strip()
+
+    return None
+
+
+def _lazy_ret_of_appl_expr_node(node: Node) -> LazyRet:
+    """Parse `top ... () [%id x]` — a `Decomp.m` applied to an identifier."""
+    if node.type != 'application_expression':
+        raise DecompParsingError(
+            'right operand of `<<` / `<|<` must be a `top ... () [%id ...]` '
+            f'application, got a `{node.type}`'
+        )
+
+    identifier = _identifier_of_appl_expr_node(node)
+    if identifier is None:
+        raise DecompParsingError(
+            'right operand of `<<` / `<|<` must be applied to an `[%id ...]`'
+        )
+    return LazyRet(m=_top_of_appl_expr_node(node), identifier=identifier)
+
+
+def _decomp_of_expr_node(node: Node) -> Decomp:
+    """
+    Parse a decomp algebra expression node into a `Decomp`.
+
+    Handles a bare `top ... ()` plus the `<<` (merge) and `<|<`
+    (compound merge) operators. Both are left-associative, so
+    `a << b << c` nests as `Merge(Merge(a, b), c)`.
+    """
+    if node.type == 'application_expression':
+        if _identifier_of_appl_expr_node(node) is not None:
+            # `[@@decomp ...]` wants a `Decomp.m`, not an already-applied
+            # `Decomp.ret`; an `[%id ...]` only belongs right of `<<` / `<|<`.
+            raise DecompParsingError(
+                'decomp payload is applied to an `[%id ...]`; expected a '
+                'decomp (`top ... ()`), not a decomp result'
+            )
+        return _top_of_appl_expr_node(node)
+
+    if node.type == 'infix_expression':
+        operands = node.named_children
+        if len(operands) != 3:
+            raise DecompParsingError(
+                f'expected a binary decomp operator, got {len(operands)} operands'
+            )
+        lhs, operator, rhs = operands
+        op = unwrap_bytes(operator.text).decode('utf8')
+
+        m = _decomp_of_expr_node(lhs)
+        d1 = _lazy_ret_of_appl_expr_node(rhs)
+        match op:
+            case '<<':
+                return Merge(m=m, d1=d1)
+            case '<|<':
+                return CompoundMerge(m=m, d1=d1)
+            case _:
+                raise DecompParsingError(
+                    f'unsupported decomp operator `{op}`; expected `<<` or `<|<`'
+                )
+
+    if node.type == 'parenthesized_expression':
+        inner = next((c for c in node.named_children), None)
+        if inner is None:
+            raise DecompParsingError('empty parenthesized decomp expression')
+        return _decomp_of_expr_node(inner)
+
+    raise DecompParsingError(f'cannot parse `{node.type}` as a decomp expression')
+
+
+def _decomp_of_decomp_attr_payload(node: Node) -> Decomp:
+    """Parse a `[@@decomp ...]` payload into a (possibly composite) `Decomp`."""
+    assert node.type == 'attribute_payload'
+
+    expression_item = node.children[0]
+    expr = expression_item.children[0]
+    return _decomp_of_expr_node(expr)
+
+
+def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
+    """
+    Read `[@@timeout n]` off the same `let_binding` as `decomp_attr`.
+
+    `[@@decomp ...]` and `[@@timeout n]` are plain sibling `item_attribute`
+    nodes under one `let_binding`, and ImandraX does not care which comes
+    first, so we scan siblings rather than anchoring on order in the query.
+
+    Returns:
+        the timeout in seconds, or None if the binding carries no
+        `[@@timeout]` attribute.
+
+    """
+
+    def _descendants(node: Node) -> list[Node]:
+        """Collect `node` and all of its descendants, pre-order."""
+        out = [node]
+        for child in node.children:
+            out.extend(_descendants(child))
+        return out
+
+    binding = decomp_attr.parent
+    if binding is None:
+        return None
+
+    for attr in binding.children:
+        if attr.type != 'item_attribute':
+            continue
+        attr_id = attr.child_by_field_name('attribute_id')
+        if attr_id is None:
+            # `attribute_id` is not a named field in this grammar; fall back
+            # to positional lookup among the children.
+            attr_id = next((c for c in attr.children if c.type == 'attribute_id'), None)
+        if attr_id is None:
+            continue
+        if unwrap_bytes(attr_id.text).decode('utf8') != 'timeout':
+            continue
+
+        number = next(
+            (
+                desc
+                for payload in attr.children
+                if payload.type == 'attribute_payload'
+                for desc in _descendants(payload)
+                if desc.type == 'number'
+            ),
+            None,
+        )
+        if number is None:
+            raise DecompParsingError('`[@@timeout]` payload is not an integer literal')
+        return int(unwrap_bytes(number.text).decode('utf8'))
+
+    return None
+
+
 class DecompReqArgs(TypedDict, total=False):
     """Decomp non-composite top expression + body function name."""
 
@@ -362,6 +505,14 @@ class DecompReqArgs(TypedDict, total=False):
     prune: bool | None
     ctx_simp: bool | None
     lift_bool: str | None
+    timeout: int | None
+    """`[@@timeout n]` on the decomposed binding, in seconds.
+
+    Send as `compute_timeout` on the decompose request. Note that in-source
+    this same attribute also budgets the binding's POs, so extraction leaves
+    it in place (see `_remove_decomp_reqs`) to keep the extracted and
+    whole-file paths equivalent.
+    """
 
 
 def decomp_capture_to_req(
@@ -371,6 +522,9 @@ def decomp_capture_to_req(
     req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
     req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
     req |= {k: v for k, v in asdict(req_labels).items() if v is not None}
+    timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
+    if timeout is not None:
+        req['timeout'] = timeout
     return (cast(DecompReqArgs, req), capture.decomp_attr.range)
 
 
@@ -379,7 +533,15 @@ def _remove_decomp_reqs(
     tree: Tree,
     captures: list[DecompCapture],
 ) -> tuple[str, Tree]:
-    """Remove decomp requests from IML code."""
+    """
+    Remove decomp requests from IML code.
+
+    Only `[@@decomp ...]` is removed. Any `[@@timeout n]` on the same binding
+    is deliberately left in place: in the whole-file path that attribute
+    budgets both the decomp and the binding's POs, so dropping it here would
+    silently give the POs a different (default) budget than they get when the
+    decomp request is left inline.
+    """
     decomp_attr_nodes = [capture.decomp_attr for capture in captures]
     new_iml, new_tree = delete_nodes(iml, tree, nodes=decomp_attr_nodes)
     return new_iml, new_tree
@@ -394,13 +556,9 @@ def extract_decomp_reqs(
         node=root,
     )
 
-    decomp_captures = [
-        DecompCapture.from_ts_capture(capture) for _, capture in matches
-    ]
+    decomp_captures = [DecompCapture.from_ts_capture(capture) for _, capture in matches]
 
-    req_and_range = [
-        decomp_capture_to_req(capture) for capture in decomp_captures
-    ]
+    req_and_range = [decomp_capture_to_req(capture) for capture in decomp_captures]
     if not req_and_range:
         return iml, tree, [], []
     else:
@@ -430,12 +588,16 @@ def insert_decomp_req(
             lift_bool=req.get('lift_bool'),
         )
     )
-    to_insert = f'[@@decomp {top_appl_text}]'
+    to_insert = [f'[@@decomp {top_appl_text}]']
+
+    timeout = req.get('timeout')
+    if timeout is not None:
+        to_insert.append(f'[@@timeout {timeout}]')
 
     new_iml, new_tree = insert_lines(
         iml,
         tree,
-        lines=[to_insert],
+        lines=to_insert,
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
@@ -450,6 +612,7 @@ class DecompReqArgs_(TypedDict, total=False):
 
     name: Required[str]
     decomp: Required[Decomp]
+    timeout: int | None
 
 
 def insert_decomp_req_(
@@ -464,12 +627,48 @@ def insert_decomp_req_(
     func_def_end_row = func_def_node.end_point[0]
 
     decomp_appl_text = iml_of_decomp(req['decomp'])
-    to_insert = f'[@@decomp {decomp_appl_text}]'
+    to_insert = [f'[@@decomp {decomp_appl_text}]']
+    timeout = req.get('timeout')
+    if timeout is not None:
+        to_insert.append(f'[@@timeout {timeout}]')
 
     new_iml, new_tree = insert_lines(
         iml,
         tree,
-        lines=[to_insert],
+        lines=to_insert,
         insert_after=func_def_end_row,
     )
     return new_iml, new_tree
+
+
+def decomp_capture_to_req_(
+    capture: DecompCapture,
+) -> tuple[DecompReqArgs_, Range]:
+    """Composite counterpart of `decomp_capture_to_req`."""
+    req: DecompReqArgs_ = {
+        'name': unwrap_bytes(capture.decomposed_func_name.text).decode('utf8'),
+        'decomp': _decomp_of_decomp_attr_payload(capture.decomp_payload),
+    }
+    timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
+    if timeout is not None:
+        req['timeout'] = timeout
+    return req, capture.decomp_attr.range
+
+
+def extract_decomp_reqs_(
+    iml: str, tree: Tree
+) -> tuple[str, Tree, list[DecompReqArgs_], list[Range]]:
+    matches = run_query(
+        mk_query(DECOMP_QUERY_SRC),
+        node=tree.root_node,
+    )
+
+    decomp_captures = [DecompCapture.from_ts_capture(capture) for _, capture in matches]
+
+    req_and_range = [decomp_capture_to_req_(capture) for capture in decomp_captures]
+    if not req_and_range:
+        return iml, tree, [], []
+
+    reqs, ranges = zip(*req_and_range)
+    new_iml, new_tree = _remove_decomp_reqs(iml, tree, decomp_captures)
+    return new_iml, new_tree, list(reqs), list(ranges)

@@ -16,16 +16,16 @@ type ProofObligation = xtype.Common_Proof_obligation_t_poly[Term, Type]
 
 __all__ = (
     'AssocList',
-    'Term',
-    'Type',
-    'Region',
-    'RegionMeta',
-    'RegionStatus',
     'FunDecomp',
-    'Sequent',
     'PO_res',
     'PO_task',
     'ProofObligation',
+    'Region',
+    'RegionMeta',
+    'RegionStatus',
+    'Sequent',
+    'Term',
+    'Type',
 )
 
 
