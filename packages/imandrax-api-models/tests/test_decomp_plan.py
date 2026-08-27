@@ -1,3 +1,4 @@
+# ai-disclosure: autonomous
 """
 Tests for the pydantic decomposition plan.
 
