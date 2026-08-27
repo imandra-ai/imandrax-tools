@@ -15,6 +15,7 @@ from .proto_models import (
     EvalOutput,
     EvalRes,
     EvalSrcReq,
+    Gc_stats,
     GetDeclsReq,
     GetDeclsRes,
     InferredType,
@@ -53,6 +54,7 @@ from .proto_models import (
     VerifyNameReq,
     VerifyRes,
     VerifySrcReq,
+    VersionResponse,
 )
 
 __all__ = [
@@ -72,6 +74,7 @@ __all__ = [
     'EvalOutput',
     'EvalRes',
     'EvalSrcReq',
+    'Gc_stats',
     'GetDeclsReq',
     'GetDeclsRes',
     'InferredType',
@@ -110,4 +113,5 @@ __all__ = [
     'VerifyNameReq',
     'VerifyRes',
     'VerifySrcReq',
+    'VersionResponse',
 ]

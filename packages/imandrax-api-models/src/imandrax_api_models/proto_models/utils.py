@@ -7,6 +7,5 @@ class Empty(BaseModel):
     """Void type, used for messages without arguments or return value."""
 
 
-
 class StringMsg(BaseModel):
     msg: str

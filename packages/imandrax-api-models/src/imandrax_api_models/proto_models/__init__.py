@@ -46,6 +46,7 @@ from .simple_api import (
     VerifyRes,
     VerifySrcReq,
 )
+from .system import Gc_stats, VersionResponse
 from .task import Origin, Task, TaskID, TaskKind
 from .utils import Empty, StringMsg
 
@@ -68,6 +69,7 @@ __all__ = [
     'EvalRes',
     'EvalResult',
     'EvalSrcReq',
+    'Gc_stats',
     'GetDeclsReq',
     'GetDeclsRes',
     'InferredType',
@@ -106,4 +108,5 @@ __all__ = [
     'VerifyNameReq',
     'VerifyRes',
     'VerifySrcReq',
+    'VersionResponse',
 ]

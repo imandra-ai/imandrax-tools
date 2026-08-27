@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 import imandrax_api
 import structlog
+from imandrax_api.client import decomp
 
 from ._rec_limit import raise_rec_limit
 from .trace_utils import (
@@ -41,11 +42,14 @@ from imandrax_api_models import (
     Art,
     DecomposeRes,
     EvalRes,
+    Gc_stats,
     GetDeclsRes,
     InstanceRes,
+    OneshotRes,
     TestRes,
     TypecheckRes,
     VerifyRes,
+    VersionResponse,
 )
 from imandrax_api_models.proto_models.api import (
     Artifact,
@@ -122,40 +126,45 @@ class ImandraXClient(imandrax_api.Client):
     def _trace(self, op: str, **fields: Any) -> Any:
         return _trace_call(op, session_id=_client_session_id(self), **fields)
 
+    # Service Simple
+    # ====================
+
     def eval_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         timeout: float | None = None,
+        async_only: bool | None = None,
+        task_filter: list[str] | None = None,
     ) -> EvalRes:
-        with self._trace('eval_src', src=src, timeout=timeout):
-            res = super().eval_src(src=src, timeout=timeout)
+        """
+        _
+
+        Args:
+            src: IML code
+            timeout: HTTP request timeout
+            async_only: if true, return as soon as the tasks are started,
+                without waiting for their results. The returned `EvalRes.tasks`
+                can then be passed to `get_artifact` / `get_artifact_zip` to
+                collect results later.
+            task_filter: glob patterns restricting which verification tasks are
+                started, matched against the name of the top-level definition,
+                e.g. `['*xyz*']`. The default is to start all tasks.
+
+        """
+        with self._trace(
+            'eval_src',
+            src=src,
+            timeout=timeout,
+            async_only=async_only,
+            task_filter=task_filter,
+        ):
+            res = super().eval_src(
+                src=src,
+                timeout=timeout,
+                async_only=async_only,
+                task_filter=task_filter,
+            )
         return EvalRes.model_validate(res)
-
-    def typecheck(  # type: ignore[override] # ty: ignore[invalid-method-override]
-        self,
-        src: str,
-        timeout: float | None = None,
-    ) -> TypecheckRes:
-        """
-        Typecheck IML code.
-
-        No eval_src is needed before typecheck.
-
-        Example:
-            ```
-            >>> iml_code = '''
-            ... let f x = x + 1
-            ...
-            ... let g x = f x + 1
-            ... '''
-            >>> client.typecheck(iml_code)
-            TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
-            ```
-
-        """
-        with self._trace('typecheck', src=src, timeout=timeout):
-            res = super().typecheck(src=src, timeout=timeout)
-        return TypecheckRes.model_validate(res)
 
     def decompose(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
@@ -193,6 +202,47 @@ class ImandraXClient(imandrax_api.Client):
             )
         return DecomposeRes.model_validate(res)
 
+    def decompose_full(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        d: decomp.Decomp,
+        timeout: float | None = None,
+        string_results: bool | None = None,
+        compute_timeout: int | None = None,
+    ) -> DecomposeRes:
+        """
+        More expressive than `decompose`.
+
+        `d` describes a tree of operations (decompose by name, prune, combine,
+        merge, let-bind) built with the helpers in `imandrax_api.client.decomp`,
+        also re-exported here as `decomp`.
+
+        Args:
+            d: the decomposition to perform
+            timeout: HTTP request timeout
+            string_results: also return regions as strings
+            compute_timeout: computation timeout (in seconds) on the server
+
+        Example:
+            ```
+            >>> from imandrax_api_models.client import decomp
+            >>> d = decomp.merge(decomp.by_name('f', prune=True), decomp.by_name('g'))
+            >>> client.decompose_full(d)
+            ```
+
+        """
+        with self._trace(
+            'decompose_full',
+            timeout=timeout,
+            compute_timeout=compute_timeout,
+        ):
+            res = super().decompose_full(
+                d=d,
+                timeout=timeout,
+                string_results=string_results,
+                compute_timeout=compute_timeout,
+            )
+        return DecomposeRes.model_validate(res)
+
     def verify_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
@@ -203,6 +253,17 @@ class ImandraXClient(imandrax_api.Client):
             res = super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
+    def verify_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        name: str,
+        hints: str | None = None,
+        timeout: float | None = None,
+    ) -> VerifyRes:
+        """Verify an already-defined predicate, by name."""
+        with self._trace('verify_name', name=name, hints=hints, timeout=timeout):
+            res = super().verify_name(name=name, hints=hints, timeout=timeout)
+        return VerifyRes.model_validate(res)
+
     def instance_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
@@ -211,6 +272,17 @@ class ImandraXClient(imandrax_api.Client):
     ) -> InstanceRes:
         with self._trace('instance_src', src=src, hints=hints, timeout=timeout):
             res = super().instance_src(src=src, hints=hints, timeout=timeout)
+        return InstanceRes.model_validate(res)
+
+    def instance_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        name: str,
+        hints: str | None = None,
+        timeout: float | None = None,
+    ) -> InstanceRes:
+        """Find an instance of an already-defined predicate, by name."""
+        with self._trace('instance_name', name=name, hints=hints, timeout=timeout):
+            res = super().instance_name(name=name, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
     def test_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
@@ -233,93 +305,126 @@ class ImandraXClient(imandrax_api.Client):
             res = super().test_name(name=name, seed=seed, timeout=timeout)
         return TestRes.model_validate(res)
 
+    def typecheck(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        src: str,
+        timeout: float | None = None,
+    ) -> TypecheckRes:
+        """
+        Typecheck IML code.
+
+        No eval_src is needed before typecheck.
+
+        Example:
+            ```
+            >>> iml_code = '''
+            ... let f x = x + 1
+            ...
+            ... let g x = f x + 1
+            ... '''
+            >>> client.typecheck(iml_code)
+            TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
+            ```
+
+        """
+        with self._trace('typecheck', src=src, timeout=timeout):
+            res = super().typecheck(src=src, timeout=timeout)
+        return TypecheckRes.model_validate(res)
+
     def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         names: list[str],
         timeout: float | None = None,
+        include_str: bool = False,
     ) -> GetDeclsRes:
-        with self._trace('get_decls', names=names, timeout=timeout):
-            res = super().get_decls(names=names, timeout=timeout)
+        """
+        Look up declarations by name.
+
+        Args:
+            names: names of the desired declarations
+            timeout: HTTP request timeout
+            include_str: also populate `DeclWithName.str_` with the string
+                representation of each declaration.
+
+        """
+        with self._trace(
+            'get_decls', names=names, timeout=timeout, include_str=include_str
+        ):
+            res = super().get_decls(
+                names=names, timeout=timeout, include_str=include_str
+            )
         return GetDeclsRes.model_validate(res)
 
-    def eval_code_snippet(
+    def oneshot(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        input: str,
+        compute_timeout: float | None = None,
+        timeout: float | None = None,
+    ) -> OneshotRes:
+        """
+        Evaluate a self-contained snippet without using the session.
+
+        Args:
+            input: some IML code
+            compute_timeout: computation timeout (in seconds) on the server
+            timeout: HTTP request timeout
+
+        """
+        with self._trace(
+            'oneshot', input=input, compute_timeout=compute_timeout, timeout=timeout
+        ):
+            res = super().oneshot(
+                input=input, compute_timeout=compute_timeout, timeout=timeout
+            )
+        return OneshotRes.model_validate(res)
+
+    # Service Eval
+    # ====================
+
+    def eval_code_snippet(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
         task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> CodeSnippetEvalResult:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
+        """
+        Evaluate a snippet, returning only the tasks it started.
 
+        Always asynchronous: collect the results via `get_artifact`.
+
+        Args:
+            code: IML code
+            task_filter: glob patterns restricting which verification tasks are
+                started, as in `eval_src`.
+            timeout: HTTP request timeout
+
+        """
         with self._trace(
             'eval_code_snippet', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = self._api_client.eval_code_snippet(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
+            res = super().eval_code_snippet(
+                code=code, task_filter=task_filter, timeout=timeout
             )
         return CodeSnippetEvalResult.model_validate(res)
 
-    def parse_term(
+    def parse_term(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
-        task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        with self._trace(
-            'parse_term', code=code, task_filter=task_filter, timeout=timeout
-        ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = self._api_client.parse_term(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
-            )
+        """Parse and typecheck a term, returning it as an artifact."""
+        with self._trace('parse_term', code=code, timeout=timeout):
+            res = super().parse_term(code=code, timeout=timeout)
         return Artifact.model_validate(res)
 
-    def parse_type(
+    def parse_type(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
-        task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        with self._trace(
-            'parse_type', code=code, task_filter=task_filter, timeout=timeout
-        ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = self._api_client.parse_type(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
-            )
-        return Artifact.model_validate(res)
-
-    def get_artifact(
-        self,
-        task: Task,
-        kind: str,
-    ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        task_id = task.to_proto().id
-
-        with self._trace('get_artifact', kind=kind):
-            res = self._api_client.get_artifact(
-                ctx=self.mk_context(),
-                request=api_pb2.ArtifactGetQuery(task_id=task_id, kind=kind),
-            )
+        """Parse and typecheck a type, returning it as an artifact."""
+        with self._trace('parse_type', code=code, timeout=timeout):
+            res = super().parse_type(code=code, timeout=timeout)
         return Artifact.model_validate(res)
 
     def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
@@ -331,17 +436,67 @@ class ImandraXClient(imandrax_api.Client):
             res = super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
+    def get_artifact(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> Artifact:
+        """Obtain an artifact from a task."""
+        with self._trace('get_artifact', kind=kind, timeout=timeout):
+            res = super().get_artifact(task=task.to_proto(), kind=kind, timeout=timeout)
+        return Artifact.model_validate(res)
+
     def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
         timeout: float | None = None,
     ) -> ArtifactZip:
+        """Obtain an artifact from a task as a zip file."""
         with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
         return ArtifactZip.model_validate(res)
+
+    # Service SessionManager
+    # ====================
+
+    def keep_session_alive(self, timeout: float | None = None) -> None:
+        """Make sure the session remains active."""
+        with self._trace('keep_session_alive', timeout=timeout):
+            super().keep_session_alive(timeout=timeout)
+
+    # Service System
+    # ====================
+
+    def version(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> VersionResponse:
+        """Return the system's version."""
+        with self._trace('version', timeout=timeout):
+            res = super().version(timeout=timeout)
+        return VersionResponse.model_validate(res)
+
+    def gc_stats(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> Gc_stats:
+        """Capture GC statistics."""
+        with self._trace('gc_stats', timeout=timeout):
+            res = super().gc_stats(timeout=timeout)
+        return Gc_stats.model_validate(res)
+
+    def release_memory(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> Gc_stats:
+        """Try to free memory, return stats."""
+        with self._trace('release_memory', timeout=timeout):
+            res = super().release_memory(timeout=timeout)
+        return Gc_stats.model_validate(res)
 
     # Additional methods
     # ====================
@@ -373,12 +528,6 @@ class ImandraXClient(imandrax_api.Client):
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
             return self.eval_src(src=iml, timeout=timeout)
 
-    @property
-    def session_id(self) -> str | None:
-        """Id of the server-side session this client is bound to, if any."""
-        sesh = getattr(self, '_sesh', None)
-        return sesh.id if sesh is not None else None
-
     def detach(self) -> str:
         """
         Close the local HTTP transport but leave the server session alive.
@@ -390,7 +539,7 @@ class ImandraXClient(imandrax_api.Client):
             str | None: current session id
 
         """
-        sid = self.session_id
+        sid = _client_session_id(self)
         if sid is None:
             raise RuntimeError('cannot detach a client with no session')
         self._closed = True
@@ -404,36 +553,45 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
     def _trace(self, op: str, **fields: Any) -> Any:
         return _trace_call(op, session_id=_client_session_id(self), **fields)
 
+    # Service Simple
+    # ====================
+
     async def eval_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
         timeout: float | None = None,
+        async_only: bool | None = None,
+        task_filter: list[str] | None = None,
     ) -> EvalRes:
-        with self._trace('eval_src', src=src, timeout=timeout):
-            res = await super().eval_src(src=src, timeout=timeout)
+        """
+        Eval IML code in the session.
+
+        Args:
+            src: IML code
+            timeout: HTTP request timeout
+            async_only: if true, return as soon as the tasks are started,
+                without waiting for their results. The returned `EvalRes.tasks`
+                can then be passed to `get_artifact` / `get_artifact_zip` to
+                collect results later.
+            task_filter: glob patterns restricting which verification tasks are
+                started, matched against the name of the top-level definition,
+                e.g. `['*xyz*']`. The default is to start all tasks.
+
+        """
+        with self._trace(
+            'eval_src',
+            src=src,
+            timeout=timeout,
+            async_only=async_only,
+            task_filter=task_filter,
+        ):
+            res = await super().eval_src(
+                src=src,
+                timeout=timeout,
+                async_only=async_only,
+                task_filter=task_filter,
+            )
         return EvalRes.model_validate(res)
-
-    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override] # ty: ignore[invalid-method-override]
-        """
-        Typecheck IML code.
-
-        No eval_src is needed before typecheck.
-
-        Example:
-            ```
-            >>> iml_code = '''
-            ... let f x = x + 1
-            ...
-            ... let g x = f x + 1
-            ... '''
-            >>> await client.typecheck(iml_code)
-            TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
-            ```
-
-        """
-        with self._trace('typecheck', src=src, timeout=timeout):
-            res = await super().typecheck(src=src, timeout=timeout)
-        return TypecheckRes.model_validate(res)
 
     async def decompose(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
@@ -471,6 +629,47 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             )
         return DecomposeRes.model_validate(res)
 
+    async def decompose_full(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        d: decomp.Decomp,
+        timeout: float | None = None,
+        string_results: bool | None = None,
+        compute_timeout: int | None = None,
+    ) -> DecomposeRes:
+        """
+        More expressive than `decompose`.
+
+        `d` describes a tree of operations (decompose by name, prune, combine,
+        merge, let-bind) built with the helpers in `imandrax_api.client.decomp`,
+        also re-exported here as `decomp`.
+
+        Args:
+            d: the decomposition to perform
+            timeout: HTTP request timeout
+            string_results: also return regions as strings
+            compute_timeout: computation timeout (in seconds) on the server
+
+        Example:
+            ```
+            >>> from imandrax_api_models.client import decomp
+            >>> d = decomp.merge(decomp.by_name('f', prune=True), decomp.by_name('g'))
+            >>> await client.decompose_full(d)
+            ```
+
+        """
+        with self._trace(
+            'decompose_full',
+            timeout=timeout,
+            compute_timeout=compute_timeout,
+        ):
+            res = await super().decompose_full(
+                d=d,
+                timeout=timeout,
+                string_results=string_results,
+                compute_timeout=compute_timeout,
+            )
+        return DecomposeRes.model_validate(res)
+
     async def verify_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
@@ -481,6 +680,17 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().verify_src(src=src, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
 
+    async def verify_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        name: str,
+        hints: str | None = None,
+        timeout: float | None = None,
+    ) -> VerifyRes:
+        """Verify an already-defined predicate, by name."""
+        with self._trace('verify_name', name=name, hints=hints, timeout=timeout):
+            res = await super().verify_name(name=name, hints=hints, timeout=timeout)
+        return VerifyRes.model_validate(res)
+
     async def instance_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         src: str,
@@ -489,6 +699,17 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
     ) -> InstanceRes:
         with self._trace('instance_src', src=src, hints=hints, timeout=timeout):
             res = await super().instance_src(src=src, hints=hints, timeout=timeout)
+        return InstanceRes.model_validate(res)
+
+    async def instance_name(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        name: str,
+        hints: str | None = None,
+        timeout: float | None = None,
+    ) -> InstanceRes:
+        """Find an instance of an already-defined predicate, by name."""
+        with self._trace('instance_name', name=name, hints=hints, timeout=timeout):
+            res = await super().instance_name(name=name, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
 
     async def test_src(  # type: ignore[override] # ty: ignore[invalid-method-override]
@@ -511,93 +732,122 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().test_name(name=name, seed=seed, timeout=timeout)
         return TestRes.model_validate(res)
 
+    async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override] # ty: ignore[invalid-method-override]
+        """
+        Typecheck IML code.
+
+        No eval_src is needed before typecheck.
+
+        Example:
+            ```
+            >>> iml_code = '''
+            ... let f x = x + 1
+            ...
+            ... let g x = f x + 1
+            ... '''
+            >>> await client.typecheck(iml_code)
+            TypecheckRes(success=True, types=[InferredType(name='g', ty='int -> int', line=3, column=1), InferredType(name='f', ty='int -> int', line=1, column=1)], errors=None)
+            ```
+
+        """
+        with self._trace('typecheck', src=src, timeout=timeout):
+            res = await super().typecheck(src=src, timeout=timeout)
+        return TypecheckRes.model_validate(res)
+
     async def get_decls(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         names: list[str],
         timeout: float | None = None,
+        include_str: bool = False,
     ) -> GetDeclsRes:
-        with self._trace('get_decls', names=names, timeout=timeout):
-            res = await super().get_decls(names=names, timeout=timeout)
+        """
+        Look up declarations by name.
+
+        Args:
+            names: names of the desired declarations
+            timeout: HTTP request timeout
+            include_str: also populate `DeclWithName.str_` with the string
+                representation of each declaration.
+
+        """
+        with self._trace(
+            'get_decls', names=names, timeout=timeout, include_str=include_str
+        ):
+            res = await super().get_decls(
+                names=names, timeout=timeout, include_str=include_str
+            )
         return GetDeclsRes.model_validate(res)
 
-    async def eval_code_snippet(
+    async def oneshot(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        input: str,
+        compute_timeout: float | None = None,
+        timeout: float | None = None,
+    ) -> OneshotRes:
+        """
+        Evaluate a self-contained snippet without using the session.
+
+        Args:
+            input: some IML code
+            compute_timeout: computation timeout (in seconds) on the server
+            timeout: HTTP request timeout
+
+        """
+        with self._trace(
+            'oneshot', input=input, compute_timeout=compute_timeout, timeout=timeout
+        ):
+            res = await super().oneshot(
+                input=input, compute_timeout=compute_timeout, timeout=timeout
+            )
+        return OneshotRes.model_validate(res)
+
+    # Service Eval
+    # ====================
+
+    async def eval_code_snippet(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
         task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> CodeSnippetEvalResult:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
+        """
+        Evaluate a snippet, returning only the tasks it started.
 
+        Always asynchronous: collect the results via `get_artifact`.
+
+        Args:
+            code: IML code
+            task_filter: glob patterns restricting which verification tasks are
+                started, as in `eval_src`.
+            timeout: HTTP request timeout
+
+        """
         with self._trace(
             'eval_code_snippet', code=code, task_filter=task_filter, timeout=timeout
         ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await self._api_client.eval_code_snippet(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
+            res = await super().eval_code_snippet(
+                code=code, task_filter=task_filter, timeout=timeout
             )
         return CodeSnippetEvalResult.model_validate(res)
 
-    async def parse_term(
+    async def parse_term(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
-        task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        with self._trace(
-            'parse_term', code=code, task_filter=task_filter, timeout=timeout
-        ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await self._api_client.parse_term(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
-            )
+        """Parse and typecheck a term, returning it as an artifact."""
+        with self._trace('parse_term', code=code, timeout=timeout):
+            res = await super().parse_term(code=code, timeout=timeout)
         return Artifact.model_validate(res)
 
-    async def parse_type(
+    async def parse_type(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
-        task_filter: list[str] | None = None,
         timeout: float | None = None,
     ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        with self._trace(
-            'parse_type', code=code, task_filter=task_filter, timeout=timeout
-        ):
-            timeout = timeout or self._timeout
-            req = api_pb2.CodeSnippet(code=code, task_filter=task_filter or [])
-            res = await self._api_client.parse_type(
-                ctx=self.mk_context(),
-                request=req,
-                timeout=timeout,
-            )
-        return Artifact.model_validate(res)
-
-    async def get_artifact(
-        self,
-        task: Task,
-        kind: str,
-    ) -> Artifact:
-        # TODO: upstream
-        from imandrax_api.bindings import api_pb2
-
-        task_id = task.to_proto().id
-
-        with self._trace('get_artifact', kind=kind):
-            res = await self._api_client.get_artifact(
-                ctx=self.mk_context(),
-                request=api_pb2.ArtifactGetQuery(task_id=task_id, kind=kind),
-            )
+        """Parse and typecheck a type, returning it as an artifact."""
+        with self._trace('parse_type', code=code, timeout=timeout):
+            res = await super().parse_type(code=code, timeout=timeout)
         return Artifact.model_validate(res)
 
     async def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
@@ -609,17 +859,69 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             res = await super().list_artifacts(task=task.to_proto(), timeout=timeout)
         return ArtifactListResult.model_validate(res)
 
+    async def get_artifact(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        task: Task,
+        kind: str,
+        timeout: float | None = None,
+    ) -> Artifact:
+        """Obtain an artifact from a task."""
+        with self._trace('get_artifact', kind=kind, timeout=timeout):
+            res = await super().get_artifact(
+                task=task.to_proto(), kind=kind, timeout=timeout
+            )
+        return Artifact.model_validate(res)
+
     async def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
         timeout: float | None = None,
     ) -> ArtifactZip:
+        """Obtain an artifact from a task as a zip file."""
         with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = await super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
         return ArtifactZip.model_validate(res)
+
+    # Service SessionManager
+    # ====================
+
+    async def keep_session_alive(self, timeout: float | None = None) -> None:
+        """Make sure the session remains active."""
+        with self._trace('keep_session_alive', timeout=timeout):
+            await super().keep_session_alive(timeout=timeout)
+
+    # Service System
+    # ====================
+
+    async def version(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> VersionResponse:
+        """Return the system's version."""
+        with self._trace('version', timeout=timeout):
+            res = await super().version(timeout=timeout)
+        return VersionResponse.model_validate(res)
+
+    async def gc_stats(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> Gc_stats:
+        """Capture GC statistics."""
+        with self._trace('gc_stats', timeout=timeout):
+            res = await super().gc_stats(timeout=timeout)
+        return Gc_stats.model_validate(res)
+
+    async def release_memory(  # type: ignore[override] # ty: ignore[invalid-method-override]
+        self,
+        timeout: float | None = None,
+    ) -> Gc_stats:
+        """Try to free memory, return stats."""
+        with self._trace('release_memory', timeout=timeout):
+            res = await super().release_memory(timeout=timeout)
+        return Gc_stats.model_validate(res)
 
     # Additional methods
     # ====================
@@ -651,11 +953,6 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
 
             return await self.eval_src(src=iml, timeout=timeout)
-
-    @property
-    def session_id(self) -> str | None:
-        """Id of the server-side session this client is bound to, if any."""
-        return self._session_id
 
     async def detach(self) -> str:
         """
