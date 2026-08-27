@@ -148,10 +148,11 @@ class ImandraXClient(imandrax_api.Client):
             async_only: if true, do not wait for tasks results, only return the
                 task list and not the task results. Use `get_artifact` to get
                 the results.
-            task_filter: regular expressions for verification tasks to be
-                started during evaluation. The default is to start all tasks,
-                but e.g. `task_filter=['*xyz*']` would start only tasks
-                pertaining to top-level definitions with 'xyz' in their name.
+            task_filter: glob patterns (`*`, `?`, `[...]`) for selecting
+                tasks to be started during evaluation. The default is to start
+                all tasks, but e.g. `task_filter=['*xyz*']` would start only
+                tasks pertaining to top-level definitions with 'xyz' in their
+                name. Tasks without names are matched under `anonymous`.
 
         """
         with self._trace(
@@ -395,8 +396,8 @@ class ImandraXClient(imandrax_api.Client):
 
         Args:
             code: IML code
-            task_filter: regular expressions for verification tasks to be
-                started during evaluation, as in `eval_src`.
+            task_filter: glob patterns for selecting tasks to be started
+                during evaluation, as in `eval_src`.
             timeout: HTTP request timeout
 
         """
@@ -581,10 +582,11 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             async_only: if true, do not wait for tasks results, only return the
                 task list and not the task results. Use `get_artifact` to get
                 the results.
-            task_filter: regular expressions for verification tasks to be
-                started during evaluation. The default is to start all tasks,
-                but e.g. `task_filter=['*xyz*']` would start only tasks
-                pertaining to top-level definitions with 'xyz' in their name.
+            task_filter: glob patterns (`*`, `?`, `[...]`) for selecting
+                tasks to be started during evaluation. The default is to start
+                all tasks, but e.g. `task_filter=['*xyz*']` would start only
+                tasks pertaining to top-level definitions with 'xyz' in their
+                name. Tasks without names are matched under `anonymous`.
 
         """
         with self._trace(
@@ -824,8 +826,8 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
 
         Args:
             code: IML code
-            task_filter: regular expressions for verification tasks to be
-                started during evaluation, as in `eval_src`.
+            task_filter: glob patterns for selecting tasks to be started
+                during evaluation, as in `eval_src`.
             timeout: HTTP request timeout
 
         """

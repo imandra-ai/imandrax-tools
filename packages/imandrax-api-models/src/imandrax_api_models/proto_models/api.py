@@ -21,11 +21,12 @@ class CodeSnippet(BaseModel):
     code: str
     task_filter: list[str] = Field(
         description=(
-            'Regular expression for verification tasks to be '
+            'Glob patterns (`*`, `?`, `[...]`) for selecting tasks to be '
             'started during evaluation. The default is to start '
             'all tasks, but e.g. task_filter="*xyz*" would start '
             "only tasks pertaining to top-level definitions with 'xyz'"
-            ' in their name.'
+            ' in their name. Tasks without names are matched under '
+            '`anonymous`.'
         ),
     )
 
