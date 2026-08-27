@@ -1,5 +1,5 @@
 # pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false, reportUnknownVariableType=false
-"""Extended imandrax-api client with Pydantic model validation."""
+"""Extended imandrax-api client with Pydantic model validation and additional convenience methods. No protobuf interaction."""
 
 import os
 import time
@@ -213,7 +213,7 @@ class ImandraXClient(imandrax_api.Client):
         compute_timeout: int | None = None,
     ) -> DecomposeRes:
         """
-        More expressive than `decompose`.
+        _
 
         Args:
             d (Decomp | proto_decomp.Decomp): the decomposition to perform. A raw `imandrax_api.client.decomp.Decomp` proto is also accepted.
@@ -313,7 +313,7 @@ class ImandraXClient(imandrax_api.Client):
         """
         Typecheck IML code.
 
-        No eval_src is needed before typecheck.
+        Note: No eval_src is needed before typecheck.
 
         Example:
             ```
@@ -737,7 +737,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         """
         Typecheck IML code.
 
-        No eval_src is needed before typecheck.
+        Note: No eval_src is needed before typecheck.
 
         Example:
             ```
