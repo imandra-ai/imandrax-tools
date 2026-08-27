@@ -776,7 +776,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             names: names of the desired declarations
             timeout: HTTP request timeout
             include_str: if true, include the string representation of each
-                declaration (`DeclWithName.str_`).
+                declaration
 
         """
         with self._trace(
