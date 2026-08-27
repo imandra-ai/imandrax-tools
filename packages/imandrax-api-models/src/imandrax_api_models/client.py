@@ -31,10 +31,10 @@ try:
     from iml_query.tree_sitter_utils import get_parser
 except ImportError:
     msg = """\
-To use extended ImandraX API client, optional dependency `iml-query` is required.
+To use extended ImandraX API client, optional dependency `client` is required.
 Install it with `pip install "imandrax-api-models[client]"`
 
-For regular API client without Pydantic model validation, use `imandrax-api` instead.\
+For client without Pydantic model validation, use `imandrax-api` instead.\
 """
     raise ImportError(msg)
 
@@ -145,13 +145,13 @@ class ImandraXClient(imandrax_api.Client):
         Args:
             src: IML code
             timeout: HTTP request timeout
-            async_only: if true, return as soon as the tasks are started,
-                without waiting for their results. The returned `EvalRes.tasks`
-                can then be passed to `get_artifact` / `get_artifact_zip` to
-                collect results later.
-            task_filter: glob patterns restricting which verification tasks are
-                started, matched against the name of the top-level definition,
-                e.g. `['*xyz*']`. The default is to start all tasks.
+            async_only: if true, do not wait for tasks results, only return the
+                task list and not the task results. Use `get_artifact` to get
+                the results.
+            task_filter: regular expressions for verification tasks to be
+                started during evaluation. The default is to start all tasks,
+                but e.g. `task_filter=['*xyz*']` would start only tasks
+                pertaining to top-level definitions with 'xyz' in their name.
 
         """
         with self._trace(
@@ -213,13 +213,18 @@ class ImandraXClient(imandrax_api.Client):
         compute_timeout: int | None = None,
     ) -> DecomposeRes:
         """
-        _
+        More expressive variant of `decompose`.
+
+        `d` is a plan: a tree of operations (decompose by name, merge, compound
+        merge, prune, combine, let-bind) built with the combinators in `decomp`,
+        re-exported here. A raw `imandrax_api.client.decomp.Decomp` proto is
+        also accepted.
 
         Args:
-            d (Decomp | proto_decomp.Decomp): the decomposition to perform. A raw `imandrax_api.client.decomp.Decomp` proto is also accepted.
+            d: the decomposition to perform
             timeout: HTTP request timeout
             string_results: also return regions as strings
-            compute_timeout: computation timeout (in seconds) on the server
+            compute_timeout: server-side compute timeout
 
         Example:
             ```
@@ -259,7 +264,6 @@ class ImandraXClient(imandrax_api.Client):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> VerifyRes:
-        """Verify an already-defined predicate, by name."""
         with self._trace('verify_name', name=name, hints=hints, timeout=timeout):
             res = super().verify_name(name=name, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
@@ -280,7 +284,6 @@ class ImandraXClient(imandrax_api.Client):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> InstanceRes:
-        """Find an instance of an already-defined predicate, by name."""
         with self._trace('instance_name', name=name, hints=hints, timeout=timeout):
             res = super().instance_name(name=name, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
@@ -311,7 +314,7 @@ class ImandraXClient(imandrax_api.Client):
         timeout: float | None = None,
     ) -> TypecheckRes:
         """
-        Typecheck IML code.
+        _
 
         Note: No eval_src is needed before typecheck.
 
@@ -338,13 +341,13 @@ class ImandraXClient(imandrax_api.Client):
         include_str: bool = False,
     ) -> GetDeclsRes:
         """
-        Look up declarations by name.
+        _
 
         Args:
             names: names of the desired declarations
             timeout: HTTP request timeout
-            include_str: also populate `DeclWithName.str_` with the string
-                representation of each declaration.
+            include_str: if true, include the string representation of each
+                declaration
 
         """
         with self._trace(
@@ -362,11 +365,11 @@ class ImandraXClient(imandrax_api.Client):
         timeout: float | None = None,
     ) -> OneshotRes:
         """
-        Evaluate a self-contained snippet without using the session.
+        Sessionless, self contained request/response.
 
         Args:
-            input: some IML code
-            compute_timeout: computation timeout (in seconds) on the server
+            input: some iml code
+            compute_timeout: server-side compute timeout
             timeout: HTTP request timeout
 
         """
@@ -388,14 +391,12 @@ class ImandraXClient(imandrax_api.Client):
         timeout: float | None = None,
     ) -> CodeSnippetEvalResult:
         """
-        Evaluate a snippet, returning only the tasks it started.
-
-        Always asynchronous: collect the results via `get_artifact`.
+        Evaluate a snippet.
 
         Args:
             code: IML code
-            task_filter: glob patterns restricting which verification tasks are
-                started, as in `eval_src`.
+            task_filter: regular expressions for verification tasks to be
+                started during evaluation, as in `eval_src`.
             timeout: HTTP request timeout
 
         """
@@ -544,7 +545,7 @@ class ImandraXClient(imandrax_api.Client):
         After `detach` the client is closed and must not be used for further RPCs.
 
         Returns:
-            str | None: current session id
+            str: current session id
 
         """
         sid = _client_session_id(self)
@@ -572,18 +573,18 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         task_filter: list[str] | None = None,
     ) -> EvalRes:
         """
-        Eval IML code in the session.
+        _
 
         Args:
             src: IML code
             timeout: HTTP request timeout
-            async_only: if true, return as soon as the tasks are started,
-                without waiting for their results. The returned `EvalRes.tasks`
-                can then be passed to `get_artifact` / `get_artifact_zip` to
-                collect results later.
-            task_filter: glob patterns restricting which verification tasks are
-                started, matched against the name of the top-level definition,
-                e.g. `['*xyz*']`. The default is to start all tasks.
+            async_only: if true, do not wait for tasks results, only return the
+                task list and not the task results. Use `get_artifact` to get
+                the results.
+            task_filter: regular expressions for verification tasks to be
+                started during evaluation. The default is to start all tasks,
+                but e.g. `task_filter=['*xyz*']` would start only tasks
+                pertaining to top-level definitions with 'xyz' in their name.
 
         """
         with self._trace(
@@ -645,17 +646,18 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         compute_timeout: int | None = None,
     ) -> DecomposeRes:
         """
-        More expressive than `decompose`.
+        More expressive variant of `decompose`.
 
-        `d` is a plan: a tree of operations (decompose by name, prune, combine,
-        merge, let-bind) built with the combinators in `decomp`, re-exported
-        here. A raw `imandrax_api.client.decomp.Decomp` proto is also accepted.
+        `d` is a plan: a tree of operations (decompose by name, merge, compound
+        merge, prune, combine, let-bind) built with the combinators in `decomp`,
+        re-exported here. A raw `imandrax_api.client.decomp.Decomp` proto is
+        also accepted.
 
         Args:
             d: the decomposition to perform
             timeout: HTTP request timeout
             string_results: also return regions as strings
-            compute_timeout: computation timeout (in seconds) on the server
+            compute_timeout: server-side compute timeout
 
         Example:
             ```
@@ -695,7 +697,6 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> VerifyRes:
-        """Verify an already-defined predicate, by name."""
         with self._trace('verify_name', name=name, hints=hints, timeout=timeout):
             res = await super().verify_name(name=name, hints=hints, timeout=timeout)
         return VerifyRes.model_validate(res)
@@ -716,7 +717,6 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         hints: str | None = None,
         timeout: float | None = None,
     ) -> InstanceRes:
-        """Find an instance of an already-defined predicate, by name."""
         with self._trace('instance_name', name=name, hints=hints, timeout=timeout):
             res = await super().instance_name(name=name, hints=hints, timeout=timeout)
         return InstanceRes.model_validate(res)
@@ -743,7 +743,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
 
     async def typecheck(self, src: str, timeout: float | None = None) -> TypecheckRes:  # type: ignore[override] # ty: ignore[invalid-method-override]
         """
-        Typecheck IML code.
+        _
 
         Note: No eval_src is needed before typecheck.
 
@@ -770,13 +770,13 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         include_str: bool = False,
     ) -> GetDeclsRes:
         """
-        Look up declarations by name.
+        _
 
         Args:
             names: names of the desired declarations
             timeout: HTTP request timeout
-            include_str: also populate `DeclWithName.str_` with the string
-                representation of each declaration.
+            include_str: if true, include the string representation of each
+                declaration (`DeclWithName.str_`).
 
         """
         with self._trace(
@@ -794,11 +794,11 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         timeout: float | None = None,
     ) -> OneshotRes:
         """
-        Evaluate a self-contained snippet without using the session.
+        Sessionless, self contained request/response.
 
         Args:
-            input: some IML code
-            compute_timeout: computation timeout (in seconds) on the server
+            input: some iml code
+            compute_timeout: server-side compute timeout
             timeout: HTTP request timeout
 
         """
@@ -820,14 +820,12 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         timeout: float | None = None,
     ) -> CodeSnippetEvalResult:
         """
-        Evaluate a snippet, returning only the tasks it started.
-
-        Always asynchronous: collect the results via `get_artifact`.
+        Evaluate a snippet.
 
         Args:
             code: IML code
-            task_filter: glob patterns restricting which verification tasks are
-                started, as in `eval_src`.
+            task_filter: regular expressions for verification tasks to be
+                started during evaluation, as in `eval_src`.
             timeout: HTTP request timeout
 
         """
