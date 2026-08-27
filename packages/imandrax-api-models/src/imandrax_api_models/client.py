@@ -505,11 +505,17 @@ class ImandraXClient(imandrax_api.Client):
         self,
         src: str,
         timeout: float | None = None,
+        async_only: bool | None = None,
+        task_filter: list[str] | None = None,
         with_vgs: bool = False,
         with_decomps: bool = False,
         with_tests: bool = False,
     ) -> EvalRes:
-        """Eval without VGs, decomps, and tests."""
+        """
+        Eval without VGs, decomps, and tests.
+
+        See `eval_src` for parameter descriptions.
+        """
         with self._trace(
             'eval_model',
             src=src,
@@ -526,7 +532,9 @@ class ImandraXClient(imandrax_api.Client):
                 iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
-            return self.eval_src(src=iml, timeout=timeout)
+            return self.eval_src(
+                src=iml, timeout=timeout, async_only=async_only, task_filter=task_filter
+            )
 
     def detach(self) -> str:
         """
@@ -931,11 +939,17 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         self,
         src: str,
         timeout: float | None = None,
+        async_only: bool | None = None,
+        task_filter: list[str] | None = None,
         with_vgs: bool = False,
         with_decomps: bool = False,
         with_tests: bool = False,
     ) -> EvalRes:
-        """Eval without VGs, decomps, and tests."""
+        """
+        Eval without VGs, decomps, and tests.
+
+        See `eval_src` for parameter descriptions.
+        """
         with self._trace(
             'eval_model',
             src=src,
@@ -953,7 +967,9 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
 
-            return await self.eval_src(src=iml, timeout=timeout)
+            return await self.eval_src(
+                src=iml, timeout=timeout, async_only=async_only, task_filter=task_filter
+            )
 
     async def detach(self) -> str:
         """
