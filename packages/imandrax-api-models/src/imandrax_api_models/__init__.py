@@ -5,6 +5,7 @@ from .proto_models import (
     CodeSnippet,
     CodeSnippetEvalResult,
     CounterSat,
+    Decomp,
     DecomposeReq,
     DecomposeRes,
     Empty,
@@ -55,6 +56,7 @@ from .proto_models import (
     VerifyRes,
     VerifySrcReq,
     VersionResponse,
+    decomp,
 )
 
 __all__ = [
@@ -64,6 +66,7 @@ __all__ = [
     'CodeSnippet',
     'CodeSnippetEvalResult',
     'CounterSat',
+    'Decomp',
     'DecomposeReq',
     'DecomposeRes',
     'Empty',
@@ -114,4 +117,5 @@ __all__ = [
     'VerifyRes',
     'VerifySrcReq',
     'VersionResponse',
+    'decomp',
 ]

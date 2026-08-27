@@ -1,5 +1,6 @@
 from imandrax_api.lib import RegionStr
 
+from . import decomp
 from .api import (
     Artifact,
     ArtifactListResult,
@@ -9,6 +10,7 @@ from .api import (
     EvalResult,
 )
 from .artmsg import Art, StorageEntry
+from .decomp import Decomp
 from .error import Error, ErrorKind, ErrorKindParsingError, ErrorMessage
 from .locs import Location, Position
 from .session import Session, SessionCreate, SessionOpen
@@ -58,6 +60,7 @@ __all__ = [
     'CodeSnippet',
     'CodeSnippetEvalResult',
     'CounterSat',
+    'Decomp',
     'DecomposeReq',
     'DecomposeRes',
     'Empty',
@@ -109,4 +112,5 @@ __all__ = [
     'VerifyRes',
     'VerifySrcReq',
     'VersionResponse',
+    'decomp',
 ]

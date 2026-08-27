@@ -10,9 +10,10 @@ from typing import Any, Literal
 
 import imandrax_api
 import structlog
-from imandrax_api.client import decomp
+from imandrax_api.client import decomp as proto_decomp
 
 from ._rec_limit import raise_rec_limit
+from .proto_utils import BaseModel
 from .trace_utils import (
     otel_trace as _otel_trace,
     set_span_attrs,
@@ -51,12 +52,14 @@ from imandrax_api_models import (
     VerifyRes,
     VersionResponse,
 )
+from imandrax_api_models.proto_models import decomp
 from imandrax_api_models.proto_models.api import (
     Artifact,
     ArtifactListResult,
     ArtifactZip,
     CodeSnippetEvalResult,
 )
+from imandrax_api_models.proto_models.decomp import Decomp
 from imandrax_api_models.proto_models.task import Task
 
 logger = structlog.get_logger(__name__)
@@ -204,7 +207,7 @@ class ImandraXClient(imandrax_api.Client):
 
     def decompose_full(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
-        d: decomp.Decomp,
+        d: Decomp | proto_decomp.Decomp,
         timeout: float | None = None,
         string_results: bool | None = None,
         compute_timeout: int | None = None,
@@ -212,12 +215,8 @@ class ImandraXClient(imandrax_api.Client):
         """
         More expressive than `decompose`.
 
-        `d` describes a tree of operations (decompose by name, prune, combine,
-        merge, let-bind) built with the helpers in `imandrax_api.client.decomp`,
-        also re-exported here as `decomp`.
-
         Args:
-            d: the decomposition to perform
+            d (Decomp | proto_decomp.Decomp): the decomposition to perform. A raw `imandrax_api.client.decomp.Decomp` proto is also accepted.
             timeout: HTTP request timeout
             string_results: also return regions as strings
             compute_timeout: computation timeout (in seconds) on the server
@@ -232,11 +231,12 @@ class ImandraXClient(imandrax_api.Client):
         """
         with self._trace(
             'decompose_full',
+            plan=decomp.decomp_repr(d) if isinstance(d, BaseModel) else None,
             timeout=timeout,
             compute_timeout=compute_timeout,
         ):
             res = super().decompose_full(
-                d=d,
+                d=d.to_proto() if isinstance(d, BaseModel) else d,
                 timeout=timeout,
                 string_results=string_results,
                 compute_timeout=compute_timeout,
@@ -631,7 +631,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
 
     async def decompose_full(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
-        d: decomp.Decomp,
+        d: Decomp | proto_decomp.Decomp,
         timeout: float | None = None,
         string_results: bool | None = None,
         compute_timeout: int | None = None,
@@ -639,9 +639,9 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         """
         More expressive than `decompose`.
 
-        `d` describes a tree of operations (decompose by name, prune, combine,
-        merge, let-bind) built with the helpers in `imandrax_api.client.decomp`,
-        also re-exported here as `decomp`.
+        `d` is a plan: a tree of operations (decompose by name, prune, combine,
+        merge, let-bind) built with the combinators in `decomp`, re-exported
+        here. A raw `imandrax_api.client.decomp.Decomp` proto is also accepted.
 
         Args:
             d: the decomposition to perform
@@ -659,11 +659,12 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         """
         with self._trace(
             'decompose_full',
+            plan=decomp.decomp_repr(d) if isinstance(d, BaseModel) else None,
             timeout=timeout,
             compute_timeout=compute_timeout,
         ):
             res = await super().decompose_full(
-                d=d,
+                d=d.to_proto() if isinstance(d, BaseModel) else d,
                 timeout=timeout,
                 string_results=string_results,
                 compute_timeout=compute_timeout,
