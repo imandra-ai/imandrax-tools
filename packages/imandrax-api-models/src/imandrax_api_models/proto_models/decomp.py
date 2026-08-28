@@ -370,15 +370,17 @@ def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
             assert_never(d)
 
 
-def decomp_of_cst(decomp_cst: DecompReqArgs_) -> tuple[Decomp, int | None]:
+def decomp_of_cst(decomp_cst: DecompReqArgs_) -> tuple[Decomp, str, int | None]:
     """
     Convert extracted decomp CST to a `Decomp` plan.
 
     Returns:
-        the plan, and the `[@@timeout n]` on the decomposed binding (in
+        - the plan
+        - name of the function
+        - the `[@@timeout n]` on the decomposed binding (in
         seconds) if it carries one, which is not part of the plan itself and
         goes to `decompose_full` as `compute_timeout`.
 
     """
     d = _decomp_of_cst(decomp_cst['decomp'], decomp_cst['name'])
-    return d, decomp_cst.get('timeout')
+    return d, decomp_cst['name'], decomp_cst.get('timeout')
