@@ -1,13 +1,11 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
-# ruff: noqa: RUF100, F401
 """
 Pydantic models for `DecomposeReqFull.Decomp` protobuf, the recursive decomposition plan DSL.
 """
 # <agent>
 # A plan is a tree: a base decomposition (by name, or read back from an artifact)
 # that can then be pruned, combined, merged with another, or bound to a local
-# variable for reuse. Build one with the combinators at the bottom of this module
-# and hand it to `ImandraXClient.decompose_full`.
+# variable for reuse. Build one with the combinators and hand it to `ImandraXClient.decompose_full`.
 
 # Each node's `op` is the name of the corresponding `oneof decomp` field in
 # `simple_api.proto`, so the mapping to the wire format stays mechanical --
@@ -36,7 +34,16 @@ __all__ = (
     'CompoundMerge',
     'Decomp',
     'DECOMP_TYPE_ADAPTER',
-    # 2. iml-query interop
+    'decomp_repr',
+    # 2. Combinators
+    'by_name',
+    'merge',
+    'compound_merge',
+    'prune',
+    'combine',
+    'get',
+    'let',
+    # 3. iml-query interop
     'decomp_of_cst',
 )
 
