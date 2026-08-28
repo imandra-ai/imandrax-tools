@@ -23,19 +23,16 @@ from .trace_utils import (
 
 try:
     from iml_query.processing import (
-        extract_decomp_reqs,
+        extract_decomp_reqs_,
         extract_instance_reqs,
         extract_test_reqs,
         extract_verify_reqs,
     )
     from iml_query.tree_sitter_utils import get_parser
 except ImportError:
-    msg = """\
-To use extended ImandraX API client, optional dependency `client` is required.
-Install it with `pip install "imandrax-api-models[client]"`
+    from ._import_err import IML_QUERY_MISSING_ERROR_MSG
 
-For client without Pydantic model validation, use `imandrax-api` instead.\
-"""
+    msg = IML_QUERY_MISSING_ERROR_MSG
     raise ImportError(msg)
 
 
@@ -531,7 +528,7 @@ class ImandraXClient(imandrax_api.Client):
                 iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
-                iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
+                iml, tree, _decomp_reqs, _ = extract_decomp_reqs_(iml, tree)
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
             return self.eval_src(
@@ -963,7 +960,7 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
-                iml, tree, _decomp_reqs, _ = extract_decomp_reqs(iml, tree)
+                iml, tree, _decomp_reqs, _ = extract_decomp_reqs_(iml, tree)
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
 
