@@ -53,6 +53,10 @@ end
 # ====================
 
 
+# TODO: switch to packages/imandrax-api-models/src/imandrax_api_models/proto_models/decomp.py
+# to avoid future drift
+
+
 Decomp = simple_api_pb2.DecomposeReqFull.Decomp
 
 

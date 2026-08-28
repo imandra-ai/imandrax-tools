@@ -5,6 +5,7 @@ from .proto_models import (
     CodeSnippet,
     CodeSnippetEvalResult,
     CounterSat,
+    Decomp,
     DecomposeReq,
     DecomposeRes,
     Empty,
@@ -15,6 +16,7 @@ from .proto_models import (
     EvalOutput,
     EvalRes,
     EvalSrcReq,
+    Gc_stats,
     GetDeclsReq,
     GetDeclsRes,
     InferredType,
@@ -53,6 +55,8 @@ from .proto_models import (
     VerifyNameReq,
     VerifyRes,
     VerifySrcReq,
+    VersionResponse,
+    decomp,
 )
 
 __all__ = [
@@ -62,6 +66,7 @@ __all__ = [
     'CodeSnippet',
     'CodeSnippetEvalResult',
     'CounterSat',
+    'Decomp',
     'DecomposeReq',
     'DecomposeRes',
     'Empty',
@@ -72,6 +77,7 @@ __all__ = [
     'EvalOutput',
     'EvalRes',
     'EvalSrcReq',
+    'Gc_stats',
     'GetDeclsReq',
     'GetDeclsRes',
     'InferredType',
@@ -110,4 +116,6 @@ __all__ = [
     'VerifyNameReq',
     'VerifyRes',
     'VerifySrcReq',
+    'VersionResponse',
+    'decomp',
 ]

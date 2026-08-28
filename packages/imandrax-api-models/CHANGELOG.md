@@ -4,6 +4,13 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.8.1] - 26-08-28
+- FIX(deps): incorrect iml-query version
+
+## [20.8.0] - 26-08-28
+- FEAT(client): adapt to new upstream `imandrax-api` RPCs; methods are now grouped by service
+- FEAT: decomp DSL (conversion between treesitter CST, pydantic.BaseModel, and protobuf)
+
 ## [20.7.0] - 26-08-24
 - client: expose `compute_timeout` on `decompose` (sync and async)
 - FIX(client): sync `decompose` accepted `assuming` but never forwarded it to the request
