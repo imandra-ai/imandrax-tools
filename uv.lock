@@ -898,7 +898,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.8.0"
+version = "20.8.1"
 source = { editable = "packages/imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
@@ -1049,7 +1049,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "packages/iml-query" }
 dependencies = [
     { name = "devtools" },

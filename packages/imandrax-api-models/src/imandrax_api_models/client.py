@@ -29,11 +29,11 @@ try:
         extract_verify_reqs,
     )
     from iml_query.tree_sitter_utils import get_parser
-except ImportError:
+except ImportError as e:
     from ._import_err import IML_QUERY_MISSING_ERROR_MSG
 
-    msg = IML_QUERY_MISSING_ERROR_MSG
-    raise ImportError(msg)
+    msg = f'{IML_QUERY_MISSING_ERROR_MSG}\n\nOriginal error: {e}'
+    raise ImportError(msg) from e
 
 
 from imandrax_api_models import (
