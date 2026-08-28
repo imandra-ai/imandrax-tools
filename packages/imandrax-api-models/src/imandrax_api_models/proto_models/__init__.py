@@ -1,3 +1,5 @@
+"""Pydantic models for protobuf definitions"""
+
 from imandrax_api.lib import RegionStr
 
 from . import decomp

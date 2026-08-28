@@ -9,10 +9,8 @@ wire format. All offline -- no session needed.
 
 import imandrax_api.bindings.simple_api_pb2 as xsimple_api_pb2
 from imandrax_api.client import decomp as proto_decomp
-from imandrax_api_models import Art, Decomp, LiftBool, decomp
-from pydantic import TypeAdapter
-
-PLAN: TypeAdapter[Decomp] = TypeAdapter(Decomp)
+from imandrax_api_models import Art, LiftBool, decomp
+from imandrax_api_models.proto_models.decomp import DECOMP_TYPE_ADAPTER
 
 ART = Art(kind='mir.fun_decomp', data=b'\x00twine', api_version='v20')
 
@@ -100,13 +98,13 @@ def test_json_round_trip():
         [('base', decomp.by_name('f', prune=True, lift_bool=LiftBool.All))],
         decomp.merge(decomp.get('base'), decomp.from_artifact(ART)),
     )
-    back = PLAN.validate_json(plan.model_dump_json())
+    back = DECOMP_TYPE_ADAPTER.validate_json(plan.model_dump_json())
     assert back == plan
     assert back.to_proto() == plan.to_proto()
 
 
 def test_json_schema_covers_every_op():
-    defs = PLAN.json_schema()['$defs']
+    defs = DECOMP_TYPE_ADAPTER.json_schema()['$defs']
     assert {
         'ByName',
         'Combine',
