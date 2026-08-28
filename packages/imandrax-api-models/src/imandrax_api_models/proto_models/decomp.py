@@ -1,6 +1,7 @@
 # pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
+# ruff: noqa: RUF100, F401
 """
-Pydantic mirror of `DecomposeReqFull.Decomp`, the recursive decomposition plan.
+Pydantic mirror of `DecomposeReqFull.Decomp`, the recursive decomposition plan DSL.
 
 A plan is a tree: a base decomposition (by name, or read back from an artifact)
 that can then be pruned, combined, merged with another, or bound to a local
@@ -14,7 +15,7 @@ including `op='set'` for let-binding, whose proto field is `set`.
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 
 import imandrax_api.bindings.simple_api_pb2 as xsimple_api_pb2
 from pydantic import Field
@@ -22,6 +23,9 @@ from pydantic import Field
 from ..proto_utils import BaseModel
 from .artmsg import Art
 from .simple_api import LiftBool
+
+if TYPE_CHECKING:
+    from iml_query.processing.decomp import Decomp as DecompCST, DecompReqArgs_
 
 # Runtime aliases to the generated proto classes (used as constructors).
 _Full = xsimple_api_pb2.DecomposeReqFull
@@ -240,6 +244,86 @@ def let(bindings: list[tuple[str, Decomp]], and_then: Decomp) -> LocalVarLet:
         bindings=[LocalVarBinding(name=n, d=d) for (n, d) in bindings],
         and_then=and_then,
     )
+
+
+# iml-query interop
+# ====================
+
+
+# `Decomp.lift_bool` constructors as they are spelled in IML, mapped onto the
+# proto enum (whose members drop the underscore).
+_LIFT_BOOL_OF_CST: dict[str, LiftBool] = {
+    'Default': LiftBool.Default,
+    'Nested_equalities': LiftBool.NestedEqualities,
+    'Equalities': LiftBool.Equalities,
+    'All': LiftBool.All,
+}
+
+
+def _lift_bool_of_cst(lift_bool: str | None) -> LiftBool | None:
+    if lift_bool is None:
+        return None
+    try:
+        return _LIFT_BOOL_OF_CST[lift_bool]
+    except KeyError:
+        raise ValueError(
+            f'invalid lift_bool `{lift_bool}`; '
+            f'expected one of {sorted(_LIFT_BOOL_OF_CST)}'
+        ) from None
+
+
+def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
+    """
+    Convert a CST decomp applied to the identifier `name`.
+
+    The CST algebra keeps the decomposition unapplied: a `Decomp.m` is a
+    function from an identifier to a result, and `<<` / `<|<` compose on the
+    left of that application. So `name` is threaded down the left spine, while
+    each right operand is a `LazyRet` carrying its own identifier.
+    """
+    from iml_query.processing.decomp import (
+        CompoundMerge as CompoundMergeCST,
+        Merge as MergeCST,
+        Top as TopCST,
+    )
+
+    match d:
+        case TopCST():
+            return ByName(
+                name=name,
+                assuming=d.assuming,
+                basis=d.basis or [],
+                rule_specs=d.rule_specs or [],
+                prune=d.prune,
+                ctx_simp=d.ctx_simp,
+                lift_bool=_lift_bool_of_cst(d.lift_bool),
+            )
+        case MergeCST():
+            return Merge(
+                d1=_decomp_of_cst(d.m, name),
+                d2=_decomp_of_cst(d.d1.m, d.d1.identifier),
+            )
+        case CompoundMergeCST():
+            return CompoundMerge(
+                d1=_decomp_of_cst(d.m, name),
+                d2=_decomp_of_cst(d.d1.m, d.d1.identifier),
+            )
+        case _:
+            raise ValueError(f'unsupported decomp CST node `{type(d).__name__}`')
+
+
+def decomp_of_cst(decomp_cst: DecompReqArgs_) -> tuple[Decomp, int | None]:
+    """
+    Convert extracted decomp CST to a `Decomp` plan.
+
+    Returns:
+        the plan, and the `[@@timeout n]` on the decomposed binding (in
+        seconds) if it carries one, which is not part of the plan itself and
+        goes to `decompose_full` as `compute_timeout`.
+
+    """
+    d = _decomp_of_cst(decomp_cst['decomp'], decomp_cst['name'])
+    return d, decomp_cst.get('timeout')
 
 
 # ====================
