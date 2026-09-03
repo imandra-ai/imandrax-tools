@@ -45,6 +45,7 @@ venv = ".venv"
 reportUnnecessaryTypeIgnoreComment = true
 reportMissingTypeStubs = false
 reportUnusedImport = false  # handled by ty
+reportUnusedExpression = false
 reportUnusedVariable = "warning"
 
 [tool.ty.rules]
