@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.9.0] - 26-09-04
+- FEAT: term evaluation skipping POs
+
 ## [20.8.1] - 26-08-28
 - FIX(deps): incorrect iml-query version
 
