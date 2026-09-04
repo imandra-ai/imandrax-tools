@@ -1107,7 +1107,7 @@ def get_imandrax_async_client(
     return client
 
 
-def _end_session(  # pyright: ignore[reportUnusedFunction]
+def _end_session(
     session_id: str,
     *,
     url: str = imandrax_api.url_prod,
@@ -1166,7 +1166,7 @@ def end_session(
     imandrax_api_key = auth_token or get_imandrax_api_key()
     if not imandrax_api_key:
         raise ValueError('IMANDRAX_API_KEY is None')
-    imandrax_api.end_session(session_id, url=url, auth_token=imandrax_api_key)
+    _end_session(session_id, url=url, auth_token=imandrax_api_key)
 
 
 # ====================
