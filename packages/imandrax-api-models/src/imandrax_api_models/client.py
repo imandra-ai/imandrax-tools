@@ -987,8 +987,9 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         return sid
 
 
-# Helpers for creating client
+# Convenience client constructors (API key resolution)
 # ====================
+# - with API key resolution
 
 
 def _get_deployment_from_default_config() -> str | None:
@@ -1004,7 +1005,7 @@ def get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
     """
     Get the ImandraX URL from the environment variable or default config location.
 
-    Precedence: env(IMANDRAX_URL) > env arg > env(IMANDRAX_ENV) > default config
+    Precedence: env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config
     """
     if url := os.getenv('IMANDRAX_URL'):
         return url
@@ -1107,69 +1108,11 @@ def get_imandrax_async_client(
     return client
 
 
-def _end_session(  # pyright: ignore[reportUnusedFunction]
-    session_id: str,
-    *,
-    url: str = imandrax_api.url_prod,
-    server_path_prefix: str = '/api/v1',
-    auth_token: str | None = None,
-    api_key: str | None = None,
-    timeout: int = 30,
-) -> None:
-    """
-    End a server-side session by id, without opening it first.
-
-    A regular `Client(session_id=...)` would issue an `open_session` RPC on
-    construction, which can be wasteful (and fails on an already-dead session)
-    when only discarding a cached/stale id is needed.
-
-    Errors propagate as `TwirpServerException` (e.g. the session is already
-    gone); callers wanting best-effort cleanup should catch them.
-    """
-    import requests
-    from imandrax_api.bindings import session_pb2, simple_api_twirp
-    from imandrax_api.client._common import mk_context
-
-    sess = requests.Session()
-    token = api_key or auth_token
-    if token:
-        sess.headers['Authorization'] = f'Bearer {token}'
-    try:
-        client = simple_api_twirp.SimpleClient(
-            url,
-            timeout=timeout,
-            server_path_prefix=server_path_prefix,
-            session=sess,
-        )
-        client.end_session(
-            ctx=mk_context(),
-            request=session_pb2.Session(id=session_id),
-            timeout=None,
-        )
-    finally:
-        sess.close()
-
-
-def end_session(
-    session_id: str,
-    auth_token: str | None = None,
-    env: Literal['dev', 'prod'] | None = None,
-) -> None:
-    """
-    End a server-side session by id, resolving url/key like `get_imandrax_client`.
-
-    Errors propagate as `TwirpServerException`; callers wanting best-effort cleanup should catch.
-    """
-    url = get_imandrax_url(env)
-    if not url:
-        raise ValueError('IMANDRAX_URL is not set')
-    imandrax_api_key = auth_token or get_imandrax_api_key()
-    if not imandrax_api_key:
-        raise ValueError('IMANDRAX_API_KEY is None')
-    imandrax_api.end_session(session_id, url=url, auth_token=imandrax_api_key)
-
-
+# Convenience client methods
 # ====================
+
+# Artifact
+# --------------------
 
 
 def _sort_artifact_kinds(
@@ -1250,3 +1193,69 @@ async def async_get_task_artifacts(
         xvalues[art_kind] = x_value
 
     return xvalues
+
+
+# End session
+# --------------------
+
+
+def _end_session(
+    session_id: str,
+    *,
+    url: str = imandrax_api.url_prod,
+    server_path_prefix: str = '/api/v1',
+    auth_token: str | None = None,
+    api_key: str | None = None,
+    timeout: int = 30,
+) -> None:
+    """
+    End a server-side session by id, without opening it first.
+
+    A regular `Client(session_id=...)` would issue an `open_session` RPC on
+    construction, which can be wasteful (and fails on an already-dead session)
+    when only discarding a cached/stale id is needed.
+
+    Errors propagate as `TwirpServerException` (e.g. the session is already
+    gone); callers wanting best-effort cleanup should catch them.
+    """
+    import requests
+    from imandrax_api.bindings import session_pb2, simple_api_twirp
+    from imandrax_api.client._common import mk_context
+
+    sess = requests.Session()
+    token = api_key or auth_token
+    if token:
+        sess.headers['Authorization'] = f'Bearer {token}'
+    try:
+        client = simple_api_twirp.SimpleClient(
+            url,
+            timeout=timeout,
+            server_path_prefix=server_path_prefix,
+            session=sess,
+        )
+        client.end_session(
+            ctx=mk_context(),
+            request=session_pb2.Session(id=session_id),
+            timeout=None,
+        )
+    finally:
+        sess.close()
+
+
+def end_session(
+    session_id: str,
+    auth_token: str | None = None,
+    env: Literal['dev', 'prod'] | None = None,
+) -> None:
+    """
+    End a server-side session by id, resolving url/key like `get_imandrax_client`.
+
+    Errors propagate as `TwirpServerException`; callers wanting best-effort cleanup should catch.
+    """
+    url = get_imandrax_url(env)
+    if not url:
+        raise ValueError('IMANDRAX_URL is not set')
+    imandrax_api_key = auth_token or get_imandrax_api_key()
+    if not imandrax_api_key:
+        raise ValueError('IMANDRAX_API_KEY is None')
+    _end_session(session_id, url=url, auth_token=imandrax_api_key)

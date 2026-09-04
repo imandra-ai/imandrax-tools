@@ -27,6 +27,10 @@ from .decomp import (
     region_meta2doc,
     region_meta_assoc2doc,
 )
+from .eval_formatter import (
+    top_fun2doc as eval_top_fun2doc,
+    value2doc as eval_value2doc,
+)
 from .goal_state import doc_of_sequent as Sequent2doc_raw
 from .model_formatter import model2doc
 from .pretty import (
@@ -72,6 +76,7 @@ class PrinterConfig:
     )
     show_decomp_task_db: bool = False
     show_decomp_res_report: bool = False
+    show_eval_task_db: bool = False
     show_anchor_hash: bool = False
     """append a short chash to anchor/cname names"""
     summarize_po_task: bool = False
@@ -529,7 +534,42 @@ class Printer:
                     return python_obj(kind, [(None, text('...'))])
                 else:
                     return dataclass2doc(v, with_name=kind)
-
+            # Eval
+            # <ai-disclosure=ai-generated>
+            case xtype.Eval_Value():
+                return python_obj(
+                    'EvalValue', [(None, python_quote(eval_value2doc(v)))]
+                )
+            case xtype.Tasks_Eval_res():
+                return dataclass2doc(v, with_name='EvalRes')
+            case xtype.Tasks_Eval_res_success():
+                # A single-field wrapper around the value: not worth a level
+                return self.value2doc(v.v)
+            case xtype.Tasks_Eval_res_stats():
+                rows = [
+                    (
+                        'compile_time',
+                        python_quote(text(fmt_duration(v.compile_time))),
+                    ),
+                    ('exec_time', python_quote(text(fmt_duration(v.exec_time)))),
+                ]
+                return python_obj('EvalStats', rows)
+            case xtype.Tasks_Eval_task_t_poly():
+                rows: AssocList[Doc] = []
+                for fld in fields(v):
+                    key = fld.name
+                    val = getattr(v, key)
+                    if key == 'db' and not self.config.show_eval_task_db:
+                        continue
+                    if key == 'timeout' and val is None:
+                        continue
+                    if key == 'term':
+                        val_doc = eval_top_fun2doc(val)
+                    else:
+                        val_doc = self.value2doc(val)
+                    rows.append((key, val_doc))
+                return python_obj('EvalTask', rows)
+            # <ai-generated>
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
