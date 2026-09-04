@@ -1,3 +1,5 @@
+"""Tests for term evaluation and eval value pretty-printer"""
+
 import os
 import re
 from collections.abc import Callable

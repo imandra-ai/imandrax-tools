@@ -5,7 +5,13 @@ from .client import ImandraXClient
 
 def evaluate(client: ImandraXClient, iml: str, expr: str, po_skip: bool = True):
     """
-    Evaluate `expr` against the model defined by `iml`.
+    Evaluate a given expression in the context of an IML snippet.
+
+    Args:
+        client: The ImandraX client instance.
+        iml (str): The IML snippet defining the model.
+        expr (str): The term expression to evaluate.
+        po_skip (bool): Whether to skip proof obligations (default: True).
 
     Raises:
         ValueError: if the model body itself failed to load, in which case
@@ -14,6 +20,7 @@ def evaluate(client: ImandraXClient, iml: str, expr: str, po_skip: bool = True):
             is left in the returned `body_eval_res` for the caller to judge.
 
     """
+    # eval tasks are anonymous. "anonymous" is _the_ task filter to select anonymous tasks.
     if po_skip:
         task_filter = ['anonymous']
     else:
