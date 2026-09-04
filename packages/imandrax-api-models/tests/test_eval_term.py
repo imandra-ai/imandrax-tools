@@ -9,7 +9,7 @@ from imandrax_api_models.client import (
     get_imandrax_client,
     get_task_artifacts,
 )
-from imandrax_api_models.evaluate import evaluate
+from imandrax_api_models.client_evaluate import evaluate_term
 from imandrax_api_models.pp.xtype import to_string as xval_to_string
 from inline_snapshot import snapshot
 
@@ -37,7 +37,7 @@ def test_good():
 
     term = 'g 100'
 
-    _body_eval_res, leval_res = evaluate(c, iml, term)
+    _body_eval_res, leval_res = evaluate_term(c, iml, term)
 
     leval_res.tasks
     assert len(leval_res.tasks) == 1, 'Expected 1 task'
@@ -73,7 +73,7 @@ def test_bad_body_raises():
     term = 'g 2'
 
     try:
-        _body_eval_res, _leval_res = evaluate(c, iml, term)
+        _body_eval_res, _leval_res = evaluate_term(c, iml, term)
     except ValueError as e:
         assert str(e) == snapshot("""\
 model body failed to load, refusing to evaluate 'g 2'
@@ -97,7 +97,7 @@ def test_bad_term_becomes_true_unconditionally():
 
     term = 'g true'
 
-    _body_eval_res, leval_res = evaluate(c, iml, term)
+    _body_eval_res, leval_res = evaluate_term(c, iml, term)
 
     leval_res.tasks
     assert len(leval_res.tasks) == 1, 'Expected 1 task'

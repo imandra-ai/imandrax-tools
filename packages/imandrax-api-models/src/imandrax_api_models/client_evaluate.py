@@ -3,7 +3,7 @@
 from .client import ImandraXClient
 
 
-def evaluate(client: ImandraXClient, iml: str, expr: str, po_skip: bool = True):
+def evaluate_term(client: ImandraXClient, iml: str, expr: str, po_skip: bool = True):
     """
     Evaluate a given expression in the context of an IML snippet.
 
