@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.9.1] - 26-09-07
+- FIX(model): decomp result error is dropped when being parsed, causing validation error
+
 ## [20.9.0] - 26-09-04
 - FEAT: term evaluation skipping POs
 
