@@ -110,9 +110,8 @@ class DecomposeRes_(DecomposeResProto):
 
     @classmethod
     def from_decomp_res(cls, v: DecomposeResProto) -> Self:
-        if v.artifact is None:
-            return cls(artifact=None)
-        return cls(artifact=cls.decode_artifact(v.artifact))
+        artifact = None if v.artifact is None else cls.decode_artifact(v.artifact)
+        return cls(artifact=artifact, err=v.err, errors=v.errors, task=v.task)
 
     # TODO: backward-compatible methods: iml_test_cases, test_docstrs
 
