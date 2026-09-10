@@ -112,6 +112,40 @@ def gen_source_code(
 # ====================
 
 
+def _connection_kwargs(
+    imandrax_api_key: str | None,
+    imandrax_env: str | None,
+    imandrax_url: str | None,
+) -> dict[str, Any]:
+    """url/auth_token for the given URL (or $IMANDRAX_URL), else Imandra's cloud.
+
+    A URL points at a self-hosted server (e.g. `http://my-vm:8086`); such
+    servers are unauthenticated, so the API key is optional there. The cloud
+    path keeps requiring one (KeyError on $IMANDRAX_API_KEY, as before).
+    """
+    url = imandrax_url or os.getenv('IMANDRAX_URL')
+    if url:
+        return {
+            'url': url,
+            'auth_token': imandrax_api_key or os.getenv('IMANDRAX_API_KEY'),
+        }
+    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
+    return {
+        'url': url_dev if env == 'dev' else url_prod,
+        'auth_token': imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
+    }
+
+
+def _imandrax_client(
+    imandrax_api_key: str | None,
+    imandrax_env: str | None,
+    imandrax_url: str | None,
+) -> ImandraXClient:
+    return ImandraXClient(
+        **_connection_kwargs(imandrax_api_key, imandrax_env, imandrax_url)
+    )
+
+
 def gen_test_cases(
     iml: str,
     decomp_name: str,
@@ -119,6 +153,7 @@ def gen_test_cases(
     other_decomp_kwargs: dict[str, Any] | None = None,
     imandrax_api_key: str | None = None,
     imandrax_env: str | None = None,
+    imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
@@ -128,13 +163,7 @@ def gen_test_cases(
 
     other_decomp_kwargs = other_decomp_kwargs or {}
 
-    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
-    url = url_dev if env == 'dev' else url_prod
-
-    c = ImandraXClient(
-        auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
-        url=url,
-    )
+    c = _imandrax_client(imandrax_api_key, imandrax_env, imandrax_url)
 
     # Eval IML
     eval_res: EvalRes = c.eval_src(iml)
@@ -177,6 +206,7 @@ def gen_counter_example(
     vg_hint: str | None = None,
     imandrax_api_key: str | None = None,
     imandrax_env: str | None = None,
+    imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
@@ -184,13 +214,7 @@ def gen_counter_example(
         Tuple of (type declarations, test case definition)
     """
 
-    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
-    url = url_dev if env == 'dev' else url_prod
-
-    c = ImandraXClient(
-        auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
-        url=url,
-    )
+    c = _imandrax_client(imandrax_api_key, imandrax_env, imandrax_url)
 
     # Eval IML
     eval_res: EvalRes = c.eval_src(iml)
