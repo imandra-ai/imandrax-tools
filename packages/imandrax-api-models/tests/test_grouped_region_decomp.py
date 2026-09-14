@@ -47,7 +47,7 @@ def decomp_res_classify() -> DecomposeRes:
 @pytest.fixture
 def decomp_res_six_swiss() -> DecomposeRes:
     c = ImandraXClient(
-        url=imandrax_api.url_dev,
+        url=imandrax_api.url_prod,
         auth_token=os.environ['IMANDRAX_API_KEY'],
     )
     IML_CODE = (Path(__file__).parent / 'data/six_swiss.iml').read_text()
