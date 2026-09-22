@@ -70,6 +70,8 @@ def snake_to_camel(s: str) -> str:
 class PrinterConfig:
     bytes_limit: int | None = None
     show_ca_store_key: bool = False
+    opaque_db: bool = True
+    """Show db as \"<opaque>\""""
     show_po_task_db: bool = False
     show_po_res_report: bool = (
         False  # Note: report can be found in a dedicated artifact
@@ -80,7 +82,7 @@ class PrinterConfig:
     show_anchor_hash: bool = False
     """append a short chash to anchor/cname names"""
     summarize_po_task: bool = False
-    """Show PO task as a summarized string. Useful in success case"""
+    """Show PO task as a summarized string (with symbol and PO description, without goal details). Useful in succeed proof case"""
     hide_po_res_success_cases: bool = False
     """Replace body of Tasks_po_res_success_* cases with `...`"""
     hide_po_res_sub_res_when_succeed: bool = True
@@ -252,15 +254,12 @@ class Printer:
     @staticmethod
     def overview_of_Tasks_PO_task_t_poly(
         v: xtype.Tasks_PO_task_t_poly[xtype.Mir_Term, xtype.Mir_Type],
-        fold_sym_if_exists: bool = False,
     ) -> str:
+        """Overview (symbol + PO description) of a task PO"""
         sym = v.from_sym
         po_descr = v.po.descr
-        if fold_sym_if_exists and sym in po_descr:
-            return po_descr
-        else:
-            sym_info = f'{sym}#{v.count}' if v.count > 0 else sym
-            return f'{sym_info}: {po_descr}'
+        sym_info = f'{sym}#{v.count}' if v.count > 0 else sym
+        return f'{sym_info}: {po_descr}'
 
     # --------------------
     def value2doc(self, v: Any) -> Doc:
@@ -326,6 +325,11 @@ class Printer:
                     expand_payloads=self.config.report_expand_payloads,
                     ascii_only=self.config.ascii_only,
                 )
+            case xtype.Common_Db_ser_t_poly():
+                if self.config.opaque_db:
+                    return text('<opaque>')
+                else:
+                    return self.value2doc(v)
             case (
                 xtype.Common_Verify_kind_K_verify()
                 | xtype.Common_Verify_kind_K_instance()
@@ -386,6 +390,7 @@ class Printer:
                 )
             case xtype.Tasks_PO_res_error_Unsat():
                 return dataclass2doc(v.arg, with_name='POErrorUnsat')
+            # /PO res
             case xtype.Common_Sequent_t_poly():
                 return Sequent2doc(v)
             case xtype.Proof_Proof_term_t_poly():
@@ -535,7 +540,7 @@ class Printer:
                 else:
                     return dataclass2doc(v, with_name=kind)
             # Eval
-            # <ai-disclosure=ai-generated>
+            # <ai-generated>
             case xtype.Eval_Value():
                 return python_obj(
                     'EvalValue', [(None, python_quote(eval_value2doc(v)))]
@@ -569,7 +574,7 @@ class Printer:
                         val_doc = self.value2doc(val)
                     rows.append((key, val_doc))
                 return python_obj('EvalTask', rows)
-            # <ai-generated>
+            # </ai-generated>
             # Collections
             case list():
                 docs = [self.value2doc(i) for i in v]
@@ -615,6 +620,7 @@ def show_value(v: Any, **kwargs: Any) -> None:
 
 
 def register_xtype_repr(**kwargs: Any) -> None:
+    """For all types defined in `imandrax_api.lib`, replace `__repr__` with `to_string`"""
     import inspect
 
     classes = []
@@ -631,14 +637,25 @@ def register_xtype_repr(**kwargs: Any) -> None:
 # ====================
 
 
-def config_items_of_art(kind: str, xval: Any) -> list[tuple[str, Any]]:
-    items = []
-    match kind, xval:
-        case 'po_res', _:
-            if isinstance(xval, xtype.Tasks_PO_res_shallow_poly):  # noqa: SIM102
-                if isinstance(xval.res, xtype.Tasks_PO_res_success_Proof):  # pyright: ignore[reportUnknownMemberType]
-                    items.append(('summarize_po_task', True))
+# def config_items_of_art(
+#     art_kind: str, art_xval: Any
+# ) -> dict[str, dict[str, Any] | None]:
+#     """
+#     Pp config for one artifact given another artifact from the same task.
 
-        case _, _:
-            pass
-    return items
+#     - Encodes interaction between artifacts from a task.
+#     - The most commont one: we'd like to summarize PO task if the PO result is a success proof.
+
+#     Returns:
+#         map of (artifact kind -> pp config name -> pp config value) or (artifact kind -> None), meaning "do not print"
+
+#     """
+#     match art_kind, art_xval:
+#         case 'po_res', _:
+#             pp_config = {}
+#             if isinstance(art_xval, xtype.Tasks_PO_res_shallow_poly):  # noqa: SIM102
+#                 if isinstance(art_xval.res, xtype.Tasks_PO_res_success_Proof):  # pyright: ignore[reportUnknownMemberType]
+#                     pp_config['summarize_po_task'] = True
+#             return {'po_task': pp_config}
+#         case _, _:
+#             return {}
