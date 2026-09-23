@@ -98,10 +98,11 @@ class TaskEntry(BaseModel):
 
 
 class TasksRepr(BaseModel):
-    """Repr of a collection of tasks and their artifacts (typically from one call)"""
+    """Repr of a collection of tasks and their artifacts"""
 
     tasks: list[TaskEntry]
     other: JSONObject = Field(default_factory=dict)
+    """Additional metadata to be displayed"""
 
     @property
     def is_nil(self) -> bool:
