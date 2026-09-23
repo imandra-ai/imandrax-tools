@@ -1130,13 +1130,32 @@ def _sort_artifact_kinds(
     return art_kinds
 
 
+def _resolve_art_kinds(
+    available_kinds: Sequence[str],
+    patterns: Sequence[str],
+) -> Sequence[str]:
+    """Resolve artifact kinds from a sequence of patterns. Right-win."""
+    selected: list[str] = []
+    for pat in patterns:
+        if pat == '*':
+            selected = list(available_kinds)
+        elif pat.startswith('!'):
+            selected = [k for k in selected if k != pat[1:]]
+        elif pat not in selected:
+            selected.append(pat)
+    return _sort_artifact_kinds(selected)
+
+
 def get_task_artifacts(
     task: Task,
     c: ImandraXClient,
-    exclude_artifact_kinds: Sequence[str] = ('show', 'report'),
+    art_kinds: Sequence[str] = ('*', '!show', '!report'),
 ) -> dict[str, Any]:
     """
     Get the artifacts for a task, decoded into imandrax-api binding values.
+
+    Args:
+        art_kinds: A sequence of artifact kind patterns to include. '*' includes all kinds, '!x' excludes kind 'x'.
 
     Returns:
         A dictionary mapping artifact kind to decoded xvalue.
@@ -1145,14 +1164,12 @@ def get_task_artifacts(
     xtype = imandrax_api.lib
     twine = imandrax_api.lib.twine
 
-    art_kinds = c.list_artifacts(task).kinds
-    art_kinds = _sort_artifact_kinds(art_kinds)
+    available_kinds = c.list_artifacts(task).kinds
+    art_kinds = _resolve_art_kinds(available_kinds, art_kinds)
 
     # artifact-kind -> xvalue decoded from artifact
     xvalues: dict[str, Any] = {}
     for art_kind in art_kinds:
-        if art_kind in exclude_artifact_kinds:
-            continue
         art: Art = c.get_artifact(task=task, kind=art_kind).art
         d = twine.Decoder(art.data)
         with raise_rec_limit():
@@ -1171,7 +1188,7 @@ async def async_get_task_artifacts(
     Get the artifacts for a task, decoded into imandrax-api binding values.
 
     Args:
-        art_kinds: A sequence of artifact kinds to include. '*' includes all kinds, '!x' excludes kind 'x'.
+        art_kinds: A sequence of artifact kind patterns to include. '*' includes all kinds, '!x' excludes kind 'x'.
 
     Returns:
         A dictionary mapping artifact kind to decoded xvalue.
@@ -1180,24 +1197,12 @@ async def async_get_task_artifacts(
     xtype = imandrax_api.lib
     twine = imandrax_api.lib.twine
 
-    selected: list[str]
-    if '*' in art_kinds:
-        # NOTE: we don't do `async with c ...` here b/c on __aexit__ aiohttp session will be closed.
-        selected = list((await c.list_artifacts(task)).kinds)
-    else:
-        selected = []
-    for pat in art_kinds:
-        if pat == '*':
-            continue
-        elif pat.startswith('!'):
-            selected = [k for k in selected if k != pat[1:]]
-        elif pat not in selected:
-            selected.append(pat)
-    selected = _sort_artifact_kinds(selected)
+    available_kinds = (await c.list_artifacts(task)).kinds
+    art_kinds = _resolve_art_kinds(available_kinds, art_kinds)
 
     # artifact-kind -> xvalue decoded from artifact
     xvalues: dict[str, Any] = {}
-    for art_kind in selected:
+    for art_kind in art_kinds:
         art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
         d = twine.Decoder(art.data)
         with raise_rec_limit():
