@@ -18,7 +18,7 @@ from typing import Any, Self
 import anywidget
 import traitlets
 from imandrax_api_models import Art, DecomposeRes
-from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
+from imandrax_api_models.artifacts import TasksDataRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import (
     FormattableModel,
@@ -92,7 +92,9 @@ class TasksWidget(anywidget.AnyWidget):
         )
 
     @classmethod
-    def from_tasks_repr(cls, obj: TasksRepr, pre: str = '', post: str = '') -> Self:
+    def from_tasks_data_repr(
+        cls, obj: TasksDataRepr, pre: str = '', post: str = ''
+    ) -> Self:
         return cls(
             task_entries=[e.model_dump(mode='json') for e in obj.tasks],
             pre=pre,

@@ -97,8 +97,8 @@ class TaskEntry(BaseModel):
         )
 
 
-class TasksRepr(BaseModel):
-    """Repr of a collection of tasks and their artifacts"""
+class TasksDataRepr(BaseModel):
+    """A collection of tasks and their artifact representations"""
 
     tasks: list[TaskEntry]
     other: JSONObject = Field(default_factory=dict)
