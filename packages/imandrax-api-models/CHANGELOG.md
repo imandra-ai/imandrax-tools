@@ -4,7 +4,7 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
-## [20.10.1] - 26-09-24
+## [20.10.0] - 26-09-24
 - task-level artifact pretty-printing config resolution, taking interaction between artifacts into account
 - **BREAKING**: artifact kind selection is changed from verbatim excluded kinds to pattern-based.
 
