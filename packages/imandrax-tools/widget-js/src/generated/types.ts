@@ -95,7 +95,6 @@ export interface RegionNonGroupStat {
  * Repr for one single task
  */
 export interface TaskEntry {
-  idx?: number | null;
   id: string;
   kind: string;
   artifacts: ArtifactEntry[];
