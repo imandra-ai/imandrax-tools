@@ -1134,13 +1134,40 @@ def _resolve_art_kinds(
     available_kinds: Sequence[str],
     patterns: Sequence[str],
 ) -> Sequence[str]:
-    """Resolve artifact kinds from a sequence of patterns. Right-win."""
+    """
+    Resolve artifact kinds from a sequence of patterns.
+
+    Applied left to right (later wins, overriding earlier selections):
+    - `'*'`: select all `available_kinds`
+    - `'!x'`: deselect `x`
+    - `'x'`: select `x`
+
+    Raises:
+        ValueError: If a plain pattern `'x'` is not in `available_kinds`.
+
+    Examples:
+        >>> available = ['po_task', 'po_res', 'show', 'report']
+        >>> _resolve_art_kinds(available, ['*', '!show', '!report'])
+        ['po_task', 'po_res']
+        >>> _resolve_art_kinds(available, ['po_res'])
+        ['po_res']
+        >>> _resolve_art_kinds(available, ['decomp_task'])
+        Traceback (most recent call last):
+        ...
+        ValueError: Artifact kind 'decomp_task' not available, available kinds: ['po_task', 'po_res', 'show', 'report']
+
+    """
     selected: list[str] = []
     for pat in patterns:
         if pat == '*':
             selected = list(available_kinds)
         elif pat.startswith('!'):
             selected = [k for k in selected if k != pat[1:]]
+        elif pat not in available_kinds:
+            raise ValueError(
+                f'Artifact kind {pat!r} not available, '
+                f'available kinds: {list(available_kinds)}'
+            )
         elif pat not in selected:
             selected.append(pat)
     return _sort_artifact_kinds(selected)
