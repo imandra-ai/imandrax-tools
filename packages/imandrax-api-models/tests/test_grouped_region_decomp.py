@@ -8,15 +8,16 @@ from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import (
     EnrichedDecomposeRes,
-    ForTest,
+    ForTesting,
     Region,
     RegionGroup,
-    eq_term_with_pp,
     get_leaf_groups,
     group_regions,
     mir_regions_of_fun_decomp_artifact,
 )
 from inline_snapshot import snapshot
+
+pytestmark = pytest.mark.vcr
 
 
 def fence_py(s: str) -> str: return f'```python\n{s}\n```'  # fmt: skip
@@ -219,20 +220,20 @@ def test_region_group_constr_equivalence(
     regions: list[Region] = [Region.from_mir_region(r) for r in mir_regions]
 
     stringified_term_map = reduce(
-        lambda acc, r: ForTest.stringified_term_map_of_region(r, acc),
+        lambda acc, r: ForTesting.stringified_term_map_of_region(r, acc),
         mir_regions,
         {},
     )
 
-    rgs1 = group_regions(regions, eq_term=eq_term_with_pp)
+    rgs1 = group_regions(regions)  # default: memoized `eq_term_with_pp`
     rgs2 = group_regions(
         regions,
         eq_term=partial(
-            ForTest.eq_term_with_string_results,
+            ForTesting.eq_term_with_string_results,
             stringified_term_map=stringified_term_map,
         ),
     )
-    rgs3 = group_regions(regions, eq_term=ForTest.eq_term_naive)
+    rgs3 = group_regions(regions, eq_term=ForTesting.mk_eq_term_naive())
 
     assert _walk(rgs1) == _walk(rgs2)
     assert _walk(rgs1) == _walk(rgs3)
