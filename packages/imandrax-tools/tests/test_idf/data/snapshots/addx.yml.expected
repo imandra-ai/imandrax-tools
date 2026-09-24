@@ -1,177 +1,177 @@
 root
-├───▶ ╭─ id=1, step_idx=0 [LEAF]
+├───▶ ╭─ id=1, step_idx=0
 │     │ invariant='''
-│     │   { counter: destruct[AddX|0] (destruct[Some|0] (nth 0 events)); hitTen: true }
+│     │   { counter: destruct[AddX|0] (destruct[Some|0] (nth 0 events)); hitTen: false }
 │     │ ''',
 │     │ constraints=[
 │     │   '(nth 0 events) is-a Some',
-│     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) = 10',
+│     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
+│     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+│     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
 │     │ ]
 │     ╰───────────
-└───▶ ╭─ id=2, step_idx=0
+│     ├───▶ ╭─ id=3, step_idx=1 [LEAF]
+│     │     │ invariant='''
+│     │     │   { counter:
+│     │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│     │     │     +
+│     │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│     │     │   ; hitTen: true
+│     │     │   }
+│     │     │ ''',
+│     │     │ constraints=[
+│     │     │   '(nth 1 events) is-a Some',
+│     │     │   '(nth 0 events) is-a Some',
+│     │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
+│     │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+│     │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
+│     │     │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+│     │     │   '''
+│     │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│     │     │     +
+│     │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│     │     │     =
+│     │     │     10
+│     │     │   ''',
+│     │     │ ]
+│     │     ╰───────────
+│     └───▶ ╭─ id=4, step_idx=1
+│           │ invariant='''
+│           │   { counter:
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     +
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │   ; hitTen: false
+│           │   }
+│           │ ''',
+│           │ constraints=[
+│           │   '(nth 1 events) is-a Some',
+│           │   '(nth 0 events) is-a Some',
+│           │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
+│           │   '''
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     +
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     <>
+│           │     10
+│           │   ''',
+│           │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+│           │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
+│           │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+│           │   '''
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     +
+│           │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     <=
+│           │     9
+│           │   ''',
+│           │ ]
+│           ╰───────────
+│           ├───▶ ╭─ id=5, step_idx=2 [LEAF]
+│           │     │ invariant='''
+│           │     │   { counter:
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     │     +
+│           │     │     (destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     │     +
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 2 events)))
+│           │     │   ; hitTen: true
+│           │     │   }
+│           │     │ ''',
+│           │     │ constraints=[
+│           │     │   '(nth 2 events) is-a Some',
+│           │     │   '(nth 1 events) is-a Some',
+│           │     │   '(nth 0 events) is-a Some',
+│           │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
+│           │     │   '''
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     │     +
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     │     <>
+│           │     │     10
+│           │     │   ''',
+│           │     │   'destruct[AddX|0] (destruct[Some|0] (nth 2 events)) >= 1',
+│           │     │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+│           │     │   '''
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     │     +
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     │     <=
+│           │     │     9
+│           │     │   ''',
+│           │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+│           │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
+│           │     │   '''
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│           │     │     +
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│           │     │     +
+│           │     │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
+│           │     │     =
+│           │     │     10
+│           │     │   ''',
+│           │     │ ]
+│           │     ╰───────────
+│           └───▶ ╭─ id=6, step_idx=2 [LEAF]
+│                 │ invariant='''
+│                 │   { counter:
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│                 │     +
+│                 │     (destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 2 events)))
+│                 │   ; hitTen: false
+│                 │   }
+│                 │ ''',
+│                 │ constraints=[
+│                 │   '(nth 2 events) is-a Some',
+│                 │   '(nth 1 events) is-a Some',
+│                 │   '(nth 0 events) is-a Some',
+│                 │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
+│                 │   '''
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│                 │     <>
+│                 │     10
+│                 │   ''',
+│                 │   '''
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
+│                 │     <>
+│                 │     10
+│                 │   ''',
+│                 │   'destruct[AddX|0] (destruct[Some|0] (nth 2 events)) >= 1',
+│                 │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
+│                 │   '''
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│                 │     <=
+│                 │     9
+│                 │   ''',
+│                 │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
+│                 │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
+│                 │   '''
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
+│                 │     +
+│                 │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
+│                 │     <=
+│                 │     9
+│                 │   ''',
+│                 │ ]
+│                 ╰───────────
+└───▶ ╭─ id=2, step_idx=0 [LEAF]
       │ invariant='''
-      │   { counter: destruct[AddX|0] (destruct[Some|0] (nth 0 events)); hitTen: false }
+      │   { counter: destruct[AddX|0] (destruct[Some|0] (nth 0 events)); hitTen: true }
       │ ''',
       │ constraints=[
       │   '(nth 0 events) is-a Some',
-      │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
-      │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
-      │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
+      │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) = 10',
       │ ]
       ╰───────────
-      ├───▶ ╭─ id=3, step_idx=1 [LEAF]
-      │     │ invariant='''
-      │     │   { counter:
-      │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-      │     │     +
-      │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-      │     │   ; hitTen: true
-      │     │   }
-      │     │ ''',
-      │     │ constraints=[
-      │     │   '(nth 1 events) is-a Some',
-      │     │   '(nth 0 events) is-a Some',
-      │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
-      │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
-      │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
-      │     │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
-      │     │   '''
-      │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-      │     │     +
-      │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-      │     │     =
-      │     │     10
-      │     │   ''',
-      │     │ ]
-      │     ╰───────────
-      └───▶ ╭─ id=4, step_idx=1
-            │ invariant='''
-            │   { counter:
-            │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     +
-            │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │   ; hitTen: false
-            │   }
-            │ ''',
-            │ constraints=[
-            │   '(nth 1 events) is-a Some',
-            │   '(nth 0 events) is-a Some',
-            │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
-            │   '''
-            │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     +
-            │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     <>
-            │     10
-            │   ''',
-            │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
-            │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
-            │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
-            │   '''
-            │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     +
-            │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     <=
-            │     9
-            │   ''',
-            │ ]
-            ╰───────────
-            ├───▶ ╭─ id=5, step_idx=2 [LEAF]
-            │     │ invariant='''
-            │     │   { counter:
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
-            │     │   ; hitTen: true
-            │     │   }
-            │     │ ''',
-            │     │ constraints=[
-            │     │   '(nth 2 events) is-a Some',
-            │     │   '(nth 1 events) is-a Some',
-            │     │   '(nth 0 events) is-a Some',
-            │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
-            │     │   '''
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     │     <>
-            │     │     10
-            │     │   ''',
-            │     │   'destruct[AddX|0] (destruct[Some|0] (nth 2 events)) >= 1',
-            │     │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
-            │     │   '''
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     │     <=
-            │     │     9
-            │     │   ''',
-            │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
-            │     │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
-            │     │   '''
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-            │     │     +
-            │     │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
-            │     │     =
-            │     │     10
-            │     │   ''',
-            │     │ ]
-            │     ╰───────────
-            └───▶ ╭─ id=6, step_idx=2 [LEAF]
-                  │ invariant='''
-                  │   { counter:
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
-                  │   ; hitTen: false
-                  │   }
-                  │ ''',
-                  │ constraints=[
-                  │   '(nth 2 events) is-a Some',
-                  │   '(nth 1 events) is-a Some',
-                  │   '(nth 0 events) is-a Some',
-                  │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <> 10',
-                  │   '''
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-                  │     <>
-                  │     10
-                  │   ''',
-                  │   '''
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
-                  │     <>
-                  │     10
-                  │   ''',
-                  │   'destruct[AddX|0] (destruct[Some|0] (nth 2 events)) >= 1',
-                  │   'destruct[AddX|0] (destruct[Some|0] (nth 1 events)) >= 1',
-                  │   '''
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-                  │     <=
-                  │     9
-                  │   ''',
-                  │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) >= 1',
-                  │   'destruct[AddX|0] (destruct[Some|0] (nth 0 events)) <= 9',
-                  │   '''
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 0 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 1 events))
-                  │     +
-                  │     destruct[AddX|0] (destruct[Some|0] (nth 2 events))
-                  │     <=
-                  │     9
-                  │   ''',
-                  │ ]
-                  ╰───────────

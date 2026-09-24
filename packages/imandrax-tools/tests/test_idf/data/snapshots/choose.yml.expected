@@ -1,81 +1,81 @@
 root
 ├───▶ ╭─ id=1, step_idx=0
-│     │ invariant='{ tag: 1 }',
-│     │ constraints=['(nth 0 events) is-a Some', 'destruct[Some|0] (nth 0 events) = A']
+│     │ invariant='{ tag: -1 }',
+│     │ constraints=['(nth 0 events) is-a Some', 'destruct[Some|0] (nth 0 events) <> A']
 │     ╰───────────
 │     ├───▶ ╭─ id=3, step_idx=1
-│     │     │ invariant='{ tag: 2 }',
+│     │     │ invariant='{ tag: 0 }',
 │     │     │ constraints=[
 │     │     │   '(nth 1 events) is-a Some',
 │     │     │   '(nth 0 events) is-a Some',
 │     │     │   'destruct[Some|0] (nth 1 events) = A',
-│     │     │   'destruct[Some|0] (nth 0 events) = A',
+│     │     │   'destruct[Some|0] (nth 0 events) <> A',
 │     │     │ ]
 │     │     ╰───────────
 │     │     ├───▶ ╭─ id=7, step_idx=2 [LEAF]
-│     │     │     │ invariant='{ tag: 3 }',
+│     │     │     │ invariant='{ tag: 1 }',
 │     │     │     │ constraints=[
 │     │     │     │   '(nth 2 events) is-a Some',
 │     │     │     │   '(nth 1 events) is-a Some',
 │     │     │     │   '(nth 0 events) is-a Some',
 │     │     │     │   'destruct[Some|0] (nth 2 events) = A',
 │     │     │     │   'destruct[Some|0] (nth 1 events) = A',
-│     │     │     │   'destruct[Some|0] (nth 0 events) = A',
+│     │     │     │   'destruct[Some|0] (nth 0 events) <> A',
 │     │     │     │ ]
 │     │     │     ╰───────────
-│     │     └───▶ ╭─ id=11, step_idx=2 [LEAF]
-│     │           │ invariant='{ tag: 1 }',
+│     │     └───▶ ╭─ id=12, step_idx=2 [LEAF]
+│     │           │ invariant='{ tag: -1 }',
 │     │           │ constraints=[
 │     │           │   '(nth 2 events) is-a Some',
 │     │           │   '(nth 1 events) is-a Some',
 │     │           │   '(nth 0 events) is-a Some',
 │     │           │   'destruct[Some|0] (nth 2 events) <> A',
 │     │           │   'destruct[Some|0] (nth 1 events) = A',
-│     │           │   'destruct[Some|0] (nth 0 events) = A',
+│     │           │   'destruct[Some|0] (nth 0 events) <> A',
 │     │           │ ]
 │     │           ╰───────────
-│     └───▶ ╭─ id=5, step_idx=1
-│           │ invariant='{ tag: 0 }',
+│     └───▶ ╭─ id=6, step_idx=1
+│           │ invariant='{ tag: -2 }',
 │           │ constraints=[
 │           │   '(nth 1 events) is-a Some',
 │           │   '(nth 0 events) is-a Some',
 │           │   'destruct[Some|0] (nth 1 events) <> A',
-│           │   'destruct[Some|0] (nth 0 events) = A',
+│           │   'destruct[Some|0] (nth 0 events) <> A',
 │           │ ]
 │           ╰───────────
-│           ├───▶ ╭─ id=9, step_idx=2 [LEAF]
-│           │     │ invariant='{ tag: 1 }',
+│           ├───▶ ╭─ id=11, step_idx=2 [LEAF]
+│           │     │ invariant='{ tag: -1 }',
 │           │     │ constraints=[
 │           │     │   '(nth 2 events) is-a Some',
 │           │     │   '(nth 1 events) is-a Some',
 │           │     │   '(nth 0 events) is-a Some',
 │           │     │   'destruct[Some|0] (nth 2 events) = A',
-│           │     │   'destruct[Some|0] (nth 0 events) = A',
+│           │     │   'destruct[Some|0] (nth 0 events) <> A',
 │           │     │   'destruct[Some|0] (nth 1 events) <> A',
 │           │     │ ]
 │           │     ╰───────────
-│           └───▶ ╭─ id=13, step_idx=2 [LEAF]
-│                 │ invariant='{ tag: -1 }',
+│           └───▶ ╭─ id=14, step_idx=2 [LEAF]
+│                 │ invariant='{ tag: -3 }',
 │                 │ constraints=[
 │                 │   '(nth 2 events) is-a Some',
 │                 │   '(nth 1 events) is-a Some',
 │                 │   '(nth 0 events) is-a Some',
 │                 │   'destruct[Some|0] (nth 2 events) <> A',
-│                 │   'destruct[Some|0] (nth 0 events) = A',
+│                 │   'destruct[Some|0] (nth 0 events) <> A',
 │                 │   'destruct[Some|0] (nth 1 events) <> A',
 │                 │ ]
 │                 ╰───────────
 └───▶ ╭─ id=2, step_idx=0
-      │ invariant='{ tag: -1 }',
-      │ constraints=['(nth 0 events) is-a Some', 'destruct[Some|0] (nth 0 events) <> A']
+      │ invariant='{ tag: 1 }',
+      │ constraints=['(nth 0 events) is-a Some', 'destruct[Some|0] (nth 0 events) = A']
       ╰───────────
       ├───▶ ╭─ id=4, step_idx=1
       │     │ invariant='{ tag: 0 }',
       │     │ constraints=[
       │     │   '(nth 1 events) is-a Some',
       │     │   '(nth 0 events) is-a Some',
-      │     │   'destruct[Some|0] (nth 1 events) = A',
-      │     │   'destruct[Some|0] (nth 0 events) <> A',
+      │     │   'destruct[Some|0] (nth 1 events) <> A',
+      │     │   'destruct[Some|0] (nth 0 events) = A',
       │     │ ]
       │     ╰───────────
       │     ├───▶ ╭─ id=8, step_idx=2 [LEAF]
@@ -85,49 +85,49 @@ root
       │     │     │   '(nth 1 events) is-a Some',
       │     │     │   '(nth 0 events) is-a Some',
       │     │     │   'destruct[Some|0] (nth 2 events) = A',
-      │     │     │   'destruct[Some|0] (nth 1 events) = A',
-      │     │     │   'destruct[Some|0] (nth 0 events) <> A',
+      │     │     │   'destruct[Some|0] (nth 0 events) = A',
+      │     │     │   'destruct[Some|0] (nth 1 events) <> A',
       │     │     │ ]
       │     │     ╰───────────
-      │     └───▶ ╭─ id=12, step_idx=2 [LEAF]
+      │     └───▶ ╭─ id=13, step_idx=2 [LEAF]
       │           │ invariant='{ tag: -1 }',
       │           │ constraints=[
       │           │   '(nth 2 events) is-a Some',
       │           │   '(nth 1 events) is-a Some',
       │           │   '(nth 0 events) is-a Some',
       │           │   'destruct[Some|0] (nth 2 events) <> A',
-      │           │   'destruct[Some|0] (nth 1 events) = A',
-      │           │   'destruct[Some|0] (nth 0 events) <> A',
+      │           │   'destruct[Some|0] (nth 0 events) = A',
+      │           │   'destruct[Some|0] (nth 1 events) <> A',
       │           │ ]
       │           ╰───────────
-      └───▶ ╭─ id=6, step_idx=1
-            │ invariant='{ tag: -2 }',
+      └───▶ ╭─ id=5, step_idx=1
+            │ invariant='{ tag: 2 }',
             │ constraints=[
             │   '(nth 1 events) is-a Some',
             │   '(nth 0 events) is-a Some',
-            │   'destruct[Some|0] (nth 1 events) <> A',
-            │   'destruct[Some|0] (nth 0 events) <> A',
+            │   'destruct[Some|0] (nth 1 events) = A',
+            │   'destruct[Some|0] (nth 0 events) = A',
             │ ]
             ╰───────────
-            ├───▶ ╭─ id=10, step_idx=2 [LEAF]
-            │     │ invariant='{ tag: -1 }',
+            ├───▶ ╭─ id=9, step_idx=2 [LEAF]
+            │     │ invariant='{ tag: 1 }',
             │     │ constraints=[
             │     │   '(nth 2 events) is-a Some',
             │     │   '(nth 1 events) is-a Some',
             │     │   '(nth 0 events) is-a Some',
-            │     │   'destruct[Some|0] (nth 2 events) = A',
-            │     │   'destruct[Some|0] (nth 0 events) <> A',
-            │     │   'destruct[Some|0] (nth 1 events) <> A',
+            │     │   'destruct[Some|0] (nth 2 events) <> A',
+            │     │   'destruct[Some|0] (nth 1 events) = A',
+            │     │   'destruct[Some|0] (nth 0 events) = A',
             │     │ ]
             │     ╰───────────
-            └───▶ ╭─ id=14, step_idx=2 [LEAF]
-                  │ invariant='{ tag: -3 }',
+            └───▶ ╭─ id=10, step_idx=2 [LEAF]
+                  │ invariant='{ tag: 3 }',
                   │ constraints=[
                   │   '(nth 2 events) is-a Some',
                   │   '(nth 1 events) is-a Some',
                   │   '(nth 0 events) is-a Some',
-                  │   'destruct[Some|0] (nth 2 events) <> A',
-                  │   'destruct[Some|0] (nth 0 events) <> A',
-                  │   'destruct[Some|0] (nth 1 events) <> A',
+                  │   'destruct[Some|0] (nth 2 events) = A',
+                  │   'destruct[Some|0] (nth 1 events) = A',
+                  │   'destruct[Some|0] (nth 0 events) = A',
                   │ ]
                   ╰───────────
