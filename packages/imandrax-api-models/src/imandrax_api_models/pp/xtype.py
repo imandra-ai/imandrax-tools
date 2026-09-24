@@ -68,16 +68,24 @@ def snake_to_camel(s: str) -> str:
 
 @dataclass
 class PrinterConfig:
+    # order flags roughly in the descending order of generality
     bytes_limit: int | None = None
+    hide_none_fields: frozenset[str] = frozenset({'timeout', 'sub_anchor'})
+    """Omit these fields (by name, in any dataclass) when their value is `None`"""
+    ascii_only: bool = False
+    unwrap_single_arg_dataclass: bool = True
+    """if True, and `arg` is the only field shown, drop the `arg=` label, e.g. `Anchor_Eval(3)` instead of `Anchor_Eval(arg=3)`"""
     show_ca_store_key: bool = False
+    """If false, hide the CA store key (as `nil`)"""
     opaque_db: bool = True
-    """Show db as \"<opaque>\""""
+    """Show db as `<opaque>`. If false, show its op count (or op keys, if
+    `show_ca_store_key`)"""
     show_po_task_db: bool = False
-    show_po_res_report: bool = (
-        False  # Note: report can be found in a dedicated artifact
-    )
     show_decomp_task_db: bool = False
+    show_po_res_report: bool = False
+    """Show `PORes.report`, the raw serialized archive. For decoded report, look for `report` artifact."""
     show_decomp_res_report: bool = False
+    """Show `DecompRes.report`, the raw serialized archive. For decoded report, look for `report` artifact."""
     show_eval_task_db: bool = False
     show_anchor_hash: bool = False
     """append a short chash to anchor/cname names"""
@@ -91,8 +99,6 @@ class PrinterConfig:
     """render full models/SMT proofs in reports"""
     concise_region_repr: bool = True
     """Whether to use concise region representation provided by `region2doc`"""
-    unwrap_single_arg_dataclass: bool = True
-    ascii_only: bool = False
 
 
 def _bytes2doc(b: bytes, limit: int | None = None) -> Doc:
@@ -176,7 +182,9 @@ class Printer:
         rows: AssocList[Doc] = []
         for fld in fields(v):
             val = getattr(v, fld.name)
-            if filter_none_values and val is None:
+            if val is None and (
+                filter_none_values or fld.name in self.config.hide_none_fields
+            ):
                 continue
             if filter_p is not None and not filter_p(fld.name, val):
                 continue
@@ -200,7 +208,8 @@ class Printer:
 
         Args:
             with_name: overrides the name of the dataclass
-            unwrap_single_arg: if True, unwrap single-argument dataclasses
+            unwrap_single_arg: if True, and `arg` is the only field shown, drop the
+                `arg=` label, e.g. `Anchor_Eval(3)` instead of `Anchor_Eval(arg=3)`
             filter_p: a function that filters fields by name and value
 
         """
@@ -226,13 +235,13 @@ class Printer:
     # Custom xtype printers
     # --------------------
 
-    def Cname2doc(self, c: xtype.Cname_t_) -> Doc:
+    def Cname2str(self, c: xtype.Cname_t_) -> str:
         """A content-addressed name: `name`, or `name/<short hash>` when configured."""
         if self.config.show_anchor_hash and c.chash:
-            return Pp.text(f'{c.name}/{c.chash[:3].hex()}')
-        return Pp.text(c.name)
+            return f'{c.name}/{c.chash[:3].hex()}'
+        return c.name
 
-    def Anchor2doc(self, a: xtype.Anchor) -> Doc:
+    def Anchor2str(self, a: xtype.Anchor) -> str:
         """
         Anchor as a content-addressed name qualified by transformation modifiers.
 
@@ -241,13 +250,13 @@ class Printer:
         """
         match a:
             case xtype.Anchor_Named(arg=c):
-                return self.Cname2doc(c)
+                return self.Cname2str(c)
             case xtype.Anchor_Eval(arg=n):
-                return Pp.text(f'eval#{n}')
+                return f'eval#{n}'
             case xtype.Anchor_Proof_check(arg=inner):
-                return hcat(text('proof_check/'), self.Anchor2doc(inner))
+                return f'proof_check/{self.Anchor2str(inner)}'
             case xtype.Anchor_Decomp(arg=inner):
-                return hcat(text('decomp/'), self.Anchor2doc(inner))
+                return f'decomp/{self.Anchor2str(inner)}'
             case _:
                 assert_never(a)
 
@@ -285,18 +294,14 @@ class Printer:
             case xtype.Common_Applied_symbol_t_poly():
                 return sym2doc(v)
             case xtype.Uid():
-                return Pp.text(v.name)
+                return Pp.text(repr(v.name))
             case xtype.Ca_store_Ca_ptr_Raw():
                 if self.config.show_ca_store_key:
                     return Pp.text(f'<Ca_store.Ca_ptr.Raw.key {v.key!r}>')
                 else:
                     return nil
             case xtype.Error_Error_core():
-                return dataclass2doc(
-                    v,
-                    with_name='Error',
-                    filter_p=lambda k, v: False if k == 'stack' and v == [] else True,  # noqa: SIM211
-                )
+                return dataclass2doc(v, with_name='Error')
             case xtype.Error_Kind(name):
                 return python_quote(text(name))
             case xtype.Error_Error_core_message():
@@ -328,8 +333,11 @@ class Printer:
             case xtype.Common_Db_ser_t_poly():
                 if self.config.opaque_db:
                     return text('<opaque>')
+                elif self.config.show_ca_store_key:
+                    return dataclass2doc(v, with_name='Db')
                 else:
-                    return self.value2doc(v)
+                    # Ops are CA pointers, which print as `nil` without keys
+                    return python_obj('Db', [('ops', text(f'<{len(v.ops)} ops>'))])
             case (
                 xtype.Common_Verify_kind_K_verify()
                 | xtype.Common_Verify_kind_K_instance()
@@ -374,9 +382,7 @@ class Printer:
                     else:
                         return dataclass2doc(v.arg, with_name=with_name)
             case xtype.Tasks_PO_res_error_No_proof():
-                return dataclass2doc(
-                    v.arg, with_name='POErrorNoProof', filter_none_values=True
-                )
+                return dataclass2doc(v.arg, with_name='POErrorNoProof')
             case xtype.Tasks_PO_res_error_Error():
                 return dataclass2doc(v.arg, with_name='POErrorError')
             case xtype.Tasks_PO_res_error_Invalid_model():
@@ -423,13 +429,13 @@ class Printer:
                 | xtype.Anchor_Proof_check()
                 | xtype.Anchor_Decomp()
             ):
-                inner = hcat(text("'"), self.Anchor2doc(v), text("'"))
+                inner = text(repr(self.Anchor2str(v)))
                 return python_obj('Anchor', [(None, inner)])
             case xtype.Sub_anchor():
-                inner = text(f"'{v.fname}#{v.anchor}'")
+                inner = text(repr(f'{v.fname}#{v.anchor}'))
                 return python_obj('SubAnchor', [(None, inner)])
             case xtype.Cname_t_():
-                return self.Cname2doc(v)
+                return text(repr(self.Cname2str(v)))
             # PO task
             case xtype.Tasks_PO_task_t_poly():
                 if not self.config.summarize_po_task:
@@ -461,7 +467,7 @@ class Printer:
                             continue
                         val = cast(list[tuple[str, xtype.Mir_Term]], val)
                         val_doc = python_dict(
-                            [(text(name), term2doc(term)) for name, term in val]
+                            [(text(repr(name)), term2doc(term)) for name, term in val]
                         )
                     else:
                         val_doc = self.value2doc(val)
@@ -499,14 +505,16 @@ class Printer:
                 name = type(v).__name__.removeprefix('Tasks_Decomp_task_decomp_poly_')
                 return self.dataclass2doc(v, with_name=name, unwrap_single_arg=False)
             case xtype.Tasks_Decomp_res_shallow_poly():
-                ignore_fields = None if self.config.show_decomp_task_db else ['report']
+                ignore_fields = (
+                    None if self.config.show_decomp_res_report else ['report']
+                )
                 return dataclass2doc(
                     v, with_name='DecompRes', ignore_fields=ignore_fields
                 )
             case xtype.Tasks_Decomp_res_success():
                 return dataclass2doc(v, with_name='DecompResSuccess')
             case xtype.Tasks_Decomp_res_error_Error():
-                return dataclass2doc(v, with_name='DecompResError')
+                return dataclass2doc(v.arg, with_name='DecompResError')
             case xtype.Common_Fun_decomp_t_poly():
                 return dataclass2doc(v, with_name='FunDecomp')
             # TODO: make following two different modes provided by decomp.py
@@ -566,7 +574,7 @@ class Printer:
                     val = getattr(v, key)
                     if key == 'db' and not self.config.show_eval_task_db:
                         continue
-                    if key == 'timeout' and val is None:
+                    if val is None and key in self.config.hide_none_fields:
                         continue
                     if key == 'term':
                         val_doc = eval_top_fun2doc(val)
