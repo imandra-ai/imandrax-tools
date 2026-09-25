@@ -3,6 +3,7 @@
 ## [Unreleased]
 - decomp: extract `[@@timeout n]` from the decomposed binding into `DecompReqArgs['timeout']` (seconds, to be sent as `compute_timeout` in API). 
 - decomp: composite extraction (`extract_decomp_reqs_` / `decomp_capture_to_req_` / `get_decomp_reqs_`) parse the `<<` (merge) and `<|<` (compound merge) operators into `DecompReqArgs_`. Composed decomps now round-trip through `insert_decomp_req_`.
+- FIX: `verify` / `instance` statements with multiple item attributes (e.g. `[@@by auto] [@@timeout 10]`) produced one match per attribute, crashing `extract_verify_reqs` / `extract_instance_reqs` with `Overlapping nodes`. They now yield one request, with all attributes joined (space-separated) into `hints`.
 
 ## [0.14.0] - 2026-08-28
 - expose composite decomp DSL APIs
