@@ -114,9 +114,8 @@ instance (fun x -> x > 0) [@@by auto]
     )
     # verify_expr should exclude the attribute
     assert verify_capture.verify_expr.text == b'(fun x y -> x > 0)'
-    # verify_attr should capture the attribute
-    assert verify_capture.verify_attr is not None
-    assert verify_capture.verify_attr.text == b'[@@by auto]'
+    # verify_attrs should capture the attribute
+    assert [a.text for a in verify_capture.verify_attrs] == [b'[@@by auto]']
 
     # Test INSTANCE query (mirrors VERIFY query)
     # --------------------
@@ -129,8 +128,7 @@ instance (fun x -> x > 0) [@@by auto]
         == b'instance (fun x -> x > 0) [@@by auto]'
     )
     assert instance_capture.instance_expr.text == b'(fun x -> x > 0)'
-    assert instance_capture.instance_attr is not None
-    assert instance_capture.instance_attr.text == b'[@@by auto]'
+    assert [a.text for a in instance_capture.instance_attrs] == [b'[@@by auto]']
 
 
 def test_test_parsing():

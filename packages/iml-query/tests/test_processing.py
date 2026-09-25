@@ -5,6 +5,7 @@ from iml_query.processing import (
     extract_decomp_reqs,
     extract_instance_reqs,
     extract_opaque_function_names,
+    extract_verify_reqs,
     iml_outline,
     insert_instance_req,
 )
@@ -206,6 +207,43 @@ let another_opaque_fn y z = y * z
     assert opaque_functions == snapshot(
         ['expensive_computation', 'external_api_call', 'another_opaque_fn']
     )
+
+
+def test_extract_vg_reqs_multiple_attrs():
+    """One request per statement, with all item attributes joined into `hints`."""
+    iml = """\
+let f x = x + 1
+
+verify (fun x -> f x > x) [@@by auto] [@@timeout 10]
+
+verify (fun x -> f x > x) [@@by auto] [@@upto 5]
+
+instance (fun x -> f x > 3) [@@timeout 10] [@@upto 5]
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+
+    iml, tree, verify_reqs, _ = extract_verify_reqs(iml, tree)
+    new_iml, _, instance_reqs, _ = extract_instance_reqs(iml, tree)
+
+    assert verify_reqs == snapshot(
+        [
+            {'hints': '[@@by auto] [@@timeout 10]', 'src': 'fun x -> f x > x'},
+            {'hints': '[@@by auto] [@@upto 5]', 'src': 'fun x -> f x > x'},
+        ]
+    )
+    assert instance_reqs == snapshot(
+        [{'hints': '[@@timeout 10] [@@upto 5]', 'src': 'fun x -> f x > 3'}]
+    )
+    assert new_iml == snapshot("""\
+let f x = x + 1
+
+
+
+
+
+
+""")
 
 
 def test_extract_instance_reqs():
