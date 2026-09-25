@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Self, override
 
 from tree_sitter import Node
@@ -36,32 +36,57 @@ VERIFY_QUERY_SRC = r"""
     "verify" .
     ; `(_)` captures whatever named node
     (_) @verify_expr
-    (item_attribute)? @verify_attr
+    ; `*` collects every attribute into one match
+    (item_attribute)* @verify_attrs
 ) @verify_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
 class VerifyCapture(BaseCapture):
-    verify_statement: Node  # the entire `verify` statement
-    verify_expr: Node  # the expression after `verify`, excluding item attributes
-    verify_attr: Node | None = None  # e.g. `[@@by simp]`
+    verify_statement: Node
+    """the entire `verify` statement"""
+    verify_expr: Node
+    """the expression after `verify`, excluding item attributes"""
+    verify_attrs: list[Node] = field(default_factory=list[Node])
+    """e.g. `[@@by simp]`, `[@@timeout 10]`"""
+
+    @override
+    @classmethod
+    def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
+        return cls(
+            verify_statement=capture['verify_statement'][0],
+            verify_expr=capture['verify_expr'][0],
+            verify_attrs=capture.get('verify_attrs', []),
+        )
 
 
 INSTANCE_QUERY_SRC = r"""
 (instance_statement
     "instance" .
     (_) @instance_expr
-    (item_attribute)? @instance_attr
+    (item_attribute)* @instance_attrs
 ) @instance_statement
 """
 
 
 @dataclass(slots=True, frozen=True)
 class InstanceCapture(BaseCapture):
-    instance_statement: Node  # the entire `instance` statement
-    instance_expr: Node  # the expression after `instance`, excluding item attributes
-    instance_attr: Node | None = None  # e.g. `[@@by simp]`
+    instance_statement: Node
+    """the entire `instance` statement"""
+    instance_expr: Node
+    """the expression after `instance`, excluding item attributes"""
+    instance_attrs: list[Node] = field(default_factory=list[Node])
+    """e.g. `[@@by simp]`, `[@@timeout 10]`"""
+
+    @override
+    @classmethod
+    def from_ts_capture(cls, capture: dict[str, list[Node]]) -> Self:
+        return cls(
+            instance_statement=capture['instance_statement'][0],
+            instance_expr=capture['instance_expr'][0],
+            instance_attrs=capture.get('instance_attrs', []),
+        )
 
 
 TEST_QUERY_SRC = r"""
