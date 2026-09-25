@@ -11,7 +11,6 @@ import json
 from collections.abc import Iterable, Iterator
 from typing import Any
 
-import dotenv
 import pytest
 from dirty_equals import IsStr
 from imandrax_api_models.client import (
@@ -25,9 +24,6 @@ from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
     InMemorySpanExporter,
 )
-
-dotenv.load_dotenv()
-
 
 # Dirty-equals matchers for unstable fields
 # =========================================

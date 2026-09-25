@@ -4,18 +4,12 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Mapping
-from typing import (
-    Any,
-    assert_never,
-)
+from typing import Any, Literal, Self, assert_never
 
 import imandrax_api.lib as xtype
 from pydantic import BaseModel, Field
 
-from imandrax_api_models import (
-    Task,
-    TaskKind,
-)
+from imandrax_api_models import Task, TaskKind
 from imandrax_api_models.client import (
     ImandraXAsyncClient,
     ImandraXClient,
@@ -23,16 +17,30 @@ from imandrax_api_models.client import (
     get_task_artifacts,
 )
 from imandrax_api_models.context_utils import (
-    JSONArray,
     JSONObject,
 )
 from imandrax_api_models.pp.xtype import (
-    Printer as XtypePrinter,
-    config_items_of_art,
     to_string as xtype_to_string,
 )
 
 type XValue = Any
+
+type ArtifactKind = Literal[
+    'eval_task',
+    'eval_res',
+    'po_task',
+    'po_res',
+    'decomp_task',
+    'decomp_res',
+    'report',
+    'show',
+]
+AVAILABLE_ARTIFACTS: dict[TaskKind, set[ArtifactKind]] = {
+    TaskKind.TASK_EVAL: {'eval_task', 'eval_res', 'show'},
+    TaskKind.TASK_CHECK_PO: {'po_task', 'po_res', 'report', 'show'},
+    TaskKind.TASK_DECOMP: {'decomp_task', 'decomp_res', 'report', 'show'},
+    TaskKind.TASK_PROOF_CHECK: {'show'},
+}
 
 
 class ArtifactEntry(BaseModel):
@@ -46,7 +54,6 @@ class ArtifactEntry(BaseModel):
 class TaskEntry(BaseModel):
     """Repr for one single task"""
 
-    idx: int | None = Field(default=None)
     id: str
     kind: str
     artifacts: list[ArtifactEntry]
@@ -54,18 +61,48 @@ class TaskEntry(BaseModel):
 
     @property
     def name(self) -> str:
-        buf = 'TASK_'
-        if self.idx is not None:
-            buf += f'{self.idx}_'
-        buf += f'{self.kind.removeprefix("TASK_")}'
-        return buf
+        comps = self.id.split(':')
+        hash = ':'.join(comps[2:])
+        return ':'.join([comps[0], comps[1], hash[:6]])
+
+    @classmethod
+    def make(cls, task: Task, artifacts: Mapping[str, XValue]) -> Self:
+        """
+        Create task artifact representations,
+
+        - Encodes pp config interaction between artifacts from a task.
+        - The most commont one: we'd like to summarize PO task if the PO result is a success proof.
+        """
+        pp_config: dict[str, Any] = {}
+        if task.kind == TaskKind.TASK_CHECK_PO:
+            po_res = artifacts.get('po_res')
+            if isinstance(po_res, xtype.Tasks_PO_res_shallow_poly) and isinstance(
+                po_res.res,  # pyright: ignore[reportUnknownMemberType]
+                xtype.Tasks_PO_res_success_Proof,
+            ):
+                pp_config['summarize_po_task'] = True
+                pp_config['hide_po_res_success_cases'] = True
+
+        art_entries: list[ArtifactEntry] = []
+        for a_kind, xval in artifacts.items():
+            xval_str = xtype_to_string(xval, **pp_config)
+            art_entries.append(ArtifactEntry(kind=a_kind, repr=xval_str))
+
+        if task.id is None:
+            raise ValueError(f'Task has no id: {task!s}')
+        return cls(
+            id=task.id.id,
+            kind=task.kind.value,
+            artifacts=art_entries,
+        )
 
 
-class TasksRepr(BaseModel):
-    """Repr of a collection of tasks and their artifacts (typically from one call)"""
+class TasksDataRepr(BaseModel):
+    """A collection of tasks and their artifact representations"""
 
     tasks: list[TaskEntry]
     other: JSONObject = Field(default_factory=dict)
+    """Additional metadata to be displayed"""
 
     @property
     def is_nil(self) -> bool:
@@ -82,92 +119,88 @@ class TasksRepr(BaseModel):
         return res
 
 
-def repr_tasks(
-    arts: list[tuple[int, Task, Mapping[str, Any]]],
-    summarize_proved_po_tasks: bool = True,
-) -> tuple[list[TaskEntry], JSONObject]:
-    """
-    Transforms the artifacts to printable JSON representation.
+# def repr_tasks(
+#     arts: list[tuple[int, Task, Mapping[str, Any]]],
+#     **pp_kwargs: Any,
+# ) -> list[TaskEntry]:
+#     """
+#     Transforms the artifacts to printable JSON representation.
 
-    For PO tasks whose res is a successful proof, we aggregate their overviews
-    into the same entry.
+#     For PO tasks whose res is a successful proof, we aggregate their overviews
+#     into the same entry.
 
-    Args:
-        arts: List of (task-index, task, art-kind -> xval map)
-        summarize_proved_po_tasks: Whether to summarize proved PO tasks into a single entry, hiding proof details
+#     Args:
+#         arts: List of (task-index, task, art-kind -> xval map)
+#         summarize_proved_po_tasks: Whether to summarize proved PO tasks into a single entry, hiding proof details
 
-    """
-    tasks_repr: list[TaskEntry] = []
-    proved_po_tasks: JSONArray = []
-    for i, task, art_kind_to_xval in arts:
-        # Proved PO tasks fast path
-        if (
-            summarize_proved_po_tasks
-            and task.kind == TaskKind.TASK_CHECK_PO
-            and isinstance(
-                (po_res := art_kind_to_xval.get('po_res', None)),
-                xtype.Tasks_PO_res_shallow_poly,
-            )
-            and isinstance(po_res.res, xtype.Tasks_PO_res_success_Proof)  # pyright: ignore
-        ):
-            po_task_overview = XtypePrinter.overview_of_Tasks_PO_task_t_poly(
-                art_kind_to_xval['po_task'],
-                fold_sym_if_exists=True,
-            )
-            proved_po_tasks.append(f'({i}) {po_task_overview}')
-            continue
+#     """
+#     tasks_repr: list[TaskEntry] = []
+#     for i, task, art_kind_to_xval in arts:
+#         # # Proved PO tasks fast path
+#         # if (
+#         #     summarize_proved_po_tasks
+#         #     and task.kind == TaskKind.TASK_CHECK_PO
+#         #     and isinstance(
+#         #         (po_res := art_kind_to_xval.get('po_res', None)),
+#         #         xtype.Tasks_PO_res_shallow_poly,
+#         #     )
+#         #     and isinstance(po_res.res, xtype.Tasks_PO_res_success_Proof)
+#         # ):
+#         #     po_task_overview = XtypePrinter.overview_of_Tasks_PO_task_t_poly(
+#         #         art_kind_to_xval['po_task']
+#         #     )
+#         #     proved_po_tasks.append(f'({i}) {po_task_overview}')
+#         #     continue
 
-        art_entries: list[ArtifactEntry] = []
-        for a_kind, xval in art_kind_to_xval.items():
-            xval_str = xtype_to_string(xval, summarize_po_task=True)
-            art_entries.append(ArtifactEntry(kind=a_kind, repr=xval_str))
+#         art_entries: list[ArtifactEntry] = []
+#         for a_kind, xval in art_kind_to_xval.items():
+#             xval_str = xtype_to_string(xval, summarize_po_task=True)
+#             art_entries.append(ArtifactEntry(kind=a_kind, repr=xval_str))
 
-        if task.id is None:
-            raise ValueError(f'Task {i} has no id')
-        task_repr = TaskEntry(
-            idx=i,
-            id=task.id.id,
-            kind=task.kind.value,
-            artifacts=art_entries,
-        )
-        tasks_repr.append(task_repr)
+#         if task.id is None:
+#             raise ValueError(f'Task {i} has no id')
+#         task_repr = TaskEntry(
+#             idx=i,
+#             id=task.id.id,
+#             kind=task.kind.value,
+#             artifacts=art_entries,
+#         )
+#         tasks_repr.append(task_repr)
 
-    return tasks_repr, {'proved_po_tasks': proved_po_tasks} if len(
-        proved_po_tasks
-    ) > 0 else {}
+#     return tasks_repr
 
 
-def mk_task_entry(task: Task, artifacts: Mapping[str, XValue]) -> TaskEntry:
-    """
-    _
+# def mk_task_entry(task: Task, artifacts: Mapping[str, XValue]) -> TaskEntry:
+#     """
+#     _
 
-    Args:
-        task: _
-        artifacts: map from artifact kind to xvalue.
+#     Args:
+#         task: _
+#         artifacts: map from artifact kind to xvalue.
 
-    """
-    if task.id is None:
-        raise ValueError('task id is missing')
+#     """
+#     if task.id is None:
+#         raise ValueError('task id is missing')
 
-    config_items: dict[str, Any] = {}
-    for a_kind, xval in artifacts.items():
-        # simple right-win merge. Conflicts are not handled.
-        config_items.update(config_items_of_art(a_kind, xval))
+#     config_items: dict[str, Any] = {}
+#     for a_kind, xval in artifacts.items():
+#         # simple right-win merge. Conflicts are not handled.
+#         config_items.update(config_items_of_art(a_kind, xval))
 
-    artifact_entries: list[ArtifactEntry] = []
-    for a_kind, xval in artifacts.items():
-        artifact_entries.append(
-            ArtifactEntry(
-                kind=a_kind,
-                repr=xtype_to_string(xval, **config_items),
-            )
-        )
+#     artifact_entries: list[ArtifactEntry] = []
+#     for a_kind, xval in artifacts.items():
+#         artifact_entries.append(
+#             ArtifactEntry(
+#                 kind=a_kind,
+#                 repr=xtype_to_string(xval, **config_items),
+#             )
+#         )
 
-    return TaskEntry(
-        id=task.id.id,
-        kind=task.kind.value,
-        artifacts=artifact_entries,
-    )
+#     return TaskEntry(
+#         id=task.id.id,
+#         kind=task.kind.value,
+#         artifacts=artifact_entries,
+#     )
 
 
 def artifact_reprs_of_tasks(
@@ -176,7 +209,7 @@ def artifact_reprs_of_tasks(
     """Fetch + decode + pretty-print artifacts for each task into trait data."""
     match c:
         case ImandraXClient():
-            return [mk_task_entry(t, get_task_artifacts(t, c)) for t in tasks]
+            return [TaskEntry.make(t, get_task_artifacts(t, c)) for t in tasks]
         case ImandraXAsyncClient() as ac:
 
             async def _gather() -> list[TaskEntry]:
@@ -186,7 +219,7 @@ def artifact_reprs_of_tasks(
                     artifacts = await asyncio.gather(
                         *[async_get_task_artifacts(t, c_) for t in tasks]
                     )
-                return [mk_task_entry(t, a) for t, a in zip(tasks, artifacts)]
+                return [TaskEntry.make(t, a) for t, a in zip(tasks, artifacts)]
 
             return asyncio.run(_gather())
         case _:
