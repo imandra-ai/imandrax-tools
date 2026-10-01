@@ -79,7 +79,8 @@ def assess_artifacts(
     match task_kind:
         case TaskKind.TASK_CHECK_PO:
             po_res: xtype.Tasks_PO_res_Shallow | None = artifacts.get('po_res')
-            assert po_res is not None
+            if po_res is None:
+                return level, pp_config
             match po_res.res:
                 case xtype.Tasks_PO_res_success_Proof():
                     pp_config |= {
@@ -108,7 +109,8 @@ def assess_artifacts(
                     assert_never(po_res.res)
         case TaskKind.TASK_EVAL:
             eval_res: xtype.Tasks_Eval_res | None = artifacts.get('eval_res')
-            assert eval_res is not None
+            if eval_res is None:
+                return level, pp_config
             match eval_res.res:
                 case xtype.Error_Error_core():
                     level = 'error'
@@ -121,7 +123,8 @@ def assess_artifacts(
             decomp_res: xtype.Tasks_Decomp_res_Shallow | None = artifacts.get(
                 'decomp_res'
             )
-            assert decomp_res is not None
+            if decomp_res is None:
+                return level, pp_config
             match decomp_res.res:
                 case xtype.Tasks_Decomp_res_error_Error():
                     level = 'error'
