@@ -32,7 +32,7 @@ function rank(level: TaskLevel): number {
 }
 
 function levelOf(task: TaskData): TaskLevel {
-  return task.level ?? "debug";
+  return task.level ?? "info";
 }
 
 // `task:po:<hash>` -> `task:po:<first 6 of hash>`, same as `TaskEntry.name`.
