@@ -36,6 +36,8 @@ const render = (data) => {
   drawTasks(el, data);
   return el;
 };
+// A checkbox only fires `change` on click when connected to the document.
+const renderAttached = (data) => document.body.appendChild(render(data));
 const rows = (el) => [...el.querySelectorAll(".imdx-task-row")];
 const cell = (row, name) => row.querySelector(`.imdx-task-${name}`);
 describe("task", () => {
@@ -208,6 +210,45 @@ describe("task", () => {
   it("reports when every task is debug", () => {
     const el = render([task({ level: "debug" })]);
     expect(el.querySelector(".imdx-task-placeholder").hidden).toBe(false);
+  });
+
+  it("puts the artifacts column before kind", () => {
+    const el = render(admitRec);
+    const heads = [...el.querySelectorAll("thead th")].map((th) => th.textContent);
+    expect(heads.slice(0, 4)).toEqual(["", "symbol", "artifacts", "kind"]);
+    const [row] = rows(el);
+    expect(row.children[2].className).toBe("imdx-task-chips");
+    expect(row.children[3].className).toBe("imdx-task-kind");
+  });
+
+  it("shows debug tasks when 'show debug' is ticked", () => {
+    const el = renderAttached([
+      task({ id: "task:po:1", level: "debug" }),
+      task({ id: "task:po:2", level: "info" }),
+    ]);
+    const box = el.querySelector(".imdx-task-show-debug input");
+    expect(box.checked).toBe(false);
+    box.click();
+    expect(rows(el).map((r) => cell(r, "id").title)).toEqual(["task:po:2", "task:po:1"]);
+    box.click();
+    expect(rows(el).map((r) => cell(r, "id").title)).toEqual(["task:po:2"]);
+  });
+
+  it("dims 'show debug' when there is no debug task", () => {
+    const label = render([task({ level: "info" })]).querySelector(".imdx-task-show-debug");
+    expect(label.querySelector("input").disabled).toBe(false);
+    expect(label.classList.contains("imdx-task-show-debug-none")).toBe(true);
+
+    const withDebug = render([task({ level: "debug" })]).querySelector(".imdx-task-show-debug");
+    expect(withDebug.classList.contains("imdx-task-show-debug-none")).toBe(false);
+  });
+
+  it("keeps the header, and its toggle, when every task is debug", () => {
+    const el = renderAttached([task({ level: "debug" })]);
+    expect(el.querySelector(".imdx-task-table").hidden).toBe(false);
+    el.querySelector(".imdx-task-show-debug input").click();
+    expect(rows(el).length).toBe(1);
+    expect(el.querySelector(".imdx-task-placeholder").hidden).toBe(true);
   });
 
   it("tolerates an empty task list", () => {
