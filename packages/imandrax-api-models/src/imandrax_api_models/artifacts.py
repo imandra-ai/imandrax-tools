@@ -52,7 +52,7 @@ class ArtifactEntry(BaseModel):
 
 
 type TaskLevel = Literal['debug', 'info', 'warning', 'error']
-"""Status of a task, the attention level, derived from its result artifact
+"""Task result attention level, derived from its result artifact
 
 - error: task failure
 - warning: an answer that isn't a plain success (refuted, bounded verification)
@@ -141,7 +141,7 @@ class TaskEntry(BaseModel):
     id: str
     kind: str
     artifacts: list[ArtifactEntry]
-    level: TaskLevel
+    level: TaskLevel = Field(description='Task result attention level')
     from_sym: str | None = Field(
         default=None, description='Symbol the task originates from, if known'
     )
