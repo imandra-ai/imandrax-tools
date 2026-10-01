@@ -300,7 +300,7 @@ describe("jsonable/view on real to_yaml_str output", () => {
     const block = el.querySelector(".imdx-jsonable-block");
     // `repr: |-` opens the literal block the str representer produced.
     expect(block.previousElementSibling.textContent).toContain("repr: |-");
-    expect(block.textContent).toContain("PORes(");
+    expect(block.textContent).toContain("POTask(");
     // Its indented body is opaque text: no nested folds, no tokens.
     expect(block.querySelector("details")).toBeNull();
     expect(block.querySelector("span")).toBeNull();

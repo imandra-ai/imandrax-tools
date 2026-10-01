@@ -10,7 +10,7 @@ import type { RegionGroupView, RegionNonGroupStat } from '../generated/types';
 
 export type { RegionGroupView, RegionNonGroupStat };
 
-// One node in the region-group forest (`region_stat` non-null only on leaves).
+// One node in the region-group forest (`region` non-null only on leaves).
 export type RegionGroup = RegionGroupView;
 // Display stats for a concrete leaf region.
 export type RegionStat = RegionNonGroupStat;

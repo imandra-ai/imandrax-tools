@@ -1,142 +1,241 @@
-// Task-artifact view: a stack of collapsible tasks, each holding collapsible
-// artifacts rendered as escaped, scrollable <pre> text.
+// Task-artifact view: a flat table with one row per task, and a detail row under
+// it holding whichever of its artifacts are open, rendered as escaped, scrollable
+// <pre> text.
+//
+// Rows are sorted by level (most severe first). The symbol is an ordinary column
+// rather than a grouping level, since a snippet often has one task per symbol;
+// consecutive rows of the same symbol only print it once, and clicking it toggles
+// all artifacts of those rows. Artifacts of warning / error tasks start open,
+// others start collapsed. Debug tasks are not shown.
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
 
 import { highlightRepr } from "./highlight";
 import { ROOT_CLASS, TASK_STYLE } from "./style";
-import type { Artifact, TaskData } from "./types";
+import type { Artifact, TaskData, TaskLevel } from "./types";
 
-const STATUS_EMOJI = {
-  success: "✅",
+const LEVELS: TaskLevel[] = ["debug", "info", "warning", "error"];
+
+const LEVEL_ICON: Record<TaskLevel, string> = {
   error: "❌",
   warning: "⚠️",
-  info: "ℹ️",
-  in_progress: "🚧",
-  pending: "⏳",
-  running: "⏱️",
-  skipped: "⏭️",
-  unknown: "❓",
-  healthy: "🟢",
-  degraded: "🟡",
-  down: "🔴",
+  info: "✅",
+  debug: "💡",
 };
 
-function status_emoji_of_art_repr(
-  art_kind: string,
-  repr: string,
-): string | undefined {
-  if (art_kind === "po_res") {
-    if (repr.includes("res=POSuccessProof")) {
-      return STATUS_EMOJI.success;
-    } else if (repr.includes("res=POErrorProof")) {
-      return STATUS_EMOJI.warning;
-    } else {
-      return STATUS_EMOJI.error;
-    }
-  }
+// Tasks below this level are hidden.
+const MIN_LEVEL: TaskLevel = "info";
+
+function rank(level: TaskLevel): number {
+  return LEVELS.indexOf(level);
 }
 
-function makeArtifact(art: Artifact): HTMLElement {
-  const details = document.createElement("details");
-  details.className = `${ROOT_CLASS}-art`;
-  details.open = true;
+function levelOf(task: TaskData): TaskLevel {
+  return task.level ?? "debug";
+}
 
-  const summary = document.createElement("summary");
-  summary.className = `${ROOT_CLASS}-summary`;
+// `task:po:<hash>` -> `task:po:<first 6 of hash>`, same as `TaskEntry.name`.
+function shortId(id: string): string {
+  const [a, b, ...rest] = id.split(":");
+  return rest.length ? `${a}:${b}:${rest.join(":").slice(0, 6)}` : id;
+}
 
-  const kind = document.createElement("span");
-  kind.className = `${ROOT_CLASS}-art-kind`;
-  kind.textContent = art.kind;
-  summary.appendChild(kind);
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  cls?: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
+  const e = document.createElement(tag);
+  if (cls) e.className = `${ROOT_CLASS}-${cls}`;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
 
-  // Status icon sits right after the artifact-kind label.
-  const art_icon = status_emoji_of_art_repr(art.kind, art.repr);
-  if (art_icon) {
-    const icon = document.createElement("span");
-    icon.className = `${ROOT_CLASS}-art-icon`;
-    icon.textContent = art_icon;
-    summary.appendChild(icon);
-  }
+function makeArtifact(art: Artifact, onClose: () => void): HTMLElement {
+  const box = el("div", "art");
 
-  const meta = document.createElement("span");
-  meta.className = `${ROOT_CLASS}-meta`;
-  meta.textContent = `${art.repr.length.toLocaleString()} chars`;
-  summary.appendChild(meta);
+  // Clicking the header closes the artifact, like clicking a symbol toggles its
+  // rows; `×` makes that discoverable and just lets its click bubble up here.
+  const head = el("div", "art-head");
+  head.title = "Close";
+  head.addEventListener("click", onClose);
+  head.appendChild(el("span", "art-kind", art.kind));
+  head.appendChild(el("span", "meta", `${art.repr.length.toLocaleString()} chars`));
 
-  const copy = document.createElement("button");
-  copy.className = `${ROOT_CLASS}-copy`;
+  const copy = el("button", "copy", "copy");
   copy.type = "button";
-  copy.textContent = "copy";
+  copy.title = "Copy";
   copy.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.stopPropagation(); // copying shouldn't close the artifact
     navigator.clipboard?.writeText(art.repr).then(() => {
       copy.textContent = "copied";
       setTimeout(() => (copy.textContent = "copy"), 1200);
     });
   });
-  summary.appendChild(copy);
-  details.appendChild(summary);
+  head.appendChild(copy);
 
-  const scroll = document.createElement("div");
-  scroll.className = `${ROOT_CLASS}-scroll`;
-  const pre = document.createElement("pre");
-  pre.className = `${ROOT_CLASS}-pre`;
+  const close = el("button", "close", "×");
+  close.type = "button";
+  close.setAttribute("aria-label", `Close ${art.kind}`);
+  head.appendChild(close);
+  box.appendChild(head);
+
+  const scroll = el("div", "scroll");
+  const pre = el("pre", "pre");
   pre.innerHTML = highlightRepr(art.repr); // tokens are HTML-escaped by highlightRepr
   scroll.appendChild(pre);
-  details.appendChild(scroll);
-  return details;
+  box.appendChild(scroll);
+  return box;
 }
 
-function makeTask(task: TaskData): HTMLElement {
-  const details = document.createElement("details");
-  details.className = `${ROOT_CLASS}-task`;
-  details.open = true;
-
-  const summary = document.createElement("summary");
-  summary.className = `${ROOT_CLASS}-summary`;
-
-  const kind = document.createElement("span");
-  kind.className = `${ROOT_CLASS}-kind`;
-  kind.textContent = task.kind;
-  summary.appendChild(kind);
-
-  if (task.id) {
-    const id = document.createElement("span");
-    id.className = `${ROOT_CLASS}-id`;
-    id.textContent = task.id;
-    summary.appendChild(id);
-  }
-
-  const meta = document.createElement("span");
-  meta.className = `${ROOT_CLASS}-meta`;
-  const n = task.artifacts.length;
-  meta.textContent = `${n} artifact${n === 1 ? "" : "s"}`;
-  summary.appendChild(meta);
-  details.appendChild(summary);
-
-  const body = document.createElement("div");
-  body.className = `${ROOT_CLASS}-body`;
-  for (const art of task.artifacts) body.appendChild(makeArtifact(art));
-  details.appendChild(body);
-  return details;
-}
-
-export function drawTasks(el: HTMLElement, tasks: TaskData[]): void {
-  el.innerHTML = "";
-  el.classList.add(ROOT_CLASS);
+export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
+  root.innerHTML = "";
+  root.classList.add(ROOT_CLASS);
 
   const style = document.createElement("style");
   style.textContent = TASK_STYLE;
-  el.appendChild(style);
+  root.appendChild(style);
 
   if (!tasks || tasks.length === 0) {
-    const empty = document.createElement("div");
-    empty.className = `${ROOT_CLASS}-placeholder`;
-    empty.textContent = "No tasks.";
-    el.appendChild(empty);
+    root.appendChild(el("div", "placeholder", "No tasks."));
     return;
   }
-  for (const task of tasks) el.appendChild(makeTask(task));
+
+  // Sort by level (most severe first), keeping tasks of one symbol together and
+  // otherwise preserving the input order.
+  const firstSeen = new Map<string, number>();
+  tasks.forEach((t, i) => {
+    const sym = t.from_sym ?? "";
+    if (!firstSeen.has(sym)) firstSeen.set(sym, i);
+  });
+  const order = tasks
+    .map((t, i) => ({ t, i }))
+    .sort(
+      (a, b) =>
+        rank(levelOf(b.t)) - rank(levelOf(a.t)) ||
+        firstSeen.get(a.t.from_sym ?? "")! - firstSeen.get(b.t.from_sym ?? "")! ||
+        a.i - b.i,
+    );
+
+  // Per task (by input index), the kinds of its open artifacts.
+  const open = new Map<number, Set<string>>();
+  for (const { t, i } of order) {
+    const loud = rank(levelOf(t)) >= rank("warning");
+    open.set(i, new Set(loud ? t.artifacts.map((a) => a.kind) : []));
+  }
+
+  // Table
+  // -----
+  const table = el("table", "table");
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  for (const h of ["", "symbol", "kind", "artifacts", "id"]) hr.appendChild(el("th", undefined, h));
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  table.appendChild(tbody);
+  root.appendChild(table);
+
+  const empty = el("div", "placeholder", "No tasks at info level or above.");
+  root.appendChild(empty);
+
+  function renderRows(): void {
+    tbody.innerHTML = "";
+    const shown = order.filter(({ t }) => rank(levelOf(t)) >= rank(MIN_LEVEL));
+    empty.hidden = shown.length > 0;
+    table.hidden = shown.length === 0;
+
+    // Open every artifact of `group`'s tasks, or close them all if all are open.
+    const toggleAll = (group: typeof shown): void => {
+      const allOpen = group.every(({ t, i }) => open.get(i)!.size === t.artifacts.length);
+      for (const { t, i } of group) {
+        open.set(i, new Set(allOpen ? [] : t.artifacts.map((a) => a.kind)));
+      }
+      renderRows();
+    };
+
+    // The run of rows the current symbol heads, and their symbol cells.
+    let prevSym: string | null | undefined;
+    let group: typeof shown = [];
+    let groupCells: HTMLElement[] = [];
+    for (const [pos, { t, i }] of shown.entries()) {
+      const level = levelOf(t);
+      const row = el("tr", "row");
+      row.dataset.level = level;
+
+      const lvl = el("td", "level", LEVEL_ICON[level]);
+      lvl.title = level;
+      row.appendChild(lvl);
+
+      // Only the first of consecutive rows sharing a symbol prints it, but every
+      // cell of the run toggles the whole run, and they highlight together.
+      const sym = t.from_sym ?? null;
+      const symCell = el("td", "sym");
+      if (sym === null || sym !== prevSym) {
+        // A task without a symbol is a run of its own.
+        let end = pos + 1;
+        while (sym !== null && end < shown.length && shown[end].t.from_sym === sym) end++;
+        group = shown.slice(pos, end);
+        groupCells = [];
+
+        // A real button for keyboard focus; its click bubbles to the cell.
+        const btn = el("button", "sym-btn", sym ?? "—");
+        btn.type = "button";
+        if (sym === null) btn.classList.add(`${ROOT_CLASS}-sym-none`);
+        symCell.appendChild(btn);
+      }
+      prevSym = sym;
+      const [runRows, runCells] = [group, groupCells];
+      runCells.push(symCell);
+      symCell.title = "Toggle all artifacts";
+      symCell.addEventListener("click", () => toggleAll(runRows));
+      const hover = (on: boolean) => () =>
+        runCells.forEach((c) => c.classList.toggle(`${ROOT_CLASS}-sym-hover`, on));
+      symCell.addEventListener("mouseenter", hover(true));
+      symCell.addEventListener("mouseleave", hover(false));
+      row.appendChild(symCell);
+
+      row.appendChild(el("td", "kind", t.kind.replace(/^TASK_/, "")));
+
+      const chips = el("td", "chips");
+      const opened = open.get(i)!;
+      for (const art of t.artifacts) {
+        const chip = el("button", "chip", art.kind);
+        chip.type = "button";
+        chip.setAttribute("aria-pressed", String(opened.has(art.kind)));
+        chip.addEventListener("click", () => {
+          if (opened.has(art.kind)) opened.delete(art.kind);
+          else opened.add(art.kind);
+          renderRows();
+        });
+        chips.appendChild(chip);
+      }
+      row.appendChild(chips);
+
+      const id = el("td", "id", shortId(t.id));
+      id.title = t.id;
+      row.appendChild(id);
+      tbody.appendChild(row);
+
+      if (opened.size > 0) {
+        const detail = el("tr", "detail");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        // Keep artifacts in their own order, not the order they were opened.
+        for (const art of t.artifacts) {
+          if (!opened.has(art.kind)) continue;
+          cell.appendChild(
+            makeArtifact(art, () => {
+              opened.delete(art.kind);
+              renderRows();
+            }),
+          );
+        }
+        detail.appendChild(cell);
+        tbody.appendChild(detail);
+      }
+    }
+  }
+
+  renderRows();
 }

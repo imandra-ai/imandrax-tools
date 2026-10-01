@@ -11,5 +11,8 @@ export type { ArtifactEntry, TaskEntry };
 
 // An artifact, rendered as pre-formatted text.
 export type Artifact = ArtifactEntry;
-// One task: its kind, id, and its pretty-printed artifacts.
+// One task: its kind, id, level, originating symbol, and its pretty-printed artifacts.
 export type TaskData = TaskEntry;
+// Status of a task, derived on the Python side from its result; named after
+// LSP's `DiagnosticSeverity`.
+export type TaskLevel = NonNullable<TaskEntry['level']>;

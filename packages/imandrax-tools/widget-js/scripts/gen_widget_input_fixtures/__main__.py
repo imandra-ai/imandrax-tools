@@ -45,7 +45,7 @@ IDF_FIXTURES = ['addx', 'choose', 'xy_template']
 # and run it through the same dumper the widget uses. Values are stems of files in
 # OUT_DIR; keys are the `jsonable.<name>` fixture stem.
 JSONABLE_FIXTURES = {
-    'tasks': 'tasks.admit_rec.iml',
+    'tasks': 'tasks.refuted_vg.iml',
     'decomp': 'decomp.simple.classify.iml',
 }
 
