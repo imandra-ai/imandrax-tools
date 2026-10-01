@@ -6,7 +6,8 @@
 // rather than a grouping level, since a snippet often has one task per symbol;
 // consecutive rows of the same symbol only print it once, and clicking it toggles
 // all artifacts of those rows. Artifacts of warning / error tasks start open,
-// others start collapsed. Debug tasks are not shown.
+// others start collapsed. Debug tasks are hidden unless "show debug" in the
+// header is ticked.
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
 
@@ -23,7 +24,7 @@ const LEVEL_ICON: Record<TaskLevel, string> = {
   debug: "💡",
 };
 
-// Tasks below this level are hidden.
+// Tasks below this level are hidden, unless "show debug" is ticked.
 const MIN_LEVEL: TaskLevel = "info";
 
 function rank(level: TaskLevel): number {
@@ -129,7 +130,24 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
   const table = el("table", "table");
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  for (const h of ["", "symbol", "kind", "artifacts", "id"]) hr.appendChild(el("th", undefined, h));
+  for (const h of ["", "symbol", "artifacts", "kind"]) hr.appendChild(el("th", undefined, h));
+  // The last header cell also holds the "show debug" toggle, right-aligned.
+  const idTh = el("th", undefined);
+  const idHead = el("div", "id-head");
+  idHead.appendChild(el("span", undefined, "id"));
+  const debugLabel = el("label", "show-debug");
+  const debugBox = document.createElement("input");
+  debugBox.type = "checkbox";
+  debugBox.addEventListener("change", () => renderRows());
+  // Nothing to reveal: dim it, but leave it clickable.
+  if (!tasks.some((t) => levelOf(t) === "debug")) {
+    debugLabel.classList.add(`${ROOT_CLASS}-show-debug-none`);
+    debugLabel.title = "No debug tasks";
+  }
+  debugLabel.append(debugBox, "show debug");
+  idHead.appendChild(debugLabel);
+  idTh.appendChild(idHead);
+  hr.appendChild(idTh);
   thead.appendChild(hr);
   table.appendChild(thead);
   const tbody = document.createElement("tbody");
@@ -141,9 +159,10 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
 
   function renderRows(): void {
     tbody.innerHTML = "";
-    const shown = order.filter(({ t }) => rank(levelOf(t)) >= rank(MIN_LEVEL));
+    const minRank = rank(debugBox.checked ? "debug" : MIN_LEVEL);
+    const shown = order.filter(({ t }) => rank(levelOf(t)) >= minRank);
+    // The header stays visible, so "show debug" can reveal hidden tasks.
     empty.hidden = shown.length > 0;
-    table.hidden = shown.length === 0;
 
     // Open every artifact of `group`'s tasks, or close them all if all are open.
     const toggleAll = (group: typeof shown): void => {
@@ -195,8 +214,6 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
       symCell.addEventListener("mouseleave", hover(false));
       row.appendChild(symCell);
 
-      row.appendChild(el("td", "kind", t.kind.replace(/^TASK_/, "")));
-
       const chips = el("td", "chips");
       const opened = open.get(i)!;
       for (const art of t.artifacts) {
@@ -211,6 +228,8 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
         chips.appendChild(chip);
       }
       row.appendChild(chips);
+
+      row.appendChild(el("td", "kind", t.kind.replace(/^TASK_/, "")));
 
       const id = el("td", "id", shortId(t.id));
       id.title = t.id;

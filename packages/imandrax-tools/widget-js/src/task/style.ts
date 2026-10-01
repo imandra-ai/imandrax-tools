@@ -30,6 +30,11 @@ export const TASK_STYLE = `
 .${ROOT_CLASS}-kind { color: #6b727b; font-size: 11px; letter-spacing: 0.02em; }
 .${ROOT_CLASS}-id { color: #9aa1a9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px; white-space: nowrap; }
+.${ROOT_CLASS}-id-head { display: flex; align-items: center; gap: 10px; }
+.${ROOT_CLASS}-show-debug { margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+  font-weight: 400; white-space: nowrap; cursor: pointer; user-select: none; }
+.${ROOT_CLASS}-show-debug input { margin: 0; cursor: pointer; }
+.${ROOT_CLASS}-show-debug-none { opacity: 0.5; }
 .${ROOT_CLASS}-meta { color: #6b727b; font-size: 11px; font-variant-numeric: tabular-nums; }
 
 .${ROOT_CLASS}-chips { display: flex; gap: 4px; flex-wrap: wrap; }
