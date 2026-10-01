@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.11.0] - 26-09-24
+- Tasks data representation: add `level` and `from_sym`; adapt widget
+
 ## [20.10.0] - 26-09-24
 - task-level artifact pretty-printing config resolution, taking interaction between artifacts into account
 - **BREAKING**: artifact kind selection is changed from verbatim excluded kinds to pattern-based.
