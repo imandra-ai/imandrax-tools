@@ -33,3 +33,7 @@ jobs:
       - name: Check committed JS bundles in `imandrax_tools.widget` module is in sync with a fresh build
         run: make check-widget-js
         working-directory: packages/imandrax-tools
+
+      - name: Typecheck widget TS sources
+        run: make check-widget-ts
+        working-directory: packages/imandrax-tools
