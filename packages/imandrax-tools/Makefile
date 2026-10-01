@@ -16,6 +16,7 @@ check-all: ## Run all checks (Python, Py2TS, TS2Py)
 	@make check-py
 	@make check-widget-types
 	@make check-widget-js
+	@make check-widget-ts
 
 .PHONY: check-py
 check-py:  ## Format, lint, typecheck
@@ -126,3 +127,7 @@ check-widget-types: gen-widget-types-py2ts  ## Verify the committed TS node type
 .PHONY: check-widget-js
 check-widget-js: build-widget-js-ts2py  ## Verify the committed JS bundles match a fresh build (fails if stale)
 	git diff --exit-code -- src/imandrax_tools/widget/static
+
+.PHONY: check-widget-ts
+check-widget-ts:  ## Typecheck the widget TS sources
+	cd widget-js && npm ci && npm run typecheck
