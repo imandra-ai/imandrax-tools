@@ -51,12 +51,100 @@ class ArtifactEntry(BaseModel):
         return {self.kind: self.repr}
 
 
+type TaskLevel = Literal['debug', 'info', 'warning', 'error']
+"""Status of a task, the attention level, derived from its result artifact
+
+- error: task failure
+- warning: an answer that isn't a plain success (refuted, bounded verification)
+- info: regular success
+- debug: not interesting
+"""
+
+
+def assess_artifacts(
+    task: Task,
+    artifacts: Mapping[str, XValue],
+) -> tuple[TaskLevel, dict[str, Any]]:
+    """
+    Calculate a task's attention level and the artifact pp config
+
+    Returns:
+        - 0: the task attention level
+        - 1: pp config for artifacts
+
+    """
+    pp_config: dict[str, Any] = {}
+    level: TaskLevel = 'info'
+    task_kind = task.kind
+    match task_kind:
+        case TaskKind.TASK_CHECK_PO:
+            po_res: xtype.Tasks_PO_res_Shallow | None = artifacts.get('po_res')
+            assert po_res is not None
+            match po_res.res:
+                case xtype.Tasks_PO_res_success_Proof():
+                    pp_config |= {
+                        'summarize_po_task': True,
+                        'hide_po_res_success_cases': True,
+                    }
+                case (
+                    xtype.Tasks_PO_res_success_Instance()
+                    | xtype.Tasks_PO_res_success_Test_ok()
+                ):
+                    pass
+                case xtype.Tasks_PO_res_error_No_proof(arg=no_proof) if (
+                    no_proof.counter_model is not None
+                ):
+                    level = 'warning'
+                case xtype.Tasks_PO_res_success_Verified_upto():
+                    level = 'warning'
+                case (
+                    xtype.Tasks_PO_res_error_No_proof()
+                    | xtype.Tasks_PO_res_error_Unsat()
+                    | xtype.Tasks_PO_res_error_Invalid_model()
+                    | xtype.Tasks_PO_res_error_Error()
+                ):
+                    level = 'error'
+                case _:
+                    assert_never(po_res.res)
+        case TaskKind.TASK_EVAL:
+            eval_res: xtype.Tasks_Eval_res | None = artifacts.get('eval_res')
+            assert eval_res is not None
+            match eval_res.res:
+                case xtype.Error_Error_core():
+                    level = 'error'
+                case xtype.Tasks_Eval_res_success():
+                    pass
+                case _:
+                    assert_never(eval_res.res)
+
+        case TaskKind.TASK_DECOMP:
+            decomp_res: xtype.Tasks_Decomp_res_Shallow | None = artifacts.get(
+                'decomp_res'
+            )
+            assert decomp_res is not None
+            match decomp_res.res:
+                case xtype.Tasks_Decomp_res_error_Error():
+                    level = 'error'
+                case xtype.Tasks_Decomp_res_success():
+                    pass
+                case _:
+                    assert_never(decomp_res.res)
+        case _:
+            pass
+
+    return level, pp_config
+
+
 class TaskEntry(BaseModel):
     """Repr for one single task"""
 
     id: str
     kind: str
     artifacts: list[ArtifactEntry]
+    level: TaskLevel
+    from_sym: str | None = Field(
+        default=None, description='Symbol the task originates from, if known'
+    )
     other: JSONObject = Field(default_factory=dict)
 
     @property
@@ -68,25 +156,24 @@ class TaskEntry(BaseModel):
     @classmethod
     def make(cls, task: Task, artifacts: Mapping[str, XValue]) -> Self:
         """
-        Create task artifact representations,
+        Create task artifact representations.
 
         - Encodes pp config interaction between artifacts from a task.
         - The most commont one: we'd like to summarize PO task if the PO result is a success proof.
         """
-        pp_config: dict[str, Any] = {}
-        if task.kind == TaskKind.TASK_CHECK_PO:
-            po_res = artifacts.get('po_res')
-            if isinstance(po_res, xtype.Tasks_PO_res_shallow_poly) and isinstance(
-                po_res.res,  # pyright: ignore[reportUnknownMemberType]
-                xtype.Tasks_PO_res_success_Proof,
-            ):
-                pp_config['summarize_po_task'] = True
-                pp_config['hide_po_res_success_cases'] = True
+        level, pp_config = assess_artifacts(task, artifacts)
 
         art_entries: list[ArtifactEntry] = []
         for a_kind, xval in artifacts.items():
             xval_str = xtype_to_string(xval, **pp_config)
             art_entries.append(ArtifactEntry(kind=a_kind, repr=xval_str))
+
+        po_task = artifacts.get('po_task')
+        from_sym = (
+            po_task.from_sym
+            if isinstance(po_task, xtype.Tasks_PO_task_t_poly)
+            else None
+        )
 
         if task.id is None:
             raise ValueError(f'Task has no id: {task!s}')
@@ -94,6 +181,8 @@ class TaskEntry(BaseModel):
             id=task.id.id,
             kind=task.kind.value,
             artifacts=art_entries,
+            level=level,
+            from_sym=from_sym,
         )
 
 
