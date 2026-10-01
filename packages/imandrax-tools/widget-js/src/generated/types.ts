@@ -5,6 +5,7 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 */
 
+export type TaskLevel = "debug" | "info" | "warning" | "error";
 export type JSONValue = string | number | boolean | JSONObject | JSONArray | null;
 export type JSONArray = JSONValue[];
 
@@ -60,7 +61,7 @@ export interface Edge {
   dst_id: number;
 }
 /**
- * RegionGroup but with `region` replaced with `region_stat`
+ * RegionGroup but with `region` replaced with its display stats (`RegionNonGroupStat`)
  */
 export interface RegionGroupView {
   /**
@@ -98,6 +99,11 @@ export interface TaskEntry {
   id: string;
   kind: string;
   artifacts: ArtifactEntry[];
+  level: TaskLevel;
+  /**
+   * Symbol the task originates from, if known
+   */
+  from_sym?: string | null;
   other?: JSONObject;
 }
 export interface ArtifactEntry {

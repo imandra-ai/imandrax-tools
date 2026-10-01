@@ -17,78 +17,202 @@ function loadFixture(name) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-const admitRec = loadFixture("tasks.admit_rec.iml"); // 1 task, 2 artifacts
-const longProof = loadFixture("tasks.long_proof.iml"); // 7 tasks
+const admitRec = loadFixture("tasks.admit_rec.iml"); // 1 task (info), 2 artifacts
+const longProof = loadFixture("tasks.long_proof.iml"); // 7 tasks, 1 error
+const mixed = loadFixture("tasks.mixed.iml"); // 8 tasks across every level but debug
 
-// The task-level <summary> (kind/id/count), not an artifact's.
-function taskSummary(task) {
-  return task.querySelector(":scope > .imdx-task-summary");
-}
+// A synthetic entry, for shapes the fixtures don't cover.
+const task = (over) => ({
+  id: "task:po:abcdefghij",
+  kind: "TASK_CHECK_PO",
+  level: "info",
+  from_sym: "f",
+  artifacts: [{ kind: "po_res", repr: "PORes()" }],
+  ...over,
+});
 
+const render = (data) => {
+  const el = document.createElement("div");
+  drawTasks(el, data);
+  return el;
+};
+const rows = (el) => [...el.querySelectorAll(".imdx-task-row")];
+const cell = (row, name) => row.querySelector(`.imdx-task-${name}`);
 describe("task", () => {
-  const render = (data) => {
-    const el = document.createElement("div");
-    drawTasks(el, data);
-    return el;
-  };
-
-  it("renders a collapsible section per task", () => {
-    expect(render(longProof).querySelectorAll(".imdx-task-task").length).toBe(7);
+  it("renders a row per task", () => {
+    expect(rows(render(longProof)).length).toBe(7);
   });
 
-  it("shows each task's kind and id", () => {
-    const summary = taskSummary(render(admitRec).querySelector(".imdx-task-task"));
-    expect(summary.querySelector(".imdx-task-kind").textContent).toBe(
-      "TASK_CHECK_PO",
-    );
-    expect(summary.querySelector(".imdx-task-id").textContent).toBe(
-      admitRec[0].id,
-    );
+  it("shows each task's symbol, kind, and short id", () => {
+    const [row] = rows(render(admitRec));
+    expect(cell(row, "sym").textContent).toBe("f");
+    expect(cell(row, "kind").textContent).toBe("CHECK_PO");
+    const id = cell(row, "id");
+    expect(id.title).toBe(admitRec[0].id);
+    expect(id.textContent).toBe(admitRec[0].id.slice(0, "task:po:".length + 6));
   });
 
-  it("summarizes the artifact count", () => {
-    const summary = taskSummary(render(admitRec).querySelector(".imdx-task-task"));
-    expect(summary.querySelector(".imdx-task-meta").textContent).toBe(
-      "2 artifacts",
-    );
+  it("sorts rows by level, most severe first", () => {
+    const levels = rows(render(mixed)).map((r) => r.dataset.level);
+    expect(levels).toEqual([...levels].sort(
+      (a, b) => ["debug", "info", "warning", "error"].indexOf(b) -
+        ["debug", "info", "warning", "error"].indexOf(a),
+    ));
+    expect(levels[0]).toBe("error");
   });
 
-  it("renders each artifact as a labeled <pre> carrying its text verbatim", () => {
+  it("prints a symbol once for consecutive rows sharing it", () => {
+    const el = render([
+      task({ id: "task:po:1", from_sym: "f" }),
+      task({ id: "task:po:2", from_sym: "f" }),
+      task({ id: "task:po:3", from_sym: "g" }),
+    ]);
+    expect(rows(el).map((r) => cell(r, "sym").textContent)).toEqual(["f", "", "g"]);
+  });
+
+  it("keeps a symbol's tasks together within a level", () => {
+    const el = render([
+      task({ id: "task:po:1", from_sym: "f" }),
+      task({ id: "task:po:2", from_sym: "g" }),
+      task({ id: "task:po:3", from_sym: "f" }),
+    ]);
+    expect(rows(el).map((r) => cell(r, "id").title)).toEqual([
+      "task:po:1",
+      "task:po:3",
+      "task:po:2",
+    ]);
+  });
+
+  it("toggles all artifacts of a symbol's rows from its name", () => {
+    const el = render([
+      task({ id: "task:po:1", from_sym: "f" }),
+      task({ id: "task:po:2", from_sym: "f" }),
+      task({ id: "task:po:3", from_sym: "g" }),
+    ]);
+    const sym = (name) =>
+      [...el.querySelectorAll(".imdx-task-sym-btn")].find((b) => b.textContent === name);
+    const openIds = () =>
+      [...el.querySelectorAll(".imdx-task-detail")].map(
+        (d) => cell(d.previousElementSibling, "id").title,
+      );
+    sym("f").click();
+    expect(openIds()).toEqual(["task:po:1", "task:po:2"]);
+    // Partly open counts as closed: the next click opens the rest.
+    el.querySelectorAll(".imdx-task-chip")[0].click();
+    sym("f").click();
+    expect(openIds()).toEqual(["task:po:1", "task:po:2"]);
+    sym("f").click();
+    expect(openIds()).toEqual([]);
+  });
+
+  it("toggles a symbol's run from any of its cells, highlighting them together", () => {
+    const el = render([
+      task({ id: "task:po:1", from_sym: "f" }),
+      task({ id: "task:po:2", from_sym: "f" }),
+      task({ id: "task:po:3", from_sym: "g" }),
+    ]);
+    const symCells = () => rows(el).map((r) => cell(r, "sym"));
+    // The blank cell under `f` stands for `f` too.
+    symCells()[1].dispatchEvent(new MouseEvent("mouseenter"));
+    expect(symCells().map((c) => c.classList.contains("imdx-task-sym-hover"))).toEqual([
+      true,
+      true,
+      false,
+    ]);
+    symCells()[1].click();
+    expect(el.querySelectorAll(".imdx-task-detail").length).toBe(2);
+    expect(rows(el).map((r) => !!r.nextElementSibling?.classList.contains("imdx-task-detail")))
+      .toEqual([true, true, false]);
+  });
+
+  it("shows an em dash for a task without a symbol", () => {
+    const [row] = rows(render([task({ from_sym: null })]));
+    expect(cell(row, "sym").textContent).toBe("—");
+  });
+
+  it("opens artifacts of warning/error tasks and collapses the rest", () => {
+    const el = render(mixed);
+    for (const row of rows(el)) {
+      const loud = ["warning", "error"].includes(row.dataset.level);
+      const next = row.nextElementSibling;
+      const hasDetail = next?.classList.contains("imdx-task-detail") ?? false;
+      expect(hasDetail).toBe(loud);
+    }
+  });
+
+  it("toggles an artifact from its chip", () => {
     const el = render(admitRec);
+    expect(el.querySelector(".imdx-task-art")).toBeNull();
+    const chip = () => el.querySelectorAll(".imdx-task-chip")[1]; // po_res
+    chip().click();
+    expect(chip().getAttribute("aria-pressed")).toBe("true");
     const arts = el.querySelectorAll(".imdx-task-art");
-    expect(arts.length).toBe(2);
-    // artifact kinds and text come straight from the fixture.
-    const kinds = [...arts].map(
-      (a) => a.querySelector(".imdx-task-art-kind").textContent,
-    );
+    expect(arts.length).toBe(1);
+    expect(arts[0].querySelector(".imdx-task-art-kind").textContent).toBe("po_res");
+    chip().click();
+    expect(el.querySelector(".imdx-task-art")).toBeNull();
+  });
+
+  it("closes an artifact from its × button", () => {
+    const el = render(admitRec);
+    const chips = () => el.querySelectorAll(".imdx-task-chip");
+    chips()[0].click();
+    chips()[1].click();
+    el.querySelector(".imdx-task-close").click(); // po_task's
+    const kinds = [...el.querySelectorAll(".imdx-task-art-kind")].map((k) => k.textContent);
+    expect(kinds).toEqual(["po_res"]);
+    expect(chips()[0].getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("closes an artifact from its header, but not from copy", () => {
+    const el = render(admitRec);
+    el.querySelectorAll(".imdx-task-chip")[1].click(); // po_res
+    el.querySelector(".imdx-task-copy").click();
+    expect(el.querySelectorAll(".imdx-task-art").length).toBe(1);
+    el.querySelector(".imdx-task-art-kind").click();
+    expect(el.querySelector(".imdx-task-art")).toBeNull();
+  });
+
+  it("keeps open artifacts in the task's own order", () => {
+    const el = render(admitRec);
+    const chips = () => el.querySelectorAll(".imdx-task-chip");
+    chips()[1].click();
+    chips()[0].click();
+    const kinds = [...el.querySelectorAll(".imdx-task-art-kind")].map((k) => k.textContent);
     expect(kinds).toEqual(admitRec[0].artifacts.map((a) => a.kind));
-    expect(el.querySelector(".imdx-task-pre").textContent).toBe(
-      admitRec[0].artifacts[0].repr,
-    );
   });
 
-  it("shows an artifact's status icon when present, and omits it otherwise", () => {
-    const arts = render(admitRec).querySelectorAll(".imdx-task-art");
-    // Icons are computed in TS from the artifact repr: po_task gets none;
-    // po_res whose repr carries res=POSuccessProof resolves to ✅.
-    expect(arts[0].querySelector(".imdx-task-art-icon")).toBeNull();
-    expect(arts[1].querySelector(".imdx-task-art-icon").textContent).toBe("✅");
-  });
-
-  it("syntax-highlights the repr text without altering it", () => {
-    // longProof's first artifact carries the full kwarg form (from_sym=..., count=0).
+  it("renders an artifact's text verbatim, syntax-highlighted", () => {
+    // longProof's first task is the failing one, so its po_task is open; it
+    // carries the full kwarg form (from_sym=..., count=0).
     const pre = render(longProof).querySelector(".imdx-task-pre");
-    // Constructors, kwargs, and strings are wrapped in token spans...
     expect(pre.querySelector(".t-cls")).not.toBeNull(); // POTask(...)
     expect(pre.querySelector(".t-attr")).not.toBeNull(); // from_sym=
     expect(pre.querySelector(".t-str")).not.toBeNull(); // 'len_append'
-    // ...but the concatenated text is still byte-for-byte the original.
-    expect(pre.textContent).toBe(longProof[0].artifacts[0].repr);
+    const failing = longProof.find((t) => t.level === "error");
+    expect(pre.textContent).toBe(failing.artifacts[0].repr);
+  });
+
+  it("hides debug tasks", () => {
+    const el = render([
+      task({ id: "task:po:1", level: "debug" }),
+      task({ id: "task:po:2", level: "info" }),
+    ]);
+    expect(rows(el).map((r) => cell(r, "id").title)).toEqual(["task:po:2"]);
+  });
+
+  it("treats a task without a level as debug", () => {
+    expect(rows(render([task({ level: undefined })])).length).toBe(0);
+  });
+
+  it("reports when every task is debug", () => {
+    const el = render([task({ level: "debug" })]);
+    expect(el.querySelector(".imdx-task-placeholder").hidden).toBe(false);
   });
 
   it("tolerates an empty task list", () => {
     const el = render([]);
-    expect(el.querySelectorAll(".imdx-task-task").length).toBe(0);
+    expect(rows(el).length).toBe(0);
     expect(el.querySelector(".imdx-task-placeholder").textContent).toBe(
       "No tasks.",
     );
