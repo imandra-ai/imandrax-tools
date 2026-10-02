@@ -20,13 +20,17 @@ export const TASK_STYLE = `
 .${ROOT_CLASS}-detail + .${ROOT_CLASS}-row > td { border-top: 1px solid #eef1f4; }
 .${ROOT_CLASS}-row[data-level="error"] { background: #fff5f5; }
 .${ROOT_CLASS}-row[data-level="warning"] { background: #fffaeb; }
-.${ROOT_CLASS}-level { width: 24px; text-align: center; color: #9aa1a9; }
-.${ROOT_CLASS}-sym { cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; }
-.${ROOT_CLASS}-sym-btn { font: inherit; color: inherit; background: none; border: 0;
-  padding: 0; cursor: pointer; text-align: left; }
-.${ROOT_CLASS}-sym-none { color: #9aa1a9; font-weight: 400; }
-/* Same shade as an artifact title on hover. */
-.${ROOT_CLASS}-table td.${ROOT_CLASS}-sym-hover { background: #f6f8fa; }
+.${ROOT_CLASS}-descr { display: flex; align-items: center; gap: 6px; }
+.${ROOT_CLASS}-descr-none { color: #9aa1a9; }
+.${ROOT_CLASS}-res-descr { white-space: nowrap; }
+.${ROOT_CLASS}-level { margin-left: auto; }
+.${ROOT_CLASS}-row-toggle { cursor: pointer; }
+/* Same shade as an artifact title on hover; level tints darken a step. */
+.${ROOT_CLASS}-row-toggle:hover { background: #f6f8fa; }
+.${ROOT_CLASS}-row-toggle[data-level="error"]:hover { background: #ffecec; }
+.${ROOT_CLASS}-row-toggle[data-level="warning"]:hover { background: #fff3d6; }
+.${ROOT_CLASS}-row-toggle:focus-visible { outline: 2px solid #b7c0c9; outline-offset: -2px; }
+.${ROOT_CLASS}-sym-none { color: #9aa1a9; }
 .${ROOT_CLASS}-kind { color: #6b727b; font-size: 11px; letter-spacing: 0.02em; }
 .${ROOT_CLASS}-id { color: #9aa1a9; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px; white-space: nowrap; }
@@ -44,7 +48,7 @@ export const TASK_STYLE = `
 .${ROOT_CLASS}-chip:hover { color: #1a1d21; border-color: #b7c0c9; }
 .${ROOT_CLASS}-chip[aria-pressed="true"] { color: #1a1d21; background: #e3e8ee; border-color: #b7c0c9; }
 
-.${ROOT_CLASS}-detail > td { padding: 0 10px 8px 34px; }
+.${ROOT_CLASS}-detail > td { padding: 0 10px 8px; }
 .${ROOT_CLASS}-detail > td > * + * { margin-top: 6px; }
 .${ROOT_CLASS}-art { border: 1px solid #d8dde2; border-radius: 6px; overflow: hidden;
   background: #fff; }

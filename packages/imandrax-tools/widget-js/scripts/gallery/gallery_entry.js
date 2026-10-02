@@ -15,9 +15,9 @@ const examples = __GALLERY_EXAMPLES__;
 
 // One tab per widget type; `type` matches the fixture filename prefix.
 const TABS = [
+  { type: "tasks", label: "Tasks", draw: drawTasks },
   { type: "decomp", label: "Region Decomposition", draw: drawTreemap },
   { type: "idf", label: "IDF", draw: drawGraph },
-  { type: "tasks", label: "Tasks", draw: drawTasks },
   // `jsonable` fixtures are a YAML string rather than an object -- `drawJsonable`
   // takes it as-is, same as the traitlet the Python side syncs.
   { type: "jsonable", label: "Jsonable", draw: drawJsonable },

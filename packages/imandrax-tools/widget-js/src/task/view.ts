@@ -2,11 +2,15 @@
 // it holding whichever of its artifacts are open, rendered as escaped, scrollable
 // <pre> text.
 //
-// Rows are sorted by level (most severe first). The symbol is an ordinary column
-// rather than a grouping level, since a snippet often has one task per symbol;
-// consecutive rows of the same symbol only print it once, and clicking it toggles
-// all artifacts of those rows. Artifacts of warning / error tasks start open,
-// others start collapsed. Debug tasks are hidden unless "show debug" in the
+// Each row leads with the task's description and its result's description (both
+// extracted on the Python side, `—` when missing); the level icon sits in the
+// result cell, right of its text.
+//
+// Rows are sorted by level (most severe first), keeping a symbol's tasks
+// together. The symbol is an ordinary column rather than a grouping level, since
+// a snippet often has one task per symbol. Clicking a row toggles all of its
+// artifacts; its chips toggle them one by one. Artifacts of warning / error
+// tasks start open, others start collapsed. Debug tasks are hidden unless "show debug" in the
 // header is ticked.
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
@@ -23,6 +27,10 @@ const LEVEL_ICON: Record<TaskLevel, string> = {
   info: "✅",
   debug: "💡",
 };
+
+// How far the pointer may move during a row click before it counts as a text
+// selection rather than a toggle.
+const DRAG_PX = 4;
 
 // Tasks below this level are hidden, unless "show debug" is ticked.
 const MIN_LEVEL: TaskLevel = "info";
@@ -50,6 +58,18 @@ function el<K extends keyof HTMLElementTagNameMap>(
   if (cls) e.className = `${ROOT_CLASS}-${cls}`;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+
+// A description cell; `—` when the description is missing. Its content sits in a
+// flex box, so the result cell can append the level icon on the right.
+function descrCell(cls: string, descr: string | null | undefined): HTMLElement {
+  const td = el("td", cls);
+  const box = el("div", "descr");
+  const text = el("span", "descr-text", descr || "—");
+  if (!descr) text.classList.add(`${ROOT_CLASS}-descr-none`);
+  box.appendChild(text);
+  td.appendChild(box);
+  return td;
 }
 
 function makeArtifact(art: Artifact, onClose: () => void): HTMLElement {
@@ -130,7 +150,9 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
   const table = el("table", "table");
   const thead = document.createElement("thead");
   const hr = document.createElement("tr");
-  for (const h of ["", "symbol", "artifacts", "kind"]) hr.appendChild(el("th", undefined, h));
+  for (const h of ["task", "result", "symbol", "artifacts", "kind"]) {
+    hr.appendChild(el("th", undefined, h));
+  }
   // The last header cell also holds the "show debug" toggle, right-aligned.
   const idTh = el("th", undefined);
   const idHead = el("div", "id-head");
@@ -157,103 +179,140 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
   const empty = el("div", "placeholder", "No tasks at info level or above.");
   root.appendChild(empty);
 
+  // Each task's rows are built once and updated in place, so toggling one task
+  // leaves the rest of the DOM -- text selections, scroll positions inside open
+  // artifacts, focus -- untouched. Only "show debug" re-lays the rows out.
+  const rowsOf = new Map<number, { row: HTMLElement; detail: HTMLElement }>();
+  for (const { t, i } of order) rowsOf.set(i, buildRows(t, open.get(i)!));
+
   function renderRows(): void {
     tbody.innerHTML = "";
     const minRank = rank(debugBox.checked ? "debug" : MIN_LEVEL);
     const shown = order.filter(({ t }) => rank(levelOf(t)) >= minRank);
     // The header stays visible, so "show debug" can reveal hidden tasks.
     empty.hidden = shown.length > 0;
+    for (const { i } of shown) {
+      const { row, detail } = rowsOf.get(i)!;
+      tbody.appendChild(row);
+      if (!detail.hidden) tbody.appendChild(detail);
+    }
+  }
 
-    // Open every artifact of `group`'s tasks, or close them all if all are open.
-    const toggleAll = (group: typeof shown): void => {
-      const allOpen = group.every(({ t, i }) => open.get(i)!.size === t.artifacts.length);
-      for (const { t, i } of group) {
-        open.set(i, new Set(allOpen ? [] : t.artifacts.map((a) => a.kind)));
+  // A task's row and its detail row (holding its open artifacts), plus the
+  // interaction that keeps them in sync with `opened`.
+  function buildRows(
+    t: TaskData,
+    opened: Set<string>,
+  ): { row: HTMLElement; detail: HTMLElement } {
+    const level = levelOf(t);
+    const row = el("tr", "row");
+    row.dataset.level = level;
+
+    const detail = el("tr", "detail");
+    const detailCell = document.createElement("td");
+    detailCell.colSpan = 6;
+    detail.appendChild(detailCell);
+    // Artifact boxes by kind, made on first open and kept while open.
+    const boxes = new Map<string, HTMLElement>();
+    const chipOf = new Map<string, HTMLElement>();
+
+    // Reflect `opened` in the chips, the row, and the detail row.
+    const update = (): void => {
+      for (const [kind, chip] of chipOf) {
+        chip.setAttribute("aria-pressed", String(opened.has(kind)));
       }
-      renderRows();
+      if (t.artifacts.length > 0) row.setAttribute("aria-expanded", String(opened.size > 0));
+      // Keep artifacts in their own order, not the order they were opened.
+      for (const art of t.artifacts) {
+        let box = boxes.get(art.kind);
+        if (!opened.has(art.kind)) {
+          box?.remove();
+          boxes.delete(art.kind);
+          continue;
+        }
+        if (!box) {
+          box = makeArtifact(art, () => {
+            opened.delete(art.kind);
+            update();
+          });
+          boxes.set(art.kind, box);
+        }
+        detailCell.appendChild(box); // (re-)appending in order keeps them sorted
+      }
+      detail.hidden = opened.size === 0;
+      if (detail.hidden) detail.remove();
+      else if (row.parentNode && row.nextSibling !== detail) row.after(detail);
     };
 
-    // The run of rows the current symbol heads, and their symbol cells.
-    let prevSym: string | null | undefined;
-    let group: typeof shown = [];
-    let groupCells: HTMLElement[] = [];
-    for (const [pos, { t, i }] of shown.entries()) {
-      const level = levelOf(t);
-      const row = el("tr", "row");
-      row.dataset.level = level;
+    // Open every artifact of the task, or close them all if all are open.
+    const toggleAll = (): void => {
+      const allOpen = opened.size === t.artifacts.length;
+      opened.clear();
+      if (!allOpen) for (const a of t.artifacts) opened.add(a.kind);
+      update();
+    };
 
-      const lvl = el("td", "level", LEVEL_ICON[level]);
-      lvl.title = level;
-      row.appendChild(lvl);
-
-      // Only the first of consecutive rows sharing a symbol prints it, but every
-      // cell of the run toggles the whole run, and they highlight together.
-      const sym = t.from_sym ?? null;
-      const symCell = el("td", "sym");
-      if (sym === null || sym !== prevSym) {
-        // A task without a symbol is a run of its own.
-        let end = pos + 1;
-        while (sym !== null && end < shown.length && shown[end].t.from_sym === sym) end++;
-        group = shown.slice(pos, end);
-        groupCells = [];
-
-        // A real button for keyboard focus; its click bubbles to the cell.
-        const btn = el("button", "sym-btn", sym ?? "—");
-        btn.type = "button";
-        if (sym === null) btn.classList.add(`${ROOT_CLASS}-sym-none`);
-        symCell.appendChild(btn);
-      }
-      prevSym = sym;
-      const [runRows, runCells] = [group, groupCells];
-      runCells.push(symCell);
-      symCell.title = "Toggle all artifacts";
-      symCell.addEventListener("click", () => toggleAll(runRows));
-      const hover = (on: boolean) => () =>
-        runCells.forEach((c) => c.classList.toggle(`${ROOT_CLASS}-sym-hover`, on));
-      symCell.addEventListener("mouseenter", hover(true));
-      symCell.addEventListener("mouseleave", hover(false));
-      row.appendChild(symCell);
-
-      const chips = el("td", "chips");
-      const opened = open.get(i)!;
-      for (const art of t.artifacts) {
-        const chip = el("button", "chip", art.kind);
-        chip.type = "button";
-        chip.setAttribute("aria-pressed", String(opened.has(art.kind)));
-        chip.addEventListener("click", () => {
-          if (opened.has(art.kind)) opened.delete(art.kind);
-          else opened.add(art.kind);
-          renderRows();
-        });
-        chips.appendChild(chip);
-      }
-      row.appendChild(chips);
-
-      row.appendChild(el("td", "kind", t.kind.replace(/^TASK_/, "")));
-
-      const id = el("td", "id", shortId(t.id));
-      id.title = t.id;
-      row.appendChild(id);
-      tbody.appendChild(row);
-
-      if (opened.size > 0) {
-        const detail = el("tr", "detail");
-        const cell = document.createElement("td");
-        cell.colSpan = 5;
-        // Keep artifacts in their own order, not the order they were opened.
-        for (const art of t.artifacts) {
-          if (!opened.has(art.kind)) continue;
-          cell.appendChild(
-            makeArtifact(art, () => {
-              opened.delete(art.kind);
-              renderRows();
-            }),
-          );
+    if (t.artifacts.length > 0) {
+      row.classList.add(`${ROOT_CLASS}-row-toggle`);
+      row.tabIndex = 0;
+      row.title = "Toggle all artifacts";
+      // Text stays selectable: a drag past DRAG_PX is a selection, not a click.
+      // Every click of a double click toggles, so selecting a word by double
+      // clicking leaves the row as it was; a triple click (selecting a line)
+      // stops at two toggles for the same reason.
+      let down: { x: number; y: number } | null = null;
+      row.addEventListener("mousedown", (e) => (down = { x: e.clientX, y: e.clientY }));
+      row.addEventListener("click", (e) => {
+        const moved = down ? Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_PX : false;
+        if (moved || e.detail > 2) return;
+        // A sloppy single click may have selected a few characters; drop them.
+        if (e.detail === 1) {
+          const sel = window.getSelection();
+          if (sel && !sel.isCollapsed && row.contains(sel.anchorNode)) sel.removeAllRanges();
         }
-        detail.appendChild(cell);
-        tbody.appendChild(detail);
-      }
+        toggleAll();
+      });
+      row.addEventListener("keydown", (e) => {
+        if (e.target !== row || (e.key !== "Enter" && e.key !== " ")) return;
+        e.preventDefault();
+        toggleAll();
+      });
     }
+
+    row.appendChild(descrCell("task-descr", t.task_descr));
+    const res = descrCell("res-descr", t.res_descr);
+    const lvl = el("span", "level", LEVEL_ICON[level]);
+    lvl.title = level;
+    res.firstElementChild!.appendChild(lvl);
+    row.appendChild(res);
+
+    const sym = el("td", "sym", t.from_sym ?? "—");
+    if (t.from_sym == null) sym.classList.add(`${ROOT_CLASS}-sym-none`);
+    row.appendChild(sym);
+
+    const chips = el("td", "chips");
+    for (const art of t.artifacts) {
+      const chip = el("button", "chip", art.kind);
+      chip.type = "button";
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation(); // a chip toggles one artifact, not the row's
+        if (opened.has(art.kind)) opened.delete(art.kind);
+        else opened.add(art.kind);
+        update();
+      });
+      chipOf.set(art.kind, chip);
+      chips.appendChild(chip);
+    }
+    row.appendChild(chips);
+
+    row.appendChild(el("td", "kind", t.kind.replace(/^TASK_/, "")));
+
+    const id = el("td", "id", shortId(t.id));
+    id.title = t.id;
+    row.appendChild(id);
+
+    update();
+    return { row, detail };
   }
 
   renderRows();
