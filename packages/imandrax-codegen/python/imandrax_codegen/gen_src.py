@@ -12,6 +12,11 @@ from imandrax_api_models import (  # noqa: F401, RUF100
     VerifyRes,
 )
 from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.proto_models.decomp import (
+    ByName,
+    Decomp,
+    prune,
+)
 from imandrax_codegen.unparse import (
     format_code,
     gen_preamble,
@@ -108,25 +113,49 @@ def gen_source_code(
             return (type_def_src_w_imports, src_body)
 
 
+def _ensure_pruned(plan: Decomp) -> Decomp:
+    """Make sure the regions of `plan` are pruned.
+
+    Only pruned (feasibility-checked) regions carry the witness model that
+    test cases are sampled from.
+    """
+    match plan:
+        case ByName():
+            return plan.model_copy(update={'prune': True})
+        case _:
+            return prune(plan)
+
+
 # Main
 # ====================
 
 
 def gen_test_cases(
     iml: str,
-    decomp_name: str,
     lang: Lang,
+    # <one-of>
+    decomp_name: str | None = None,
     other_decomp_kwargs: dict[str, Any] | None = None,
+    decomp_plan: Decomp | None = None,
+    # </one-of>
     imandrax_api_key: str | None = None,
     imandrax_env: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
+    either (decomp_name, other_decomp_kwargs) xor decomp_plan should be given
+    If decomp_plan is given, the original
+
+    Args:
+        iml: input IML code to decompose. Decomp request requires to be passed in explicitly. Source decomp requests are ignored.
+        lang: target language (python or typescript)
+        decomp_name: name of the function to decompose
+        other_decomp_kwargs: additional keyword arguments for the decompose request
+        decomp_plan: pre-computed decomp plan to use instead of a decomp request
+
     Return:
         Tuple of (type declarations, test case definition)
     """
-
-    other_decomp_kwargs = other_decomp_kwargs or {}
 
     env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
     url = url_dev if env == 'dev' else url_prod
@@ -142,19 +171,43 @@ def gen_test_cases(
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    #  Decomp
+    # Decomp
     # Since v20:
-    # - `prune=True` is required to get concrete sample points: only pruned
-    #   (feasibility-checked) regions carry a witness `model`/`model_eval`.
-    #   Without it every region is reported as "feasibility unknown" and no test
-    #   case is generated.
-    # - `string_results=True` is required: the artifact parser (`art-parse`)
-    #   relies on the region string-representations being embedded in the meta.
-    decomp_kwargs: dict[str, Any] = other_decomp_kwargs | {
-        'prune': True,
-        'string_results': True,
-    }
-    decomp_res: DecomposeRes = c.decompose(decomp_name, **decomp_kwargs)
+    # - `prune=True` is required to get concrete sample points
+    # - `string_results=True` is required: the artifact parser `art-parse`
+    #   relies on the region string-representations being stored in the meta.
+    match decomp_name, other_decomp_kwargs, decomp_plan:
+        case None, _, None:
+            raise ValueError('Either `decomp_name` or `decomp_plan` must be given')
+        case decomp_name, other_decomp_kwargs, decomp_plan if (
+            decomp_name is not None and decomp_plan is not None
+        ):
+            raise ValueError(
+                'Either `decomp_name` or `decomp_plan` must be given, not both'
+            )
+        case decomp_name, other_decomp_kwargs, decomp_plan if (
+            other_decomp_kwargs is not None and decomp_plan is not None
+        ):
+            raise ValueError(
+                '`other_decomp_kwargs` can only be given when `decomp_name` is given'
+            )
+        case decomp_name, other_decomp_kwargs, _ if decomp_name is not None:
+            assert other_decomp_kwargs is not None, 'Never'
+            decomp_kwargs: dict[str, Any] = other_decomp_kwargs | {
+                'prune': True,
+                'string_results': True,
+            }
+            decomp_res: DecomposeRes = c.decompose(decomp_name, **decomp_kwargs)
+        case _, _, decomp_plan if decomp_plan is not None:
+            decomp_plan = _ensure_pruned(decomp_plan)
+            decomp_res: DecomposeRes = c.decompose_full(
+                decomp_plan, string_results=True
+            )
+        case _:
+            raise AssertionError(
+                f'Never: {decomp_name=} {other_decomp_kwargs=} {decomp_plan=}'
+            )
+
     decomp_art = decomp_res.artifact
     assert decomp_art, 'No artifact returned from decompose'
 
