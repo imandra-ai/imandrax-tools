@@ -30,7 +30,7 @@ export function detailHtml(node: Node): string {
     parts.push(`<ol>${lis}</ol>`);
   }
 
-  const stat = node.data.region_stat;
+  const stat = node.data.region;
   if (stat) {
     parts.push(`<div class="k">Invariant</div><pre>${esc(stat.invariant)}</pre>`);
     parts.push(`<div class="k">Example input</div><pre>${esc(fmtModel(stat.model))}</pre>`);

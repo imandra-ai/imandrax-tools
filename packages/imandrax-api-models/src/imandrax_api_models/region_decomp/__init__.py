@@ -277,7 +277,7 @@ class RegionGroup(BaseModel):
 
 
 class RegionGroupView(RegionGroup):
-    """RegionGroup but with `region` replaced with `region_stat`"""
+    """RegionGroup but with `region` replaced with its display stats (`RegionNonGroupStat`)"""
 
     region: RegionNonGroupStat | None = Field(default=None)  # pyright: ignore[reportIncompatibleVariableOverride]
     children: list[RegionGroupView] = Field(default_factory=lambda: [])  # pyright: ignore[reportIncompatibleVariableOverride]
