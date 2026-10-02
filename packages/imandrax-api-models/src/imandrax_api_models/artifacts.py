@@ -138,6 +138,43 @@ def assess_artifacts(
     return level, pp_config
 
 
+def describe_task(artifacts: Mapping[str, XValue]) -> str | None:
+    """The PO description of a PO task; other tasks don't carry one"""
+    po_task: xtype.Tasks_PO_task_t_poly[xtype.Mir_Term, xtype.Mir_Type] | None = (
+        artifacts.get('po_task')
+    )
+    if isinstance(po_task, xtype.Tasks_PO_task_t_poly):
+        return po_task.po.descr
+    return None
+
+
+def describe_res(artifacts: Mapping[str, XValue]) -> str | None:
+    """
+    The result variant's class name
+
+    Examples:
+        `Tasks_PO_res_error_No_proof` -> 'Error: No Proof',
+        `Tasks_Decomp_res_error_Error` -> 'Error'.
+
+    """
+    _RES_ARTIFACTS: tuple[ArtifactKind, ...] = ('po_res', 'eval_res', 'decomp_res')
+    res = next((artifacts[k] for k in _RES_ARTIFACTS if k in artifacts), None)
+    if res is None:
+        return None
+    variant = res.res
+    if isinstance(variant, xtype.Error_Error_core):
+        return 'Error'
+    _, _, name = type(variant).__name__.partition('_res_')
+    words: list[str] = []
+    for w in name.split('_'):
+        w = w.capitalize()
+        if w and (not words or words[-1] != w):
+            words.append(w)
+    if len(words) > 1 and words[0].lower() in ('error', 'success'):
+        words = [words[0], ':', *words[1:]]
+    return ' '.join(words) or None
+
+
 class TaskEntry(BaseModel):
     """Repr for one single task"""
 
@@ -145,6 +182,12 @@ class TaskEntry(BaseModel):
     kind: str
     artifacts: list[ArtifactEntry]
     level: TaskLevel = Field(description='Task result attention level')
+    task_descr: str | None = Field(
+        default=None, description='Description of the task, if known'
+    )
+    res_descr: str | None = Field(
+        default=None, description='Description of the task result, if known'
+    )
     from_sym: str | None = Field(
         default=None, description='Symbol the task originates from, if known'
     )
@@ -184,6 +227,8 @@ class TaskEntry(BaseModel):
             id=task.id.id,
             kind=task.kind.value,
             artifacts=art_entries,
+            task_descr=describe_task(artifacts),
+            res_descr=describe_res(artifacts),
             level=level,
             from_sym=from_sym,
         )

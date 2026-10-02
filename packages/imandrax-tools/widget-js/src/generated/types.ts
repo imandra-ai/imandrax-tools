@@ -5,7 +5,6 @@
 /* Do not modify it by hand - just update the pydantic models and then re-run the script
 */
 
-export type TaskLevel = "debug" | "info" | "warning" | "error";
 export type JSONValue = string | number | boolean | JSONObject | JSONArray | null;
 export type JSONArray = JSONValue[];
 
@@ -99,7 +98,18 @@ export interface TaskEntry {
   id: string;
   kind: string;
   artifacts: ArtifactEntry[];
-  level: TaskLevel;
+  /**
+   * Task result attention level
+   */
+  level: "debug" | "info" | "warning" | "error";
+  /**
+   * Description of the task, if known
+   */
+  task_descr?: string | null;
+  /**
+   * Description of the task result, if known
+   */
+  res_descr?: string | null;
   /**
    * Symbol the task originates from, if known
    */

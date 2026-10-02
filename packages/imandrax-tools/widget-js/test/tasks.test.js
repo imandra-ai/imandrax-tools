@@ -38,6 +38,14 @@ const render = (data) => {
 };
 // A checkbox only fires `change` on click when connected to the document.
 const renderAttached = (data) => document.body.appendChild(render(data));
+// A click whose pointer moved `dx` px between press and release; `detail` is the
+// click count (2 for a double click's second click).
+const press = (row, dx, detail = 1) => {
+  row.dispatchEvent(new MouseEvent("mousedown", { clientX: 10, clientY: 10, detail, bubbles: true }));
+  row.dispatchEvent(
+    new MouseEvent("click", { clientX: 10 + dx, clientY: 10, detail, bubbles: true }),
+  );
+};
 const rows = (el) => [...el.querySelectorAll(".imdx-task-row")];
 const cell = (row, name) => row.querySelector(`.imdx-task-${name}`);
 describe("task", () => {
@@ -63,13 +71,13 @@ describe("task", () => {
     expect(levels[0]).toBe("error");
   });
 
-  it("prints a symbol once for consecutive rows sharing it", () => {
+  it("prints the symbol on every row", () => {
     const el = render([
       task({ id: "task:po:1", from_sym: "f" }),
       task({ id: "task:po:2", from_sym: "f" }),
       task({ id: "task:po:3", from_sym: "g" }),
     ]);
-    expect(rows(el).map((r) => cell(r, "sym").textContent)).toEqual(["f", "", "g"]);
+    expect(rows(el).map((r) => cell(r, "sym").textContent)).toEqual(["f", "f", "g"]);
   });
 
   it("keeps a symbol's tasks together within a level", () => {
@@ -85,46 +93,74 @@ describe("task", () => {
     ]);
   });
 
-  it("toggles all artifacts of a symbol's rows from its name", () => {
+  it("toggles all artifacts of a task by clicking its row", () => {
     const el = render([
       task({ id: "task:po:1", from_sym: "f" }),
       task({ id: "task:po:2", from_sym: "f" }),
-      task({ id: "task:po:3", from_sym: "g" }),
     ]);
-    const sym = (name) =>
-      [...el.querySelectorAll(".imdx-task-sym-btn")].find((b) => b.textContent === name);
     const openIds = () =>
       [...el.querySelectorAll(".imdx-task-detail")].map(
         (d) => cell(d.previousElementSibling, "id").title,
       );
-    sym("f").click();
-    expect(openIds()).toEqual(["task:po:1", "task:po:2"]);
-    // Partly open counts as closed: the next click opens the rest.
-    el.querySelectorAll(".imdx-task-chip")[0].click();
-    sym("f").click();
-    expect(openIds()).toEqual(["task:po:1", "task:po:2"]);
-    sym("f").click();
+    // Any cell of the row will do; only that row opens.
+    cell(rows(el)[0], "task-descr").click();
+    expect(openIds()).toEqual(["task:po:1"]);
+    expect(rows(el)[0].getAttribute("aria-expanded")).toBe("true");
+    cell(rows(el)[0], "sym").click();
     expect(openIds()).toEqual([]);
   });
 
-  it("toggles a symbol's run from any of its cells, highlighting them together", () => {
-    const el = render([
-      task({ id: "task:po:1", from_sym: "f" }),
-      task({ id: "task:po:2", from_sym: "f" }),
-      task({ id: "task:po:3", from_sym: "g" }),
-    ]);
-    const symCells = () => rows(el).map((r) => cell(r, "sym"));
-    // The blank cell under `f` stands for `f` too.
-    symCells()[1].dispatchEvent(new MouseEvent("mouseenter"));
-    expect(symCells().map((c) => c.classList.contains("imdx-task-sym-hover"))).toEqual([
-      true,
-      true,
-      false,
-    ]);
-    symCells()[1].click();
-    expect(el.querySelectorAll(".imdx-task-detail").length).toBe(2);
-    expect(rows(el).map((r) => !!r.nextElementSibling?.classList.contains("imdx-task-detail")))
-      .toEqual([true, true, false]);
+  it("toggles on a slightly sloppy click, but not after a drag", () => {
+    const el = render(admitRec);
+    const arts = () => el.querySelectorAll(".imdx-task-art").length;
+    press(rows(el)[0], 2);
+    expect(arts()).toBe(2);
+    press(rows(el)[0], 20); // a drag selecting text
+    expect(arts()).toBe(2);
+  });
+
+  it("leaves a row as it was after a double or triple click", () => {
+    const el = render(admitRec);
+    const arts = () => el.querySelectorAll(".imdx-task-art").length;
+    const clicks = (n) => {
+      for (let d = 1; d <= n; d++) press(rows(el)[0], 0, d);
+    };
+    clicks(2); // double click: selects a word
+    expect(arts()).toBe(0);
+    clicks(3); // triple click: selects a line
+    expect(arts()).toBe(0);
+  });
+
+  it("keeps other rows' DOM when toggling one", () => {
+    const el = render(mixed);
+    const before = [...el.querySelectorAll(".imdx-task-art")];
+    const quiet = rows(el).find((r) => r.dataset.level === "info");
+    quiet.click();
+    const after = [...el.querySelectorAll(".imdx-task-art")];
+    expect(after.length).toBe(before.length + quiet.querySelectorAll(".imdx-task-chip").length);
+    // The artifacts already open are the same nodes, so their scroll and selection survive.
+    expect(before.every((b) => after.includes(b))).toBe(true);
+  });
+
+  it("opens the rest when a row is partly open", () => {
+    const el = render(admitRec);
+    el.querySelectorAll(".imdx-task-chip")[0].click();
+    rows(el)[0].click();
+    expect(el.querySelectorAll(".imdx-task-art").length).toBe(2);
+  });
+
+  it("toggles a row from the keyboard, keeping focus on it", () => {
+    const el = renderAttached(admitRec);
+    rows(el)[0].focus();
+    rows(el)[0].dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(el.querySelectorAll(".imdx-task-art").length).toBe(2);
+    expect(document.activeElement).toBe(rows(el)[0]);
+  });
+
+  it("doesn't make a row without artifacts clickable", () => {
+    const [row] = rows(render([task({ artifacts: [] })]));
+    expect(row.classList.contains("imdx-task-row-toggle")).toBe(false);
+    expect(row.tabIndex).toBe(-1);
   });
 
   it("shows an em dash for a task without a symbol", () => {
@@ -148,6 +184,7 @@ describe("task", () => {
     const chip = () => el.querySelectorAll(".imdx-task-chip")[1]; // po_res
     chip().click();
     expect(chip().getAttribute("aria-pressed")).toBe("true");
+    // The chip's click doesn't also toggle its row.
     const arts = el.querySelectorAll(".imdx-task-art");
     expect(arts.length).toBe(1);
     expect(arts[0].querySelector(".imdx-task-art-kind").textContent).toBe("po_res");
@@ -203,8 +240,9 @@ describe("task", () => {
     expect(rows(el).map((r) => cell(r, "id").title)).toEqual(["task:po:2"]);
   });
 
-  it("treats a task without a level as debug", () => {
-    expect(rows(render([task({ level: undefined })])).length).toBe(0);
+  it("treats a task without a level as info", () => {
+    const [row] = rows(render([task({ level: undefined })]));
+    expect(row.dataset.level).toBe("info");
   });
 
   it("reports when every task is debug", () => {
@@ -212,13 +250,41 @@ describe("task", () => {
     expect(el.querySelector(".imdx-task-placeholder").hidden).toBe(false);
   });
 
-  it("puts the artifacts column before kind", () => {
+  it("orders columns: task, result, symbol, artifacts, kind", () => {
     const el = render(admitRec);
     const heads = [...el.querySelectorAll("thead th")].map((th) => th.textContent);
-    expect(heads.slice(0, 4)).toEqual(["", "symbol", "artifacts", "kind"]);
+    expect(heads.slice(0, 5)).toEqual(["task", "result", "symbol", "artifacts", "kind"]);
     const [row] = rows(el);
-    expect(row.children[2].className).toBe("imdx-task-chips");
-    expect(row.children[3].className).toBe("imdx-task-kind");
+    expect([...row.children].slice(0, 5).map((c) => c.className)).toEqual([
+      "imdx-task-task-descr",
+      "imdx-task-res-descr",
+      "imdx-task-sym",
+      "imdx-task-chips",
+      "imdx-task-kind",
+    ]);
+  });
+
+  it("shows the task and result descriptions, with the level icon after the result", () => {
+    const [row] = rows(render(admitRec));
+    expect(cell(row, "task-descr").textContent).toBe(admitRec[0].task_descr);
+    const res = cell(row, "res-descr");
+    const parts = [...res.querySelector(".imdx-task-descr").children];
+    expect(parts.map((p) => p.className)).toEqual(["imdx-task-descr-text", "imdx-task-level"]);
+    expect(parts[0].textContent).toBe(admitRec[0].res_descr);
+    expect(parts[1].textContent).toBe("✅");
+    expect(parts[1].title).toBe("info");
+  });
+
+  it("shows a dash for missing descriptions, keeping the level icon", () => {
+    for (const descr of [undefined, null, ""]) {
+      const [row] = rows(render([task({ task_descr: descr, res_descr: descr, level: "error" })]));
+      for (const name of ["task-descr", "res-descr"]) {
+        const text = cell(row, name).querySelector(".imdx-task-descr-text");
+        expect(text.textContent).toBe("—");
+        expect(text.classList.contains("imdx-task-descr-none")).toBe(true);
+      }
+      expect(cell(row, "level").textContent).toBe("❌");
+    }
   });
 
   it("shows debug tasks when 'show debug' is ticked", () => {
