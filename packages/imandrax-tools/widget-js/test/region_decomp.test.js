@@ -74,6 +74,45 @@ describe("region_decomp", () => {
     expect(crumbs[0].textContent).toBe("classify");
   });
 
+  it("collapses and expands on a click in the bar's empty space", () => {
+    const el = render(classify);
+    const topbar = el.querySelector(".imdx-rd-topbar");
+    click(topbar);
+    expect(el.classList.contains("is-collapsed")).toBe(true);
+    click(topbar);
+    expect(el.classList.contains("is-collapsed")).toBe(false);
+  });
+
+  it("doesn't collapse on a click on a crumb or the leaf-count toggle", () => {
+    const el = render(classify);
+    dblclick(byLabelPath(el, "1"));
+    click(el.querySelector(".imdx-rd-crumb")); // zooms out instead
+    click(el.querySelector(".imdx-rd-toggle input"));
+    expect(el.classList.contains("is-collapsed")).toBe(false);
+  });
+
+  it("keeps the zoom and the picked region across collapse", () => {
+    const el = render(classify);
+    dblclick(byLabelPath(el, "1"));
+    click(byLabelPath(el, "1.1"));
+    const detail = el.querySelector(".imdx-rd-detail").innerHTML;
+    const topbar = el.querySelector(".imdx-rd-topbar");
+    click(topbar);
+    click(topbar);
+    expect(el.querySelectorAll(".imdx-rd-crumb").length).toBe(2);
+    expect(el.querySelector(".imdx-rd-detail").innerHTML).toBe(detail);
+    expect(byLabelPath(el, "1.1").classList.contains("is-selected")).toBe(true);
+  });
+
+  it("starts collapsed, and expands through the handle", () => {
+    const el = document.createElement("div");
+    const handle = drawTreemap(el, classify, { collapsed: true });
+    expect(el.classList.contains("is-collapsed")).toBe(true);
+    handle.setCollapsed(false);
+    expect(el.classList.contains("is-collapsed")).toBe(false);
+    expect(el.querySelectorAll(".imdx-rd-tile").length).toBe(8);
+  });
+
   it("zooms into a region on double click, extending the breadcrumb", () => {
     const el = render(classify);
     dblclick(byLabelPath(el, "1"));

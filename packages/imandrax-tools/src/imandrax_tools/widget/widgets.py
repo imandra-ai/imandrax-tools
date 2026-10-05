@@ -107,6 +107,8 @@ class RegionDecompWidget(anywidget.AnyWidget):
     Treemap view of a region-group forest.
 
     `title`, when set, labels the treemap's root breadcrumb in place of "root".
+    `collapsed` folds the treemap down to its breadcrumb bar; clicking the bar's
+    empty space toggles it in the frontend, without syncing back.
     """
 
     _esm = _DIST / 'region_decomp.js'
@@ -115,6 +117,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
         sync=True
     )
     title = traitlets.Unicode('').tag(sync=True)
+    collapsed = traitlets.Bool(False).tag(sync=True)
     pre = traitlets.Unicode('').tag(sync=True)
     post = traitlets.Unicode('').tag(sync=True)
 
@@ -123,6 +126,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
         cls,
         decomp_res: EnrichedDecomposeRes | DecomposeRes,
         title: str = '',
+        collapsed: bool = False,
         pre: str = '',
         post: str = '',
     ) -> Self:
@@ -134,6 +138,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
         return cls(
             data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
             title=title,
+            collapsed=collapsed,
             pre=pre,
             post=post,
         )
@@ -143,6 +148,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
         cls,
         decomp_res: DecomposeRes_,
         title: str = '',
+        collapsed: bool = False,
         pre: str = '',
         post: str = '',
     ) -> Self:
@@ -164,6 +170,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
                 return cls(
                     data=[r.model_dump(mode='json') for r in region_group_views],
                     title=title,
+                    collapsed=collapsed,
                     pre=pre,
                     post=post,
                 )

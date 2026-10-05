@@ -7,9 +7,15 @@
 //   single click → show that region's detail panel
 //   double click → zoom into that region (if it has children)
 //   breadcrumb   → zoom back out to any ancestor
+//   empty space in the breadcrumb bar → collapse / expand
 //
-// `drawTreemap(el, input, opts)` builds the DOM, wires interaction, and returns
-// nothing.
+// Collapsing folds the widget down to its breadcrumb bar, hiding the tiles and
+// the detail panel. It only hides them, so expanding restores the zoom and the
+// picked region as they were. The fold animates the widget's box toward its
+// top-left corner, clipping the panes rather than reflowing them.
+//
+// `drawTreemap(el, input, opts)` builds the DOM, wires interaction, and returns a
+// `TreemapHandle`.
 
 import { hierarchy, treemap, type HierarchyRectangularNode } from 'd3-hierarchy';
 import { select } from 'd3-selection';
@@ -17,7 +23,7 @@ import { select } from 'd3-selection';
 import { detailHtml, esc, PLACEHOLDER_HTML } from './detail';
 import { buildHierarchy, introducedConstraint, isRoot, labelPath } from './nodes';
 import { ROOT_CLASS, SHARED_STYLE, TREEMAP_STYLE } from './style';
-import type { DrawInput, RegionGroup, TreemapOptions } from './types';
+import type { DrawInput, RegionGroup, TreemapHandle, TreemapOptions } from './types';
 
 type Rect = HierarchyRectangularNode<RegionGroup>;
 interface Extent {
@@ -46,6 +52,7 @@ const DEFAULTS = {
   detailWidth: 300, // detail pane width in px
   maxDepth: 3, // levels of descendants shown below the zoom root
   title: '', // root breadcrumb label; blank keeps "root"
+  collapsed: false, // start folded down to the breadcrumb bar
 };
 
 // Ghost preview mode. true: show every leaf below the solid-tile depth, so each
@@ -67,6 +74,7 @@ const SHOW_LEAF_COUNT_DEFAULT = true;
 const SHOW_TITLE_LEAF_COUNT = true;
 
 const TOPBAR_H = 31; // breadcrumb bar height, for the jsdom size fallback
+const COLLAPSE_MS = 150; // collapse / expand animation length
 const MIN_TILE_PX = 2; // tiles smaller than this on a side are culled
 const LABEL_MIN_W = 40; // tile must be this wide to show a label
 const LABEL_MIN_H = 15; // tile must be this tall to show a label
@@ -181,7 +189,11 @@ function nodeSummary(node: Rect): string {
 // Render
 // ====================
 
-export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOptions = {}): void {
+export function drawTreemap(
+  el: HTMLElement,
+  input: DrawInput,
+  opts: TreemapOptions = {},
+): TreemapHandle {
   const cfg = { ...DEFAULTS, ...opts };
 
   const root = buildHierarchy(input);
@@ -224,6 +236,7 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
   let selected: Rect = root as Rect;
   let picked: Rect | null = null;
   let showLeafCount = SHOW_LEAF_COUNT_DEFAULT;
+  let collapsed = cfg.collapsed;
   let laidOutW = 0;
   let laidOutH = 0;
 
@@ -247,6 +260,67 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
     laidOutW = vw;
     laidOutH = vh;
   }
+
+  let folding: Animation | null = null;
+
+  // Collapse or expand, animating the box from its current size to the size of
+  // the new state (a FLIP: measure, switch state, measure, animate between).
+  // Without `el.animate` (jsdom) or under reduced motion the switch is instant.
+  function setCollapsed(next: boolean, animate = true): void {
+    if (next === collapsed && !folding) return;
+    const canAnimate =
+      animate &&
+      typeof el.animate === 'function' &&
+      !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    // Measured before cancelling, so a fold reversed midway starts from where
+    // it got to rather than jumping to the end.
+    const from = { width: el.offsetWidth, height: el.offsetHeight };
+    folding?.cancel();
+    folding = null;
+    // Pin the left column to its width, which is the same in both states, so the
+    // bar holds still while the box narrows over the detail pane.
+    main.style.flex = canAnimate ? `0 0 ${main.offsetWidth}px` : '';
+
+    collapsed = next;
+    el.classList.remove('is-folding');
+    el.classList.toggle('is-collapsed', collapsed);
+    // While collapsed the tiles pane has no size, so a treemap that started
+    // collapsed was laid out against the fallback size: lay it out again now that
+    // it can be measured, and before the expand starts so it unfolds onto the
+    // right layout. A no-op when the size hasn't changed.
+    if (!collapsed) renderTiles();
+    if (!canAnimate) return;
+
+    // Measured in the final state, before `is-folding` brings the hidden panes
+    // back for the duration of the animation.
+    const to = { width: el.offsetWidth, height: el.offsetHeight };
+    el.classList.add('is-folding');
+    const px = (b: typeof from) => ({ width: `${b.width}px`, height: `${b.height}px` });
+    // `fill` holds the end size until the cleanup below drops `is-folding`, so
+    // the panes it keeps rendered never get a frame to stretch the box.
+    const anim = el.animate([px(from), px(to)], {
+      duration: COLLAPSE_MS,
+      easing: 'ease',
+      fill: 'forwards',
+    });
+    folding = anim;
+    anim.onfinish = () => {
+      if (folding !== anim) return;
+      folding = null;
+      el.classList.remove('is-folding');
+      main.style.flex = '';
+      anim.cancel();
+    };
+  }
+
+  // Only clicks on the bar's empty space toggle: the crumbs zoom and the
+  // checkbox flips leaf counts. The bar is rebuilt on every zoom, so the
+  // listener sits on the bar itself rather than on its children.
+  topbar.addEventListener('click', (event) => {
+    if ((event.target as Element).closest('button, label')) return;
+    setCollapsed(!collapsed);
+  });
 
   function setSelected(node: Rect): void {
     selected = node;
@@ -358,6 +432,9 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
 
   renderBreadcrumb();
   renderTiles();
+  el.classList.toggle('is-collapsed', collapsed);
+
+  return { setCollapsed: (next) => setCollapsed(next) };
 }
 
 // Tile rendering helpers

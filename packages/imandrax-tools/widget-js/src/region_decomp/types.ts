@@ -38,4 +38,11 @@ export interface TreemapOptions {
   detailWidth?: number; // detail pane width in px
   maxDepth?: number; // levels of descendants shown below the zoom root
   title?: string; // label for the root breadcrumb (falls back to "root")
+  collapsed?: boolean; // start folded down to the breadcrumb bar
+}
+
+// Handle `drawTreemap` returns, for driving a drawn treemap without redrawing it
+// (a redraw would lose the zoom and the picked region).
+export interface TreemapHandle {
+  setCollapsed(collapsed: boolean): void;
 }
