@@ -9,14 +9,22 @@ import { drawTasks } from "../../src/task/view";
 
 // Fixtures are read from disk and inlined at build time by build_gallery.mjs
 // (the browser has no filesystem access). The build replaces __GALLERY_EXAMPLES__
-// with a `[{ name, type, data }]` array, where each `data` is the exact widget
-// input the Python side syncs to the frontend — the views consume it as-is.
+// with a `[{ name, type, fn, data }]` array, where each `data` is the exact widget
+// input the Python side syncs to the frontend — the views consume it as-is — and
+// `fn` is the fixture's `<fn>` filename slot (null when absent).
 const examples = __GALLERY_EXAMPLES__;
 
-// One tab per widget type; `type` matches the fixture filename prefix.
+// One tab per widget type; `type` matches the fixture filename prefix. `opts`
+// maps an example to the view's extra options, standing in for the traitlets
+// beside `data` (e.g. the decomp widget's `title`).
 const TABS = [
   { type: "tasks", label: "Tasks", draw: drawTasks },
-  { type: "decomp", label: "Region Decomposition", draw: drawTreemap },
+  {
+    type: "decomp",
+    label: "Region Decomposition",
+    draw: drawTreemap,
+    opts: (ex) => ({ title: ex.fn ?? "" }),
+  },
   { type: "idf", label: "IDF", draw: drawGraph },
   // `jsonable` fixtures are a YAML string rather than an object -- `drawJsonable`
   // takes it as-is, same as the traitlet the Python side syncs.
@@ -35,7 +43,7 @@ const built = {};
 
 // Render a panel's widgets on first reveal. Deferring until the panel is visible
 // lets the treemap measure a real width instead of falling back to its default.
-function buildPanel({ type, draw }) {
+function buildPanel({ type, draw, opts }) {
   if (built[type]) return;
   built[type] = true;
   for (const ex of examples) {
@@ -46,7 +54,7 @@ function buildPanel({ type, draw }) {
     const mount = document.createElement("div");
     section.append(h2, mount);
     panels[type].appendChild(section);
-    draw(mount, ex.data);
+    draw(mount, ex.data, opts?.(ex));
   }
 }
 

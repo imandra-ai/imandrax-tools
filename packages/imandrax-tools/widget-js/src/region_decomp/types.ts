@@ -37,4 +37,5 @@ export interface TreemapOptions {
   height?: number; // overall widget height in px
   detailWidth?: number; // detail pane width in px
   maxDepth?: number; // levels of descendants shown below the zoom root
+  title?: string; // label for the root breadcrumb (falls back to "root")
 }

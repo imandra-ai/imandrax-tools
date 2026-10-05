@@ -3,6 +3,8 @@
 // optional `pre` / `post` YAML panels: pull the one-directional traitlets off the
 // model, render, and re-render when any change.
 //
+// `title`, when set, labels the treemap's root breadcrumb in place of "root".
+//
 // A null `data` drops the treemap, leaving a widget that is only its `pre` /
 // `post` slots -- how a decomposition that errored renders. An empty array still
 // draws the treemap, whose own "No regions." reports that it holds none; note that
@@ -13,15 +15,15 @@ import { drawStacked } from '../common/stack';
 import { drawTreemap } from './treemap';
 import type { DrawInput } from './types';
 
-type Key = 'data' | 'pre' | 'post';
+type Key = 'data' | 'title' | 'pre' | 'post';
 
 interface Model {
   get(key: 'data'): DrawInput;
-  get(key: 'pre' | 'post'): string;
+  get(key: 'title' | 'pre' | 'post'): string;
   on(event: `change:${Key}`, cb: () => void): void;
 }
 
-const KEYS: Key[] = ['data', 'pre', 'post'];
+const KEYS: Key[] = ['data', 'title', 'pre', 'post'];
 
 export default {
   render({ model, el }: { model: Model; el: HTMLElement }) {
@@ -30,7 +32,7 @@ export default {
       drawStacked(el, {
         pre: model.get('pre'),
         post: model.get('post'),
-        main: (target) => drawTreemap(target, data),
+        main: (target) => drawTreemap(target, data, { title: model.get('title') }),
         hasMain: data != null,
       });
     };

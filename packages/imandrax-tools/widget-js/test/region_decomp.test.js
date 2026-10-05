@@ -66,6 +66,14 @@ describe("region_decomp", () => {
     expect(detail).toContain("x = 1");
   });
 
+  it("labels the root breadcrumb with the title, if given", () => {
+    const el = document.createElement("div");
+    drawTreemap(el, classify, { title: "classify" });
+    const crumbs = el.querySelectorAll(".imdx-rd-crumb");
+    expect(crumbs.length).toBe(1);
+    expect(crumbs[0].textContent).toBe("classify");
+  });
+
   it("zooms into a region on double click, extending the breadcrumb", () => {
     const el = render(classify);
     dblclick(byLabelPath(el, "1"));

@@ -45,6 +45,7 @@ const DEFAULTS = {
   height: 520, // overall widget height in px
   detailWidth: 300, // detail pane width in px
   maxDepth: 3, // levels of descendants shown below the zoom root
+  title: '', // root breadcrumb label; blank keeps "root"
 };
 
 // Ghost preview mode. true: show every leaf below the solid-tile depth, so each
@@ -282,7 +283,7 @@ export function drawTreemap(el: HTMLElement, input: DrawInput, opts: TreemapOpti
       crumb.type = 'button';
       const isCurrent = node === selected;
       crumb.className = `${ROOT_CLASS}-crumb${isCurrent ? ' -current' : ''}`;
-      crumb.textContent = isRoot(node) ? 'root' : `[${labelPath(node)}]`;
+      crumb.textContent = isRoot(node) ? cfg.title || 'root' : `[${labelPath(node)}]`;
       if (!isCurrent) crumb.addEventListener('click', () => setSelected(node));
       topbar.appendChild(crumb);
     });
