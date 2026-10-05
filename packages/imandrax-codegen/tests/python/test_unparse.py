@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import pytest
 import yaml
 from imandrax_codegen.gen_src import Lang, gen_test_cases
 from imandrax_codegen.unparse import join_code_parts
@@ -119,10 +118,10 @@ def test_nested_conditions():
 def test_1():
     """test_1
 
-    - invariant: (-1) * x + (-1) * y
+    - invariant: (~- 1 * y) - 1 * x
     - constraints:
-        - y <= 0
         - x <= 0
+        - y <= 0
     """
     result: int = nested_check(x=0, y=0)
     expected: int = 0
@@ -132,7 +131,7 @@ def test_1():
 def test_2():
     """test_2
 
-    - invariant: y + (-1) * x
+    - invariant: y - 1 * x
     - constraints:
         - y >= 1
         - x <= 0
@@ -145,10 +144,10 @@ def test_2():
 def test_3():
     """test_3
 
-    - invariant: x + (-1) * y
+    - invariant: x - 1 * y
     - constraints:
-        - y <= 0
         - x >= 1
+        - y <= 0
     """
     result: int = nested_check(x=1, y=0)
     expected: int = 1
@@ -160,8 +159,8 @@ def test_4():
 
     - invariant: x + y
     - constraints:
-        - y >= 1
         - x >= 1
+        - y >= 1
     """
     result: int = nested_check(x=1, y=1)
     expected: int = 2
@@ -169,8 +168,6 @@ def test_4():
 ''')
 
 
-# Upstream bug
-@pytest.mark.skip
 def test_list_operations():
     file_path = DATA_DIR / 'list_operations.yaml'
     input_data = read_test_input(file_path)
@@ -186,7 +183,7 @@ def test_1():
 
     - invariant: 0
     - constraints:
-        - not (xs <> [])
+        - xs = []
     """
     result: int = list_check(xs=[])
     expected: int = 0
@@ -199,7 +196,7 @@ def test_2():
     - invariant: List.hd xs
     - constraints:
         - xs <> []
-        - not ((List.tl xs) <> [])
+        - List.tl xs = []
     """
     result: int = list_check(xs=[0])
     expected: int = 0
@@ -211,7 +208,7 @@ def test_3():
 
     - invariant: List.hd xs + List.hd (List.tl xs)
     - constraints:
-        - (List.tl xs) <> []
+        - List.tl xs <> []
         - xs <> []
     """
     result: int = list_check(xs=[1, 0])
@@ -306,10 +303,10 @@ def test_composite_tuple():
 def test_1():
     """test_1
 
-    - invariant: _x_1_25.1 + (-1) * _x_1_25.0
+    - invariant: _x_1_25.1 - 1 * _x_1_25.0
     - constraints:
-        - _x_1_25.0 <> _x_1_25.1
         - _x_1_25.0 <= _x_1_25.1
+        - _x_1_25.0 <> _x_1_25.1
     """
     result: int = tuple_compare(_x_1_25=(0, 1))
     expected: int = 1
@@ -332,7 +329,7 @@ def test_2():
 def test_3():
     """test_3
 
-    - invariant: _x_1_25.0 + (-1) * _x_1_25.1
+    - invariant: _x_1_25.0 - 1 * _x_1_25.1
     - constraints:
         - _x_1_25.0 > _x_1_25.1
     """
@@ -355,7 +352,7 @@ def test_with_basis():
 def test_1():
     """test_1
 
-    - invariant: helper ((-1) * x)
+    - invariant: helper (~- x)
     - constraints:
         - x <= 0
     """
@@ -415,9 +412,9 @@ def test_1():
 
     - invariant: 0
     - constraints:
+        - a <= b
         - a <> b
         - b <> c
-        - a <= b
     """
     result: int = calculate(a=0, b=1, c=2)
     expected: int = 0
@@ -427,11 +424,11 @@ def test_1():
 def test_2():
     """test_2
 
-    - invariant: a * b
+    - invariant: b * a
     - constraints:
         - b = c
-        - a <> b
         - a <= b
+        - a <> b
     """
     result: int = calculate(a=0, b=1, c=1)
     expected: int = 0
@@ -456,10 +453,10 @@ def test_4():
 
     - invariant: 0
     - constraints:
-        - a <> b
-        - b <> c
         - a > b
         - b <= c
+        - a <> b
+        - b <> c
     """
     result: int = calculate(a=1, b=0, c=1)
     expected: int = 0
@@ -469,12 +466,12 @@ def test_4():
 def test_5():
     """test_5
 
-    - invariant: a * b
+    - invariant: b * a
     - constraints:
-        - b = c
-        - a <> b
         - a > b
+        - b = c
         - b <= c
+        - a <> b
     """
     result: int = calculate(a=0, b=-1, c=-1)
     expected: int = 0
@@ -484,7 +481,7 @@ def test_5():
 def test_6():
     """test_6
 
-    - invariant: a + b + c
+    - invariant: a + (b + c)
     - constraints:
         - a > b
         - b > c
@@ -594,7 +591,7 @@ option: TypeAlias = Some[T] | None
 def test_1():
     """test_1
 
-    - invariant: (-1) * Option.get opt
+    - invariant: ~- 1 * Option.get opt
     - constraints:
         - not Is_a(None, opt)
         - Option.get opt <= 0
@@ -768,8 +765,8 @@ def test_3():
 
     - invariant: 3
     - constraints:
-        - y <= x
         - x <= y
+        - y <= x
         - x >= 1
         - y >= 1
     """

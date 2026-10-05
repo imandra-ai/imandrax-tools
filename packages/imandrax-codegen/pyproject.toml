@@ -54,6 +54,9 @@ where = ["python"]
 # sdist).
 imandrax_codegen = ["art_parse.exe"]
 
+# Own pytest config, so pytest stops here instead of picking up the repo root one
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
 
 [tool.ty]
 environment.python = "./.venv"
