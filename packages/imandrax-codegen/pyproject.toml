@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-codegen"
-version = "20.0.1"
+version = "20.1.0"
 description = "Code generator for ImandraX artifact"
 readme = "README.md"
 authors = [
@@ -10,9 +10,9 @@ requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
-    "imandrax-api-models>=20,<21",
+    "imandrax-api-models>=20.8.1,<21",
     "imandrax-api[async]>=0.20,<0.21",
-    "iml-query>=0.11",
+    "iml-query>=0.13",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
     "rich>=14.2.0",
@@ -34,7 +34,7 @@ package = true
 
 [tool.uv.sources]
 iml-query = { path = "../iml-query", editable = true }
-imandrax-api-models = { path = "../imandrax-api-models", editable = true }
+# imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
 
 [tool.uv.workspace]
@@ -54,6 +54,9 @@ where = ["python"]
 # sdist).
 imandrax_codegen = ["art_parse.exe"]
 
+# Own pytest config, so pytest stops here instead of picking up the repo root one
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
 
 [tool.ty]
 environment.python = "./.venv"

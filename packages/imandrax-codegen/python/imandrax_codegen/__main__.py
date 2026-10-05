@@ -101,7 +101,7 @@ def gen_test_command(
     if isinstance(target_lang, Exception):
         raise target_lang
 
-    type_def, test_def = gen_test_cases(iml, function, lang=target_lang)
+    type_def, test_def = gen_test_cases(iml, lang=target_lang, decomp_name=function)
     result = join_code_parts([type_def, test_def])
 
     write_output(output, result)
