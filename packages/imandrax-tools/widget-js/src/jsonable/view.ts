@@ -2,7 +2,8 @@
 // where any line with nested content becomes a <details> the reader can fold.
 //
 // `drawJsonable(el, yaml, label?)` builds the DOM, wires interaction, and returns
-// nothing. Rendering never rewrites the text it is given, so what is shown is
+// nothing. Clicking the toolbar's empty space collapses the widget down to the
+// toolbar, or expands it again. Rendering never rewrites the text it is given, so what is shown is
 // also what the copy button yields.
 
 import { foldYaml, hiddenLineCount, type YamlNode } from './fold';
@@ -89,13 +90,35 @@ export function drawJsonable(el: HTMLElement, yaml: string, label = ''): void {
   scroll.className = `${ROOT_CLASS}-scroll`;
   scroll.appendChild(doc);
 
-  el.appendChild(makeBar(doc, yaml, label));
+  el.appendChild(makeBar(el, doc, yaml, label));
   el.appendChild(scroll);
 }
 
-function makeBar(doc: HTMLElement, yaml: string, label: string): HTMLElement {
+function makeBar(
+  root: HTMLElement,
+  doc: HTMLElement,
+  yaml: string,
+  label: string,
+): HTMLElement {
   const bar = document.createElement('div');
   bar.className = `${ROOT_CLASS}-bar`;
+
+  // Clicking the bar collapses / expands the document; its buttons don't.
+  bar.tabIndex = 0;
+  const setCollapsed = (collapsed: boolean): void => {
+    root.classList.toggle(`${ROOT_CLASS}-collapsed`, collapsed);
+    bar.setAttribute('aria-expanded', String(!collapsed));
+    bar.title = collapsed ? 'Expand' : 'Collapse';
+  };
+  const toggle = (): void =>
+    setCollapsed(!root.classList.contains(`${ROOT_CLASS}-collapsed`));
+  setCollapsed(false); // a re-render starts expanded
+  bar.addEventListener('click', toggle);
+  bar.addEventListener('keydown', (e) => {
+    if (e.target !== bar || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    toggle();
+  });
 
   if (label) {
     const name = document.createElement('span');
@@ -118,7 +141,10 @@ function makeBar(doc: HTMLElement, yaml: string, label: string): HTMLElement {
     b.className = `${ROOT_CLASS}-btn`;
     b.type = 'button';
     b.textContent = text;
-    b.addEventListener('click', onClick);
+    b.addEventListener('click', (e) => {
+      e.stopPropagation(); // a button's action, not a collapse
+      onClick();
+    });
     actions.appendChild(b);
     return b;
   };
@@ -126,8 +152,12 @@ function makeBar(doc: HTMLElement, yaml: string, label: string): HTMLElement {
   const setAll = (open: boolean) => {
     for (const d of doc.querySelectorAll('details')) d.open = open;
   };
-  button('expand all', () => setAll(true));
-  button('collapse all', () => setAll(false));
+  // Fold buttons only when there is something to fold: not for a scalar or a flat
+  // mapping / list. "fold", not "collapse", which is what clicking the bar does.
+  if (doc.querySelector('details')) {
+    button('unfold all', () => setAll(true));
+    button('fold all', () => setAll(false));
+  }
 
   const copy = button('copy', () => {
     navigator.clipboard?.writeText(yaml).then(() => {

@@ -11,24 +11,21 @@ from imandrax_api_models.region_decomp import DecomposeRes_
 from imandrax_api_models.yaml_utils import to_yaml_str
 from iml_query.processing import get_decomp_reqs_
 
-from imandrax_tools.widget import RegionDecompWidget, TasksWidget
+from imandrax_tools.widget import JsonableWidget, RegionDecompWidget, TasksWidget
 
 
-def tasks_widget(c: ImandraXClient, iml: str) -> tuple[TasksWidget | None, bool]:
+def eval_widget(
+    c: ImandraXClient, iml: str
+) -> tuple[TasksWidget | JsonableWidget, bool]:
     """Eval `iml` (VGs and tests included, decomps left out) -> (widget, ok)."""
     eval_res = c.eval_model(src=iml, with_vgs=True, with_tests=True)
 
     if len(eval_res.errors) > 0:
-        pre = to_yaml_str(format_eval_res(eval_res, iml))
-        ok = False
+        return JsonableWidget.from_json_value(format_eval_res(eval_res, iml)), False
+    elif len(eval_res.tasks) == 0:
+        return JsonableWidget.from_json_value(format_eval_res(eval_res, iml)), True
     else:
-        pre = ''
-        ok = True
-
-    if len(eval_res.tasks) == 0:
-        return None, ok
-    else:
-        return TasksWidget.from_has_tasks(eval_res, c, pre=pre), ok
+        return TasksWidget.from_has_tasks(eval_res, c, pre=''), True
 
 
 def decomp_widgets(c: ImandraXClient, iml: str) -> list[RegionDecompWidget]:
@@ -55,10 +52,10 @@ def decomp_widgets(c: ImandraXClient, iml: str) -> list[RegionDecompWidget]:
 
 def cell_widgets(c: ImandraXClient, iml: str) -> list[anywidget.AnyWidget]:
     wgts: list[anywidget.AnyWidget] = []
-    tasks_w, ok = tasks_widget(c, iml)
+    tasks_w, ok = eval_widget(c, iml)
 
-    if tasks_w is not None:
-        wgts.append(tasks_w)
+    wgts.append(tasks_w)
+
     if ok:
         wgts.extend(decomp_widgets(c, iml))
 
