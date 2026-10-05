@@ -47,6 +47,9 @@ const press = (row, dx, detail = 1) => {
   );
 };
 const rows = (el) => [...el.querySelectorAll(".imdx-task-row")];
+// Artifacts on screen: not inside a folded (hidden) detail row.
+const visibleArts = (el) =>
+  [...el.querySelectorAll(".imdx-task-art")].filter((a) => !a.closest("tr").hidden);
 const cell = (row, name) => row.querySelector(`.imdx-task-${name}`);
 describe("task", () => {
   it("renders a row per task", () => {
@@ -93,21 +96,27 @@ describe("task", () => {
     ]);
   });
 
-  it("toggles all artifacts of a task by clicking its row", () => {
+  it("opens all artifacts on a row click, then folds and unfolds them", () => {
     const el = render([
       task({ id: "task:po:1", from_sym: "f" }),
       task({ id: "task:po:2", from_sym: "f" }),
     ]);
-    const openIds = () =>
-      [...el.querySelectorAll(".imdx-task-detail")].map(
-        (d) => cell(d.previousElementSibling, "id").title,
-      );
+    const shownIds = () =>
+      [...el.querySelectorAll(".imdx-task-detail")]
+        .filter((d) => !d.hidden)
+        .map((d) => cell(d.previousElementSibling, "id").title);
     // Any cell of the row will do; only that row opens.
     cell(rows(el)[0], "task-descr").click();
-    expect(openIds()).toEqual(["task:po:1"]);
+    expect(shownIds()).toEqual(["task:po:1"]);
     expect(rows(el)[0].getAttribute("aria-expanded")).toBe("true");
+    const art = el.querySelector(".imdx-task-art");
     cell(rows(el)[0], "sym").click();
-    expect(openIds()).toEqual([]);
+    expect(shownIds()).toEqual([]);
+    expect(rows(el)[0].getAttribute("aria-expanded")).toBe("false");
+    cell(rows(el)[0], "sym").click();
+    expect(shownIds()).toEqual(["task:po:1"]);
+    // Unfolding brings back the same nodes, not rebuilt ones.
+    expect(el.querySelector(".imdx-task-art")).toBe(art);
   });
 
   it("toggles on a slightly sloppy click, but not after a drag", () => {
@@ -126,9 +135,9 @@ describe("task", () => {
       for (let d = 1; d <= n; d++) press(rows(el)[0], 0, d);
     };
     clicks(2); // double click: selects a word
-    expect(arts()).toBe(0);
+    expect(visibleArts(el).length).toBe(0);
     clicks(3); // triple click: selects a line
-    expect(arts()).toBe(0);
+    expect(visibleArts(el).length).toBe(0);
   });
 
   it("keeps other rows' DOM when toggling one", () => {
@@ -142,11 +151,41 @@ describe("task", () => {
     expect(before.every((b) => after.includes(b))).toBe(true);
   });
 
-  it("opens the rest when a row is partly open", () => {
+  it("folds a partly open row, keeping which artifacts are open", () => {
     const el = render(admitRec);
-    el.querySelectorAll(".imdx-task-chip")[0].click();
+    const chips = () => el.querySelectorAll(".imdx-task-chip");
+    chips()[0].click();
+    rows(el)[0].click(); // folds, rather than opening the rest
+    expect(visibleArts(el).length).toBe(0);
+    // Still open, so still pressed -- dimmed via the row's folded class.
+    expect(rows(el)[0].classList.contains("imdx-task-row-folded")).toBe(true);
+    expect(chips()[0].getAttribute("aria-pressed")).toBe("true");
     rows(el)[0].click();
-    expect(el.querySelectorAll(".imdx-task-art").length).toBe(2);
+    expect(visibleArts(el).map((a) => a.querySelector(".imdx-task-art-kind").textContent)).toEqual([
+      "po_task",
+    ]);
+    expect(rows(el)[0].classList.contains("imdx-task-row-folded")).toBe(false);
+  });
+
+  it("unfolds a folded row on a chip click, adding that artifact", () => {
+    const el = render(admitRec);
+    const chips = () => el.querySelectorAll(".imdx-task-chip");
+    chips()[0].click();
+    rows(el)[0].click(); // fold
+    chips()[1].click();
+    expect(visibleArts(el).length).toBe(2);
+    expect(rows(el)[0].getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("keeps the artifacts' own collapse across a row fold", () => {
+    const el = render(admitRec);
+    rows(el)[0].click();
+    el.querySelector(".imdx-task-art-head").click(); // collapse po_task
+    rows(el)[0].click();
+    rows(el)[0].click();
+    const [first, second] = el.querySelectorAll(".imdx-task-art");
+    expect(first.classList.contains("imdx-task-art-collapsed")).toBe(true);
+    expect(second.classList.contains("imdx-task-art-collapsed")).toBe(false);
   });
 
   it("toggles a row from the keyboard, keeping focus on it", () => {
@@ -192,7 +231,7 @@ describe("task", () => {
     expect(el.querySelector(".imdx-task-art")).toBeNull();
   });
 
-  it("closes an artifact from its × button", () => {
+  it("removes an artifact from its × button", () => {
     const el = render(admitRec);
     const chips = () => el.querySelectorAll(".imdx-task-chip");
     chips()[0].click();
@@ -203,13 +242,55 @@ describe("task", () => {
     expect(chips()[0].getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("closes an artifact from its header, but not from copy", () => {
+  it("collapses an artifact from its header, but not from copy", () => {
     const el = render(admitRec);
     el.querySelectorAll(".imdx-task-chip")[1].click(); // po_res
+    const art = () => el.querySelector(".imdx-task-art");
+    const collapsed = () => art().classList.contains("imdx-task-art-collapsed");
     el.querySelector(".imdx-task-copy").click();
-    expect(el.querySelectorAll(".imdx-task-art").length).toBe(1);
+    expect(collapsed()).toBe(false);
     el.querySelector(".imdx-task-art-kind").click();
-    expect(el.querySelector(".imdx-task-art")).toBeNull();
+    expect(collapsed()).toBe(true);
+    expect(el.querySelector(".imdx-task-art-head").getAttribute("aria-expanded")).toBe("false");
+    el.querySelector(".imdx-task-art-head").click();
+    expect(collapsed()).toBe(false);
+  });
+
+  it("collapses an artifact from the keyboard", () => {
+    const el = renderAttached(admitRec);
+    el.querySelectorAll(".imdx-task-chip")[1].click();
+    const head = el.querySelector(".imdx-task-art-head");
+    head.focus();
+    head.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(el.querySelector(".imdx-task-art").classList.contains("imdx-task-art-collapsed")).toBe(
+      true,
+    );
+  });
+
+  it("brings a removed artifact back expanded", () => {
+    const el = render(admitRec);
+    const chip = () => el.querySelectorAll(".imdx-task-chip")[1];
+    chip().click();
+    el.querySelector(".imdx-task-art-head").click(); // collapse
+    chip().click(); // remove
+    chip().click(); // add back
+    expect(el.querySelector(".imdx-task-art").classList.contains("imdx-task-art-collapsed")).toBe(
+      false,
+    );
+  });
+
+  it("doesn't move a task's open artifacts when opening another", () => {
+    const el = render(admitRec);
+    const chips = () => el.querySelectorAll(".imdx-task-chip");
+    chips()[0].click();
+    const art = el.querySelector(".imdx-task-art");
+    const moves = [];
+    new MutationObserver((ms) => moves.push(...ms.flatMap((m) => [...m.removedNodes]))).observe(
+      art.parentNode,
+      { childList: true },
+    );
+    chips()[1].click();
+    return Promise.resolve().then(() => expect(moves).not.toContain(art));
   });
 
   it("keeps open artifacts in the task's own order", () => {

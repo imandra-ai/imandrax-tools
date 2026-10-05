@@ -8,10 +8,23 @@
 //
 // Rows are sorted by level (most severe first), keeping a symbol's tasks
 // together. The symbol is an ordinary column rather than a grouping level, since
-// a snippet often has one task per symbol. Clicking a row toggles all of its
-// artifacts; its chips toggle them one by one. Artifacts of warning / error
-// tasks start open, others start collapsed. Debug tasks are hidden unless "show debug" in the
-// header is ticked.
+// a snippet often has one task per symbol. Debug tasks are hidden unless "show
+// debug" in the header is ticked.
+//
+// Three controls, one job each:
+//
+//   chip / artifact `×`   → add / remove that artifact (added back expanded)
+//   artifact title bar    → collapse / expand that artifact's body
+//   row                   → fold / unfold the task's whole detail row, keeping
+//                           which artifacts are open and collapsed as they were;
+//                           with none open, it opens them all
+//
+// Folding and collapsing only hide, so an artifact's selection survives; its
+// scroll position, which browsers drop on `display: none`, is saved and restored
+// around the hide. A chip click on a folded task unfolds it, so the click always
+// has a visible result; while folded, the chips of its open artifacts show a
+// dimmed pressed state. Artifacts of warning / error tasks start open, others
+// start closed.
 //
 // `drawTasks(el, tasks)` builds the DOM, wires interaction, and returns nothing.
 
@@ -72,14 +85,51 @@ function descrCell(cls: string, descr: string | null | undefined): HTMLElement {
   return td;
 }
 
-function makeArtifact(art: Artifact, onClose: () => void): HTMLElement {
+// Scroll offsets of artifact bodies hidden by a collapse or a fold, restored when
+// they show again. Only rendered bodies are saved: one already hidden (an
+// artifact collapsed inside a task now folding) keeps the entry saved when it was
+// hidden, and only restores once it is rendered again.
+const savedScroll = new WeakMap<Element, { top: number; left: number }>();
+const rendered = (e: Element): boolean => e.getClientRects().length > 0;
+
+function saveScroll(scope: HTMLElement): void {
+  for (const s of scope.querySelectorAll(`.${ROOT_CLASS}-scroll`)) {
+    if (rendered(s)) savedScroll.set(s, { top: s.scrollTop, left: s.scrollLeft });
+  }
+}
+
+function restoreScroll(scope: HTMLElement): void {
+  for (const s of scope.querySelectorAll(`.${ROOT_CLASS}-scroll`)) {
+    const saved = savedScroll.get(s);
+    if (!saved || !rendered(s)) continue;
+    s.scrollTop = saved.top;
+    s.scrollLeft = saved.left;
+    savedScroll.delete(s);
+  }
+}
+
+function makeArtifact(art: Artifact, onRemove: () => void): HTMLElement {
   const box = el("div", "art");
 
-  // Clicking the header closes the artifact, like clicking a symbol toggles its
-  // rows; `×` makes that discoverable and just lets its click bubble up here.
+  // Clicking the header collapses / expands the body; `×` removes the artifact.
   const head = el("div", "art-head");
-  head.title = "Close";
-  head.addEventListener("click", onClose);
+  head.tabIndex = 0;
+  const setCollapsed = (collapsed: boolean): void => {
+    if (collapsed) saveScroll(box);
+    box.classList.toggle(`${ROOT_CLASS}-art-collapsed`, collapsed);
+    if (!collapsed) restoreScroll(box);
+    head.setAttribute("aria-expanded", String(!collapsed));
+    head.title = collapsed ? "Expand" : "Collapse";
+  };
+  const toggle = (): void =>
+    setCollapsed(!box.classList.contains(`${ROOT_CLASS}-art-collapsed`));
+  setCollapsed(false);
+  head.addEventListener("click", toggle);
+  head.addEventListener("keydown", (e) => {
+    if (e.target !== head || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    toggle();
+  });
   head.appendChild(el("span", "art-kind", art.kind));
   head.appendChild(el("span", "meta", `${art.repr.length.toLocaleString()} chars`));
 
@@ -87,7 +137,7 @@ function makeArtifact(art: Artifact, onClose: () => void): HTMLElement {
   copy.type = "button";
   copy.title = "Copy";
   copy.addEventListener("click", (e) => {
-    e.stopPropagation(); // copying shouldn't close the artifact
+    e.stopPropagation(); // copying shouldn't collapse the artifact
     navigator.clipboard?.writeText(art.repr).then(() => {
       copy.textContent = "copied";
       setTimeout(() => (copy.textContent = "copy"), 1200);
@@ -97,7 +147,12 @@ function makeArtifact(art: Artifact, onClose: () => void): HTMLElement {
 
   const close = el("button", "close", "×");
   close.type = "button";
-  close.setAttribute("aria-label", `Close ${art.kind}`);
+  close.title = "Remove";
+  close.setAttribute("aria-label", `Remove ${art.kind}`);
+  close.addEventListener("click", (e) => {
+    e.stopPropagation(); // removing, not collapsing
+    onRemove();
+  });
   head.appendChild(close);
   box.appendChild(head);
 
@@ -138,7 +193,8 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
         a.i - b.i,
     );
 
-  // Per task (by input index), the kinds of its open artifacts.
+  // Per task (by input index), the kinds of its open artifacts; whether the task
+  // is folded lives with its rows (see `buildRows`).
   const open = new Map<number, Set<string>>();
   for (const { t, i } of order) {
     const loud = rank(levelOf(t)) >= rank("warning");
@@ -194,12 +250,13 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
     for (const { i } of shown) {
       const { row, detail } = rowsOf.get(i)!;
       tbody.appendChild(row);
-      if (!detail.hidden) tbody.appendChild(detail);
+      // A folded task's detail row goes back in too, still hidden.
+      if (open.get(i)!.size > 0) tbody.appendChild(detail);
     }
   }
 
   // A task's row and its detail row (holding its open artifacts), plus the
-  // interaction that keeps them in sync with `opened`.
+  // interaction that keeps them in sync with `opened` and `folded`.
   function buildRows(
     t: TaskData,
     opened: Set<string>,
@@ -215,14 +272,22 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
     // Artifact boxes by kind, made on first open and kept while open.
     const boxes = new Map<string, HTMLElement>();
     const chipOf = new Map<string, HTMLElement>();
+    // The detail row is hidden but kept, open artifacts and all.
+    let folded = false;
 
-    // Reflect `opened` in the chips, the row, and the detail row.
+    // Reflect `opened` and `folded` in the chips, the row, and the detail row.
     const update = (): void => {
       for (const [kind, chip] of chipOf) {
         chip.setAttribute("aria-pressed", String(opened.has(kind)));
       }
-      if (t.artifacts.length > 0) row.setAttribute("aria-expanded", String(opened.size > 0));
-      // Keep artifacts in their own order, not the order they were opened.
+      if (opened.size === 0) folded = false; // nothing left to fold
+      row.classList.toggle(`${ROOT_CLASS}-row-folded`, folded);
+      if (t.artifacts.length > 0) {
+        row.setAttribute("aria-expanded", String(opened.size > 0 && !folded));
+      }
+      // Keep artifacts in their own order, not the order they were opened. A box
+      // moves only when out of place: moving one resets its scroll position.
+      let prev: HTMLElement | null = null;
       for (const art of t.artifacts) {
         let box = boxes.get(art.kind);
         if (!opened.has(art.kind)) {
@@ -237,25 +302,30 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
           });
           boxes.set(art.kind, box);
         }
-        detailCell.appendChild(box); // (re-)appending in order keeps them sorted
+        const at: ChildNode | null = prev ? prev.nextSibling : detailCell.firstChild;
+        if (at !== box) detailCell.insertBefore(box, at);
+        prev = box;
       }
-      detail.hidden = opened.size === 0;
-      if (detail.hidden) detail.remove();
+      // Folded, the detail row stays in place, hidden rather than detached.
+      if (folded && !detail.hidden) saveScroll(detail);
+      const unfolding = !folded && detail.hidden;
+      detail.hidden = folded;
+      if (opened.size === 0) detail.remove();
       else if (row.parentNode && row.nextSibling !== detail) row.after(detail);
+      if (unfolding) restoreScroll(detail);
     };
 
-    // Open every artifact of the task, or close them all if all are open.
-    const toggleAll = (): void => {
-      const allOpen = opened.size === t.artifacts.length;
-      opened.clear();
-      if (!allOpen) for (const a of t.artifacts) opened.add(a.kind);
+    // Fold / unfold the task's detail row; with no artifact open, open them all.
+    const toggleRow = (): void => {
+      if (opened.size === 0) for (const a of t.artifacts) opened.add(a.kind);
+      else folded = !folded;
       update();
     };
 
     if (t.artifacts.length > 0) {
       row.classList.add(`${ROOT_CLASS}-row-toggle`);
       row.tabIndex = 0;
-      row.title = "Toggle all artifacts";
+      row.title = "Show / hide artifacts";
       // Text stays selectable: a drag past DRAG_PX is a selection, not a click.
       // Every click of a double click toggles, so selecting a word by double
       // clicking leaves the row as it was; a triple click (selecting a line)
@@ -274,12 +344,12 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
           const sel = window.getSelection();
           if (sel && !sel.isCollapsed && row.contains(sel.anchorNode)) sel.removeAllRanges();
         }
-        toggleAll();
+        toggleRow();
       });
       row.addEventListener("keydown", (e) => {
         if (e.target !== row || (e.key !== "Enter" && e.key !== " ")) return;
         e.preventDefault();
-        toggleAll();
+        toggleRow();
       });
     }
 
@@ -302,6 +372,7 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
         e.stopPropagation(); // a chip toggles one artifact, not the row's
         if (opened.has(art.kind)) opened.delete(art.kind);
         else opened.add(art.kind);
+        folded = false; // so the click has a visible result
         update();
       });
       chipOf.set(art.kind, chip);

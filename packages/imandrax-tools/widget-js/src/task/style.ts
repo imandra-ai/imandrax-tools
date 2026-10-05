@@ -47,6 +47,9 @@ export const TASK_STYLE = `
   color: #6b727b; background: #fff; border: 1px solid #d8dde2; border-radius: 10px; }
 .${ROOT_CLASS}-chip:hover { color: #1a1d21; border-color: #b7c0c9; }
 .${ROOT_CLASS}-chip[aria-pressed="true"] { color: #1a1d21; background: #e3e8ee; border-color: #b7c0c9; }
+/* A folded task's open artifacts: still open, but out of sight. */
+.${ROOT_CLASS}-row-folded .${ROOT_CLASS}-chip[aria-pressed="true"] { color: #6b727b;
+  background: #f1f3f5; border-color: #d8dde2; }
 
 .${ROOT_CLASS}-detail > td { padding: 0 10px 8px; }
 .${ROOT_CLASS}-detail > td > * + * { margin-top: 6px; }
@@ -55,6 +58,8 @@ export const TASK_STYLE = `
 .${ROOT_CLASS}-art-head { display: flex; align-items: center; gap: 8px; padding: 4px 10px;
   cursor: pointer; user-select: none; }
 .${ROOT_CLASS}-art-head:hover { background: #f6f8fa; }
+.${ROOT_CLASS}-art-head:focus-visible { outline: 2px solid #b7c0c9; outline-offset: -2px; }
+.${ROOT_CLASS}-art-collapsed .${ROOT_CLASS}-scroll { display: none; }
 .${ROOT_CLASS}-art-kind { font-weight: 600; color: #1a1d21;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
