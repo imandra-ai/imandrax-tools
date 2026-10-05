@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.1.0] - 2026-10-05
 - **BREAKING** `gen_test_cases`: `decomp_name` is now an optional keyword argument after `lang`; exactly one of `decomp_name` (with optional `other_decomp_kwargs`) or `decomp_plan` must be given
 - FEAT: support composite decomp via `gen_test_cases(..., decomp_plan=...)`
 - FEAT: `gen_test_cases` accepts `compute_timeout`
