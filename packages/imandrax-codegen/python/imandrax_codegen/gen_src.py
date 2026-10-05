@@ -138,24 +138,36 @@ def gen_test_cases(
     other_decomp_kwargs: dict[str, Any] | None = None,
     decomp_plan: Decomp | None = None,
     # </one-of>
+    compute_timeout: int | None = None,
     imandrax_api_key: str | None = None,
     imandrax_env: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
-    either (decomp_name, other_decomp_kwargs) xor decomp_plan should be given
-    If decomp_plan is given, the original
+    `[@@decomp]` attributes in `iml` are ignored, so pass the decomposition explicitly.
+
+    Exactly one of `decomp_name` (optionally with `other_decomp_kwargs`) or
+    `decomp_plan` must be given.
 
     Args:
-        iml: input IML code to decompose. Decomp request requires to be passed in explicitly. Source decomp requests are ignored.
+        iml: input IML code to evaluate
         lang: target language (python or typescript)
         decomp_name: name of the function to decompose
-        other_decomp_kwargs: additional keyword arguments for the decompose request
-        decomp_plan: pre-computed decomp plan to use instead of a decomp request
+        other_decomp_kwargs: additional keyword arguments for `decompose`, only
+            valid with `decomp_name`
+        decomp_plan: decomposition plan for `decompose_full`, which can be
+            composite (merge, combine, ...)
+        compute_timeout: server-side timeout of the decomposition, in seconds
 
     Return:
         Tuple of (type declarations, test case definition)
     """
+    if (decomp_name is None) == (decomp_plan is None):
+        raise ValueError('Exactly one of `decomp_name` or `decomp_plan` must be given')
+    if decomp_plan is not None and other_decomp_kwargs is not None:
+        raise ValueError(
+            '`other_decomp_kwargs` can only be given together with `decomp_name`'
+        )
 
     env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
     url = url_dev if env == 'dev' else url_prod
@@ -176,37 +188,22 @@ def gen_test_cases(
     # - `prune=True` is required to get concrete sample points
     # - `string_results=True` is required: the artifact parser `art-parse`
     #   relies on the region string-representations being stored in the meta.
-    match decomp_name, other_decomp_kwargs, decomp_plan:
-        case None, _, None:
-            raise ValueError('Either `decomp_name` or `decomp_plan` must be given')
-        case decomp_name, other_decomp_kwargs, decomp_plan if (
-            decomp_name is not None and decomp_plan is not None
-        ):
-            raise ValueError(
-                'Either `decomp_name` or `decomp_plan` must be given, not both'
-            )
-        case decomp_name, other_decomp_kwargs, decomp_plan if (
-            other_decomp_kwargs is not None and decomp_plan is not None
-        ):
-            raise ValueError(
-                '`other_decomp_kwargs` can only be given when `decomp_name` is given'
-            )
-        case decomp_name, other_decomp_kwargs, _ if decomp_name is not None:
-            assert other_decomp_kwargs is not None, 'Never'
-            decomp_kwargs: dict[str, Any] = other_decomp_kwargs | {
-                'prune': True,
-                'string_results': True,
-            }
-            decomp_res: DecomposeRes = c.decompose(decomp_name, **decomp_kwargs)
-        case _, _, decomp_plan if decomp_plan is not None:
-            decomp_plan = _ensure_pruned(decomp_plan)
-            decomp_res: DecomposeRes = c.decompose_full(
-                decomp_plan, string_results=True
-            )
-        case _:
-            raise AssertionError(
-                f'Never: {decomp_name=} {other_decomp_kwargs=} {decomp_plan=}'
-            )
+    decomp_res: DecomposeRes
+    if decomp_plan is not None:
+        decomp_res = c.decompose_full(
+            _ensure_pruned(decomp_plan),
+            string_results=True,
+            compute_timeout=compute_timeout,
+        )
+    else:
+        assert decomp_name is not None, 'Never'
+        decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
+            'prune': True,
+            'string_results': True,
+        }
+        if compute_timeout is not None:
+            decomp_kwargs['compute_timeout'] = compute_timeout
+        decomp_res = c.decompose(decomp_name, **decomp_kwargs)
 
     decomp_art = decomp_res.artifact
     assert decomp_art, 'No artifact returned from decompose'

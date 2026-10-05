@@ -18,7 +18,9 @@ def _gen_test_cases(
     lang: Lang,
     other_decomp_kwargs: dict[str, Any] | None = None,
 ) -> str:
-    type_def, test_def = gen_test_cases(iml, decomp_name, lang, other_decomp_kwargs)
+    type_def, test_def = gen_test_cases(
+        iml, lang, decomp_name=decomp_name, other_decomp_kwargs=other_decomp_kwargs
+    )
     return join_code_parts([type_def, test_def])
 
 
