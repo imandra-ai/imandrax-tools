@@ -2,15 +2,15 @@
 """
 IPython/Jupyter cell magic for IML.
 
-Routes `%%iml` cell to a user-supplied imandrax-api client object and
-displays the result widgets (tasks, then one per `[@@decomp ...]`).
+Routes `%%iml` cell to a user-supplied imandrax-api client object's
+`eval_src` method and prints the result.
 
 Usage
 -----
 ````jupyter
 
 ```top-cell
-%load_ext imandrax_tools.widget.ipython_ext   # once per kernel session
+%load_ext imandrax_tools.widget.ipython_ext_v1   # once per kernel session
 %imandrax_client my_client      # once: name the client variable
 ```
 
@@ -18,8 +18,7 @@ Usage
 %%iml
 <iml source>
 ```
-<shows result widgets>
-
+<shows eval results>
 ````
 
 The client is resolved from the user namespace *by name* at execution time,
@@ -29,7 +28,9 @@ A single client is shared by every `%%iml` cell; the extension is loaded once.
 
 from __future__ import annotations
 
+from imandrax_api_models import EvalRes
 from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.context_utils import register_model_repr
 from IPython.core.error import UsageError
 from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 from IPython.core.magic_arguments import (
@@ -37,9 +38,6 @@ from IPython.core.magic_arguments import (
     magic_arguments,
     parse_argstring,
 )
-from IPython.display import display
-
-from imandrax_tools.widget.cell_repr import cell_widgets
 
 
 @magics_class
@@ -89,14 +87,19 @@ class IMLMagics(Magics):
         help='override the client variable for this cell only',
     )
     @cell_magic
-    def iml(self, line, cell) -> None:
+    def iml(self, line, cell) -> EvalRes:
         args = parse_argstring(self.iml, line)
         client = self._resolve_client(args.client)
-        for w in cell_widgets(client, cell):
-            display(w)
+        eval_res: EvalRes = client.eval_src(cell)
+        # Returning the value lets IPython render it via the rich repr installed
+        # by register_model_repr(), matching the notebook display.
+        return eval_res
 
 
 def load_ipython_extension(ipython):
+    # Install the pretty __repr__ on the model classes so %%iml output matches
+    # the notebook experience.
+    register_model_repr()
     ipython.register_magics(IMLMagics)
 
 
