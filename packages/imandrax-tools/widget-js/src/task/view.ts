@@ -263,7 +263,11 @@ export function drawTasks(root: HTMLElement, tasks: TaskData[]): void {
       let down: { x: number; y: number } | null = null;
       row.addEventListener("mousedown", (e) => (down = { x: e.clientX, y: e.clientY }));
       row.addEventListener("click", (e) => {
-        const moved = down ? Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_PX : false;
+        // Consume the press so a later click with no mousedown of its own
+        // (assistive tech, `row.click()`) isn't measured against it.
+        const start = down;
+        down = null;
+        const moved = start ? Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_PX : false;
         if (moved || e.detail > 2) return;
         // A sloppy single click may have selected a few characters; drop them.
         if (e.detail === 1) {

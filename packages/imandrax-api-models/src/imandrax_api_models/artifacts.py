@@ -171,7 +171,7 @@ def describe_res(artifacts: Mapping[str, XValue]) -> str | None:
         if w and (not words or words[-1] != w):
             words.append(w)
     if len(words) > 1 and words[0].lower() in ('error', 'success'):
-        words = [words[0], ':', *words[1:]]
+        words = [words[0] + ':', *words[1:]]
     return ' '.join(words) or None
 
 

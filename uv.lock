@@ -958,7 +958,7 @@ dev = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "20.0.1"
+version = "20.1.0"
 source = { editable = "packages/imandrax-codegen" }
 dependencies = [
     { name = "devtools" },
@@ -978,7 +978,7 @@ requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "imandrax-api", extras = ["async"], specifier = ">=0.20,<0.21" },
-    { name = "imandrax-api-models", editable = "packages/imandrax-api-models" },
+    { name = "imandrax-api-models", specifier = ">=20.8.1,<21" },
     { name = "iml-query", editable = "packages/iml-query" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },
