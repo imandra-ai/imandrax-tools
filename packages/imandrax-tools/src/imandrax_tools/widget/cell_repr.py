@@ -59,4 +59,8 @@ def cell_widgets(c: ImandraXClient, iml: str) -> list[anywidget.AnyWidget]:
     if ok:
         wgts.extend(decomp_widgets(c, iml))
 
+    # TODO(refa): if-else statements
+    if len(wgts) >= 2 and isinstance(wgts[0], JsonableWidget):
+        wgts = wgts[1:]
+
     return wgts

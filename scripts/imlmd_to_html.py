@@ -8,6 +8,8 @@
 # ]
 #
 # [tool.uv.sources]
+# # comment the following line to use the git source (lastest dev)
+# # imandrax-tools = { git = "https://github.com/imandra-ai/imandrax-tools.git", subdirectory = "packages/imandrax-tools" }
 # # imandrax-tools = { path = "../packages/imandrax-tools", editable = true }
 #
 # ///
