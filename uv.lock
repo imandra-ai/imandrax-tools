@@ -898,7 +898,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.10.0"
+version = "20.11.0"
 source = { editable = "packages/imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
@@ -958,8 +958,8 @@ dev = [
 
 [[package]]
 name = "imandrax-codegen"
-version = "20.0.1"
-source = { editable = "packages/imandrax-codegen" }
+version = "20.1.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
     { name = "dotenv" },
@@ -972,30 +972,15 @@ dependencies = [
     { name = "ruff" },
     { name = "typer" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "devtools", specifier = ">=0.12.2" },
-    { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20,<0.21" },
-    { name = "imandrax-api-models", editable = "packages/imandrax-api-models" },
-    { name = "iml-query", editable = "packages/iml-query" },
-    { name = "pydantic", specifier = ">=2.12.3" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "rich", specifier = ">=14.2.0" },
-    { name = "ruff", specifier = ">=0.14.3" },
-    { name = "typer", specifier = ">=0.21.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "inline-snapshot", specifier = ">=0.31.1" },
-    { name = "ipykernel", specifier = ">=7.0.1" },
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4c/83/5e1cd86f2b66907cb0a437039c278d75362016ae40150bb680a2e26b8857/imandrax_codegen-20.1.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:a757f7598a3128e595b3cc7030c79113e3ad6e2ca122d7117e05a4fb26f5e3f5", size = 3952175, upload-time = "2026-10-05T10:07:13.989Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/4a/74a25af4ae07cb982d1ec964a2b1f706d918bfdef670205ea51e6d025489/imandrax_codegen-20.1.0-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:39d629365a194a428585bdcf089715e2654db232f6915d08cf2ea614ee42a3cf", size = 6722179, upload-time = "2026-10-05T10:07:16.058Z" },
+    { url = "https://files.pythonhosted.org/packages/25/a2/c353e8415f43f9a743db90ebace4283e254d348fd6bec40a3d6a158c2e28/imandrax_codegen-20.1.0-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:65be354a5e997fb061645b56cef9bdf623112506f8d2839afdaf7737c3983c13", size = 5839029, upload-time = "2026-10-05T10:07:17.779Z" },
 ]
 
 [[package]]
 name = "imandrax-tools"
-version = "20.6.0"
+version = "20.7.1"
 source = { editable = "packages/imandrax-tools" }
 dependencies = [
     { name = "imandrax-api-models" },
@@ -1030,7 +1015,7 @@ requires-dist = [
     { name = "anywidget", marker = "extra == 'widget'", specifier = ">=0.11.0" },
     { name = "imandrax-api-models", editable = "packages/imandrax-api-models" },
     { name = "imandrax-api-models", extras = ["client"], marker = "extra == 'extended-client'", editable = "packages/imandrax-api-models" },
-    { name = "imandrax-codegen", marker = "extra == 'codegen'", editable = "packages/imandrax-codegen" },
+    { name = "imandrax-codegen", marker = "extra == 'codegen'", specifier = ">=20.0.0,<21.0.0" },
     { name = "iml-query", editable = "packages/iml-query" },
     { name = "pydantic", specifier = ">=2" },
     { name = "structlog", specifier = ">=24" },

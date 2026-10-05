@@ -1,0 +1,19 @@
+(* One snippet exercising every task level: proved (info), refuted and bounded
+   (warn), unproved (error), and several tasks per symbol. *)
+
+let rec sum_to n =
+  if n <= 0 then 0 else n + sum_to (n - 1)
+
+theorem sum_to_nonneg n = sum_to n >= 0 [@@by auto]
+
+let rec g x = if x > 10 then x else g (x + 1)
+
+verify (fun x -> g x > 10)
+
+verify (fun x -> x > 0 ==> sum_to x > x) [@@by auto]
+
+verify (fun x -> sum_to x = x * (x + 1) / 2) [@@upto 20]
+
+instance (fun x -> sum_to x = 15)
+
+theorem sum_to_hard n = n >= 0 ==> sum_to n * 2 = n * (n + 1) [@@by simp]

@@ -18,6 +18,11 @@ export const JSONABLE_STYLE = `
 
 .${ROOT_CLASS}-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px;
   background: #fafbfc; border-bottom: 1px solid #d8dde2; }
+.${ROOT_CLASS}-bar { cursor: pointer; user-select: none; }
+.${ROOT_CLASS}-bar:hover { background: #f6f8fa; }
+.${ROOT_CLASS}-bar:focus-visible { outline: 2px solid #b7c0c9; outline-offset: -2px; }
+.${ROOT_CLASS}-collapsed .${ROOT_CLASS}-bar { border-bottom: 0; }
+.${ROOT_CLASS}-collapsed .${ROOT_CLASS}-scroll { display: none; }
 .${ROOT_CLASS}-label { font-weight: 600; letter-spacing: 0.02em; }
 .${ROOT_CLASS}-meta { color: #6b727b; font-size: 11px; font-variant-numeric: tabular-nums; }
 .${ROOT_CLASS}-actions { margin-left: auto; display: flex; gap: 6px; }

@@ -60,7 +60,7 @@ export interface Edge {
   dst_id: number;
 }
 /**
- * RegionGroup but with `region` replaced with `region_stat`
+ * RegionGroup but with `region` replaced with its display stats (`RegionNonGroupStat`)
  */
 export interface RegionGroupView {
   /**
@@ -98,6 +98,22 @@ export interface TaskEntry {
   id: string;
   kind: string;
   artifacts: ArtifactEntry[];
+  /**
+   * Task result attention level
+   */
+  level: "debug" | "info" | "warning" | "error";
+  /**
+   * Description of the task, if known
+   */
+  task_descr?: string | null;
+  /**
+   * Description of the task result, if known
+   */
+  res_descr?: string | null;
+  /**
+   * Symbol the task originates from, if known
+   */
+  from_sym?: string | null;
   other?: JSONObject;
 }
 export interface ArtifactEntry {

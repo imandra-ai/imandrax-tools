@@ -1,3 +1,6 @@
+"""
+Register `repr_mimebundle` with widgets for `EvalRes`, `CodeSnippetEvalResult`, `DecomposeRes`, `EnrichedDecomposeRes`, `IDFView`.
+"""
 # pyright: reportPrivateUsage=false, reportUnknownMemberType=false, reportUnknownVariableType=false
 
 from __future__ import annotations
