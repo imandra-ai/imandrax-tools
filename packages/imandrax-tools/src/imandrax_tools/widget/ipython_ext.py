@@ -2,17 +2,23 @@
 """
 IPython/Jupyter cell magic for IML.
 
-Routes the body of any `%%iml` cell to a user-supplied imandrax-api client object's
+Routes `%%iml` cell to a user-supplied imandrax-api client object's
 `eval_src` method and prints the result.
 
 Usage
 -----
-```jupyter
+````jupyter
+
+```top-cell
 %load_ext imandrax_tools.widget.ipython_ext   # once per kernel session
 %imandrax_client my_client      # once: name the client variable
+```
+
+```later-cells
 %%iml
 <iml source>               # -> shows eval results
 ```
+````
 
 The client is resolved from the user namespace *by name* at execution time,
 so rebinding or mutating the bound object is reflected on the next cell.
@@ -43,6 +49,7 @@ class IMLMagics(Magics):
 
     @property
     def _ns(self):
+        """Namespace"""
         shell = self.shell
         if shell is None:  # only possible if constructed outside IPython
             raise UsageError('no active IPython shell')
@@ -79,7 +86,7 @@ class IMLMagics(Magics):
         help='override the client variable for this cell only',
     )
     @cell_magic
-    def iml(self, line, cell):
+    def iml(self, line, cell) -> EvalRes:
         args = parse_argstring(self.iml, line)
         client = self._resolve_client(args.client)
         eval_res: EvalRes = client.eval_src(cell)
