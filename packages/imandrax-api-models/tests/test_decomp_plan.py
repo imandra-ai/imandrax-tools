@@ -122,3 +122,19 @@ def test_plan_repr_hides_artifact_bytes():
     r = decomp.decomp_repr(plan)
     assert r == 'merge(from_artifact(mir.fun_decomp), by_name(f, prune))'
     assert 'twine' not in r
+
+
+def test_decomp_of_cst_refiners():
+    from iml_query.processing import get_decomp_reqs_
+
+    iml = (
+        'let f x = x\n[@@decomp ~| (top () << (top () |>> prune) [%id g] |>> prune)]\n'
+    )
+    _, reqs, _ = get_decomp_reqs_(iml)
+    plan, name, timeout = decomp.decomp_of_cst(reqs[0])
+    assert (name, timeout) == ('f', None)
+    assert plan == decomp.combine(
+        decomp.prune(
+            decomp.merge(decomp.by_name('f'), decomp.prune(decomp.by_name('g')))
+        )
+    )

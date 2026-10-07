@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+- FIX(decomp): in decomp arguments, module-qualified function names should be parsed in full
+- decomp: add parsing for `Combine` (`m |>> combine`) and `Prune` (`m |>> prune`)
+
 ## [0.14.1] - 2026-09-25
 - FIX(vg): VG with multiple attributes crashes
   - `verify` / `instance` statements with multiple item attributes (e.g. `[@@by auto] [@@timeout 10]`) produced one match per attribute, crashing `extract_verify_reqs` / `extract_instance_reqs` with `Overlapping nodes`. They now yield one request, with all attributes joined (space-separated) into `hints`.

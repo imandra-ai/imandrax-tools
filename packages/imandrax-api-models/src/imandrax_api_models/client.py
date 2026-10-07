@@ -528,6 +528,9 @@ class ImandraXClient(imandrax_api.Client):
                 iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
+                # NOTE: stripping parses each `[@@decomp ...]` payload, so one
+                # the parser rejects (e.g. `|>> enumerate ...`) raises
+                # `DecompParsingError` here even though we only want it gone.
                 iml, tree, _decomp_reqs, _ = extract_decomp_reqs_(iml, tree)
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
@@ -960,6 +963,9 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
                 iml, tree, _verify_reqs, _ = extract_verify_reqs(iml, tree)
                 iml, tree, _instance_reqs, _ = extract_instance_reqs(iml, tree)
             if not with_decomps:
+                # NOTE: stripping parses each `[@@decomp ...]` payload, so one
+                # the parser rejects (e.g. `|>> enumerate ...`) raises
+                # `DecompParsingError` here even though we only want it gone.
                 iml, tree, _decomp_reqs, _ = extract_decomp_reqs_(iml, tree)
             if not with_tests:
                 iml, tree, _test_reqs, _ = extract_test_reqs(iml, tree)
