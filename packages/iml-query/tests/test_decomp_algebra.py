@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING
 
 import pytest
 from iml_query.processing.decomp import (
+    Combine,
     CompoundMerge,
     DecompParsingError,
     DecompReqArgs_,
+    Prune,
     Top,
     apply_decomp,
     extract_decomp_reqs_,
@@ -315,9 +317,59 @@ class TestExtractDecompReq_:
             'timeout': 60,
         }
 
+    def test_extract_refine_prune(self):
+        req = self._extract_one('let f x = x\n[@@decomp top () |>> prune]')
+        assert req == {'name': 'f', 'decomp': Prune(m=Top())}
+
+    def test_extract_refine_combine(self):
+        req = self._extract_one('let f x = x\n[@@decomp top () |>> combine]')
+        assert req == {'name': 'f', 'decomp': Combine(m=Top())}
+
+    def test_extract_prefix_combine(self):
+        req = self._extract_one('let f x = x\n[@@decomp ~| (top ~prune:true ())]')
+        assert req == {'name': 'f', 'decomp': Combine(m=Top(prune=True))}
+
+    def test_extract_refine_is_left_associative_with_merge(self):
+        req = self._extract_one(
+            'let f x = x\n[@@decomp top () << top () [%id a] |>> prune]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': Prune(m=merge(Top(), apply_decomp(Top(), 'a'))),
+        }
+
+    def test_extract_composite_rhs(self):
+        req = self._extract_one(
+            'let f x = x\n[@@decomp top () << (top () |>> prune) [%id g]]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': merge(Top(), apply_decomp(Prune(m=Top()), 'g')),
+        }
+
     @pytest.mark.parametrize(
         ('iml', 'expected_msg'),
         [
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate (top () [%id g])]',
+                'no enumerate operation',
+                id='enumerate',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> foo]',
+                'unsupported refiner `foo`',
+                id='unknown-refiner',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp ~| top ()]',
+                'write `~| (top ())`',
+                id='prefix-combine-unparenthesized',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp foo ()]',
+                'expected a `top ... ()` application',
+                id='not-top',
+            ),
             pytest.param(
                 'let f x = x\n[@@decomp top () << top ()]',
                 'must be applied to an `[%id ...]`',
@@ -356,6 +408,9 @@ class TestDecompReqRoundTrip_:
             '[@@decomp top ~prune:true () << top ~ctx_simp:true () [%id bar]]',
             '[@@decomp top () << top () [%id a] << top () [%id b]]',
             '[@@decomp top () <|< top () [%id c]]',
+            '[@@decomp top () |>> prune]',
+            '[@@decomp top () << top () [%id a] |>> combine]',
+            '[@@decomp top () << (top ~prune:true () |>> prune) [%id g]]',
             '[@@decomp top ~assuming:[%id g] ~basis:[[%id g]; [%id h]] ()]',
         ],
     )

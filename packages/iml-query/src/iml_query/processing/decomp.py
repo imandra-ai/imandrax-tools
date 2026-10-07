@@ -143,7 +143,21 @@ class CompoundMerge:
     d1: LazyRet
 
 
-Decomp = Top | Merge | CompoundMerge
+@dataclass
+class Prune:
+    """`m |>> prune`."""
+
+    m: Decomp
+
+
+@dataclass
+class Combine:
+    """`m |>> combine`, or equivalently `~| m`."""
+
+    m: Decomp
+
+
+Decomp = Top | Merge | CompoundMerge | Prune | Combine
 
 
 @dataclass
@@ -283,10 +297,18 @@ def iml_of_decomp(d: Decomp) -> str:
             return f'{iml_of_decomp(m)} << {iml_of_lazy_ret(d1)}'
         case CompoundMerge(m=m, d1=d1):
             return f'{iml_of_decomp(m)} <|< {iml_of_lazy_ret(d1)}'
+        case Prune(m=m):
+            return f'{iml_of_decomp(m)} |>> prune'
+        case Combine(m=m):
+            return f'{iml_of_decomp(m)} |>> combine'
 
 
 def iml_of_lazy_ret(ret: LazyRet) -> str:
-    return f'{iml_of_decomp(ret.m)} {mk_id(ret.identifier)}'
+    m = iml_of_decomp(ret.m)
+    # Application binds tighter than any decomp operator
+    if not isinstance(ret.m, Top):
+        m = f'({m})'
+    return f'{m} {mk_id(ret.identifier)}'
 
 
 def iml_of_top(top: Top) -> str:
@@ -365,12 +387,34 @@ def _identifier_of_appl_expr_node(node: Node) -> str | None:
     return None
 
 
+def _check_top_head(node: Node) -> None:
+    """Reject applications whose head is not `top`, e.g. `~| top ()`."""
+    assert node.type == 'application_expression'
+
+    head = node.named_children[0]
+    if head.type == 'prefix_expression':
+        # Prefix operators bind tighter than application
+        raise DecompParsingError(
+            '`~| top ()` parses as `(~| top) ()`; write `~| (top ())`'
+        )
+    head_text = unwrap_bytes(head.text).decode('utf8')
+    if head.type != 'value_path' or head_text.split('.')[-1].strip() != 'top':
+        raise DecompParsingError(
+            f'expected a `top ... ()` application, got one of `{head_text}`'
+        )
+
+
 def _lazy_ret_of_appl_expr_node(node: Node) -> LazyRet:
-    """Parse `top ... () [%id x]` — a `Decomp.m` applied to an identifier."""
+    """
+    Parse a `Decomp.m` applied to an identifier.
+
+    Either `top ... () [%id x]`, or a parenthesized composite decomp such as
+    `(top () |>> prune) [%id x]`.
+    """
     if node.type != 'application_expression':
         raise DecompParsingError(
-            'right operand of `<<` / `<|<` must be a `top ... () [%id ...]` '
-            f'application, got a `{node.type}`'
+            'right operand of `<<` / `<|<` must be a decomp applied to an '
+            f'`[%id ...]`, got a `{node.type}`'
         )
 
     identifier = _identifier_of_appl_expr_node(node)
@@ -378,16 +422,53 @@ def _lazy_ret_of_appl_expr_node(node: Node) -> LazyRet:
         raise DecompParsingError(
             'right operand of `<<` / `<|<` must be applied to an `[%id ...]`'
         )
+
+    head = node.named_children[0]
+    if head.type == 'parenthesized_expression':
+        if len(node.named_children) != 2:
+            raise DecompParsingError(
+                'a parenthesized decomp must be applied to exactly one `[%id ...]`'
+            )
+        return LazyRet(m=_decomp_of_expr_node(head), identifier=identifier)
+
+    _check_top_head(node)
     return LazyRet(m=_top_of_appl_expr_node(node), identifier=identifier)
+
+
+_REFINERS: dict[str, type[Prune] | type[Combine]] = {
+    'prune': Prune,
+    'combine': Combine,
+}
+
+
+def _refined_of_expr_node(m: Decomp, refiner: Node) -> Decomp:
+    """Parse the right operand of `m |>> refiner`."""
+    head = refiner
+    while head.type == 'application_expression':
+        head = head.named_children[0]
+    name = unwrap_bytes(head.text).decode('utf8').split('.')[-1].strip()
+
+    if refiner.type == 'value_path' and name in _REFINERS:
+        return _REFINERS[name](m=m)
+    if name in ('enumerate', 'enumerate_', 'enumerate_all', 'enumerate_all_'):
+        raise DecompParsingError(
+            f'`|>> {name} ...` is not supported: the decompose plan has no '
+            'enumerate operation'
+        )
+    raise DecompParsingError(
+        f'unsupported refiner `{unwrap_bytes(refiner.text).decode("utf8")}` '
+        f'right of `|>>`; expected one of {sorted(_REFINERS)}'
+    )
 
 
 def _decomp_of_expr_node(node: Node) -> Decomp:
     """
     Parse a decomp algebra expression node into a `Decomp`.
 
-    Handles a bare `top ... ()` plus the `<<` (merge) and `<|<`
-    (compound merge) operators. Both are left-associative, so
-    `a << b << c` nests as `Merge(Merge(a, b), c)`.
+    Handles a bare `top ... ()`, the `<<` (merge), `<|<` (compound merge) and
+    `|>>` (refine with `prune` / `combine`) operators, and the prefix `~|`
+    (combine). The infix operators share one precedence level and are
+    left-associative, so `a << b |>> prune` nests as `Prune(Merge(a, b))`.
     """
     if node.type == 'application_expression':
         if _identifier_of_appl_expr_node(node) is not None:
@@ -397,6 +478,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
                 'decomp payload is applied to an `[%id ...]`; expected a '
                 'decomp (`top ... ()`), not a decomp result'
             )
+        _check_top_head(node)
         return _top_of_appl_expr_node(node)
 
     if node.type == 'infix_expression':
@@ -408,17 +490,30 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
         lhs, operator, rhs = operands
         op = unwrap_bytes(operator.text).decode('utf8')
 
-        m = _decomp_of_expr_node(lhs)
-        d1 = _lazy_ret_of_appl_expr_node(rhs)
         match op:
             case '<<':
-                return Merge(m=m, d1=d1)
+                return Merge(
+                    m=_decomp_of_expr_node(lhs), d1=_lazy_ret_of_appl_expr_node(rhs)
+                )
             case '<|<':
-                return CompoundMerge(m=m, d1=d1)
+                return CompoundMerge(
+                    m=_decomp_of_expr_node(lhs), d1=_lazy_ret_of_appl_expr_node(rhs)
+                )
+            case '|>>':
+                return _refined_of_expr_node(_decomp_of_expr_node(lhs), rhs)
             case _:
                 raise DecompParsingError(
-                    f'unsupported decomp operator `{op}`; expected `<<` or `<|<`'
+                    f'unsupported decomp operator `{op}`; expected `<<`, `<|<` or `|>>`'
                 )
+
+    if node.type == 'prefix_expression':
+        operator, operand = node.named_children
+        op = unwrap_bytes(operator.text).decode('utf8')
+        if op != '~|':
+            raise DecompParsingError(
+                f'unsupported decomp prefix operator `{op}`; expected `~|`'
+            )
+        return Combine(m=_decomp_of_expr_node(operand))
 
     if node.type == 'parenthesized_expression':
         inner = next((c for c in node.named_children), None)
