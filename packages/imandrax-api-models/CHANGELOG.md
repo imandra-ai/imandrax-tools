@@ -4,6 +4,8 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+- proto-models: add `Combine` and `Prune` transformation from treesitter nodes to API instances
+
 ## [20.11.0] - 26-09-24
 - Tasks data representation: add `level` and `from_sym`; adapt widget
 

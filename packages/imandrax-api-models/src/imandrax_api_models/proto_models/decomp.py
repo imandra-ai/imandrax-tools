@@ -342,13 +342,15 @@ def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
     Convert a CST decomp applied to the identifier `name`.
 
     The CST algebra keeps the decomposition unapplied: a `Decomp.m` is a
-    function from an identifier to a result, and `<<` / `<|<` compose on the
-    left of that application. So `name` is threaded down the left spine, while
+    function from an identifier to a result, and `<<` / `<|<` / `|>>` compose
+    on the left of that application. So `name` is threaded down the left spine, while
     each right operand is a `LazyRet` carrying its own identifier.
     """
     from iml_query.processing.decomp import (
+        Combine as CombineCST,
         CompoundMerge as CompoundMergeCST,
         Merge as MergeCST,
+        Prune as PruneCST,
         Top as TopCST,
     )
 
@@ -373,6 +375,10 @@ def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
                 d1=_decomp_of_cst(d.m, name),
                 d2=_decomp_of_cst(d.d1.m, d.d1.identifier),
             )
+        case PruneCST():
+            return Prune(d=_decomp_of_cst(d.m, name))
+        case CombineCST():
+            return Combine(d=_decomp_of_cst(d.m, name))
         case _:
             assert_never(d)
 
