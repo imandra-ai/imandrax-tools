@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from imandrax_tools.iml_eval_corpus.query_protocol import QueryModule
 
-    from corpus.decomp_asm_sig_mismatch import query as _decomp_asm_sig_mismatch
     from corpus.function_in_composite_type import query as _function_in_composite_type
     from corpus.general_termination_proof_error import (
         query as _general_termination_proof_error,
@@ -44,7 +43,6 @@ if TYPE_CHECKING:
     )
 
     _CHECKS: list[QueryModule] = [
-        _decomp_asm_sig_mismatch,
         _function_in_composite_type,
         _general_termination_proof_error,
         _infix_op_missing_paren,

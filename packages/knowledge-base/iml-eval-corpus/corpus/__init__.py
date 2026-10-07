@@ -1,7 +1,6 @@
 from imandrax_api_models import EvalRes
 from imandrax_tools.iml_eval_corpus.common import BaseDiag
 
-from .decomp_asm_sig_mismatch.query import check as check_decomp_asm_sig_mismatch
 from .function_in_composite_type.query import check as check_function_in_composite_type
 from .general_termination_proof_error.query import (
     check as check_general_termination_proof_error,
@@ -33,7 +32,6 @@ from .unknown_id_ocaml_stdlib_sys_int_size.query import (
 )
 
 check_fns = (
-    check_decomp_asm_sig_mismatch,
     check_function_in_composite_type,
     check_general_termination_proof_error,
     check_infix_op_missing_paren,
