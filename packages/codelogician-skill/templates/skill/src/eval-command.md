@@ -21,4 +21,4 @@ eval "hello" ^ " world" (* "hello world" *)
 
 - `eval` takes an expression, not a binding (unlike `let`)
 - CodeLogician CLI's `check` subcommand reports one result per `eval`, in source order, under `eval_result_1`, `eval_result_2`, ... with the value in the `value_as_ocaml` field.
-    - Note that `eval <expr>` as a syntaxic structure has no direct relation with "eval" in `codelogician eval ...`.
+- Note: `eval <expr>` as a syntaxic structure has no direct relation with "eval" in `codelogician eval ...`.
