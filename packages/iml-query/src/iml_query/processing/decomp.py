@@ -215,9 +215,7 @@ def _top_of_appl_expr_node(node: Node) -> Top:
                     (attribute_id)
                     (attribute_payload
                         (expression_item
-                            (value_path
-                                (value_name) @id
-                            )
+                            (value_path) @id
                         )
                     )
                 )

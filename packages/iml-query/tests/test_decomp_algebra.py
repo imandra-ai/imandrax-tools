@@ -294,6 +294,17 @@ class TestExtractDecompReq_:
             ),
         }
 
+    def test_extract_keeps_module_path_of_basis_and_rule_specs(self):
+        """`[%id Lib.g]` is kept as `Lib.g`, not truncated to `g`."""
+        req = self._extract_one(
+            'let f x = x\n'
+            '[@@decomp top ~basis:[[%id Lib.g]; [%id A.B.h]; [%id k]] ~rule_specs:[[%id Lib.r]] ()]'
+        )
+        assert req == {
+            'name': 'f',
+            'decomp': Top(basis=['Lib.g', 'A.B.h', 'k'], rule_specs=['Lib.r']),
+        }
+
     def test_extract_with_timeout(self):
         req = self._extract_one(
             'let f x = x\n[@@decomp top () << top () [%id bar]]\n[@@timeout 60]'
