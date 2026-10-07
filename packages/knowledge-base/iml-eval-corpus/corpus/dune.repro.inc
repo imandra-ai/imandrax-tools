@@ -3,9 +3,12 @@
  (deps (:in repro.iml))
  (target eval_res.json)
  (action
-  (with-stdout-to
-   %{target}
-   (run iml-eval-corpus-imx-eval %{in}))))
+  (progn
+   (with-stdout-to
+    %{target}
+    (run iml-eval-corpus-imx-eval %{in}))
+   ; Guard against caching an empty result (e.g. a broken tool env)
+   (run test -s %{target}))))
 
 ; Assert the expected failure in eval_res.json
 (rule

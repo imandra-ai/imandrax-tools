@@ -10,7 +10,7 @@ tag:
 Since IML serves as both a programming language and a logic, function termination must be provable:
 
 - *Every* `let rec` definition triggers a termination proving task. All recursive functions need to be *admitted* before they can be used. The admission includes proving termination.
-- For common recursion patterns, termination is proven automatically. When no custom measure is given, ImandraX's heuristics will select the first argument that is tested in every branch, i.e., automatic measure synthesis will try a measure with a single argument.
+- For common recursion patterns, termination is proven automatically. When no custom measure is given, ImandraX's heuristics pick a single argument for the measure.
 - When default measure is not sufficient, provide explicit termination measures using `[@@measure ...]` or `[@@adm ...]`.
 
 **Ordinals in Termination Proofs:**
@@ -22,9 +22,9 @@ Quick Decision Tree:
 ```
 Is your function rejected for termination?
 ├─ Does it use structural recursion on datatypes?
-│   └─ Should work automatically. Check recursion structure.
+│   └─ Usually automatic, if the default measure picks the shrinking argument (see below).
 ├─ Does it have simple decreasing integer arguments?
-│   └─ Should work automatically. Verify the decrease.
+│   └─ Usually automatic, if the default measure picks the decreasing argument (see below).
 ├─ Do arguments decrease lexicographically?
 │   └─ Use `[@@adm arg1, arg2, ...]`
 └─ Need custom measure?
@@ -51,7 +51,21 @@ let rec countdown x =
 (* Works automatically *)
 ```
 
-NOTE: When no custom measure is given, ImandraX's heuristics will select the first argument that is tested in every branch, i.e., automatic measure synthesis will try a measure with a single argument.
+## How the default measure is chosen
+
+With no `[@@measure]`/`[@@adm]`, ImandraX measures a single argument: the first one appearing in a condition that leads to a recursive call (a `match`, an `if`, or a guard like `x = s && f ...`). No other argument is tried. So an earlier argument in a guard can take the place of a later one that actually shrinks:
+
+```iml
+(* Fails: measure is on `s`, not `tr`. Admits with `[@@adm tr]`. *)
+let rec chain (s : int) (tr : int list) : bool =
+  match tr with
+  | [] -> true
+  | i :: rest -> i = s && chain (i + 1) rest
+```
+
+An int argument is measured as `max 0 x`, so a base case of `x <= 0` admits but `x = 0` does not.
+
+Advanced: When the default fails ("Goal is counter-satisfiable"), the chosen argument is visible in the subgoal's `<<` conclusion, e.g. `<< (Int if s' >= 0 then s' else 0) (Int if s >= 0 then s else 0)`.
 
 ## Example: Lexicographic Ordering with `[@@adm]`
 
@@ -105,7 +119,7 @@ standard idiom, used on nearly every int-recursion:
 
 ```iml
 let rec real_pow (g : real) (n : int) : real =
-  if n <= 0 then 1.0 else Real.(g * real_pow g (n - 1))
+  if n <= 0 then 1.0 else g *. real_pow g (n - 1)
 [@@measure Ordinal.of_int (max 0 n)]
 ```
 

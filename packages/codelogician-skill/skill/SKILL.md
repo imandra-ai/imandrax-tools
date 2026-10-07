@@ -40,8 +40,7 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
 │   ├── bypass-verification-completely.md # Last resort to bypass verification completely using `[@@no_validate]`. Don't use this unless you absolutely have the reason to.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
-│   ├── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
-│   └── unit-testing.md # Writing unit tests (in the context of regular software development) in IML using `verify` with `ground_eval` and `expand`. Can be useful in incrementally building up IML projects.
+│   └── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
 ├── error-fix-data/ # Data for common error and fix
 │   └── README.md # IML error and fixes database. Provides `error_corpus.json`, a collection of common IML errors and their fixes. Search it using jq or grep to find relevant errors and their fixes.
 ├── extended-prelude/
@@ -71,12 +70,16 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── statement-engineering.md # How to state theorems and choose encodings so they are provable in ImandraX. Witness functions instead of existentials, division-free forms, executable predicates, totalization, and more. Read this BEFORE formalizing any non-trivial property — a hard proof is usually won or lost at the statement.
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
-├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
-├── eval-command.md # The `eval <expr>` syntax evaluates a closed IML expression and prints its value. Use it for quick REPL-style sanity checks while developing IML.
+├── async-workflow.md # Async-only workflow for submitting tasks non-blockingly and polling for results. A common way to tackle timeouts.
+├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX. Includes installation guide, `--json` output, `--async-only` workflow.
+├── eval-command.md # The `eval <expr>` syntax evaluates a closed IML expression and prints its value. With `--task-filter=anonymous`, you can only run `eval` computation and ignores all verification as if you are running a script. With `--json`, you can write test cases by computation as if you are unit-testing regular programs.
 ├── iml-language-guide.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
+├── python-libraries.md # Python libraries for programmatically interacting with ImandraX. `imandrax-api-models` for client, `iml-query` for treesitter-based IML code manipulation.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
+├── task-and-artifacts.md # Conceptual guide about tasks and artifacts
 ├── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module. Every `let rec` definition triggers a termination proving task. Read this when the default termination proving heuristics fail.
+├── timeouts.md # HTTP connection timeout and compute budget timeout when communicating with ImandraX (via `codelogician` CLI or Python libs).
 └── verification-with-verify-and-instance.md # Basic verification (prove a property or find a counter-example) with `verify` and `instance` commands.
 ```
 
