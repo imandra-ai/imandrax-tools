@@ -6,7 +6,7 @@ description: Notes and practical guidance for writing proofs in IML.
 # Facts
 
 - When there's no tactic attached to a definition, `unroll` is used by default.
-- Known issue as of 26-07-20: `expand "f"` ignores module `open` and needs the qualified name. Alternatively, use `[%expand (f …)]`.
+- The string form expand, `expand "f"`, always requires a fully quantified name. i.e., even if `open Foo` exists, `expand "Foo.bar"` is needed. In constrast, `[%expand f]` exists and it takes a term argument, which means it can be used with a local name like `[%expand bar]`.
 
 # Practices
 
