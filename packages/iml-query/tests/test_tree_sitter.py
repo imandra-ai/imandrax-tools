@@ -1,6 +1,4 @@
 # pyright: basic
-from inline_snapshot import snapshot
-
 from iml_query.tree_sitter_utils import (
     get_nesting_relationship,
     get_parser,
@@ -9,6 +7,7 @@ from iml_query.tree_sitter_utils import (
     run_query,
     unwrap_bytes,
 )
+from inline_snapshot import snapshot
 
 
 def test_get_nesting_relationship():

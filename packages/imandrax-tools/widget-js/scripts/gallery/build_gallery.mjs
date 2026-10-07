@@ -23,9 +23,9 @@ const examples = [];
 for (const file of readdirSync(fixtureDir).sort()) {
   if (!file.endsWith(".widget_input.json")) continue;
   // Filenames are `<type>.<name>.[<fn>.]iml.widget_input.json`.
-  const [type, name] = file.split("."); // e.g. "decomp","simple" / "tasks","admit_rec"
+  const [type, name, fn] = file.split("."); // e.g. "decomp","simple","classify" / "tasks","admit_rec","iml"
   const data = JSON.parse(readFileSync(resolve(fixtureDir, file), "utf8"));
-  examples.push({ name, type, data });
+  examples.push({ name, type, fn: fn === "iml" ? null : fn, data });
 }
 
 const result = await build({

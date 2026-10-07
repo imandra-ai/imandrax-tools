@@ -1,0 +1,43 @@
+name: list_operations
+iml: |
+  let list_check = fun xs ->
+    match xs with
+    | [] -> 0
+    | [x] -> x
+    | x :: y :: _ -> x + y
+decomp_kwargs:
+  name: list_check
+  prune: true
+  string_results: true
+regions:
+- model_str:
+    xs: '[]'
+  model_eval_str: '0'
+  invariant_str: '0'
+  constraints_str:
+  - xs = []
+- model_str:
+    xs: '[0]'
+  model_eval_str: '0'
+  invariant_str: List.hd xs
+  constraints_str:
+  - xs <> []
+  - List.tl xs = []
+- model_str:
+    xs: '[1; 0]'
+  model_eval_str: '1'
+  invariant_str: List.hd xs + List.hd (List.tl xs)
+  constraints_str:
+  - List.tl xs <> []
+  - xs <> []
+decomp_res:
+  artifact:
+    kind: mir.fun_decomp
+    data: YGBgsEhta19zX2ludLP6YkNpbnT2wwL3/wZh9bFHdHkubGlzdLP5YkRsaXN098MC+P8HYGH/EMACHy6gYkFh97D0YfLDAv8P9WH9YvL4sUVjLm5pbLP3YkJbXfVi9f8DY/T/Hv8mxQP3/yYCY/b/MAJgYGLx/zfAAh+V2i+gYkJ4c/pi9f8CY/T/CP9NYvb/E2H0YGbx9P+GAQEA/4wBsfu0QTBiSm1vZGVsX2V2YWz+tEEwYklpbnZhcmlhbnT9tEd4cyA9IFtdYfm38mJLY29uc3RyYWludHP+tEJbXWJCeHP3YfW18mJFbW9kZWz4ZP89/y//GP61+GJDc3Ry9rb/hQFiQnhz92H1tfJiRW1vZGVs+LJQsPJj8v/2AQK29mJKbW9kZWxfZXZhbP20TxVlNjIwMWFjNi03YmU2LTRhNWEtYjU1YS1iMzgwODhhMGM5OWViQmlk/xtk/1L/Qf8v/GCwSW1rX3NfYm9vbLP7YkRib29s98MC+P8IYv/wAf/DArP3Y/L/ygICYGH/6QLAAh8EoGJBYfew9GHywwL/6QL2Yf5i8vli/8MC9mP1/xP/9AK092Py//sCAsIC9/8kY/X/hgMCYv8z+MEDAv+RA/9KwQMC/5kD/WH/ngPAAh8FoGJBYfew9MEDAvT/ZsEDAvr5Yf8CYvP5sEVta19lcbP3YkE99GL0/wJj9P8j/yy09mPy/zICwgL2/0Rj9f+YAQJh9mTy//8B/8AB//8CYGBi/4sC/7sDwQMC//8D/4IEwQMC/6EE/mH/pgTBAwL//QP/gATBAwL/igT+Yf+TBGL0/LFGYy5jb25zs/hiQjo69WL1/wRj9P8g/ynFA/f/PgJj9v/IBAJgYGLx/9AEYv+EBPhj9f3/2wRi9v8KYfRgZvH0/2QBAP9psfm0QTBiSm1vZGVsX2V2YWz+tEpMaXN0LmhkIHhzYklpbnZhcmlhbnT/B7RIeHMgPD4gW120TwBMaXN0LnRsIHhzID0gW11i/w3/Bbf1Yktjb25zdHJhaW50c/60Q1swXWJCeHP4YfW18mJFbW9kZWz4ZP9e/0f/Gf61+GJDc3Ry9rb/mwFiQnhz92H1tfJiRW1vZGVs+Lb/mwRiSm1vZGVsX2V2YWz/ALRPFTA3MjA3OWQyLTgxYzktNGI5Zi04MWUwLWVkNDk1ZmY5NGM3OGJCaWT/G2T/S/86/zD8Yf/1A8EDAv/TBv/vBmH/8wbAAh8LoGJBYfew9GHywwL/8wb2wQMC+P1h/wRi8/mwSm1rX2xpc3RfaGSz/GJHTGlzdC5oZPpi+v8NY/T/MP87tPZj8v9BAsIC9v9LY/X/xAcCYGH/ygfAAh8GoGJBYfew9GHywwL/ygf2Yf5i8vli/6QH9mP1/xP/1Qe092Py/9wHAsIC9/8kY/X/5wcCYv+UBflh//EHwAIfB6BiQWH3sPTBAwL0/7kFwQMC+/ph/wNi8/mwRm1rX25lcbP4YkI8PvVi9f8EY/T/Jv+CBbT3Y/L/iQUCwgL3/ztj9f/wBQJh/+cFYf/cCMACHwigYkFh97D0YfLDAv/cCPbBAwL4+WH/BGLz+bBKbWtfbGlzdF90bLP8YkdMaXN0LnRs+mL6/w1j9P8w//gEtPdj8v//BALCAvf/RGP1/5YJAmBh/7UJwAIfCaBiQWH3sPRh8sMC/7UJ9mH+YvL5Yv+PCfZj9f8T/8AJtPdj8v/HCQLCAvf/JGP1/9IJAmL/M/hh/9sJwAIfCqBiQWH3sPTBAwL0/6MHwQMC+/ph/wNi8/li/6YG9mP1/xj/3ga092Py/+UGAsIC9/8sY/X/zAcCYv/TAflk9f/oAv/QA/+pBWBgslgCAAAAAAAAALD6Y/L/0woCYvb/6gVh/90KYf+6CmL0/6QGYv+QBvhj9f8E/8QGxQP4/xECY/b/5AoCYGBi8f/sCmL/oAr4Y/X9//cKYvb/CmH0YGbx9P9JAQD/TrH5tEExYkptb2RlbF9ldmFs/rRPEkxpc3QuaGQgeHMgKyBMaXN0LmhkIChMaXN0LnRsIHhzKWJJaW52YXJpYW50/x+0TwFMaXN0LnRsIHhzIDw+IFtdtEh4cyA8PiBbXWL/Dvy39GJLY29uc3RyYWludHP+tEZbMTsgMF1iQnhz+2H1tfJiRW1vZGVs+GT/ef9K/xz+tfhiQ3N0cva2/7YBYkJ4c/dh9bXyYkVtb2RlbPi2//UBYkptb2RlbF9ldmFs/wC0TxVjNmUzNGFlZS02Njg0LTQ0YzgtOGQyZS0wM2FjNDIxNDhiMGViQmlk/xtk/0v/Ov8w/GH/4APCAv/aBfhj9v+oDQJi/9sF+cEDAv+0Df+3DcEDAv+9Df5gYGLx+rBIbWtfaV9hZGSz+mJBK/Ri9P8FY/T/C/8UtPZj8v8aAsIC9v8uY/X/7g0CYGH/9A3AAh8MoGJBYfew9GHywwL/9A32Yf5i8vli/84N9mP1/xP//w2092Py/4YOAsIC9/8kY/X/kQ4CYv/yBPlh/5sOwAIfDaBiQWH3sPTBAwL0/+MLwQMC+/ph/wNi8/li/5EG9mP1/xj/ngu092Py/6ULAsIC9/8tY/X/jAwCYGH/9Q7AAh8OoGJBYfew9GHywwL/9Q72Yf5i8vli/88O9mP1/xP/gA+092Py/4cPAsIC9/8kY/X/kg8CYv+/DPlh/5wPwAIfD6BiQWH3sPTBAwL0/+QMwQMC+/ph/wNi8/li/5IH9mP1/xj/nwy092Py/6YMAsIC9/8tY/X/jQ0CYv94+GT0//4B/9kC/80EY//zC/+/Bf8CYv+kD//3D2H3XxGQ8QBRcA4IjfsvOlvCOQhwaFNWtzu+Y5KDeJp026GhH2NKbGlzdF9jaGVja/8eAYb/ALLzYkpsaXN0X2NoZWNr/WP9/zf/SQU=
+    api_version: v20
+    storage: []
+  task:
+    id:
+      id: task:decomp:8vO9Gt6S-z3eqX7ld17r7zdMAvoao7ZtkV9gKKjUsys=
+    kind: TASK_DECOMP
+  errors: []

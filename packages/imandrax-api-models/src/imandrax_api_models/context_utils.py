@@ -388,17 +388,25 @@ def remove_fields_rec(
         replace_with (Either[None, Any]): If provided, the field is replaced with this value instead of being removed.
 
     """
+
+    def go(v: Any) -> Any:
+        if isinstance(v, dict):
+            return remove_fields_rec(
+                cast(dict[str, Any], v), remove_fields, replace_with
+            )
+        if isinstance(v, list):
+            return [go(x) for x in cast(list[Any], v)]
+        return v
+
     data = data.copy()
     for k in list(data.keys()):
-        v = data[k]
         if k in remove_fields:
             if replace_with[0] == 'left':
                 data.pop(k)
             else:
                 data[k] = replace_with[1]
-        elif isinstance(v, dict):
-            v = cast(dict[str, Any], v)
-            data[k] = remove_fields_rec(v)
+        else:
+            data[k] = go(data[k])
     return data
 
 
@@ -506,7 +514,7 @@ def jsonable_of_model(model: FormattableModel) -> JSONValue:
         case DecomposeRes():
             try:
                 return jsonable_of_model(EnrichedDecomposeRes.from_decomp_res(model))
-            except Exception:
+            except Exception:  # noqa: BLE001, RUF100
                 return format_decomp_res(model)
         case ErrorMessage():
             return format_error_msg(model)

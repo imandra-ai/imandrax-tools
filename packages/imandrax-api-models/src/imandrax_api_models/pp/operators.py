@@ -1,3 +1,4 @@
+# ruff: noqa: PIE810, RUF100
 """
 Operator-precedence info for ImandraX (MIR) terms, used to drive parenthesisation in `term_formatter`.
 

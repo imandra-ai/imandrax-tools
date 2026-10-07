@@ -1,13 +1,13 @@
 ---
 name: codelogician-cli
-description: Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX and access additional features.
+description: Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX. Includes installation guide, `--json` output, `--async-only` workflow.
 ---
 
 # `codelogician-lite` / `codelogician` CLI
 
 ## Installation
 
-- Installation commands:
+- Installation options:
   - `curl -fsSL https://codelogician.dev/codelogician/install.sh | sh`
   - `uv tool install codelogician`
   - `pip install codelogician`
@@ -20,15 +20,14 @@ codelogician-lite --help
 
 `IMANDRA_UNI_KEY` or `IMANDRAX_API_KEY` needs to be set in the environment variables.
 
-## Usage
+`codelogician eval` will be the main workhorse
 
-All commands accept a `FILE` argument (path to an IML file, or `-` to read from stdin) and a `--json` flag to output results in JSON format.
+See other environment variables guide in `codelogician eval --help`
 
-Important: Refer to `--help` for arguments and options of each command.
+## Store JSON for later programmatic interaction
 
-### Store JSON for later programmatic interaction
+It can he helpful to store the JSON output of the command you are running for later programmatic interaction, e.g., to use `jq` or a Python script to filter or manipulate the output. Useful to persist time-consuming commands to disk for later structured analysis.
 
-It can he helpful to store the JSON output of the command you are running for later programmatic interaction, e.g., to use `jq` (or a Python script) to filter or manipulate the output. Reasons for doing so include:
-- Some commands (e.g., `check-decomp` for a function with large state-space) can take a long time to run
-- Some results are convoluted and need to be filtered or manipulated for further analysis
-- Parallizing multiple commands (e.g., `check-vg` and `check-decomp` for different index) can be useful
+## `--async-only` + `list-artifacts` + `get-artifact` workflow
+
+Very useful for long-running commands that can timeout.

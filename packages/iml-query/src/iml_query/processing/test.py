@@ -64,9 +64,7 @@ def extract_test_reqs(
         node=root,
     )
 
-    test_captures = [
-        TestCapture.from_ts_capture(capture) for _, capture in matches
-    ]
+    test_captures = [TestCapture.from_ts_capture(capture) for _, capture in matches]
     req_and_range: list[tuple[TestReqArgs, Range]] = [
         test_capture_to_req(capture) for capture in test_captures
     ]

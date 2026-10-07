@@ -222,7 +222,7 @@ describe("jsonable/view", () => {
     expect(open).toEqual([true, true, true, false]);
   });
 
-  it("expands and collapses everything from the toolbar", () => {
+  it("unfolds and folds everything from the toolbar", () => {
     const el = render(DOC);
     const btn = (text) =>
       [...el.querySelectorAll(".imdx-jsonable-btn")].find(
@@ -230,10 +230,19 @@ describe("jsonable/view", () => {
       );
     const folds = [...el.querySelectorAll(".imdx-jsonable-fold")];
 
-    btn("expand all").click();
+    btn("unfold all").click();
     expect(folds.every((f) => f.open)).toBe(true);
-    btn("collapse all").click();
+    btn("fold all").click();
     expect(folds.some((f) => f.open)).toBe(false);
+  });
+
+  it("leaves out the fold buttons when nothing can fold", () => {
+    for (const flat of ["42\n", "res: Some 40.\nstatus: ok\n", "- a\n- b\n"]) {
+      const labels = [...render(flat).querySelectorAll(".imdx-jsonable-btn")].map(
+        (b) => b.textContent,
+      );
+      expect(labels).toEqual(["copy"]);
+    }
   });
 
   it("shows the label and line count in the toolbar", () => {
@@ -300,7 +309,7 @@ describe("jsonable/view on real to_yaml_str output", () => {
     const block = el.querySelector(".imdx-jsonable-block");
     // `repr: |-` opens the literal block the str representer produced.
     expect(block.previousElementSibling.textContent).toContain("repr: |-");
-    expect(block.textContent).toContain("PORes(");
+    expect(block.textContent).toContain("POTask(");
     // Its indented body is opaque text: no nested folds, no tokens.
     expect(block.querySelector("details")).toBeNull();
     expect(block.querySelector("span")).toBeNull();

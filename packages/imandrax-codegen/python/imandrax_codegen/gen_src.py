@@ -12,6 +12,11 @@ from imandrax_api_models import (  # noqa: F401, RUF100
     VerifyRes,
 )
 from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.proto_models.decomp import (
+    ByName,
+    Decomp,
+    prune,
+)
 from imandrax_codegen.unparse import (
     format_code,
     gen_preamble,
@@ -108,6 +113,19 @@ def gen_source_code(
             return (type_def_src_w_imports, src_body)
 
 
+def _ensure_pruned(plan: Decomp) -> Decomp:
+    """Make sure the regions of `plan` are pruned.
+
+    Only pruned (feasibility-checked) regions carry the witness model that
+    test cases are sampled from.
+    """
+    match plan:
+        case ByName():
+            return plan.model_copy(update={'prune': True})
+        case _:
+            return prune(plan)
+
+
 # Main
 # ====================
 
@@ -148,20 +166,43 @@ def _imandrax_client(
 
 def gen_test_cases(
     iml: str,
-    decomp_name: str,
     lang: Lang,
+    # <one-of>
+    decomp_name: str | None = None,
     other_decomp_kwargs: dict[str, Any] | None = None,
+    decomp_plan: Decomp | None = None,
+    # </one-of>
+    compute_timeout: int | None = None,
     imandrax_api_key: str | None = None,
     imandrax_env: str | None = None,
     imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
+    `[@@decomp]` attributes in `iml` are ignored, so pass the decomposition explicitly.
+
+    Exactly one of `decomp_name` (optionally with `other_decomp_kwargs`) or
+    `decomp_plan` must be given.
+
+    Args:
+        iml: input IML code to evaluate
+        lang: target language (python or typescript)
+        decomp_name: name of the function to decompose
+        other_decomp_kwargs: additional keyword arguments for `decompose`, only
+            valid with `decomp_name`
+        decomp_plan: decomposition plan for `decompose_full`, which can be
+            composite (merge, combine, ...)
+        compute_timeout: server-side timeout of the decomposition, in seconds
+
     Return:
         Tuple of (type declarations, test case definition)
     """
-
-    other_decomp_kwargs = other_decomp_kwargs or {}
+    if (decomp_name is None) == (decomp_plan is None):
+        raise ValueError('Exactly one of `decomp_name` or `decomp_plan` must be given')
+    if decomp_plan is not None and other_decomp_kwargs is not None:
+        raise ValueError(
+            '`other_decomp_kwargs` can only be given together with `decomp_name`'
+        )
 
     c = _imandrax_client(imandrax_api_key, imandrax_env, imandrax_url)
 
@@ -171,19 +212,28 @@ def gen_test_cases(
         error_msgs = [repr(err.msg) for err in eval_res.errors]
         raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    #  Decomp
+    # Decomp
     # Since v20:
-    # - `prune=True` is required to get concrete sample points: only pruned
-    #   (feasibility-checked) regions carry a witness `model`/`model_eval`.
-    #   Without it every region is reported as "feasibility unknown" and no test
-    #   case is generated.
-    # - `string_results=True` is required: the artifact parser (`art-parse`)
-    #   relies on the region string-representations being embedded in the meta.
-    decomp_kwargs: dict[str, Any] = other_decomp_kwargs | {
-        'prune': True,
-        'string_results': True,
-    }
-    decomp_res: DecomposeRes = c.decompose(decomp_name, **decomp_kwargs)
+    # - `prune=True` is required to get concrete sample points
+    # - `string_results=True` is required: the artifact parser `art-parse`
+    #   relies on the region string-representations being stored in the meta.
+    decomp_res: DecomposeRes
+    if decomp_plan is not None:
+        decomp_res = c.decompose_full(
+            _ensure_pruned(decomp_plan),
+            string_results=True,
+            compute_timeout=compute_timeout,
+        )
+    else:
+        assert decomp_name is not None, 'Never'
+        decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
+            'prune': True,
+            'string_results': True,
+        }
+        if compute_timeout is not None:
+            decomp_kwargs['compute_timeout'] = compute_timeout
+        decomp_res = c.decompose(decomp_name, **decomp_kwargs)
+
     decomp_art = decomp_res.artifact
     assert decomp_art, 'No artifact returned from decompose'
 

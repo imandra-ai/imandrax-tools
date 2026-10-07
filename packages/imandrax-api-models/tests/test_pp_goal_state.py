@@ -1,12 +1,11 @@
 import imandrax_api.lib as xtype
-import pytest
-from inline_snapshot import snapshot
-
 import imandrax_api_models.pp.pretty as Pp
+import pytest
 from imandrax_api_models.pp.goal_state import (
     goal_state_doc_of_po_res,
     po_res_of_art_zip,
 )
+from inline_snapshot import snapshot
 
 IML = """\
 (* Number of subsets of a (finite) set in Imandra, rep'd as lists.

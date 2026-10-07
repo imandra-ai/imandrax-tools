@@ -4,6 +4,30 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.11.0] - 26-09-24
+- Tasks data representation: add `level` and `from_sym`; adapt widget
+
+## [20.10.0] - 26-09-24
+- task-level artifact pretty-printing config resolution, taking interaction between artifacts into account
+- **BREAKING**: artifact kind selection is changed from verbatim excluded kinds to pattern-based.
+
+## [20.9.1] - 26-09-07
+- FIX(model): decomp result error is dropped when being parsed, causing validation error
+
+## [20.9.0] - 26-09-04
+- FEAT: term evaluation skipping POs
+
+## [20.8.1] - 26-08-28
+- FIX(deps): incorrect iml-query version
+
+## [20.8.0] - 26-08-28
+- FEAT(client): adapt to new upstream `imandrax-api` RPCs; methods are now grouped by service
+- FEAT: decomp DSL (conversion between treesitter CST, pydantic.BaseModel, and protobuf)
+
+## [20.7.0] - 26-08-24
+- client: expose `compute_timeout` on `decompose` (sync and async)
+- FIX(client): sync `decompose` accepted `assuming` but never forwarded it to the request
+
 ## [20.6.0] - 26-08-14
 - client: support passing timeout config
 

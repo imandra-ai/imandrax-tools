@@ -4,6 +4,16 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.7.1] - 2026-10-05
+- ENH: polish jsonable widget
+
+## [20.7.0] - 2026-10-05
+- ENH: widgets
+- DEPS: bump `imandrax-api-models>=20.11.0`
+
+## [20.6.0] - 2026-09-24
+- rename internal widget data representation types
+
 ## [20.5.0] - 2026-07-30
 - widget: add jsonable general widget
 - widget: replace plain text fallback with new pre/post slots in existing widgets

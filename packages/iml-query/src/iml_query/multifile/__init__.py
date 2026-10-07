@@ -18,14 +18,14 @@ from .resolve import (
 
 __all__ = (
     'CircularImportError',
+    'IMLImportResolutionError',
     'IMLModule',
     'IMLModuleNotFoundError',
     'NotImplementedImportError',
-    'IMLImportResolutionError',
+    'gather_modules',
     'mk_monolith_iml',
     'parse_imports',
     'resolve',
-    'gather_modules',
 )
 
 

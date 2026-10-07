@@ -27,8 +27,8 @@ function mount(adapter, state) {
   return { el, model };
 }
 
-const TASK = { kind: "verify", id: "1", artifacts: [] };
-const GROUP = { label_path: ["a"], constraints: [], weight: 1, region_stat: null, children: [] };
+const TASK = { kind: "verify", id: "1", level: "info", artifacts: [] };
+const GROUP = { label_path: ["a"], constraints: [], weight: 1, region: null, children: [] };
 const PRE = "eval_res:\n  errors: []\n";
 
 const hasJsonable = (el) => el.querySelectorAll(".imdx-jsonable").length;
@@ -38,19 +38,19 @@ describe("task adapter", () => {
 
   it("renders the tasks panel when there are entries", () => {
     const { el } = mount(taskAdapter, state({ task_entries: [TASK] }));
-    expect(el.querySelectorAll(".imdx-task-task").length).toBe(1);
+    expect(el.querySelectorAll(".imdx-task-row").length).toBe(1);
     expect(hasJsonable(el)).toBe(0);
   });
 
   it("renders pre and post alongside the tasks panel", () => {
     const { el } = mount(taskAdapter, state({ task_entries: [TASK], pre: PRE, post: PRE }));
-    expect(el.querySelectorAll(".imdx-task-task").length).toBe(1);
+    expect(el.querySelectorAll(".imdx-task-row").length).toBe(1);
     expect(hasJsonable(el)).toBe(2);
   });
 
   it("drops the tasks panel when task_entries is null", () => {
     const { el } = mount(taskAdapter, state({ pre: PRE }));
-    expect(el.querySelector(".imdx-task-task")).toBeNull();
+    expect(el.querySelector(".imdx-task-row")).toBeNull();
     expect(el.querySelector(".imdx-task-placeholder")).toBeNull();
     expect(hasJsonable(el)).toBe(1);
   });
@@ -58,7 +58,7 @@ describe("task adapter", () => {
   it("keeps the panel for an empty array, which reports no tasks", () => {
     // [] and null differ: an eval that ran and produced nothing says so.
     const { el } = mount(taskAdapter, state({ task_entries: [], pre: PRE }));
-    expect(el.querySelector(".imdx-task-task")).toBeNull();
+    expect(el.querySelector(".imdx-task-row")).toBeNull();
     expect(el.querySelector(".imdx-task-placeholder").textContent).toBe("No tasks.");
     expect(hasJsonable(el)).toBe(1);
   });
@@ -68,7 +68,7 @@ describe("task adapter", () => {
     expect(hasJsonable(el)).toBe(0);
     model.set("pre", PRE);
     expect(hasJsonable(el)).toBe(1);
-    expect(el.querySelectorAll(".imdx-task-task").length).toBe(1);
+    expect(el.querySelectorAll(".imdx-task-row").length).toBe(1);
   });
 });
 

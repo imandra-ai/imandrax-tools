@@ -52,7 +52,16 @@ export const TREEMAP_STYLE = `
 .${ROOT_CLASS}-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .${ROOT_CLASS}-topbar { flex: 0 0 auto; display: flex; align-items: center; flex-wrap: wrap;
   gap: 2px; padding: 7px 10px; border-bottom: 1px solid #eceef1; min-height: 30px;
-  font-variant-numeric: tabular-nums; }
+  font-variant-numeric: tabular-nums; cursor: pointer; user-select: none; }
+/* Collapsed, the widget narrows by the detail pane + divider it hid, so the bar
+   keeps its expanded width rather than stretching into the freed space. While
+   \`is-folding\` (the collapse / expand animation) the panes stay rendered, for
+   the animated box to clip. */
+.${ROOT_CLASS}.is-collapsed { height: auto; width: calc(100% - var(--imdx-dw) - 1px); }
+.${ROOT_CLASS}.is-collapsed .${ROOT_CLASS}-topbar { border-bottom: 0; }
+.${ROOT_CLASS}.is-collapsed:not(.is-folding) .${ROOT_CLASS}-tiles,
+.${ROOT_CLASS}.is-collapsed:not(.is-folding) .${ROOT_CLASS}-divider,
+.${ROOT_CLASS}.is-collapsed:not(.is-folding) .${ROOT_CLASS}-detail { display: none; }
 .${ROOT_CLASS}-crumb { border: 0; background: transparent; padding: 1px 4px; border-radius: 4px;
   font: inherit; color: #6b727b; cursor: pointer; }
 .${ROOT_CLASS}-crumb:hover { background: #eef1f4; color: #1a1d21; }

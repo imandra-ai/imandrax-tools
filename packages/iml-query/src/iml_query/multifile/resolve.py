@@ -91,9 +91,7 @@ def parse_imports(code: str) -> list[ImportCapture]:
     ts_captures: list[dict[str, list[Node]]] = [
         item for sublist in matches.values() for item in sublist
     ]
-    return [
-        ImportCapture.from_ts_capture(ts_capture) for ts_capture in ts_captures
-    ]
+    return [ImportCapture.from_ts_capture(ts_capture) for ts_capture in ts_captures]
 
 
 def _module_name_from_path(path: Path) -> str:
@@ -101,9 +99,7 @@ def _module_name_from_path(path: Path) -> str:
     return path.stem.capitalize()
 
 
-type _ResolveState = tuple[
-    tuple[IMLModule, ...], frozenset[Path], frozenset[Path]
-]
+type _ResolveState = tuple[tuple[IMLModule, ...], frozenset[Path], frozenset[Path]]
 
 
 def os_path_reader(path: Path) -> str:
@@ -169,19 +165,15 @@ def resolve(
 
         # Recursively resolve dependencies first (DFS)
         for imp in imports:
-            imp_path: str = str(
-                unwrap_bytes(imp.import_path.text), encoding='utf-8'
-            )
-            if imp_path.startswith('findlib:') or imp_path.startswith('dune:'):
+            imp_path: str = str(unwrap_bytes(imp.import_path.text), encoding='utf-8')
+            if imp_path.startswith(('findlib:', 'dune:')):
                 return NotImplementedImportError(imp_path)
 
             dep_path = (base_dir / imp_path).resolve()
 
             dep_name: str | None = None
             if imp.import_name is not None:
-                dep_name = str(
-                    unwrap_bytes(imp.import_name.text), encoding='utf-8'
-                )
+                dep_name = str(unwrap_bytes(imp.import_name.text), encoding='utf-8')
 
             inner = loop(dep_path, (result, visited, in_progress), dep_name)
             if isinstance(inner, IMLImportResolutionError):
@@ -259,8 +251,7 @@ def mk_monolith_iml(modules: list[IMLModule]) -> tuple[str, str]:
             parts.append(src_wo_imports)
         else:
             indented = '\n'.join(
-                f'  {line}' if line.strip() else ''
-                for line in mod.content.splitlines()
+                f'  {line}' if line.strip() else '' for line in mod.content.splitlines()
             )
             parts.append(f'module {mod.name} = struct\n{indented}\nend')
 

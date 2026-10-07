@@ -1,10 +1,9 @@
 # pyright: basic
-from inline_snapshot import snapshot
-
 from iml_query.tree_sitter_utils import (
     get_parser,
     insert_lines,
 )
+from inline_snapshot import snapshot
 
 
 def test_insert_lines_consecutive():
@@ -46,9 +45,7 @@ let w = 4
     assert not tree4.root_node.has_error
 
     # Insert at the beginning of the file
-    iml5, tree5 = insert_lines(
-        iml4, tree4, lines=['let b = 0'], insert_after=-1
-    )
+    iml5, tree5 = insert_lines(iml4, tree4, lines=['let b = 0'], insert_after=-1)
     assert iml5 == snapshot("""\
 let b = 0
 let x = 1

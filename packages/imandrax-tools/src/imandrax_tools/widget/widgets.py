@@ -18,7 +18,7 @@ from typing import Any, Self
 import anywidget
 import traitlets
 from imandrax_api_models import Art, DecomposeRes
-from imandrax_api_models.artifacts import TasksRepr, artifact_reprs_of_tasks
+from imandrax_api_models.artifacts import TasksDataRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import (
     FormattableModel,
@@ -92,7 +92,9 @@ class TasksWidget(anywidget.AnyWidget):
         )
 
     @classmethod
-    def from_tasks_repr(cls, obj: TasksRepr, pre: str = '', post: str = '') -> Self:
+    def from_tasks_data_repr(
+        cls, obj: TasksDataRepr, pre: str = '', post: str = ''
+    ) -> Self:
         return cls(
             task_entries=[e.model_dump(mode='json') for e in obj.tasks],
             pre=pre,
@@ -101,13 +103,21 @@ class TasksWidget(anywidget.AnyWidget):
 
 
 class RegionDecompWidget(anywidget.AnyWidget):
-    """Treemap view of a region-group forest."""
+    """
+    Treemap view of a region-group forest.
+
+    `title`, when set, labels the treemap's root breadcrumb in place of "root".
+    `collapsed` folds the treemap down to its breadcrumb bar; clicking the bar's
+    empty space toggles it in the frontend, without syncing back.
+    """
 
     _esm = _DIST / 'region_decomp.js'
 
     data = traitlets.List(traitlets.Any(), allow_none=True, default_value=None).tag(
         sync=True
     )
+    title = traitlets.Unicode('').tag(sync=True)
+    collapsed = traitlets.Bool(False).tag(sync=True)
     pre = traitlets.Unicode('').tag(sync=True)
     post = traitlets.Unicode('').tag(sync=True)
 
@@ -115,6 +125,8 @@ class RegionDecompWidget(anywidget.AnyWidget):
     def from_decomp_res(
         cls,
         decomp_res: EnrichedDecomposeRes | DecomposeRes,
+        title: str = '',
+        collapsed: bool = False,
         pre: str = '',
         post: str = '',
     ) -> Self:
@@ -125,13 +137,20 @@ class RegionDecompWidget(anywidget.AnyWidget):
         )
         return cls(
             data=[v.model_dump(mode='json') for v in enriched.region_group_views()],
+            title=title,
+            collapsed=collapsed,
             pre=pre,
             post=post,
         )
 
     @classmethod
     def from_decomp_res_(
-        cls, decomp_res: DecomposeRes_, pre: str = '', post: str = ''
+        cls,
+        decomp_res: DecomposeRes_,
+        title: str = '',
+        collapsed: bool = False,
+        pre: str = '',
+        post: str = '',
     ) -> Self:
         """
         _
@@ -150,6 +169,8 @@ class RegionDecompWidget(anywidget.AnyWidget):
             case _:
                 return cls(
                     data=[r.model_dump(mode='json') for r in region_group_views],
+                    title=title,
+                    collapsed=collapsed,
                     pre=pre,
                     post=post,
                 )

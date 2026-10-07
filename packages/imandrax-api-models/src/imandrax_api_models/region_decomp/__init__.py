@@ -38,23 +38,40 @@ from ._region import (
 )
 
 __all__ = (
-    'Region',
-    'RegionNonGroupStat',
-    'mir_regions_of_fun_decomp_artifact',
     'EnrichedDecomposeRes',
+    'ForTesting',
+    'Region',
     'RegionGroup',
     'RegionGroupView',
+    'RegionNonGroupStat',
     'eq_term_with_pp',
-    'rgs_of_mir_fun_decomp',
-    'group_regions',
     'get_leaf_groups',
+    'group_regions',
+    'mir_regions_of_fun_decomp_artifact',
     'render_region_groups',
-    'ForTest',
+    'rgs_of_mir_fun_decomp',
 )
 
 
 def eq_term_with_pp(left: xtype.Mir_Term, right: xtype.Mir_Term) -> bool:
+    """Equal iff same string under our local pretty-printer (`term_to_string`)."""
     return term_to_string(left) == term_to_string(right)
+
+
+def _mk_memo_term_to_string() -> Callable[[xtype.Mir_Term_term], str]:
+    """`term_to_string`, memoized by object identity (`id`)."""
+    # An `id` can be reused once its term is garbage-collected, so a memo must only
+    # live as long as the terms it has seen: build a fresh one per grouping call
+    # (where the regions keep every term alive) rather than sharing one globally.
+    memo: dict[int, str] = {}
+
+    def pp(t: xtype.Mir_Term_term) -> str:
+        s = memo.get(id(t))
+        if s is None:
+            s = memo[id(t)] = term_to_string(t)
+        return s
+
+    return pp
 
 
 def rgs_of_mir_fun_decomp(fun_decomp: xtype.Mir_Fun_decomp) -> list[RegionGroup]:
@@ -110,9 +127,8 @@ class DecomposeRes_(DecomposeResProto):
 
     @classmethod
     def from_decomp_res(cls, v: DecomposeResProto) -> Self:
-        if v.artifact is None:
-            return cls(artifact=None)
-        return cls(artifact=cls.decode_artifact(v.artifact))
+        artifact = None if v.artifact is None else cls.decode_artifact(v.artifact)
+        return cls(artifact=artifact, err=v.err, errors=v.errors, task=v.task)
 
     # TODO: backward-compatible methods: iml_test_cases, test_docstrs
 
@@ -261,7 +277,7 @@ class RegionGroup(BaseModel):
 
 
 class RegionGroupView(RegionGroup):
-    """RegionGroup but with `region` replaced with `region_stat`"""
+    """RegionGroup but with `region` replaced with its display stats (`RegionNonGroupStat`)"""
 
     region: RegionNonGroupStat | None = Field(default=None)  # pyright: ignore[reportIncompatibleVariableOverride]
     children: list[RegionGroupView] = Field(default_factory=lambda: [])  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -307,12 +323,20 @@ def get_leaf_groups[T: HasChildren](
 
 def group_regions(
     regions: Sequence[Region],
-    eq_term: Callable[
-        [xtype.Mir_Term_term, xtype.Mir_Term_term], bool
-    ] = eq_term_with_pp,
+    eq_term: Callable[[xtype.Mir_Term_term, xtype.Mir_Term_term], bool] | None = None,
 ) -> list[RegionGroup]:
-    """Group regions hierarchically based on constraints."""
-    return _loop_group_regions([], [], regions, eq_term)
+    """
+    Group regions hierarchically based on constraints.
+
+    Args:
+        eq_term: constraint equality. Defaults to `eq_term_with_pp`, memoized
+            for the duration of this call.
+
+    """
+    pp = _mk_memo_term_to_string()
+    if eq_term is None:
+        eq_term = lambda l, r: pp(l) == pp(r)
+    return _loop_group_regions([], [], regions, eq_term, pp)
 
 
 # Tree rendering
@@ -378,12 +402,14 @@ def _tree_lines(
 def _sort_terms_by_frequency(
     terms: list[xtype.Mir_Term_term],
     eq_term: Callable[[xtype.Mir_Term_term, xtype.Mir_Term_term], bool],
+    show_term: Callable[[xtype.Mir_Term_term], str],
 ) -> list[xtype.Mir_Term_term]:
     """
     Sort duplicate terms by frequency, breaking ties alphabetically.
 
     Args:
         terms: terms to sort, with duplicates
+        show_term: term printer for the alphabetical tiebreak
 
     """
     # Count occurrences of each distinct constraint (distinctness per `eq_term`).
@@ -407,7 +433,7 @@ def _sort_terms_by_frequency(
     counter = mk_counter(terms)
     # Most frequent first, ties broken alphabetically.
     assoc_list: list[tuple[xtype.Mir_Term_term, int]] = sorted(
-        counter, key=lambda kv: (-kv[1], term_to_string(kv[0]))
+        counter, key=lambda kv: (-kv[1], show_term(kv[0]))
     )
     sorted_terms: list[xtype.Mir_Term_term] = [kv[0] for kv in assoc_list]
     return sorted_terms
@@ -418,6 +444,7 @@ def _loop_group_regions(
     constraint_path: list[xtype.Mir_Term_term],
     regions: Sequence[Region],
     eq_term: Callable[[xtype.Mir_Term_term, xtype.Mir_Term_term], bool],
+    show_term: Callable[[xtype.Mir_Term_term], str],
 ) -> list[RegionGroup]:
     """
     Recursively group regions by shared constraints.
@@ -456,6 +483,7 @@ def _loop_group_regions(
 
     Args:
         constraint_path: ancestor constraint path
+        show_term: term printer for tiebreaks and `RegionGroup.constraints`
 
     """
 
@@ -471,7 +499,7 @@ def _loop_group_regions(
     ]
 
     constraints_by_most_frequent: list[xtype.Mir_Term_term] = _sort_terms_by_frequency(
-        all_constraints_with_dup, eq_term
+        all_constraints_with_dup, eq_term, show_term
     )
 
     # grouped: tuple[list[RegionGroup], list[RegionStr_]]
@@ -520,7 +548,7 @@ def _loop_group_regions(
         is_non_discriminating = all(
             term_in_list(konstraint, r.constraints) for r in regions
         )
-        if is_non_discriminating and (not (len(has) == 1)):
+        if is_non_discriminating and (len(has) != 1):
             new_idx_path = idx_path
         else:
             i = len(groups) + 1  # level_index = sibling counts + 1
@@ -533,6 +561,7 @@ def _loop_group_regions(
                 new_constraint_path,
                 has,
                 eq_term,
+                show_term,
             )
             group: RegionGroup
             if len(rg_children) == 1:
@@ -547,7 +576,7 @@ def _loop_group_regions(
                     rg_region = None
                 rg_weight = len(has)
                 group = RegionGroup(
-                    constraints=[term_to_string(c) for c in rg_constraints],
+                    constraints=[show_term(c) for c in rg_constraints],
                     region=rg_region,
                     children=rg_children,
                     label_path=new_idx_path,
@@ -581,20 +610,21 @@ def _loop_group_regions(
 # ====================
 
 
-class ForTest(SimpleNamespace):
+class ForTesting(SimpleNamespace):
+    """Alternative `eq_term`s for cross-checking `group_regions`."""
+
     @staticmethod
     def stringified_term_map_of_region(
         r: xtype.Mir_Region_Region, base: dict[int, str] | None = None
     ) -> dict[int, str]:
         # MIR terms are unhashable (they contain lists), so key the map by object
-        # identity (`id`). This maps each concrete term instance to its server-side
-        # string, keeping this grouping strategy independent of the structural
-        # `_term_key` used by `eq_term_naive`.
+        # identity (`id`).
+        # maps each concrete term instance to its server-side string
         out = base or {}
 
         constraints_str = xtype.unwrap_region_str(r).constraints_str
         assert constraints_str is not None
-        for c, s in zip(r.constraints, constraints_str):
+        for c, s in zip(r.constraints, constraints_str, strict=True):
             out[id(c)] = s
 
         return out
@@ -605,39 +635,50 @@ class ForTest(SimpleNamespace):
         right: xtype.Mir_Term,
         stringified_term_map: dict[int, str],
     ) -> bool:
+        """Equal iff same server-side string (`constraints_str`)."""
         l = stringified_term_map[id(left)]
         r = stringified_term_map[id(right)]
         return l == r
 
     @staticmethod
-    def eq_term_naive(
-        left: xtype.Mir_Term,
-        right: xtype.Mir_Term,
-    ) -> bool:
-        return _term_key(left) == _term_key(right)
+    def mk_eq_term_naive() -> Callable[[xtype.Mir_Term, xtype.Mir_Term], bool]:
+        """Equal iff same structure ignoring `ty` and `sub_anchor`."""
+        # Memoized by `id`; build a fresh one per `group_regions` call (see
+        # `_mk_memo_term_to_string`).
+        memo: dict[int, str] = {}
 
+        def key(t: xtype.Mir_Term) -> str:
+            k = memo.get(id(t))
+            if k is None:
+                k = memo[id(t)] = ForTesting._term_repr_wo_ty_anchor(t)
+            return k
 
-def _term_key(obj: object) -> str:
-    """
-    A canonical structural string key for a decoded term.
+        return lambda l, r: key(l) == key(r)
 
-    Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
-    level. Terms that differ only in type annotations or source anchors produce
-    the same key, so regions sharing a constraint group together even though
-    their raw `repr`s differ.
-    """
-    # Term fields carrying no logical identity: `ty` is the (redundant, given the
-    # fully-resolved view) type annotation, `sub_anchor` is a source-position
-    # anchor. Both vary between structurally-identical constraints, so they are
-    # skipped when deriving a grouping key from a raw term.
-    term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
-    if is_dataclass(obj) and not isinstance(obj, type):
-        inner = ','.join(
-            f'{f.name}={_term_key(getattr(obj, f.name))}'
-            for f in fields(obj)
-            if f.name not in term_key_drop_fields
-        )
-        return f'{type(obj).__name__}({inner})'
-    if isinstance(obj, (list, tuple)):
-        return '[' + ','.join(_term_key(x) for x in obj) + ']'  # pyright: ignore
-    return repr(obj)
+    @staticmethod
+    def _term_repr_wo_ty_anchor(obj: object) -> str:
+        """
+        A canonical structural string key for a decoded term.
+
+        Recursively serializes `obj`, skipping `_TERM_KEY_DROP_FIELDS` at every
+        level. Terms that differ only in type annotations or source anchors produce
+        the same key, so regions sharing a constraint group together even though
+        their raw `repr`s differ.
+        """
+        # Term fields carrying no logical identity: `ty` is the (redundant, given the
+        # fully-resolved view) type annotation, `sub_anchor` is a source-position
+        # anchor. Both vary between structurally-identical constraints, so they are
+        # skipped when deriving a grouping key from a raw term.
+        term_key_drop_fields = frozenset({'ty', 'sub_anchor'})
+        if is_dataclass(obj) and not isinstance(obj, type):
+            inner = ','.join(
+                f'{f.name}={ForTesting._term_repr_wo_ty_anchor(getattr(obj, f.name))}'
+                for f in fields(obj)
+                if f.name not in term_key_drop_fields
+            )
+            return f'{type(obj).__name__}({inner})'
+        if isinstance(obj, (list, tuple)):
+            return (
+                '[' + ','.join(ForTesting._term_repr_wo_ty_anchor(x) for x in obj) + ']'  # pyright: ignore
+            )
+        return repr(obj)

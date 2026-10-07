@@ -91,9 +91,7 @@ def _merge_queries(queries: dict[str, str]) -> str:
     s = ''
     for name, query in queries.items():
         if __debug__:
-            assert mk_query(query).pattern_count == 1, (
-                'expected exactly one pattern'
-            )
+            assert mk_query(query).pattern_count == 1, 'expected exactly one pattern'
         s += f'; {name}\n'
         s += query
         s += '\n\n'
@@ -349,9 +347,7 @@ def insert_lines(
         need_leading_newline = False  # Last line already has \n
     else:
         lines_before = iml_lines[: insert_after + 1]
-        insert_byte_pos = sum(
-            len(line.encode('utf-8')) for line in lines_before
-        )
+        insert_byte_pos = sum(len(line.encode('utf-8')) for line in lines_before)
         # Check if we need to add a leading newline
         # (the last line might not end with "\n", so which case we need to add
         # it)
@@ -401,9 +397,7 @@ def insert_lines(
     # Apply text insertion
     code_bytes = code.encode('utf-8')
     new_code_bytes = (
-        code_bytes[:insert_byte_pos]
-        + insert_bytes
-        + code_bytes[insert_byte_pos:]
+        code_bytes[:insert_byte_pos] + insert_bytes + code_bytes[insert_byte_pos:]
     )
     new_code = new_code_bytes.decode('utf-8')
 

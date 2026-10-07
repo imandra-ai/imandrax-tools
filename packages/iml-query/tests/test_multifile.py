@@ -3,8 +3,6 @@
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from inline_snapshot import snapshot
-
 from iml_query.multifile import (
     CircularImportError,
     IMLModuleNotFoundError,
@@ -13,6 +11,7 @@ from iml_query.multifile import (
     mk_monolith_iml,
     resolve,
 )
+from inline_snapshot import snapshot
 
 DATA_DIR = Path(__file__).parent / 'data' / 'multifile'
 

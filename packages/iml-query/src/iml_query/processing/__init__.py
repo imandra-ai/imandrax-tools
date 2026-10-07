@@ -17,7 +17,14 @@ from iml_query.tree_sitter_utils import (
 )
 
 from .base import Nesting, resolve_nesting_definitions
-from .decomp import DecompReqArgs, extract_decomp_reqs, insert_decomp_req
+from .decomp import (
+    DecompReqArgs,
+    DecompReqArgs_,
+    extract_decomp_reqs,
+    extract_decomp_reqs_,
+    insert_decomp_req,
+    insert_decomp_req_,
+)
 from .test import (
     TestReqArgs,
     extract_test_reqs,
@@ -34,19 +41,21 @@ from .vg import (
 
 __all__ = [
     'Nesting',
-    'resolve_nesting_definitions',
-    'update_top_definition',
-    'extract_verify_reqs',
+    'eval_capture_to_src',
+    'extract_decomp_reqs',
+    'extract_decomp_reqs_',
     'extract_instance_reqs',
     'extract_test_reqs',
-    'extract_decomp_reqs',
     'extract_type_decl_names',
-    'insert_verify_req',
+    'extract_verify_reqs',
+    'iml_outline',
+    'insert_decomp_req',
+    'insert_decomp_req_',
     'insert_instance_req',
     'insert_test_req',
-    'insert_decomp_req',
-    'iml_outline',
-    'eval_capture_to_src',
+    'insert_verify_req',
+    'resolve_nesting_definitions',
+    'update_top_definition',
 ]
 
 
@@ -121,6 +130,13 @@ def eval_capture_to_src(capture: EvalCapture) -> str:
 def get_decomp_reqs(iml: str) -> tuple[str, list[DecompReqArgs], list[Range]]:
     tree = get_parser().parse(bytes(iml, encoding='utf8'))
     res = extract_decomp_reqs(iml, tree)
+    return res[0], res[2], res[3]
+
+
+def get_decomp_reqs_(iml: str) -> tuple[str, list[DecompReqArgs_], list[Range]]:
+    """Composite counterpart of `get_decomp_reqs` (understands `<<` / `<|<`)."""
+    tree = get_parser().parse(bytes(iml, encoding='utf8'))
+    res = extract_decomp_reqs_(iml, tree)
     return res[0], res[2], res[3]
 
 
