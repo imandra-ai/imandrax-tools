@@ -1006,7 +1006,7 @@ def get_imandrax_url(
     url: str | None = None,
 ) -> str | None:
     """
-    Get the ImandraX URL: given, from the environment, or Imandra's cloud for the deployment.
+    Resolve the ImandraX server URL.
 
     Precedence: `url` argument > env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config
     """
