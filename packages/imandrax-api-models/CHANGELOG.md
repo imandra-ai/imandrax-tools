@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.12.0] - 26-10-07
+- FEAT: `get_imandrax_client`, `get_imandrax_async_client` and `end_session` take `url=`; `get_imandrax_url(env, url)` resolves `url` > `$IMANDRAX_URL` > `env` > `$IMANDRAX_ENV` > default config
+- FEAT: a self-hosted ImandraX (a URL given as argument or `$IMANDRAX_URL`) needs no API key: `resolve_connection` and `is_self_hosted_url` say so; Imandra's cloud still requires one (`ValueError`, as before)
+
 ## [20.11.0] - 26-09-24
 - Tasks data representation: add `level` and `from_sym`; adapt widget
 
