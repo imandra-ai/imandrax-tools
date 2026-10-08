@@ -157,6 +157,13 @@ def gen_test_cases(
         decomp_plan: decomposition plan for `decompose_full`, which can be
             composite (merge, combine, ...)
         compute_timeout: server-side timeout of the decomposition, in seconds
+        imandrax_api_key: API key, required for Imandra's cloud; defaults to
+            $IMANDRAX_API_KEY or ~/.config/imandrax/api_key, which are never sent
+            to a self-hosted server
+        imandrax_env: Imandra's cloud deployment, 'dev' or 'prod'
+        imandrax_url: URL of the ImandraX server, e.g. a self-hosted one. The URL
+            is `imandrax_url` > $IMANDRAX_URL > `imandrax_env` > $IMANDRAX_ENV >
+            ~/.config/imandrax/config.toml
 
     Return:
         Tuple of (type declarations, test case definition)
@@ -225,6 +232,15 @@ def gen_counter_example(
     imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
+
+    Args:
+        imandrax_api_key: API key, required for Imandra's cloud; defaults to
+            $IMANDRAX_API_KEY or ~/.config/imandrax/api_key, which are never sent
+            to a self-hosted server
+        imandrax_env: Imandra's cloud deployment, 'dev' or 'prod'
+        imandrax_url: URL of the ImandraX server, e.g. a self-hosted one. The URL
+            is `imandrax_url` > $IMANDRAX_URL > `imandrax_env` > $IMANDRAX_ENV >
+            ~/.config/imandrax/config.toml
 
     Return:
         Tuple of (type declarations, test case definition)

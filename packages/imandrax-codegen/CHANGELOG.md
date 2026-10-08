@@ -5,6 +5,7 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 ## [Unreleased]
 - FEAT: `gen_test_cases(..., imandrax_url=...)` - ImandraX at a self-hosted server (or `$IMANDRAX_URL`), where no API key is needed; Imandra's cloud still requires one
 - DEPS: bump `imandrax-api-models>=20.12.0` - the connection is resolved by its `get_imandrax_client(url=...)`, not here
+- CHANGE: `gen_test_cases` / `gen_counter_example` now honour `$IMANDRAX_URL`, which beats `imandrax_env`; the API key may also come from `~/.config/imandrax/api_key`
 - CHANGE: an `imandrax_env` / `$IMANDRAX_ENV` other than 'dev' / 'prod' is a `ValueError`, instead of falling back to prod
 
 ## [20.1.0] - 2026-10-05
