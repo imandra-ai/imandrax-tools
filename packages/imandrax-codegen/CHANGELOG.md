@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.2.0] - 2026-10-08
 - FEAT: `gen_test_cases` and `gen_counter_example` accept an `imandrax_url` argument for a self-hosted ImandraX
 - BREAKING: `gen_test_cases` and `gen_counter_example` use `$IMANDRAX_URL` when set, overriding `imandrax_env`
 - BREAKING: `gen_test_cases` and `gen_counter_example` also read the API key from `~/.config/imandrax/api_key`
