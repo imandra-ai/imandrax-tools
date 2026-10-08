@@ -1086,21 +1086,16 @@ def get_imandrax_client(
 ) -> ImandraXClient:
     url_, imandrax_api_key = resolve_connection(auth_token, env, url)
 
+    kwargs: dict[str, Any] = dict(
+        url=url_,
+        auth_token=imandrax_api_key,
+        session_id=session_id,
+        create_if_not_found=create_if_not_found,
+    )
+    # omitted rather than None, which would drop the client's default timeout
     if timeout is not None:
-        client = ImandraXClient(
-            url=url_,
-            auth_token=imandrax_api_key,
-            timeout=timeout,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    else:
-        client = ImandraXClient(
-            url=url_,
-            auth_token=imandrax_api_key,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
+        kwargs['timeout'] = timeout
+    client = ImandraXClient(**kwargs)
     logger.info(
         'imandrax_client_initialized',
         url=url_,
@@ -1120,21 +1115,16 @@ def get_imandrax_async_client(
 ) -> ImandraXAsyncClient:
     url_, imandrax_api_key = resolve_connection(auth_token, env, url)
 
+    kwargs: dict[str, Any] = dict(
+        url=url_,
+        auth_token=imandrax_api_key,
+        session_id=session_id,
+        create_if_not_found=create_if_not_found,
+    )
+    # omitted rather than None, which would drop the client's default timeout
     if timeout is not None:
-        client = ImandraXAsyncClient(
-            url=url_,
-            auth_token=imandrax_api_key,
-            timeout=timeout,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    else:
-        client = ImandraXAsyncClient(
-            url=url_,
-            auth_token=imandrax_api_key,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
+        kwargs['timeout'] = timeout
+    client = ImandraXAsyncClient(**kwargs)
     logger.info(
         'imandrax_client_initialized',
         url=url_,
