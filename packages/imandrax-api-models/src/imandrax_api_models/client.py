@@ -1027,14 +1027,15 @@ def get_imandrax_url(
     return url
 
 
-def is_self_hosted_url(url: str | None = None) -> bool:
+def _is_self_hosted_url(url: str) -> bool:
     """
-    Whether ImandraX is reached at a URL given explicitly, rather than Imandra's cloud.
+    Whether `url` is a self-hosted ImandraX, i.e. neither of Imandra's cloud URLs.
 
-    Explicitly: the `url` argument or env(IMANDRAX_URL). A self-hosted server is
-    unauthenticated, so no API key is required for it.
+    Pass the resolved URL (`get_imandrax_url`), however it was given. A trailing '/'
+    is ignored. A self-hosted server is unauthenticated, so no API key is required for it.
     """
-    return bool(url or os.getenv('IMANDRAX_URL'))
+    cloud_urls = (imandrax_api.url_dev, imandrax_api.url_prod)
+    return url.rstrip('/') not in {u.rstrip('/') for u in cloud_urls}
 
 
 def get_imandrax_api_key() -> str | None:
@@ -1055,23 +1056,24 @@ def resolve_connection(
     url: str | None = None,
 ) -> tuple[str, str | None]:
     """
-    The (url, api key) a client is made with - what `get_imandrax_client` and friends resolve.
+    The (url, api key) a client is made with
 
-    The URL is `get_imandrax_url(env, url)`; none at all is a `ValueError`. The key is `auth_token`, else
-    `get_imandrax_api_key()`. Imandra's cloud requires one (`ValueError` when missing, as before); a
-    self-hosted URL (`is_self_hosted_url`) does not, so the key is passed through as None there.
+    A self-hosted URL gets only `auth_token`: the key from env or disk config is for
+    Imandra's cloud and is never sent elsewhere.
     """
     resolved = get_imandrax_url(env, url)
     if not resolved:
         raise ValueError('IMANDRAX_URL is not set')
+    if _is_self_hosted_url(resolved):
+        return resolved, auth_token or None
 
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
     imandrax_api_key = auth_token or get_imandrax_api_key()
-    if not imandrax_api_key and not is_self_hosted_url(url):
+    if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
-    return resolved, imandrax_api_key or None
+    return resolved, imandrax_api_key
 
 
 def get_imandrax_client(

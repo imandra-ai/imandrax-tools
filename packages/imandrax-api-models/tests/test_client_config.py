@@ -1,16 +1,19 @@
+# pyright: reportPrivateUsage=false
 """
-How a client's URL and API key are resolved - no network.
+_
 
-A URL given explicitly (argument or $IMANDRAX_URL) is a self-hosted ImandraX: unauthenticated, so no key is
-required. Imandra's cloud (chosen by `env` / $IMANDRAX_ENV) keeps requiring one.
+- URL precedence: `url` arg > $IMANDRAX_URL > `env` arg > $IMANDRAX_ENV > disk config
+- Key precedence: `auth_token` > $IMANDRAX_API_KEY > disk config
+- Cloud URL without a key gives a `ValueError`
+- Self-hosted URL gets only an explicit `auth_token`, never the key from env or disk config
 """
 
 import pytest
 from imandrax_api import url_dev, url_prod
 from imandrax_api_models.client import (
+    _is_self_hosted_url,
     get_imandrax_client,
     get_imandrax_url,
-    is_self_hosted_url,
     resolve_connection,
 )
 
@@ -25,7 +28,7 @@ def _no_ambient_config(monkeypatch: pytest.MonkeyPatch):
 
 def test_url_argument_wins_and_is_keyless():
     assert get_imandrax_url(None, 'http://my-vm:8086') == 'http://my-vm:8086'
-    assert is_self_hosted_url('http://my-vm:8086')
+    assert _is_self_hosted_url('http://my-vm:8086')
     assert resolve_connection(None, None, 'http://my-vm:8086') == (
         'http://my-vm:8086',
         None,
@@ -35,7 +38,7 @@ def test_url_argument_wins_and_is_keyless():
 def test_url_from_env_is_keyless(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv('IMANDRAX_URL', 'http://my-vm:8086')
     assert get_imandrax_url() == 'http://my-vm:8086'
-    assert is_self_hosted_url()
+    assert _is_self_hosted_url(get_imandrax_url())
     assert resolve_connection() == ('http://my-vm:8086', None)
 
 
@@ -52,7 +55,8 @@ def test_self_hosted_keeps_an_explicit_key():
 
 
 def test_cloud_path_unchanged():
-    assert not is_self_hosted_url()
+    assert not _is_self_hosted_url(url_prod)
+    assert not _is_self_hosted_url(url_dev)
     assert resolve_connection('sekrit') == (url_prod, 'sekrit')
     assert resolve_connection('sekrit', 'dev') == (url_dev, 'sekrit')
 
@@ -62,6 +66,33 @@ def test_cloud_path_still_requires_a_key():
         resolve_connection()
     with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
         get_imandrax_client(env='prod')
+
+
+@pytest.mark.parametrize(
+    'cloud_url', [url_prod, url_dev, url_prod.rstrip('/'), url_dev.rstrip('/')]
+)
+def test_cloud_url_given_explicitly_still_requires_a_key(
+    monkeypatch: pytest.MonkeyPatch, cloud_url: str
+):
+    with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
+        resolve_connection(None, None, cloud_url)
+    monkeypatch.setenv('IMANDRAX_URL', cloud_url)
+    with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
+        resolve_connection()
+
+
+def test_self_hosted_never_gets_the_ambient_key(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        'imandrax_api_models.client.get_imandrax_api_key', lambda: 'cloud-key'
+    )
+    assert resolve_connection(None, None, 'http://my-vm:8086') == (
+        'http://my-vm:8086',
+        None,
+    )
+    monkeypatch.setenv('IMANDRAX_URL', 'http://my-vm:8086')
+    assert resolve_connection() == ('http://my-vm:8086', None)
+    # the cloud still picks it up
+    assert resolve_connection(None, 'prod', url_prod) == (url_prod, 'cloud-key')
 
 
 @pytest.fixture
