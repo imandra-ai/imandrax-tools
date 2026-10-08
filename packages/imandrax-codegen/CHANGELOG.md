@@ -5,6 +5,7 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 ## [Unreleased]
 - FEAT: `gen_test_cases(..., imandrax_url=...)` - ImandraX at a self-hosted server (or `$IMANDRAX_URL`), where no API key is needed; Imandra's cloud still requires one
 - DEPS: bump `imandrax-api-models>=20.12.0` - the connection is resolved by its `get_imandrax_client(url=...)`, not here
+- CHANGE: an `imandrax_env` / `$IMANDRAX_ENV` other than 'dev' / 'prod' is a `ValueError`, instead of falling back to prod
 
 ## [20.1.0] - 2026-10-05
 - **BREAKING** `gen_test_cases`: `decomp_name` is now an optional keyword argument after `lang`; exactly one of `decomp_name` (with optional `other_decomp_kwargs`) or `decomp_plan` must be given

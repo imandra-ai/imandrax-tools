@@ -95,6 +95,14 @@ def test_self_hosted_never_gets_the_ambient_key(monkeypatch: pytest.MonkeyPatch)
     assert resolve_connection(None, 'prod', url_prod) == (url_prod, 'cloud-key')
 
 
+def test_unknown_env_is_a_clear_error(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv('IMANDRAX_ENV', 'staging')
+    with pytest.raises(ValueError, match="'staging'"):
+        get_imandrax_url()
+    with pytest.raises(ValueError, match="'Prod'"):
+        get_imandrax_url('Prod')  # pyright: ignore[reportArgumentType]
+
+
 @pytest.fixture
 def made(monkeypatch: pytest.MonkeyPatch) -> dict:
     """What `get_imandrax_client` constructs - the client opens a session on construction, so a stub stands in."""

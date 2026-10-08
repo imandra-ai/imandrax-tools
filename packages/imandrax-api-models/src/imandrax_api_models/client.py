@@ -1004,11 +1004,13 @@ def _get_deployment_from_default_config() -> str | None:
 def get_imandrax_url(
     env: Literal['dev', 'prod'] | None = None,
     url: str | None = None,
-) -> str | None:
+) -> str:
     """
     Resolve the ImandraX server URL.
 
     Precedence: `url` argument > env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config
+
+    A deployment name other than 'dev' or 'prod' is a `ValueError`.
     """
     if url:
         return url
@@ -1021,10 +1023,10 @@ def get_imandrax_url(
         or _get_deployment_from_default_config()
     )
     if env_ == 'dev':
-        url = imandrax_api.url_dev
-    elif env_ == 'prod':
-        url = imandrax_api.url_prod
-    return url
+        return imandrax_api.url_dev
+    if env_ == 'prod':
+        return imandrax_api.url_prod
+    raise ValueError(f"Unknown ImandraX env {env_!r}, expected 'dev' or 'prod'")
 
 
 def _is_self_hosted_url(url: str) -> bool:
@@ -1062,8 +1064,6 @@ def resolve_connection(
     Imandra's cloud and is never sent elsewhere.
     """
     resolved = get_imandrax_url(env, url)
-    if not resolved:
-        raise ValueError('IMANDRAX_URL is not set')
     if _is_self_hosted_url(resolved):
         return resolved, auth_token or None
 
