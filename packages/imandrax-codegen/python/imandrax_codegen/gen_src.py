@@ -175,44 +175,43 @@ def gen_test_cases(
             '`other_decomp_kwargs` can only be given together with `decomp_name`'
         )
 
-    c = get_imandrax_client(
+    with get_imandrax_client(
         auth_token=imandrax_api_key, env=imandrax_env, url=imandrax_url
-    )
+    ) as c:
+        # Eval IML
+        eval_res: EvalRes = c.eval_src(iml)
+        if eval_res.success is not True:
+            error_msgs = [repr(err.msg) for err in eval_res.errors]
+            raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    # Eval IML
-    eval_res: EvalRes = c.eval_src(iml)
-    if eval_res.success is not True:
-        error_msgs = [repr(err.msg) for err in eval_res.errors]
-        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
+        # Decomp
+        # Since v20:
+        # - `prune=True` is required to get concrete sample points
+        # - `string_results=True` is required: the artifact parser `art-parse`
+        #   relies on the region string-representations being stored in the meta.
+        decomp_res: DecomposeRes
+        if decomp_plan is not None:
+            decomp_res = c.decompose_full(
+                _ensure_pruned(decomp_plan),
+                string_results=True,
+                compute_timeout=compute_timeout,
+            )
+        else:
+            assert decomp_name is not None, 'Never'
+            decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
+                'prune': True,
+                'string_results': True,
+            }
+            if compute_timeout is not None:
+                decomp_kwargs['compute_timeout'] = compute_timeout
+            decomp_res = c.decompose(decomp_name, **decomp_kwargs)
 
-    # Decomp
-    # Since v20:
-    # - `prune=True` is required to get concrete sample points
-    # - `string_results=True` is required: the artifact parser `art-parse`
-    #   relies on the region string-representations being stored in the meta.
-    decomp_res: DecomposeRes
-    if decomp_plan is not None:
-        decomp_res = c.decompose_full(
-            _ensure_pruned(decomp_plan),
-            string_results=True,
-            compute_timeout=compute_timeout,
-        )
-    else:
-        assert decomp_name is not None, 'Never'
-        decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
-            'prune': True,
-            'string_results': True,
-        }
-        if compute_timeout is not None:
-            decomp_kwargs['compute_timeout'] = compute_timeout
-        decomp_res = c.decompose(decomp_name, **decomp_kwargs)
+        decomp_art = decomp_res.artifact
+        assert decomp_art, 'No artifact returned from decompose'
 
-    decomp_art = decomp_res.artifact
-    assert decomp_art, 'No artifact returned from decompose'
-
-    # Get type declarations
-    arg_types: list[str] = extract_type_decl_names(iml)
-    decls: GetDeclsRes = c.get_decls(arg_types)
+        # Get type declarations
+        arg_types: list[str] = extract_type_decl_names(iml)
+        decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(decomp_res, lang, decls)
     if isinstance(src_res, GenSourceCodeError):
@@ -246,28 +245,27 @@ def gen_counter_example(
         Tuple of (type declarations, test case definition)
     """
 
-    c = get_imandrax_client(
+    with get_imandrax_client(
         auth_token=imandrax_api_key, env=imandrax_env, url=imandrax_url
-    )
+    ) as c:
+        # Eval IML
+        eval_res: EvalRes = c.eval_src(iml)
+        if eval_res.success is not True:
+            error_msgs = [repr(err.msg) for err in eval_res.errors]
+            raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    # Eval IML
-    eval_res: EvalRes = c.eval_src(iml)
-    if eval_res.success is not True:
-        error_msgs = [repr(err.msg) for err in eval_res.errors]
-        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
+        #  VG
+        match vg_type:
+            case 'verify':
+                model_res = c.verify_src(vg_src, vg_hint)
+            case 'instance':
+                model_res = c.instance_src(vg_src, vg_hint)
+            case _:
+                assert_never(vg_type)
 
-    #  VG
-    match vg_type:
-        case 'verify':
-            model_res = c.verify_src(vg_src, vg_hint)
-        case 'instance':
-            model_res = c.instance_src(vg_src, vg_hint)
-        case _:
-            assert_never(vg_type)
-
-    # Get type declarations
-    arg_types: list[str] = extract_type_decl_names(iml)
-    decls: GetDeclsRes = c.get_decls(arg_types)
+        # Get type declarations
+        arg_types: list[str] = extract_type_decl_names(iml)
+        decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(model_res, lang, decls)
     if isinstance(src_res, GenSourceCodeError):
