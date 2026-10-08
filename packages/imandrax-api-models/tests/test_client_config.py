@@ -8,6 +8,8 @@ _
 - Self-hosted URL gets only an explicit `auth_token`, never the key from env or disk config
 """
 
+from typing import Any
+
 import pytest
 from imandrax_api import url_dev, url_prod
 from imandrax_api_models.client import (
@@ -19,7 +21,7 @@ from imandrax_api_models.client import (
 
 
 @pytest.fixture(autouse=True)
-def _no_ambient_config(monkeypatch: pytest.MonkeyPatch):
+def no_ambient_config(monkeypatch: pytest.MonkeyPatch):
     for v in ('IMANDRAX_URL', 'IMANDRAX_API_KEY', 'IMANDRAX_ENV'):
         monkeypatch.delenv(v, raising=False)
     # a key in ~/.config/imandrax/api_key must not make the cloud tests pass by accident
@@ -100,29 +102,29 @@ def test_unknown_env_is_a_clear_error(monkeypatch: pytest.MonkeyPatch):
     with pytest.raises(ValueError, match="'staging'"):
         get_imandrax_url()
     with pytest.raises(ValueError, match="'Prod'"):
-        get_imandrax_url('Prod')  # pyright: ignore[reportArgumentType]
+        get_imandrax_url('Prod')  # pyright: ignore[reportArgumentType] # ty: ignore[invalid-argument-type]
 
 
 @pytest.fixture
-def made(monkeypatch: pytest.MonkeyPatch) -> dict:
+def made(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     """What `get_imandrax_client` constructs - the client opens a session on construction, so a stub stands in."""
-    seen: dict = {}
+    seen: dict[str, Any] = {}
 
     class Stub:
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: Any):
             seen.update(kwargs)
 
     monkeypatch.setattr('imandrax_api_models.client.ImandraXClient', Stub)
     return seen
 
 
-def test_client_for_a_self_hosted_url_without_a_key(made: dict):
+def test_client_for_a_self_hosted_url_without_a_key(made: dict[str, Any]):
     get_imandrax_client(url='http://my-vm:8086')
     assert made['url'] == 'http://my-vm:8086'
     assert made['auth_token'] is None
 
 
-def test_client_for_a_self_hosted_url_with_a_key(made: dict):
+def test_client_for_a_self_hosted_url_with_a_key(made: dict[str, Any]):
     get_imandrax_client(auth_token='sekrit', url='http://my-vm:8086')
     assert made == {
         'url': 'http://my-vm:8086',
