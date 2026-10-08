@@ -2,7 +2,7 @@
 """
 _
 
-- URL precedence: `url` arg > $IMANDRAX_URL > `env` arg > $IMANDRAX_ENV > disk config
+- URL precedence: `url` arg > $IMANDRAX_URL > `env` arg > $IMANDRAX_ENV > disk config > prod
 - Key precedence: `auth_token` > $IMANDRAX_API_KEY > disk config
 - Cloud URL without a key gives a `ValueError`
 - Self-hosted URL gets only an explicit `auth_token`, never the key from env or disk config
@@ -26,6 +26,10 @@ def no_ambient_config(monkeypatch: pytest.MonkeyPatch):
         monkeypatch.delenv(v, raising=False)
     # a key in ~/.config/imandrax/api_key must not make the cloud tests pass by accident
     monkeypatch.setattr('imandrax_api_models.client.get_imandrax_api_key', lambda: None)
+    # nor a deployment in ~/.config/imandrax/config.toml pick the cloud URL
+    monkeypatch.setattr(
+        'imandrax_api_models.client._get_deployment_from_default_config', lambda: None
+    )
 
 
 def test_url_argument_wins_and_is_keyless():
@@ -95,6 +99,17 @@ def test_self_hosted_never_gets_the_ambient_key(monkeypatch: pytest.MonkeyPatch)
     assert resolve_connection() == ('http://my-vm:8086', None)
     # the cloud still picks it up
     assert resolve_connection(None, 'prod', url_prod) == (url_prod, 'cloud-key')
+
+
+def test_disk_config_deployment_is_used(monkeypatch: pytest.MonkeyPatch):
+    assert get_imandrax_url() == url_prod
+    monkeypatch.setattr(
+        'imandrax_api_models.client._get_deployment_from_default_config', lambda: 'dev'
+    )
+    assert get_imandrax_url() == url_dev
+    monkeypatch.setenv('IMANDRAX_ENV', 'prod')
+    assert get_imandrax_url() == url_prod
+    assert get_imandrax_url('dev') == url_dev
 
 
 def test_unknown_env_is_a_clear_error(monkeypatch: pytest.MonkeyPatch):

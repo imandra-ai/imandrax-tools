@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- DEPS: `imandrax-api>=0.20.2.4`
+- FIX(client): `get_imandrax_url` reads `net.deployment` from `~/.config/imandrax/config.toml` when neither `env` nor `$IMANDRAX_ENV` is given
 
 ## [20.12.0] - 26-10-07
 - FEAT: `get_imandrax_client`, `get_imandrax_async_client` and `end_session` take `url=`; `get_imandrax_url(env, url)` resolves `url` > `$IMANDRAX_URL` > `env` > `$IMANDRAX_ENV` > default config

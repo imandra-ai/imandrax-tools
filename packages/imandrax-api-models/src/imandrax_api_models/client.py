@@ -1008,7 +1008,7 @@ def get_imandrax_url(
     """
     Resolve the ImandraX server URL.
 
-    Precedence: `url` argument > env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config
+    Precedence: `url` argument > env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config > 'prod'
 
     A deployment name other than 'dev' or 'prod' is a `ValueError`.
     """
@@ -1019,8 +1019,9 @@ def get_imandrax_url(
 
     env_ = (
         env
-        or os.getenv('IMANDRAX_ENV', 'prod')
+        or os.getenv('IMANDRAX_ENV')
         or _get_deployment_from_default_config()
+        or 'prod'
     )
     if env_ == 'dev':
         return imandrax_api.url_dev
