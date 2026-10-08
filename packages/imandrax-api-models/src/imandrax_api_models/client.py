@@ -1001,25 +1001,44 @@ def _get_deployment_from_default_config() -> str | None:
         return deployment.get('net', {}).get('deployment')
 
 
-def get_imandrax_url(env: Literal['dev', 'prod'] | None = None) -> str | None:
+def get_imandrax_url(
+    env: Literal['dev', 'prod'] | None = None,
+    url: str | None = None,
+) -> str:
     """
-    Get the ImandraX URL from the environment variable or default config location.
+    Resolve the ImandraX server URL.
 
-    Precedence: env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config
+    Precedence: `url` argument > env(IMANDRAX_URL) > `env` argument > env(IMANDRAX_ENV) > default config > 'prod'
+
+    A deployment name other than 'dev' or 'prod' is a `ValueError`.
     """
+    if url:
+        return url
     if url := os.getenv('IMANDRAX_URL'):
         return url
 
     env_ = (
         env
-        or os.getenv('IMANDRAX_ENV', 'prod')
+        or os.getenv('IMANDRAX_ENV')
         or _get_deployment_from_default_config()
+        or 'prod'
     )
     if env_ == 'dev':
-        url = imandrax_api.url_dev
-    elif env_ == 'prod':
-        url = imandrax_api.url_prod
-    return url
+        return imandrax_api.url_dev
+    if env_ == 'prod':
+        return imandrax_api.url_prod
+    raise ValueError(f"Unknown ImandraX env {env_!r}, expected 'dev' or 'prod'")
+
+
+def _is_self_hosted_url(url: str) -> bool:
+    """
+    Whether `url` is a self-hosted ImandraX, i.e. neither of Imandra's cloud URLs.
+
+    Pass the resolved URL (`get_imandrax_url`), however it was given. A trailing '/'
+    is ignored. A self-hosted server is unauthenticated, so no API key is required for it.
+    """
+    cloud_urls = (imandrax_api.url_dev, imandrax_api.url_prod)
+    return url.rstrip('/') not in {u.rstrip('/') for u in cloud_urls}
 
 
 def get_imandrax_api_key() -> str | None:
@@ -1034,16 +1053,20 @@ def get_imandrax_api_key() -> str | None:
     return api_key
 
 
-def get_imandrax_client(
+def _resolve_connection(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
-    timeout: int | None = None,
-    session_id: str | None = None,
-    create_if_not_found: bool = False,
-) -> ImandraXClient:
-    url = get_imandrax_url(env)
-    if not url:
-        raise ValueError('IMANDRAX_URL is not set')
+    url: str | None = None,
+) -> tuple[str, str | None]:
+    """
+    The (url, api key) a client is made with
+
+    A self-hosted URL gets only `auth_token`: the key from env or disk config is for
+    Imandra's cloud and is never sent elsewhere.
+    """
+    resolved = get_imandrax_url(env, url)
+    if _is_self_hosted_url(resolved):
+        return resolved, auth_token or None
 
     if auth_token is None:
         logger.debug('imandra_api_key is None, setting from env and default path')
@@ -1051,23 +1074,35 @@ def get_imandrax_client(
     if not imandrax_api_key:
         logger.error('IMANDRAX_API_KEY is None')
         raise ValueError('IMANDRAX_API_KEY is None')
+    return resolved, imandrax_api_key
 
+
+def get_imandrax_client(
+    auth_token: str | None = None,
+    env: Literal['dev', 'prod'] | None = None,
+    timeout: int | None = None,
+    session_id: str | None = None,
+    create_if_not_found: bool = False,
+    url: str | None = None,
+) -> ImandraXClient:
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
+
+    kwargs: dict[str, Any] = dict(
+        url=url_,
+        auth_token=imandrax_api_key,
+        session_id=session_id,
+        create_if_not_found=create_if_not_found,
+    )
+    # omitted rather than None, which would drop the client's default timeout
     if timeout is not None:
-        client = ImandraXClient(
-            url=url,
-            auth_token=imandrax_api_key,
-            timeout=timeout,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    else:
-        client = ImandraXClient(
-            url=url,
-            auth_token=imandrax_api_key,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    logger.info('imandrax_client_initialized', url=url, session_id=session_id)
+        kwargs['timeout'] = timeout
+    client = ImandraXClient(**kwargs)
+    logger.info(
+        'imandrax_client_initialized',
+        url=url_,
+        session_id=session_id,
+        authenticated=imandrax_api_key is not None,
+    )
     return client
 
 
@@ -1077,34 +1112,26 @@ def get_imandrax_async_client(
     timeout: int | None = None,
     session_id: str | None = None,
     create_if_not_found: bool = False,
+    url: str | None = None,
 ) -> ImandraXAsyncClient:
-    url = get_imandrax_url(env)
-    if not url:
-        raise ValueError('IMANDRAX_URL is not set')
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
 
-    if auth_token is None:
-        logger.debug('imandra_api_key is None, setting from env and default path')
-    imandrax_api_key = auth_token or get_imandrax_api_key()
-    if not imandrax_api_key:
-        logger.error('IMANDRAX_API_KEY is None')
-        raise ValueError('IMANDRAX_API_KEY is None')
-
+    kwargs: dict[str, Any] = dict(
+        url=url_,
+        auth_token=imandrax_api_key,
+        session_id=session_id,
+        create_if_not_found=create_if_not_found,
+    )
+    # omitted rather than None, which would drop the client's default timeout
     if timeout is not None:
-        client = ImandraXAsyncClient(
-            url=url,
-            auth_token=imandrax_api_key,
-            timeout=timeout,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    else:
-        client = ImandraXAsyncClient(
-            url=url,
-            auth_token=imandrax_api_key,
-            session_id=session_id,
-            create_if_not_found=create_if_not_found,
-        )
-    logger.info('imandrax_client_initialized', url=url, session_id=session_id)
+        kwargs['timeout'] = timeout
+    client = ImandraXAsyncClient(**kwargs)
+    logger.info(
+        'imandrax_client_initialized',
+        url=url_,
+        session_id=session_id,
+        authenticated=imandrax_api_key is not None,
+    )
     return client
 
 
@@ -1290,16 +1317,12 @@ def end_session(
     session_id: str,
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
+    url: str | None = None,
 ) -> None:
     """
     End a server-side session by id, resolving url/key like `get_imandrax_client`.
 
     Errors propagate as `TwirpServerException`; callers wanting best-effort cleanup should catch.
     """
-    url = get_imandrax_url(env)
-    if not url:
-        raise ValueError('IMANDRAX_URL is not set')
-    imandrax_api_key = auth_token or get_imandrax_api_key()
-    if not imandrax_api_key:
-        raise ValueError('IMANDRAX_API_KEY is None')
-    _end_session(session_id, url=url, auth_token=imandrax_api_key)
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
+    _end_session(session_id, url=url_, auth_token=imandrax_api_key)

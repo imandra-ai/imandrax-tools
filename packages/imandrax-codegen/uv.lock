@@ -423,7 +423,7 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.10.0"
+version = "20.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "devtools" },
@@ -431,14 +431,14 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/0c/5fe65edfeb7a9b05b47071fa68420cf80c7c0e2fec420defd5a31bf87680/imandrax_api_models-20.10.0.tar.gz", hash = "sha256:4dcbf27500bd6f3eb7cd993c890e16947cac00305201822ca75e44b15f9a21d3", size = 67430, upload-time = "2026-09-24T15:53:09.523Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/0f/299794c4c42b73d347ec23c2cd39ad8b20fce6cd8c9d3ade6818b3d9c050/imandrax_api_models-20.12.0.tar.gz", hash = "sha256:83830c3c72a01937e76133e85ad7884ff308f58977c80a922e0fffeb19dcfe70", size = 68228, upload-time = "2026-10-08T16:01:20.574Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/e3/61f8d095986118bc9fad31298a25076ed1133adc99d9cba0eafa59f8acd3/imandrax_api_models-20.10.0-py3-none-any.whl", hash = "sha256:1b8c47477f25f5f4cbd3fab83fd1700f4eff51492d7a1fb81cf25d88e9322eb2", size = 84243, upload-time = "2026-09-24T15:53:08.342Z" },
+    { url = "https://files.pythonhosted.org/packages/30/41/176de855279d3ecfb80c16c6e7354c3a590cd71b2d8bdf3f3ef722511c81/imandrax_api_models-20.12.0-py3-none-any.whl", hash = "sha256:1807b837fa0e5ab3b72eae9429c16cd707ab84c6badd8247fa7e28d9922e7bb1", size = 85121, upload-time = "2026-10-08T16:01:19.269Z" },
 ]
 
 [[package]]
 name = "imandrax-codegen"
-version = "20.1.0"
+version = "20.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
@@ -464,7 +464,7 @@ requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "imandrax-api", extras = ["async"], specifier = ">=0.20,<0.21" },
-    { name = "imandrax-api-models", specifier = ">=20.8.1,<21" },
+    { name = "imandrax-api-models", specifier = ">=20.12.0,<21" },
     { name = "iml-query", editable = "../iml-query" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },

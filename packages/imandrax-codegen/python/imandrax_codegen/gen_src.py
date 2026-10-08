@@ -1,8 +1,6 @@
-import os
 from pathlib import Path
 from typing import Any, Literal, assert_never
 
-from imandrax_api import url_dev, url_prod
 from imandrax_api_models import (  # noqa: F401, RUF100
     Art,
     DecomposeRes,
@@ -11,7 +9,7 @@ from imandrax_api_models import (  # noqa: F401, RUF100
     InstanceRes,
     VerifyRes,
 )
-from imandrax_api_models.client import ImandraXClient
+from imandrax_api_models.client import ImandraXClient, get_imandrax_client
 from imandrax_api_models.proto_models.decomp import (
     ByName,
     Decomp,
@@ -140,7 +138,8 @@ def gen_test_cases(
     # </one-of>
     compute_timeout: int | None = None,
     imandrax_api_key: str | None = None,
-    imandrax_env: str | None = None,
+    imandrax_env: Literal['dev', 'prod'] | None = None,
+    imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
 
@@ -158,6 +157,13 @@ def gen_test_cases(
         decomp_plan: decomposition plan for `decompose_full`, which can be
             composite (merge, combine, ...)
         compute_timeout: server-side timeout of the decomposition, in seconds
+        imandrax_api_key: API key, required for Imandra's cloud; defaults to
+            $IMANDRAX_API_KEY or ~/.config/imandrax/api_key, which are never sent
+            to a self-hosted server
+        imandrax_env: Imandra's cloud deployment, 'dev' or 'prod'
+        imandrax_url: URL of the ImandraX server, e.g. a self-hosted one. The URL
+            is `imandrax_url` > $IMANDRAX_URL > `imandrax_env` > $IMANDRAX_ENV >
+            ~/.config/imandrax/config.toml
 
     Return:
         Tuple of (type declarations, test case definition)
@@ -169,48 +175,43 @@ def gen_test_cases(
             '`other_decomp_kwargs` can only be given together with `decomp_name`'
         )
 
-    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
-    url = url_dev if env == 'dev' else url_prod
+    with get_imandrax_client(
+        auth_token=imandrax_api_key, env=imandrax_env, url=imandrax_url
+    ) as c:
+        # Eval IML
+        eval_res: EvalRes = c.eval_src(iml)
+        if eval_res.success is not True:
+            error_msgs = [repr(err.msg) for err in eval_res.errors]
+            raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    c = ImandraXClient(
-        auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
-        url=url,
-    )
+        # Decomp
+        # Since v20:
+        # - `prune=True` is required to get concrete sample points
+        # - `string_results=True` is required: the artifact parser `art-parse`
+        #   relies on the region string-representations being stored in the meta.
+        decomp_res: DecomposeRes
+        if decomp_plan is not None:
+            decomp_res = c.decompose_full(
+                _ensure_pruned(decomp_plan),
+                string_results=True,
+                compute_timeout=compute_timeout,
+            )
+        else:
+            assert decomp_name is not None, 'Never'
+            decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
+                'prune': True,
+                'string_results': True,
+            }
+            if compute_timeout is not None:
+                decomp_kwargs['compute_timeout'] = compute_timeout
+            decomp_res = c.decompose(decomp_name, **decomp_kwargs)
 
-    # Eval IML
-    eval_res: EvalRes = c.eval_src(iml)
-    if eval_res.success is not True:
-        error_msgs = [repr(err.msg) for err in eval_res.errors]
-        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
+        decomp_art = decomp_res.artifact
+        assert decomp_art, 'No artifact returned from decompose'
 
-    # Decomp
-    # Since v20:
-    # - `prune=True` is required to get concrete sample points
-    # - `string_results=True` is required: the artifact parser `art-parse`
-    #   relies on the region string-representations being stored in the meta.
-    decomp_res: DecomposeRes
-    if decomp_plan is not None:
-        decomp_res = c.decompose_full(
-            _ensure_pruned(decomp_plan),
-            string_results=True,
-            compute_timeout=compute_timeout,
-        )
-    else:
-        assert decomp_name is not None, 'Never'
-        decomp_kwargs: dict[str, Any] = (other_decomp_kwargs or {}) | {
-            'prune': True,
-            'string_results': True,
-        }
-        if compute_timeout is not None:
-            decomp_kwargs['compute_timeout'] = compute_timeout
-        decomp_res = c.decompose(decomp_name, **decomp_kwargs)
-
-    decomp_art = decomp_res.artifact
-    assert decomp_art, 'No artifact returned from decompose'
-
-    # Get type declarations
-    arg_types: list[str] = extract_type_decl_names(iml)
-    decls: GetDeclsRes = c.get_decls(arg_types)
+        # Get type declarations
+        arg_types: list[str] = extract_type_decl_names(iml)
+        decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(decomp_res, lang, decls)
     if isinstance(src_res, GenSourceCodeError):
@@ -226,40 +227,45 @@ def gen_counter_example(
     lang: Lang,
     vg_hint: str | None = None,
     imandrax_api_key: str | None = None,
-    imandrax_env: str | None = None,
+    imandrax_env: Literal['dev', 'prod'] | None = None,
+    imandrax_url: str | None = None,
 ) -> tuple[str, str]:
     """Decomp, get decl, and generate test cases as source code.
+
+    Args:
+        imandrax_api_key: API key, required for Imandra's cloud; defaults to
+            $IMANDRAX_API_KEY or ~/.config/imandrax/api_key, which are never sent
+            to a self-hosted server
+        imandrax_env: Imandra's cloud deployment, 'dev' or 'prod'
+        imandrax_url: URL of the ImandraX server, e.g. a self-hosted one. The URL
+            is `imandrax_url` > $IMANDRAX_URL > `imandrax_env` > $IMANDRAX_ENV >
+            ~/.config/imandrax/config.toml
 
     Return:
         Tuple of (type declarations, test case definition)
     """
 
-    env = imandrax_env or os.getenv('IMANDRAX_ENV', 'prod')
-    url = url_dev if env == 'dev' else url_prod
+    with get_imandrax_client(
+        auth_token=imandrax_api_key, env=imandrax_env, url=imandrax_url
+    ) as c:
+        # Eval IML
+        eval_res: EvalRes = c.eval_src(iml)
+        if eval_res.success is not True:
+            error_msgs = [repr(err.msg) for err in eval_res.errors]
+            raise ValueError(f'Failed to evaluate source code: {error_msgs}')
 
-    c = ImandraXClient(
-        auth_token=imandrax_api_key or os.environ['IMANDRAX_API_KEY'],
-        url=url,
-    )
+        #  VG
+        match vg_type:
+            case 'verify':
+                model_res = c.verify_src(vg_src, vg_hint)
+            case 'instance':
+                model_res = c.instance_src(vg_src, vg_hint)
+            case _:
+                assert_never(vg_type)
 
-    # Eval IML
-    eval_res: EvalRes = c.eval_src(iml)
-    if eval_res.success is not True:
-        error_msgs = [repr(err.msg) for err in eval_res.errors]
-        raise ValueError(f'Failed to evaluate source code: {error_msgs}')
-
-    #  VG
-    match vg_type:
-        case 'verify':
-            model_res = c.verify_src(vg_src, vg_hint)
-        case 'instance':
-            model_res = c.instance_src(vg_src, vg_hint)
-        case _:
-            assert_never(vg_type)
-
-    # Get type declarations
-    arg_types: list[str] = extract_type_decl_names(iml)
-    decls: GetDeclsRes = c.get_decls(arg_types)
+        # Get type declarations
+        arg_types: list[str] = extract_type_decl_names(iml)
+        decls: GetDeclsRes = c.get_decls(arg_types)
 
     src_res = gen_source_code(model_res, lang, decls)
     if isinstance(src_res, GenSourceCodeError):

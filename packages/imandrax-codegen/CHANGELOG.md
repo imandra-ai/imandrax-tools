@@ -4,6 +4,14 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [20.2.0] - 2026-10-08
+- FEAT: `gen_test_cases` and `gen_counter_example` accept an `imandrax_url` argument for a self-hosted ImandraX
+- BREAKING: `gen_test_cases` and `gen_counter_example` use `$IMANDRAX_URL` when set, overriding `imandrax_env`
+- BREAKING: `gen_test_cases` and `gen_counter_example` also read the API key from `~/.config/imandrax/api_key`
+- BREAKING: an `imandrax_env` or `$IMANDRAX_ENV` other than 'dev' or 'prod' raises `ValueError` (it used to fall back to prod)
+- FIX: `gen_test_cases` and `gen_counter_example` end their server session on return or raise
+- DEPS: `imandrax-api-models>=20.12.0`
+
 ## [20.1.0] - 2026-10-05
 - **BREAKING** `gen_test_cases`: `decomp_name` is now an optional keyword argument after `lang`; exactly one of `decomp_name` (with optional `other_decomp_kwargs`) or `decomp_plan` must be given
 - FEAT: support composite decomp via `gen_test_cases(..., decomp_plan=...)`
