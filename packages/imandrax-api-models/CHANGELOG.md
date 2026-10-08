@@ -3,14 +3,12 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
-- DEPS: `imandrax-api>=0.20.2.4`
-- FIX(client): `get_imandrax_url` reads `net.deployment` from `~/.config/imandrax/config.toml` when neither `env` nor `$IMANDRAX_ENV` is given
 
-## [20.12.0] - 26-10-07
-- FEAT: `get_imandrax_client`, `get_imandrax_async_client` and `end_session` take `url=`; `get_imandrax_url(env, url)` resolves `url` > `$IMANDRAX_URL` > `env` > `$IMANDRAX_ENV` > default config
-- FEAT: a self-hosted ImandraX (any URL other than `url_dev` / `url_prod`, trailing `/` ignored) needs no API key; Imandra's cloud still requires one (`ValueError`, as before), also when its URL is given as `url=` or `$IMANDRAX_URL`
-- FEAT: `resolve_connection(auth_token, env, url)` returns the `(url, api_key)` a client is made with; a self-hosted URL gets only `auth_token`, never the key from `$IMANDRAX_API_KEY` or `~/.config/imandrax/api_key`
-- CHANGE: `get_imandrax_url` returns `str`; an env other than 'dev' / 'prod' is a `ValueError` naming it, instead of `None` (and the misleading "IMANDRAX_URL is not set")
+## [20.12.0] - 26-10-08
+- FEAT: `get_imandrax_client`, `get_imandrax_async_client` and `end_session` accept a `url` argument
+- FEAT: self-hosted ImandraX servers (any URL other than Imandra's cloud) do not require an API key, and the key from `$IMANDRAX_API_KEY` or `~/.config/imandrax/api_key` is only sent to Imandra's cloud
+- BREAKING: `deployment` in `~/.config/imandrax/config.toml` is now used when `env` and `$IMANDRAX_ENV` are unset (it used to be ignored, defaulting to prod)
+- DEPS: `imandrax-api>=0.20.2.4`
 
 ## [20.11.0] - 26-09-24
 - Tasks data representation: add `level` and `from_sym`; adapt widget

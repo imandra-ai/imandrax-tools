@@ -14,9 +14,9 @@ import pytest
 from imandrax_api import url_dev, url_prod
 from imandrax_api_models.client import (
     _is_self_hosted_url,
+    _resolve_connection,
     get_imandrax_client,
     get_imandrax_url,
-    resolve_connection,
 )
 
 
@@ -35,7 +35,7 @@ def no_ambient_config(monkeypatch: pytest.MonkeyPatch):
 def test_url_argument_wins_and_is_keyless():
     assert get_imandrax_url(None, 'http://my-vm:8086') == 'http://my-vm:8086'
     assert _is_self_hosted_url('http://my-vm:8086')
-    assert resolve_connection(None, None, 'http://my-vm:8086') == (
+    assert _resolve_connection(None, None, 'http://my-vm:8086') == (
         'http://my-vm:8086',
         None,
     )
@@ -45,16 +45,18 @@ def test_url_from_env_is_keyless(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv('IMANDRAX_URL', 'http://my-vm:8086')
     assert get_imandrax_url() == 'http://my-vm:8086'
     assert _is_self_hosted_url(get_imandrax_url())
-    assert resolve_connection() == ('http://my-vm:8086', None)
+    assert _resolve_connection() == ('http://my-vm:8086', None)
 
 
 def test_url_argument_beats_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv('IMANDRAX_URL', 'http://other:8086')
-    assert resolve_connection(None, None, 'http://my-vm:8086')[0] == 'http://my-vm:8086'
+    assert (
+        _resolve_connection(None, None, 'http://my-vm:8086')[0] == 'http://my-vm:8086'
+    )
 
 
 def test_self_hosted_keeps_an_explicit_key():
-    assert resolve_connection('sekrit', None, 'http://my-vm:8086') == (
+    assert _resolve_connection('sekrit', None, 'http://my-vm:8086') == (
         'http://my-vm:8086',
         'sekrit',
     )
@@ -63,13 +65,13 @@ def test_self_hosted_keeps_an_explicit_key():
 def test_cloud_path_unchanged():
     assert not _is_self_hosted_url(url_prod)
     assert not _is_self_hosted_url(url_dev)
-    assert resolve_connection('sekrit') == (url_prod, 'sekrit')
-    assert resolve_connection('sekrit', 'dev') == (url_dev, 'sekrit')
+    assert _resolve_connection('sekrit') == (url_prod, 'sekrit')
+    assert _resolve_connection('sekrit', 'dev') == (url_dev, 'sekrit')
 
 
 def test_cloud_path_still_requires_a_key():
     with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
-        resolve_connection()
+        _resolve_connection()
     with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
         get_imandrax_client(env='prod')
 
@@ -81,24 +83,24 @@ def test_cloud_url_given_explicitly_still_requires_a_key(
     monkeypatch: pytest.MonkeyPatch, cloud_url: str
 ):
     with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
-        resolve_connection(None, None, cloud_url)
+        _resolve_connection(None, None, cloud_url)
     monkeypatch.setenv('IMANDRAX_URL', cloud_url)
     with pytest.raises(ValueError, match='IMANDRAX_API_KEY'):
-        resolve_connection()
+        _resolve_connection()
 
 
 def test_self_hosted_never_gets_the_ambient_key(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(
         'imandrax_api_models.client.get_imandrax_api_key', lambda: 'cloud-key'
     )
-    assert resolve_connection(None, None, 'http://my-vm:8086') == (
+    assert _resolve_connection(None, None, 'http://my-vm:8086') == (
         'http://my-vm:8086',
         None,
     )
     monkeypatch.setenv('IMANDRAX_URL', 'http://my-vm:8086')
-    assert resolve_connection() == ('http://my-vm:8086', None)
+    assert _resolve_connection() == ('http://my-vm:8086', None)
     # the cloud still picks it up
-    assert resolve_connection(None, 'prod', url_prod) == (url_prod, 'cloud-key')
+    assert _resolve_connection(None, 'prod', url_prod) == (url_prod, 'cloud-key')
 
 
 def test_disk_config_deployment_is_used(monkeypatch: pytest.MonkeyPatch):

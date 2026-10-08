@@ -1053,7 +1053,7 @@ def get_imandrax_api_key() -> str | None:
     return api_key
 
 
-def resolve_connection(
+def _resolve_connection(
     auth_token: str | None = None,
     env: Literal['dev', 'prod'] | None = None,
     url: str | None = None,
@@ -1085,7 +1085,7 @@ def get_imandrax_client(
     create_if_not_found: bool = False,
     url: str | None = None,
 ) -> ImandraXClient:
-    url_, imandrax_api_key = resolve_connection(auth_token, env, url)
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
 
     kwargs: dict[str, Any] = dict(
         url=url_,
@@ -1114,7 +1114,7 @@ def get_imandrax_async_client(
     create_if_not_found: bool = False,
     url: str | None = None,
 ) -> ImandraXAsyncClient:
-    url_, imandrax_api_key = resolve_connection(auth_token, env, url)
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
 
     kwargs: dict[str, Any] = dict(
         url=url_,
@@ -1324,5 +1324,5 @@ def end_session(
 
     Errors propagate as `TwirpServerException`; callers wanting best-effort cleanup should catch.
     """
-    url_, imandrax_api_key = resolve_connection(auth_token, env, url)
+    url_, imandrax_api_key = _resolve_connection(auth_token, env, url)
     _end_session(session_id, url=url_, auth_token=imandrax_api_key)

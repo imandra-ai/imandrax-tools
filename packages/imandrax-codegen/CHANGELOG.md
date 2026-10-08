@@ -3,11 +3,12 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
-- FEAT: `gen_test_cases` / `gen_counter_example` take `imandrax_url=` for a self-hosted ImandraX
-- CHANGE: `gen_test_cases` / `gen_counter_example` now honour `$IMANDRAX_URL`, which beats `imandrax_env`; the API key may also come from `~/.config/imandrax/api_key`
-- CHANGE: an `imandrax_env` / `$IMANDRAX_ENV` other than 'dev' / 'prod' is a `ValueError` (was: fall back to prod)
-- FIX: both end their server session on return or raise (was: on garbage collection)
-- DEPS: `imandrax-api-models>=20.12.0`; the connection is resolved by its `get_imandrax_client`
+- FEAT: `gen_test_cases` and `gen_counter_example` accept an `imandrax_url` argument for a self-hosted ImandraX
+- BREAKING: `gen_test_cases` and `gen_counter_example` use `$IMANDRAX_URL` when set, overriding `imandrax_env`
+- BREAKING: `gen_test_cases` and `gen_counter_example` also read the API key from `~/.config/imandrax/api_key`
+- BREAKING: an `imandrax_env` or `$IMANDRAX_ENV` other than 'dev' or 'prod' raises `ValueError` (it used to fall back to prod)
+- FIX: `gen_test_cases` and `gen_counter_example` end their server session on return or raise
+- DEPS: `imandrax-api-models>=20.12.0`
 
 ## [20.1.0] - 2026-10-05
 - **BREAKING** `gen_test_cases`: `decomp_name` is now an optional keyword argument after `lang`; exactly one of `decomp_name` (with optional `other_decomp_kwargs`) or `decomp_plan` must be given
