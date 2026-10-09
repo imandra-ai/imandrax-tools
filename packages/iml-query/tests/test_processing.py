@@ -441,7 +441,9 @@ let context_sensitive x y z =
     )
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(
+    reason='migration pin (old behavior): Naive decomp query does not support composition operator'
+)
 def test_composition_operator_decomp_parsing():
     """Test detailed parsing of complex decomp examples from decomp_eg2.iml."""
     iml = """\

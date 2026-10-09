@@ -1,6 +1,8 @@
+from iml_query.processing import extract_decomp_reqs
 from iml_query.queries import (
     DECOMP_QUERY_SRC,
     INSTANCE_QUERY_SRC,
+    RULE_SPEC_QUERY_SRC,
     TEST_QUERY_SRC,
     VERIFY_QUERY_SRC,
     InstanceCapture,
@@ -163,3 +165,54 @@ def test_test_parsing_with_attr():
     assert t_capture.test_expr.text == b'(fun x -> x > 0)'
     assert t_capture.test_attr is not None
     assert t_capture.test_attr.text == b'[@@by foo]'
+
+
+def test_rule_spec_parsing():
+    # `abs_` is kept opaque by `~basis`; the `abs_zero_iff` rewrite rule turns the
+    # `abs_ x = 0` branch condition into `x = 0` in the decomp regions.
+    iml = """\
+let abs_ (x : int) = if x >= 0 then x else -x
+
+rule_spec abs_nonneg (x : int) = abs_ x [@trigger] >= 0 [@@fc]
+
+rule_spec abs_zero_iff (x : int) =
+  (abs_ x = 0) = (x = 0)
+[@@rw]
+
+let classify (x : int) =
+  if abs_ x < 0 then "impossible"
+  else if abs_ x = 0 then "zero"
+  else "nonzero"
+[@@decomp top ~basis:[[%id abs_]] ~rule_specs:[[%id abs_zero_iff]] ~prune:true ()]
+"""
+    parser = get_parser()
+    tree = parser.parse(bytes(iml, encoding='utf8'))
+    assert not tree.root_node.has_error
+    assert [c.type for c in tree.root_node.children] == snapshot(
+        [
+            'value_definition',
+            'rule_spec_definition',
+            'rule_spec_definition',
+            'value_definition',
+        ]
+    )
+
+    rs_matches = run_query(mk_query(RULE_SPEC_QUERY_SRC), node=tree.root_node)
+    assert [unwrap_bytes(m[1]['rule_spec'][0].text) for m in rs_matches] == snapshot(
+        [
+            b'rule_spec abs_nonneg (x : int) = abs_ x [@trigger] >= 0 [@@fc]',
+            b'rule_spec abs_zero_iff (x : int) =\n  (abs_ x = 0) = (x = 0)\n[@@rw]',
+        ]
+    )
+
+    _, _, decomp_reqs, _ = extract_decomp_reqs(iml, tree)
+    assert decomp_reqs == snapshot(
+        [
+            {
+                'name': 'classify',
+                'basis': ['abs_'],
+                'rule_specs': ['abs_zero_iff'],
+                'prune': True,
+            }
+        ]
+    )
