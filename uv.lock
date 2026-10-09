@@ -1034,7 +1034,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.14.1"
+version = "0.15.0"
 source = { editable = "packages/iml-query" }
 dependencies = [
     { name = "devtools" },

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.15.0] - 2026-10-09
 - support `rule_spec` declarations (tree-sitter-iml >=0.28): add `RULE_SPEC_QUERY_SRC`
 - DEPS: `tree-sitter-iml>=0.28`
 
