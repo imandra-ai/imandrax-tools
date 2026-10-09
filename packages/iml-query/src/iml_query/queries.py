@@ -121,6 +121,10 @@ LEMMA_QUERY_SRC = r"""
 (lemma_definition) @lemma
 """
 
+RULE_SPEC_QUERY_SRC = r"""
+(rule_spec_definition) @rule_spec
+"""
+
 DECOMP_QUERY_SRC = r"""
 (value_definition
     (let_binding
