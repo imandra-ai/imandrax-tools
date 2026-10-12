@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- FEAT(context_utils): `format_eval_res` (and `format_errors`, `format_error`, `format_error_msg`) accept sources keyed by file name to cut error excerpts from the right file
+- `format_location` prefixes the file name when the location has one 
 
 ## [20.12.0] - 26-10-08
 - FEAT: `get_imandrax_client`, `get_imandrax_async_client` and `end_session` accept a `url` argument
