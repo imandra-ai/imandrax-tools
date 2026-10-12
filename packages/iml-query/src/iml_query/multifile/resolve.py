@@ -3,78 +3,26 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
-from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING
 
-from iml_query.processing import (
-    extract_decomp_reqs,
-    extract_instance_reqs,
-    extract_verify_reqs,
-)
 from iml_query.queries import (
     IMPORT_NAMED_PATH_QUERY_SRC,
     IMPORT_PATH_ONLY_QUERY_SRC,
     ImportCapture,
 )
-from iml_query.tree_sitter_utils import (
-    delete_nodes,
-    get_parser,
-    run_queries,
-    unwrap_bytes,
+from iml_query.tree_sitter_utils import run_queries, unwrap_bytes
+
+from ._common import (
+    CircularImportError,
+    IMLImportResolutionError,
+    IMLModule,
+    IMLModuleNotFoundError,
+    NotImplementedImportError,
 )
 
 if TYPE_CHECKING:
     from tree_sitter import Node
-
-
-class IMLImportResolutionError(Exception):
-    """Base class for all IML import resolution errors."""
-
-
-class IMLModuleNotFoundError(IMLImportResolutionError):
-    """Raised when an imported file does not exist."""
-
-
-class CircularImportError(IMLImportResolutionError):
-    """Raised when a circular import is detected."""
-
-
-class NotImplementedImportError(IMLImportResolutionError):
-    """Raised for unsupported import schemes (findlib:, dune:)."""
-
-
-@dataclass
-class IMLModule:
-    """Resolved IML module."""
-
-    path: Path  # absolute path to .iml file
-    name: str  # module name
-    src: str  # source code
-    imports: list[ImportCapture]  # list of parsed imports
-
-    @cached_property
-    def content(self) -> str:
-        """
-        Module content with imports, VGs, and decomps stripped.
-
-        Assumption: the importing module does not care about VGs or decomps
-        in the imported module.
-        """
-        tree = get_parser().parse(bytes(self.src, 'utf-8'))
-        # strip imports
-        src, tree = delete_nodes(
-            iml=self.src,
-            old_tree=tree,
-            nodes=[imp.import_stmt for imp in self.imports],
-        )
-        # strip decomps and VGs
-        src, tree, _decomps, _ranges = extract_decomp_reqs(src, tree)
-        src, tree, _vgs, _ranges = extract_verify_reqs(src, tree)
-        src, tree, _vgs, _ranges = extract_instance_reqs(src, tree)
-
-        return src.strip() + '\n'
 
 
 def parse_imports(code: str) -> list[ImportCapture]:
@@ -112,7 +60,7 @@ def os_path_reader(path: Path) -> str:
 type PathReader = Callable[[Path], str]
 
 
-def resolve(
+def resolve_or_error(
     entry_path: Path,
     path_reader: PathReader = os_path_reader,
 ) -> list[IMLModule] | IMLImportResolutionError:
@@ -120,7 +68,8 @@ def resolve(
     Resolve all modules starting from an entry file.
 
     Returns a topologically sorted list of IMLModule (leaves first,
-    entry module last), suitable for mk_monolith_iml.
+    entry module last).
+
     On failure, returns the error as a value.
 
     Args:
@@ -129,13 +78,11 @@ def resolve(
             code. Defaults to reading from the filesystem; pass a custom reader
             to resolve against a bundle of pre-loaded modules.
 
-    Raises:
-        IMLModuleNotFoundError: If the entry path or any imported module is not found.
-
     Returns:
         A topologically sorted list of IMLModule (leaves first,
-        entry module last), suitable for mk_monolith_iml.
-        On failure, returns the error as a value.
+        entry module last), suitable for `Library`.
+
+        On failure, an `IMLImportResolutionError`.
 
     """
 
@@ -198,61 +145,3 @@ def resolve(
         return out
     result, _, _ = out
     return list(result)
-
-
-class Library:
-    """A library is a collection of IML modules. A DAG."""
-
-    def __init__(self, modules: list[IMLModule]):
-        self.modules = modules
-
-    @classmethod
-    def from_entry_path(
-        cls,
-        entry_path: Path,
-        path_reader: PathReader = os_path_reader,
-    ) -> Self:
-        """Create a library from an entry file."""
-        result = resolve(entry_path, path_reader)
-        if isinstance(result, IMLImportResolutionError):
-            raise result
-        return cls(modules=result)
-
-    def to_monolith(self) -> tuple[str, str]:
-        """Generate a monolith IML file from the library."""
-        return mk_monolith_iml(self.modules)
-
-
-def mk_monolith_iml(modules: list[IMLModule]) -> tuple[str, str]:
-    """
-    Generate a monolith IML file from topologically sorted modules.
-
-    Each dependency module is wrapped in `module Name = struct ... end`.
-    The entry module (last in list) is emitted unwrapped.
-
-    Args:
-        modules: List of topologically sorted IML modules. Must be non-empty.
-
-    Returns:
-        A tuple of (monolith IML string, entry module source without imports).
-
-    """
-    parts: list[str] = []
-
-    for i, mod in enumerate(modules):
-        is_entry = i == len(modules) - 1
-        if is_entry:
-            # strip imports
-            src_wo_imports, _ = delete_nodes(
-                iml=mod.src,
-                nodes=[imp.import_stmt for imp in mod.imports],
-            )
-            src_wo_imports = src_wo_imports.strip() + '\n'
-            parts.append(src_wo_imports)
-        else:
-            indented = '\n'.join(
-                f'  {line}' if line.strip() else '' for line in mod.content.splitlines()
-            )
-            parts.append(f'module {mod.name} = struct\n{indented}\nend')
-
-    return '\n\n'.join(parts[:-1]), parts[-1]

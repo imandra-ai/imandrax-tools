@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+- FEAT!(multifile): `gather_modules` returns a `Library` object, which contains information about the location maps before and after joinning. (was: return `(deps, entry)` two-element string tuple)
+- **BREAKING** multifile: imports, and the dependencies' VGs and decomps, are blanked out instead of deleted, and leading lines are kept
+- add `tree_sitter_utils.blank_nodes`, replacing a node with blank lines
 
 ## [0.15.0] - 2026-10-09
 - support `rule_spec` declarations (tree-sitter-iml >=0.28): add `RULE_SPEC_QUERY_SRC`

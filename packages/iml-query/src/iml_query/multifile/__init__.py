@@ -2,37 +2,41 @@
 
 from pathlib import Path
 
-from .resolve import (
+from ._common import (
     CircularImportError,
     IMLImportResolutionError,
     IMLModule,
     IMLModuleNotFoundError,
     Library,
     NotImplementedImportError,
-    PathReader,
-    mk_monolith_iml,
-    os_path_reader,
-    parse_imports,
-    resolve,
 )
+from .resolve import PathReader, os_path_reader, parse_imports, resolve_or_error
 
 __all__ = (
     'CircularImportError',
     'IMLImportResolutionError',
     'IMLModule',
     'IMLModuleNotFoundError',
+    'Library',
     'NotImplementedImportError',
     'gather_modules',
-    'mk_monolith_iml',
     'parse_imports',
-    'resolve',
+    'resolve_or_error',
 )
 
 
 def gather_modules(
     entry_path: Path,
     path_reader: PathReader = os_path_reader,
-) -> tuple[str, str]:
-    """Resolve all modules starting from an entry file and generate a monolith."""
-    lib = Library.from_entry_path(entry_path, path_reader)
-    return lib.to_monolith()
+) -> Library:
+    """
+    Resolve all modules starting from an entry file.
+
+    Raises:
+        IMLImportResolutionError: If an import cannot be resolved.
+
+    """
+    modules = resolve_or_error(entry_path, path_reader)
+    if isinstance(modules, IMLImportResolutionError):
+        raise modules
+    return Library(modules=tuple(modules))
