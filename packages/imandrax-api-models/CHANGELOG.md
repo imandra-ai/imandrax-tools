@@ -3,6 +3,8 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+
+## [20.13.0] - 26-10-13
 - FEAT(context_utils): `format_eval_res` (and `format_errors`, `format_error`, `format_error_msg`) accept sources keyed by file name to cut error excerpts from the right file
 - `format_location` prefixes the file name when the location has one
 
