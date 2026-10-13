@@ -188,11 +188,11 @@ def format_location(loc: Location) -> str:
     Examples:
         >>> start = Position(line=2, col=5)
         >>> stop = Position(line=2, col=10)
-        >>> format_location(Location(file=None, start, stop))
+        >>> format_location(Location(file=None, start=start, stop=stop))
         '2:5-2:10'
-        >>> format_location(Location(file='<none>', start, stop))
+        >>> format_location(Location(file='<none>', start=start, stop=stop))
         '2:5-2:10'
-        >>> format_location(Location(file='lib.iml', start, stop))
+        >>> format_location(Location(file='lib.iml', start=start, stop=stop))
         'lib.iml:2:5-2:10'
 
     """
