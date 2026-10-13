@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+
+## [0.16.0] - 2026-10-13
 - FEAT!(multifile): `gather_modules` returns a `Library` object, which contains information about the location maps before and after joining. (was: return `(deps, entry)` two-element string tuple)
 - **BREAKING** multifile: imports, and the dependencies' VGs and decomps, are blanked out instead of deleted, and leading lines are kept
 - add `tree_sitter_utils.blank_nodes`, replacing a node with blank lines
