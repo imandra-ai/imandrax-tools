@@ -980,7 +980,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-tools"
-version = "20.8.0"
+version = "20.8.1"
 source = { editable = "packages/imandrax-tools" }
 dependencies = [
     { name = "imandrax-api-models" },
