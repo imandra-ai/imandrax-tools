@@ -237,7 +237,7 @@ class TestMonolithSourceMap:
         m = gather_modules(DATA_DIR / case / 'main.iml')
         mapped: dict[Path, list[int]] = {}
         for line, joined in enumerate(m.iml.split('\n'), 1):
-            loc = m.locate(line, 1)
+            loc = m.joined_to_module_loc(line, 1)
             if loc is None:
                 continue
             path, orig_line, _ = loc
@@ -257,16 +257,16 @@ class TestMonolithSourceMap:
         lines = m.iml.split('\n')
         # `module Base = struct` and `end` belong to no file
         assert lines[0] == 'module Base = struct'
-        assert m.locate(1, 1) is None
+        assert m.joined_to_module_loc(1, 1) is None
         end_line = lines.index('end') + 1
-        assert m.locate(end_line, 1) is None
+        assert m.joined_to_module_loc(end_line, 1) is None
         # `let y = Base.f 1` is line 3 of main.iml
         y_line = lines.index('let y = Base.f 1') + 1
-        assert m.locate(y_line, 5) == (entry_path, 3, 5)
+        assert m.joined_to_module_loc(y_line, 5) == (entry_path, 3, 5)
         # `let f x = x + 1` is line 2 of base.iml, shifted by the indentation
         f_line = lines.index('  let f x = x + 1') + 1
         base = (DATA_DIR / 'with_vg' / 'base.iml').resolve()
-        assert m.locate(f_line, 7) == (base, 2, 5)
+        assert m.joined_to_module_loc(f_line, 7) == (base, 2, 5)
 
     def test_stripped_vg_keeps_lines(self, tmp_path: Path):
         """A multi-line `verify` in a dependency does not shift the lines below it."""
@@ -277,6 +277,14 @@ class TestMonolithSourceMap:
         m = gather_modules(tmp_path / 'main.iml')
         lines = m.iml.split('\n')
         b_line = lines.index('  let b = 2') + 1
-        assert m.locate(b_line, 3) == ((tmp_path / 'lib.iml').resolve(), 6, 1)
+        assert m.joined_to_module_loc(b_line, 3) == (
+            (tmp_path / 'lib.iml').resolve(),
+            6,
+            1,
+        )
         c_line = lines.index('let c = Lib.b') + 1
-        assert m.locate(c_line, 1) == ((tmp_path / 'main.iml').resolve(), 2, 1)
+        assert m.joined_to_module_loc(c_line, 1) == (
+            (tmp_path / 'main.iml').resolve(),
+            2,
+            1,
+        )

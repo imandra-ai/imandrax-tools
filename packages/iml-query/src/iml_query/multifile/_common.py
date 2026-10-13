@@ -141,12 +141,17 @@ class Library:
     modules: tuple[IMLModule, ...]
     """Topologically sorted, non-empty."""
 
-    def locate(self, line: int, col: int) -> tuple[Path, int, int] | None:
+    def joined_to_module_loc(self, line: int, col: int) -> tuple[Path, int, int] | None:
         """
         Map a `(line, col)` of the joined source to `(path, line, col)` in a module file.
 
         Both are 1-indexed. A column inside the `struct` indentation maps to 1.
         Returns `None` on lines in no module file.
+
+        Returns:
+            (source-mod, line-in-src, col-in-src)
+            or None if input is out of range
+
         """
         for seg in self._layout.segments:
             if seg.contains(line):
@@ -160,7 +165,15 @@ class Library:
 
     @property
     def entry(self) -> str:
-        """Entry module, imports blanked out."""
+        """
+        Entry module, imports blanked out.
+
+        Invariant:
+            - Imports are blanked in place, so line k, column c of entry is line k, column
+        c of the entry file. Only the blanked imports and trailing whitespace differ from
+        what it was built from.
+
+        """
         return self._layout.entry
 
     @property

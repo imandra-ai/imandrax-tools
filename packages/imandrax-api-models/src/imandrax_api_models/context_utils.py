@@ -215,6 +215,13 @@ def format_error_msg(
     iml_src: str | Mapping[str, str] | None = None,
     max_backtrace_len: int = 0,
 ) -> JSONObject:
+    """
+    _
+
+    Arguments:
+        iml_src: IML sources to be matched by `loc`'s `file`, `start`, and `stop`
+
+    """
     res: dict[str, Any] = {'msg': error_msg.msg}
 
     locs: list[Location] = error_msg.locs or []
