@@ -1,9 +1,12 @@
 # Changelog
 
 ## [Unreleased]
-- FEAT!(multifile): `gather_modules` returns a `Library` object, which contains information about the location maps before and after joinning. (was: return `(deps, entry)` two-element string tuple)
+- FEAT!(multifile): `gather_modules` returns a `Library` object, which contains information about the location maps before and after joining. (was: return `(deps, entry)` two-element string tuple)
 - **BREAKING** multifile: imports, and the dependencies' VGs and decomps, are blanked out instead of deleted, and leading lines are kept
 - add `tree_sitter_utils.blank_nodes`, replacing a node with blank lines
+- **BREAKING** multifile: `resolve` is renamed `resolve_or_error`
+- **BREAKING** multifile: `mk_monolith_iml`, `Library.from_entry_path` and `Library.to_monolith` are removed; use `gather_modules` (or `Library(modules=...)`) and `Library.deps` / `Library.entry` / `Library.iml`
+- FIX(multifile): lines are counted on `\n` only, so `\f`, `\v` or `\u2028` in a module no longer shift mapped locations
 
 ## [0.15.0] - 2026-10-09
 - support `rule_spec` declarations (tree-sitter-iml >=0.28): add `RULE_SPEC_QUERY_SRC`
