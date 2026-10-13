@@ -267,6 +267,21 @@ def delete_nodes(
     return iml, new_tree
 
 
+def blank_nodes(iml: str, nodes: list[Node]) -> str:
+    """
+    Overwrite nodes with spaces, keeping their newlines.
+
+    Unlike `delete_nodes`, every byte outside the nodes keeps its line and
+    column, so positions in the result are positions in the input iml.
+    """
+    iml_b = bytearray(iml, encoding='utf8')
+    for node in nodes:
+        for i in range(node.start_byte, node.end_byte):
+            if iml_b[i] != ord('\n'):
+                iml_b[i] = ord(' ')
+    return iml_b.decode('utf8')
+
+
 def insert_lines(
     code: str,
     tree: Tree,

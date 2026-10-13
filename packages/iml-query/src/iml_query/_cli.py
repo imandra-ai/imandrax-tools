@@ -22,7 +22,8 @@ app = typer.Typer(no_args_is_help=True)
 @app.command()
 def gather_module(path: Annotated[Path, typer.Argument()]) -> None:
     """Read IML code from a file or stdin."""
-    iml = '\n\n'.join(gather_modules(path)) + '\n'
+    m = gather_modules(path)
+    iml = '\n\n'.join((m.deps, m.entry)) + '\n'
     typer.echo(iml)
 
 

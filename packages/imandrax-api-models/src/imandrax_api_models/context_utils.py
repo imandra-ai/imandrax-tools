@@ -6,7 +6,7 @@ Most functions returns a JSON-serializable value, suitable to be further dumped 
 
 from __future__ import annotations
 
-from collections.abc import Collection, MutableMapping, MutableSequence
+from collections.abc import Collection, Mapping, MutableMapping, MutableSequence
 from functools import partial
 from typing import Any, Literal, assert_never, cast, get_args
 
@@ -176,7 +176,26 @@ def _format_unstructured_msg_errors(
     return out
 
 
+def _file_of_loc(loc: Location) -> str | None:
+    # ImandraX reports `<none>` for code evaluated from a string
+    return None if loc.file in (None, '<none>') else loc.file
+
+
 def format_location(loc: Location) -> str:
+    """
+    Format a location as `start-stop`, prefixed by its file if it has one.
+
+    Examples:
+        >>> start = Position(line=2, col=5)
+        >>> stop = Position(line=2, col=10)
+        >>> format_location(Location(file=None, start=start, stop=stop))
+        '2:5-2:10'
+        >>> format_location(Location(file='<none>', start=start, stop=stop))
+        '2:5-2:10'
+        >>> format_location(Location(file='lib.iml', start=start, stop=stop))
+        'lib.iml:2:5-2:10'
+
+    """
     start = loc.start
     end = loc.stop
 
@@ -186,14 +205,23 @@ def format_location(loc: Location) -> str:
         else:
             return f'{pos_opt.line}:{pos_opt.col}'
 
-    return f'{string_of_pos(start)}-{string_of_pos(end)}'
+    span = f'{string_of_pos(start)}-{string_of_pos(end)}'
+    file = _file_of_loc(loc)
+    return span if file is None else f'{file}:{span}'
 
 
 def format_error_msg(
     error_msg: ErrorMessage,
-    iml_src: str | None = None,
+    iml_src: str | Mapping[str, str] | None = None,
     max_backtrace_len: int = 0,
 ) -> JSONObject:
+    """
+    _
+
+    Arguments:
+        iml_src: IML sources to be matched by `loc`'s `file`, `start`, and `stop`
+
+    """
     res: dict[str, Any] = {'msg': error_msg.msg}
 
     locs: list[Location] = error_msg.locs or []
@@ -201,15 +229,26 @@ def format_error_msg(
 
     if locs:
         # TODO: handle multiple locations
-        start, stop = locs[0].start, locs[0].stop
+        loc = locs[0]
+
+        start, stop = loc.start, loc.stop
         start = cast(Position, start)
         stop = cast(Position, stop)
         res['location'] = format_location(locs[0])
 
-        if iml_src is not None:
+        # A single source serves every location; with one source per file, a
+        # location without a file gets no excerpt
+        file = _file_of_loc(loc)
+        src: str | None
+        match iml_src:
+            case None | str():
+                src = iml_src
+            case Mapping():
+                src = None if file is None else iml_src.get(file)
+        if src is not None:
             start_pos = (start.line, start.col)
             end_pos = (stop.line, stop.col)
-            error_src = format_code_snippet_with_loc(iml_src, start_pos, end_pos)
+            error_src = format_code_snippet_with_loc(src, start_pos, end_pos)
             res['error_src'] = error_src
     else:
         # No location information
@@ -222,7 +261,7 @@ def format_error_msg(
 
 def format_error(
     error: Error,
-    iml_src: str | None = None,
+    iml_src: str | Mapping[str, str] | None = None,
     max_stack_depth: int = 3,
 ) -> JSONObject:
     out: dict[str, Any] = {}
@@ -252,7 +291,7 @@ def format_error(
 def format_errors(
     non_po_errors: list[Error],
     po_errors: list[Error],
-    iml_src: str | None = None,
+    iml_src: str | Mapping[str, str] | None = None,
     max_errors: int = 3,
 ) -> JSONArray:
     """
@@ -300,14 +339,14 @@ def format_errors(
 
 def format_eval_res(
     eval_res: EvalRes,
-    iml_src: str | None = None,
+    iml_src: str | Mapping[str, str] | None = None,
     process_decomp: bool = True,
 ) -> JSONObject | str:
     """
     Format an EvalRes object into a JSON-serializable value.
 
     Args:
-        iml_src: IML source used to resolve error locations
+        iml_src: IML source used to resolve error locations. can be a string or a map from file name to source string
         process_decomp: whether to populate decomp grouping information
 
     Returns:
