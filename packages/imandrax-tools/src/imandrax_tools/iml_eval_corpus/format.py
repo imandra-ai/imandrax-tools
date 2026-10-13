@@ -1,9 +1,11 @@
+from collections.abc import Mapping
+
 from .common import BaseDiag
 
 
 def format_diagnostics(
     diags: list[BaseDiag],
-    code: str | None,
+    code: str | Mapping[str, str] | None,
     header: bool = False,
 ) -> str:
     s = ''

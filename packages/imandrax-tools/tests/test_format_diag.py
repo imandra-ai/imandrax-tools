@@ -150,3 +150,32 @@ help: Measure attribute `[@@measure Ordinal.of_int (n - curr_i)]` should be atta
 help: Recursive function `helper` nested in `build_fib` might cause proof-obligation difficulty.
 
 """)
+
+
+def test_loc_of_points():
+    # ai-disclosure: ai-generated
+    src = 'let x = 1\nlet é = 2\n'
+    loc = Loc.make(src, (2, 5), (2, 7), file='a.iml')
+    assert src.encode()[loc.start_byte : loc.end_byte] == 'é'.encode()
+    assert loc.model_dump() == snapshot(
+        {
+            'start_byte': 14,
+            'end_byte': 16,
+            'start_point': (2, 5),
+            'end_point': (2, 7),
+            'file': 'a.iml',
+        }
+    )
+    # No `file` key for a `Loc` in the checked code
+    assert 'file' not in Loc.make(src, (1, 5), (1, 6)).model_dump()
+
+
+def test_format_with_file_sources():
+    # ai-disclosure: ai-generated
+    loc = Loc.make(IML, (17, 5), (17, 9), file='lib.iml')
+    diag = InfixOpMissingParenDiag(loc=loc, op='land')
+    s = diag.format(code={'lib.iml': IML})
+    assert '->loc:lib.iml:17:5-17:9' in s
+    assert '17 | let land' in s
+    # No excerpt for a file without a source
+    assert '17 | let land' not in diag.format(code={'other.iml': IML})

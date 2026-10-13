@@ -3,6 +3,7 @@
 Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
+- FEAT(iml_eval_corpus): `BaseDiag.format` and `format_diagnostics` accept sources keyed by file name to cut excerpts from the right file based on location
 
 ## [20.7.1] - 2026-10-05
 - ENH: polish jsonable widget
