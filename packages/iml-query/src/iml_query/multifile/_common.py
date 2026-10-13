@@ -76,6 +76,15 @@ class IMLModule:
         return _rstrip_lines(blank_nodes(self.src, nodes))
 
 
+def _lines(src: str) -> list[str]:
+    r"""
+    Lines of `src`, split on `\n` only, as ImandraX counts them.
+
+    Unlike `str.splitlines`, `\f`, `\v`, `\u2028` etc. do not end a line.
+    """
+    return src.removesuffix('\n').split('\n')
+
+
 def _rstrip_lines(src: str) -> str:
     """Strip trailing whitespace of each line and trailing blank lines."""
     return '\n'.join(line.rstrip() for line in src.rstrip().split('\n')) + '\n'
@@ -190,7 +199,7 @@ class Library:
 
         line = 1
         for mod in deps:
-            content_lines = mod.content.splitlines()
+            content_lines = _lines(mod.content)
             indented = '\n'.join(
                 f'  {ln}' if ln.strip() else '' for ln in content_lines
             )
@@ -215,7 +224,7 @@ class Library:
             SourceSegment(
                 path=entry.path,
                 start_line_in_joined=line,
-                end_line_in_joined=line + len(entry_src.splitlines()) - 1,
+                end_line_in_joined=line + len(_lines(entry_src)) - 1,
                 join_line_offset=line - 1,
                 join_col_offset=0,
             )
