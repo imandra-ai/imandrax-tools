@@ -20,8 +20,6 @@
 (def dir-descriptions
   {"advanced"                                       "Advanced topics and tips"
    "examples"                                       "Worked examples"
-   "examples/region-decomp"                         ""
-   "examples/region-decomp/synthesized-real-world-examples" ""
    "reference"                                      "Language and API reference"
    "reference/prelude"                              "Module-level API docs"
    "error-fix-data"                                 "Data for common error and fix"
