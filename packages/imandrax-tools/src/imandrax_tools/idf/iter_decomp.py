@@ -60,7 +60,7 @@ end
 Decomp = simple_api_pb2.DecomposeReqFull.Decomp
 
 
-def from_artifact(art: artmsg_pb2.Art) -> Decomp:
+def from_artifact(art: artmsg_pb2.Artifact) -> Decomp:
     return Decomp(from_artifact=art)
 
 
@@ -116,7 +116,7 @@ async def merge_decompose(
     if merge_from is not None:
         assert merge_from.artifact is not None, 'No artifact in merge_from'
         art_model = merge_from.artifact
-        art = artmsg_pb2.Art(
+        art = artmsg_pb2.Artifact(
             kind=art_model.kind,
             data=art_model.data,
             api_version=art_model.api_version,

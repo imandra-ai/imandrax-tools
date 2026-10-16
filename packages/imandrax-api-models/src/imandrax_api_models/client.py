@@ -37,7 +37,7 @@ except ImportError as e:
 
 
 from imandrax_api_models import (
-    Art,
+    Artifact,
     DecomposeRes,
     EvalRes,
     Gc_stats,
@@ -51,9 +51,9 @@ from imandrax_api_models import (
 )
 from imandrax_api_models.proto_models import decomp
 from imandrax_api_models.proto_models.api import (
-    Artifact,
     ArtifactListResult,
-    ArtifactZip,
+    ArtifactResult,
+    ArtifactZipResult,
     CodeSnippetEvalResult,
 )
 from imandrax_api_models.proto_models.decomp import Decomp
@@ -410,21 +410,21 @@ class ImandraXClient(imandrax_api.Client):
         self,
         code: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Parse and typecheck a term, returning it as an artifact."""
         with self._trace('parse_term', code=code, timeout=timeout):
             res = super().parse_term(code=code, timeout=timeout)
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     def parse_type(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Parse and typecheck a type, returning it as an artifact."""
         with self._trace('parse_type', code=code, timeout=timeout):
             res = super().parse_type(code=code, timeout=timeout)
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
@@ -440,24 +440,24 @@ class ImandraXClient(imandrax_api.Client):
         task: Task,
         kind: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Obtain an artifact from a task."""
         with self._trace('get_artifact', kind=kind, timeout=timeout):
             res = super().get_artifact(task=task.to_proto(), kind=kind, timeout=timeout)
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
         timeout: float | None = None,
-    ) -> ArtifactZip:
+    ) -> ArtifactZipResult:
         """Obtain an artifact from a task as a zip file."""
         with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
-        return ArtifactZip.model_validate(res)
+        return ArtifactZipResult.model_validate(res)
 
     # Service SessionManager
     # ====================
@@ -840,21 +840,21 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         self,
         code: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Parse and typecheck a term, returning it as an artifact."""
         with self._trace('parse_term', code=code, timeout=timeout):
             res = await super().parse_term(code=code, timeout=timeout)
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     async def parse_type(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         code: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Parse and typecheck a type, returning it as an artifact."""
         with self._trace('parse_type', code=code, timeout=timeout):
             res = await super().parse_type(code=code, timeout=timeout)
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     async def list_artifacts(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
@@ -870,26 +870,26 @@ class ImandraXAsyncClient(imandrax_api.AsyncClient):
         task: Task,
         kind: str,
         timeout: float | None = None,
-    ) -> Artifact:
+    ) -> ArtifactResult:
         """Obtain an artifact from a task."""
         with self._trace('get_artifact', kind=kind, timeout=timeout):
             res = await super().get_artifact(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
-        return Artifact.model_validate(res)
+        return ArtifactResult.model_validate(res)
 
     async def get_artifact_zip(  # type: ignore[override] # ty: ignore[invalid-method-override]
         self,
         task: Task,
         kind: str,
         timeout: float | None = None,
-    ) -> ArtifactZip:
+    ) -> ArtifactZipResult:
         """Obtain an artifact from a task as a zip file."""
         with self._trace('get_artifact_zip', kind=kind, timeout=timeout):
             res = await super().get_artifact_zip(
                 task=task.to_proto(), kind=kind, timeout=timeout
             )
-        return ArtifactZip.model_validate(res)
+        return ArtifactZipResult.model_validate(res)
 
     # Service SessionManager
     # ====================
@@ -1218,13 +1218,13 @@ def get_task_artifacts(
     xtype = imandrax_api.lib
     twine = imandrax_api.lib.twine
 
-    available_kinds = c.list_artifacts(task).kinds
+    available_kinds = c.list_artifacts(task).unwrap().kinds
     art_kinds = _resolve_art_kinds(available_kinds, art_kinds)
 
     # artifact-kind -> xvalue decoded from artifact
     xvalues: dict[str, Any] = {}
     for art_kind in art_kinds:
-        art: Art = c.get_artifact(task=task, kind=art_kind).art
+        art: Artifact = c.get_artifact(task=task, kind=art_kind).unwrap()
         d = twine.Decoder(art.data)
         with raise_rec_limit():
             x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())
@@ -1251,13 +1251,13 @@ async def async_get_task_artifacts(
     xtype = imandrax_api.lib
     twine = imandrax_api.lib.twine
 
-    available_kinds = (await c.list_artifacts(task)).kinds
+    available_kinds = (await c.list_artifacts(task)).unwrap().kinds
     art_kinds = _resolve_art_kinds(available_kinds, art_kinds)
 
     # artifact-kind -> xvalue decoded from artifact
     xvalues: dict[str, Any] = {}
     for art_kind in art_kinds:
-        art: Art = (await c.get_artifact(task=task, kind=art_kind)).art
+        art: Artifact = (await c.get_artifact(task=task, kind=art_kind)).unwrap()
         d = twine.Decoder(art.data)
         with raise_rec_limit():
             x_value = xtype.artifact_decoders[art_kind](d, d.entrypoint())

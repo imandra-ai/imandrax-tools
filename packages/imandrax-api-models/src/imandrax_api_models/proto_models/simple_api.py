@@ -17,7 +17,7 @@ from pydantic import (
 )
 
 from ..proto_utils import BaseModel
-from .artmsg import Art
+from .artmsg import Artifact
 from .error import Error
 from .session import Session
 from .task import Origin, Task
@@ -52,7 +52,7 @@ class DecomposeReq(BaseModel):
 
 class DecomposeResProto(BaseModel):
     # oneof_res
-    artifact: Art | None = Field(default=None, exclude_if=lambda v: v is None)
+    artifact: Artifact | None = Field(default=None, exclude_if=lambda v: v is None)
     err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
     # oneof_res
     errors: list[Error] = Field(default_factory=list)
@@ -275,7 +275,9 @@ class ModelType(Enum):
 class Model(BaseModel):
     m_type: ModelType  # NOTE: proto file has this but it's not returned?
     src: str = Field(description='iml source code for the model')
-    artifact: Art | None = Field(default=None, description='the model as an artifact')
+    artifact: Artifact | None = Field(
+        default=None, description='the model as an artifact'
+    )
 
 
 class Refuted(BaseModel):
@@ -551,7 +553,7 @@ class GetDeclsReq(BaseModel):
 
 class DeclWithName(BaseModel):
     name: str
-    artifact: Art = Field(description='artifact with the decl in it')
+    artifact: Artifact = Field(description='artifact with the decl in it')
     str_: str | None = Field(
         default=None,
         alias='str',

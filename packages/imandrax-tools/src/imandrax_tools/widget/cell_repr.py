@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import anywidget
-from imandrax_api_models import Art
+from imandrax_api_models import Artifact
 from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.context_utils import format_eval_res, jsonable_of_model
 from imandrax_api_models.proto_models.decomp import decomp_of_cst
@@ -42,7 +42,7 @@ def decomp_widgets(c: ImandraXClient, iml: str) -> list[RegionDecompWidget]:
         res = DecomposeRes_.from_decomp_res(
             c.decompose_full(d=plan, string_results=True, compute_timeout=timeout)
         )
-        if res.artifact is None or isinstance(res.artifact, Art):
+        if res.artifact is None or isinstance(res.artifact, Artifact):
             pre = to_yaml_str({'decomp': name, 'decomp_res': jsonable_of_model(res)})
             widgets.append(RegionDecompWidget(pre=pre))
         else:

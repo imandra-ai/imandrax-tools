@@ -14,13 +14,14 @@ Pydantic models for `DecomposeReqFull.Decomp` protobuf, the recursive decomposit
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, Annotated, Literal, assert_never
 
 import imandrax_api.bindings.simple_api_pb2 as xsimple_api_pb2
 from pydantic import Field, TypeAdapter
 
 from ..proto_utils import BaseModel
-from .artmsg import Art
+from .artmsg import Artifact
 from .simple_api import LiftBool
 
 if TYPE_CHECKING:
@@ -32,6 +33,8 @@ __all__ = (
     'ByName',
     'Merge',
     'CompoundMerge',
+    'EnumerationStyle',
+    'Enumerate',
     'Decomp',
     'DECOMP_TYPE_ADAPTER',
     'decomp_repr',
@@ -43,6 +46,7 @@ __all__ = (
     'combine',
     'get',
     'let',
+    'enumerate_',
     # 3. iml-query interop
     'decomp_of_cst',
 )
@@ -60,7 +64,7 @@ class FromArtifact(BaseModel):
     """
 
     op: Literal['from_artifact'] = 'from_artifact'
-    art: Art
+    art: Artifact
 
     def to_proto(self) -> _Decomp:
         return _Decomp(from_artifact=self.art.to_proto())
@@ -186,6 +190,29 @@ class LocalVarLet(BaseModel):
         )
 
 
+class EnumerationStyle(Enum):
+    Additive = 0
+    Multiplicative = 1
+
+
+class Enumerate(BaseModel):
+    """Enumerate `d_f` over the decompositions `ds`, in the given `style`."""
+
+    op: Literal['enumerate'] = 'enumerate'
+    d_f: Decomp
+    ds: list[Decomp] = Field(default_factory=list)
+    style: EnumerationStyle = Field(default=EnumerationStyle.Additive)
+
+    def to_proto(self) -> _Decomp:
+        return _Decomp(
+            enumerate=_Full.Enumerate(
+                d_f=self.d_f.to_proto(),
+                ds=[d.to_proto() for d in self.ds],
+                style=self.style.name,
+            )
+        )
+
+
 type Decomp = Annotated[
     FromArtifact
     | ByName
@@ -194,7 +221,8 @@ type Decomp = Annotated[
     | Prune
     | Combine
     | LocalVarGet
-    | LocalVarLet,
+    | LocalVarLet
+    | Enumerate,
     Field(discriminator='op'),
 ]
 
@@ -205,7 +233,7 @@ DECOMP_TYPE_ADAPTER: TypeAdapter[Decomp] = TypeAdapter(Decomp)
 # ====================
 
 
-def from_artifact(art: Art) -> FromArtifact:
+def from_artifact(art: Artifact) -> FromArtifact:
     """Resume from a decomposition previously returned as an artifact."""
     return FromArtifact(art=art)
 
@@ -269,6 +297,15 @@ def let(bindings: list[tuple[str, Decomp]], and_then: Decomp) -> LocalVarLet:
     )
 
 
+def enumerate_(
+    d_f: Decomp,
+    ds: list[Decomp],
+    style: EnumerationStyle = EnumerationStyle.Additive,
+) -> Enumerate:
+    """Enumerate `d_f` over the decompositions `ds`, in the given `style`."""
+    return Enumerate(d_f=d_f, ds=ds, style=style)
+
+
 # ====================
 
 
@@ -309,6 +346,9 @@ def decomp_repr(d: Decomp) -> str:
         case LocalVarLet():
             binds = ', '.join(f'{b.name}={decomp_repr(b.d)}' for b in d.bindings)
             return f'let([{binds}], {decomp_repr(d.and_then)})'
+        case Enumerate():
+            ds = ', '.join(decomp_repr(x) for x in d.ds)
+            return f'enumerate({decomp_repr(d.d_f)}, [{ds}], {d.style.name})'
 
 
 # iml-query CST interop

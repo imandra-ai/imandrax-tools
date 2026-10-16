@@ -6,13 +6,14 @@ import base64
 import json
 from enum import Enum
 from io import BytesIO
+from typing import Self
 from zipfile import ZipFile
 
 from imandrax_api.lib import Artifact as XtypesArtifact, read_artifact_data
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 
 from ..proto_utils import BaseModel
-from .artmsg import Art
+from .artmsg import Artifact
 from .error import Error
 from .task import Task
 
@@ -43,16 +44,12 @@ class CodeSnippetEvalResult(BaseModel):
     errors: list[Error] = Field(description='Errors occurring during evaluation.')
 
 
-class ArtifactListResult(BaseModel):
-    """Result of listing artifacts for a task."""
+class ArtifactList(BaseModel):
+    """The kinds of artifacts available for a task."""
 
     kinds: list[str] = Field(
         default_factory=list, description='Available artifact kinds'
     )
-
-
-class Artifact(BaseModel):
-    art: Art = Field(description='Requested artifact')
 
 
 class ArtifactZip(BaseModel):
@@ -83,3 +80,44 @@ class ArtifactZip(BaseModel):
             kind = str(manifest['kind'])
             twine_data = f.read('data.twine')
         return read_artifact_data(data=twine_data, kind=kind)
+
+
+class ArtifactResultError(Exception):
+    """Raised by `unwrap` on an artifact result that holds an error."""
+
+    def __init__(self, error: Error) -> None:
+        self.error = error
+        msg = error.msg.msg if error.msg is not None else error.kind
+        super().__init__(msg)
+
+
+class _OkOrError[T](BaseModel):
+    # oneof result
+    ok: T | None = Field(default=None)
+    error: Error | None = Field(default=None)
+    # oneof result
+
+    @model_validator(mode='after')
+    def one_of_result(self) -> Self:
+        if (self.ok is None) == (self.error is None):
+            raise ValueError('One of ok or error must be set')
+        return self
+
+    def unwrap(self) -> T:
+        """The `ok` value, or raise `ArtifactResultError` on `error`."""
+        if self.ok is None:
+            assert self.error is not None
+            raise ArtifactResultError(self.error)
+        return self.ok
+
+
+class ArtifactResult(_OkOrError[Artifact]):
+    """Result of `get_artifact`, `parse_term` and `parse_type`."""
+
+
+class ArtifactListResult(_OkOrError[ArtifactList]):
+    """Result of listing artifacts for a task."""
+
+
+class ArtifactZipResult(_OkOrError[ArtifactZip]):
+    """Result of `get_artifact_zip`."""

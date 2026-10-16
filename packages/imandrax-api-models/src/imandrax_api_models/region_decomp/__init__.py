@@ -21,8 +21,8 @@ import imandrax_api.lib as xtype
 from devtools import pformat
 from pydantic import BaseModel, Field, PlainSerializer, model_validator
 
-from imandrax_api_models.proto_models import DecomposeRes
-from imandrax_api_models.proto_models.simple_api import Art, DecomposeResProto
+from imandrax_api_models.proto_models import Artifact, DecomposeRes
+from imandrax_api_models.proto_models.simple_api import DecomposeResProto
 
 from ._common import (
     AssocList as AssocList,
@@ -86,7 +86,7 @@ class DecomposeRes_(DecomposeResProto):
     # - RegionGroupView will be the only type representing parsed regions
     #   - by then, it should be renamed to without the `View` suffix
     # - types in ._region needs a unifying cleanup as well
-    artifact: list[RegionGroupView] | Art | None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
+    artifact: list[RegionGroupView] | Artifact | None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         default=None, exclude_if=lambda v: v is None
     )
 
@@ -114,7 +114,7 @@ class DecomposeRes_(DecomposeResProto):
         return ds
 
     @staticmethod
-    def decode_artifact(art: Art) -> list[RegionGroupView]:
+    def decode_artifact(art: Artifact) -> list[RegionGroupView]:
         mir_regions: list[xtype.Mir_Region_Region] = mir_regions_of_fun_decomp_artifact(
             art
         )

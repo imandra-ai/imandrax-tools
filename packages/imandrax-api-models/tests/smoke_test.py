@@ -6,7 +6,7 @@ def test_package_import():
 def test_all_exports_import():
     """Test that all exported models can be imported."""
     from imandrax_api_models import (  # noqa: F401
-        Art,
+        Artifact,
         CounterSat,
         DecomposeReq,
         DecomposeRes,

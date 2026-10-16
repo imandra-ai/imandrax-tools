@@ -11,7 +11,7 @@ from functools import partial
 from typing import Any, Literal, assert_never, cast, get_args
 
 from imandrax_api_models import (
-    Art,
+    Artifact,
     DecomposeRes,
     Error,
     ErrorKind,
@@ -470,7 +470,7 @@ def format_decomp_res_(decomp_res: DecomposeRes_) -> JSONObject:
     if len(decomp_res.errors) > 0:
         d['description'] = 'Decomp failed'
         d['errors'] = [format_error(e) for e in decomp_res.errors]
-    elif isinstance(decomp_res.artifact, None | Art):
+    elif isinstance(decomp_res.artifact, None | Artifact):
         d['description'] = (
             'Decomp succeeded with no parsed region:'
             'Please investigate artifact and task details'

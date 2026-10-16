@@ -25,7 +25,7 @@ from imandrax_api.lib import (
     Ty_view_view_Constr,
     read_artifact_data,
 )
-from imandrax_api_models import Art
+from imandrax_api_models import Artifact as ArtifactModel
 from imandrax_api_models.client import ImandraXClient
 from imandrax_codegen.ast_deserialize import load_from_json_string
 from imandrax_codegen.unparse import unparse

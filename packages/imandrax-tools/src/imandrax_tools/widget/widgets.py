@@ -17,7 +17,7 @@ from typing import Any, Self
 
 import anywidget
 import traitlets
-from imandrax_api_models import Art, DecomposeRes
+from imandrax_api_models import Artifact, DecomposeRes
 from imandrax_api_models.artifacts import TasksDataRepr, artifact_reprs_of_tasks
 from imandrax_api_models.client import ImandraXAsyncClient, ImandraXClient
 from imandrax_api_models.context_utils import (
@@ -164,7 +164,7 @@ class RegionDecompWidget(anywidget.AnyWidget):
         match region_group_views:
             case None:
                 raise TypeError('Artifact is None')
-            case Art():
+            case Artifact():
                 raise TypeError('Regions are not parsed from artifact')
             case _:
                 return cls(

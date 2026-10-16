@@ -9,10 +9,10 @@ wire format. All offline -- no session needed.
 
 import imandrax_api.bindings.simple_api_pb2 as xsimple_api_pb2
 from imandrax_api.client import decomp as proto_decomp
-from imandrax_api_models import Art, LiftBool, decomp
+from imandrax_api_models import Artifact, LiftBool, decomp
 from imandrax_api_models.proto_models.decomp import DECOMP_TYPE_ADAPTER
 
-ART = Art(kind='mir.fun_decomp', data=b'\x00twine', api_version='v20')
+ART = Artifact(kind='mir.fun_decomp', data=b'\x00twine', api_version='v20')
 
 
 def test_by_name_minimal():

@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Literal, assert_never
 
 from imandrax_api_models import (  # noqa: F401, RUF100
-    Art,
+    Artifact,
     DecomposeRes,
     EvalRes,
     GetDeclsRes,
@@ -52,7 +52,7 @@ def gen_source_code(
     decls_res: GetDeclsRes,
 ) -> tuple[str, str] | GenSourceCodeError:
     mode: Mode
-    art: Art
+    art: Artifact
 
     match model_res:
         case DecomposeRes():
