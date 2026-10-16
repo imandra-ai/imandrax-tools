@@ -18,7 +18,7 @@ from imandrax_api.lib import (
     Ty_view_view_Constr,
     read_artifact_data,
 )
-from imandrax_api_models import Art
+from imandrax_api_models import Artifact as ArtifactModel
 from imandrax_api_models.client import ImandraXClient
 from IPython.core.getipython import get_ipython
 from rich import print

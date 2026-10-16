@@ -11,7 +11,7 @@ dependencies = [
     "devtools>=0.12.2",
     "dotenv>=0.9.9",
     "imandrax-api-models>=20.12.0,<21",
-    "imandrax-api[async]>=0.20,<0.21",
+    "imandrax-api[async]>=0.21.0,<0.22",
     "iml-query>=0.13",
     "pydantic>=2.12.3",
     "pyyaml>=6.0.3",
@@ -34,8 +34,10 @@ package = true
 
 [tool.uv.sources]
 iml-query = { path = "../iml-query", editable = true }
-# imandrax-api-models = { path = "../imandrax-api-models", editable = true }
+imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
+# v21 API, not yet released on PyPI
+imandrax-api = { git = "https://github.com/imandra-ai/imandrax-api", subdirectory = "src/py", rev = "b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" }
 
 [tool.uv.workspace]
 members = [

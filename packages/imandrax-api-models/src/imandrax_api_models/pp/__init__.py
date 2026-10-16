@@ -4,14 +4,14 @@
 import imandrax_api.lib as _xlib
 
 from imandrax_api_models import DecomposeRes
-from imandrax_api_models.proto_models.artmsg import Art
+from imandrax_api_models.proto_models.artmsg import Artifact
 
 from ._common import FunDecomp, Region
 
 
-def _decode_fun_decomp(art: Art) -> FunDecomp:
+def _decode_fun_decomp(art: Artifact) -> FunDecomp:
     """
-    Decode an `Art` payload into the typed `Mir_Fun_decomp`.
+    Decode an `Artifact` payload into the typed `Mir_Fun_decomp`.
 
     Mirrors `imandrax_api.lib.get_region_str_from_decomp_artifact` but returns
     the structured `Common_Fun_decomp_t_poly[Mir_Term, Mir_Type]` (with

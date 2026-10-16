@@ -7,7 +7,7 @@ import imandrax_api.lib as xtype
 from pydantic import BaseModel, Field
 
 from imandrax_api_models.pp.xtype import to_string as xtype_to_string
-from imandrax_api_models.proto_models import Art
+from imandrax_api_models.proto_models import Artifact
 
 from ._common import JSONObject, term_to_string
 
@@ -217,7 +217,9 @@ def _parse_region(
     return id, string_res, other
 
 
-def mir_regions_of_fun_decomp_artifact(artifact: Art) -> list[xtype.Mir_Region_Region]:
+def mir_regions_of_fun_decomp_artifact(
+    artifact: Artifact,
+) -> list[xtype.Mir_Region_Region]:
     import imandrax_api.lib as xtype
 
     xval = xtype.read_artifact_data(data=artifact.data, kind=artifact.kind)

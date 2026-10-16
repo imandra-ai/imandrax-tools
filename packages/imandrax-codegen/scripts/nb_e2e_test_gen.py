@@ -19,7 +19,7 @@ from imandrax_api.lib import (
     Ty_view_view_Constr,
     read_artifact_data,
 )
-from imandrax_api_models import Art
+from imandrax_api_models import Artifact as ArtifactModel
 from imandrax_api_models.client import ImandraXClient
 from IPython.core.getipython import get_ipython
 from rich import print
@@ -137,9 +137,9 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
 
 @singledispatch
 def gen_ast(
-    art: str | Art, mode: Literal['fun-decomp', 'model', 'decl']
+    art: str | ArtifactModel, mode: Literal['fun-decomp', 'model', 'decl']
 ) -> list[ast_types.stmt]:
-    raise NotImplementedError(f'Only Art and str are supported, got {type(art)}')
+    raise NotImplementedError(f'Only ArtifactModel and str are supported, got {type(art)}')
 
 
 @gen_ast.register
@@ -168,13 +168,13 @@ def _base(
 
 @gen_ast.register
 def _(
-    art: Art,
+    art: ArtifactModel,
     mode: Literal['fun-decomp', 'model', 'decl'],
 ) -> list[ast_types.stmt]:
     return gen_ast(serialize_artifact(art), mode)
 
 
-def serialize_artifact(art: Art) -> str:
+def serialize_artifact(art: ArtifactModel) -> str:
     """Serialize an artifact BaseModel to a JSON string."""
     art_dict = art.model_dump()
     art_dict['data'] = convert_to_standard_base64(art_dict['data'])
