@@ -83,7 +83,7 @@ class ArtifactZip(BaseModel):
 
 
 class ArtifactResultError(Exception):
-    """Raised by `unwrap` on an artifact result that holds an error."""
+    """Error hold by an artifact result"""
 
     def __init__(self, error: Error) -> None:
         self.error = error
@@ -95,7 +95,7 @@ class _OkOrError[T](BaseModel):
     # oneof result
     ok: T | None = Field(default=None)
     error: Error | None = Field(default=None)
-    # oneof result
+    # /oneof result
 
     @model_validator(mode='after')
     def one_of_result(self) -> Self:

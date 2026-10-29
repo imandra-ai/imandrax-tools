@@ -55,7 +55,7 @@ class DecomposeResProto(BaseModel):
     artifact: Artifact | None = Field(default=None, exclude_if=lambda v: v is None)
     err: Empty | None = Field(default=None, exclude_if=lambda v: v is None)
     # oneof_res
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
     task: Task | None = Field(default=None)
 
     @model_validator(mode='after')
@@ -157,21 +157,21 @@ class EvalOutput(BaseModel):
     value_as_ocaml: str | None = Field(
         default=None, description='result as a OCaml value, if any'
     )
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
 
 
 class EvalRes(BaseModel):
     success: bool = Field()
     messages: list[str] = Field(default_factory=list, description='"normal" messages')
-    errors: list[Error] = Field(default_factory=list, description='akin to stderr')
+    errors: list[Error] = Field(default_factory=list[Error], description='akin to stderr')
 
     # All tasks started during eval
     tasks: list[Task] = Field(
-        default_factory=list, description='all tasks started during eval'
+        default_factory=list[Task], description='all tasks started during eval'
     )
-    po_results: list[PO_Res] = Field(default_factory=list)
-    eval_results: list[EvalOutput] = Field(default_factory=list)
-    decomp_results: list[DecomposeRes] = Field(default_factory=list)
+    po_results: list[PO_Res] = Field(default_factory=lambda: list[PO_Res]())
+    eval_results: list[EvalOutput] = Field(default_factory=list[EvalOutput])
+    decomp_results: list[DecomposeRes] = Field(default_factory=list[DecomposeRes])
 
     def __repr__(self) -> str:
         return pformat(self, indent=2)
@@ -304,7 +304,7 @@ class PO_Res(BaseModel):
     test_ok: Test_ok | None = Field(default=None, exclude_if=lambda v: v is None)
     # /oneof_res
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
     task: Task | None = Field(default=None, description='the ID of the task')
     origin: Origin | None = Field(
         default=None, description='where did the task originate?'
@@ -363,7 +363,7 @@ class VerifyRes(BaseModel):
     )
     # /oneof res
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
     task: Task | None = Field(default=None, description='the ID of the task')
 
     @property
@@ -428,7 +428,7 @@ class TestRes(BaseModel):
         default=None, exclude_if=lambda v: v is None
     )
     # /oneof res
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
     task: Task | None = Field(default=None, description='the ID of the task')
 
     @property
@@ -467,7 +467,7 @@ class InstanceRes(BaseModel):
     sat: Sat | None = Field(default=None, exclude_if=lambda v: v is None)
     # /oneof res
 
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
     task: Task | None = Field(default=None, description='the ID of the task')
 
     @property
@@ -518,7 +518,7 @@ class TypecheckReq(BaseModel):
 class TypecheckResProto(BaseModel):
     success: bool
     types: str = Field(description='JSON string of inferred types')
-    errors: list[Error] = Field(default_factory=list)
+    errors: list[Error] = Field(default_factory=list[Error])
 
 
 class InferredType(BaseModel):
