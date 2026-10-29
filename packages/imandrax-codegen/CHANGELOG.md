@@ -4,6 +4,11 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [21.0.0] - 2026-10-29
+- **BREAKING**: ImandraX API v21
+- **BREAKING**: `ast_of_art`, `code_of_art` and `gen_source_code` take `imandrax_api_models.Artifact` (was `Art`)
+- DEPS: `imandrax-api>=0.21.0,<0.22`, `imandrax-api-models>=21.0.0,<22`
+
 ## [20.2.0] - 2026-10-08
 - FEAT: `gen_test_cases` and `gen_counter_example` accept an `imandrax_url` argument for a self-hosted ImandraX
 - BREAKING: `gen_test_cases` and `gen_counter_example` use `$IMANDRAX_URL` when set, overriding `imandrax_env`
