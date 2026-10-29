@@ -224,7 +224,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                 }
@@ -313,7 +313,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                 }
@@ -386,7 +386,7 @@ end
                     'artifact': {
                         'kind': 'mir.model',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                 }
@@ -406,7 +406,7 @@ def test_decompose(c: Client):
             'artifact': {
                 'kind': 'mir.fun_decomp',
                 'data': IsArtifactData(),
-                'api_version': 'v20',
+                'api_version': 'v21',
                 'storage': [],
             },
             'errors': [],
@@ -501,7 +501,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                     'str': None,
@@ -511,7 +511,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                     'str': None,
@@ -521,7 +521,7 @@ def test_get_decls(c: Client):
                     'artifact': {
                         'kind': 'mir.decl',
                         'data': IsArtifactData(),
-                        'api_version': 'v20',
+                        'api_version': 'v21',
                         'storage': [],
                     },
                     'str': None,

@@ -36,8 +36,6 @@ package = true
 iml-query = { path = "../iml-query", editable = true }
 imandrax-api-models = { path = "../imandrax-api-models", editable = true }
 # imandrax-api = { path = "../../../imandrax-api/src/py" }
-# v21 API, not yet released on PyPI
-imandrax-api = { git = "https://github.com/imandra-ai/imandrax-api", subdirectory = "src/py", rev = "b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" }
 
 [tool.uv.workspace]
 members = [

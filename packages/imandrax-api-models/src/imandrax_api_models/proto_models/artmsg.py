@@ -41,4 +41,3 @@ class Artifact(BaseModel):
             api_version=self.api_version,
             storage=[s.to_proto() for s in self.storage],
         )
-

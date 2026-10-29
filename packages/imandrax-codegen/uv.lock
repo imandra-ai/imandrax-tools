@@ -406,11 +406,14 @@ wheels = [
 [[package]]
 name = "imandrax-api"
 version = "0.21.0"
-source = { git = "https://github.com/imandra-ai/imandrax-api?subdirectory=src%2Fpy&rev=b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83#b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
     { name = "requests" },
     { name = "structlog" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a2/96/786d68cb18334adbc8b4d6f47cb799d8b95b828278c7dcf278a83abfd57a/imandrax_api-0.21.0-py3-none-any.whl", hash = "sha256:e8593b6197d563bf007a1f304848e377b94338c01329f88f37b3e5484e8949ab", size = 76442, upload-time = "2026-10-23T20:30:07.315Z" },
 ]
 
 [package.optional-dependencies]
@@ -432,7 +435,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
-    { name = "imandrax-api", extras = ["async"], git = "https://github.com/imandra-ai/imandrax-api?subdirectory=src%2Fpy&rev=b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.21.0,<0.22" },
     { name = "iml-query", marker = "extra == 'client'", editable = "../iml-query" },
     { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.27" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'tracing'", specifier = ">=1.41.1" },
@@ -482,7 +485,7 @@ dev = [
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], git = "https://github.com/imandra-ai/imandrax-api?subdirectory=src%2Fpy&rev=b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.21.0,<0.22" },
     { name = "imandrax-api-models", editable = "../imandrax-api-models" },
     { name = "iml-query", editable = "../iml-query" },
     { name = "pydantic", specifier = ">=2.12.3" },
@@ -524,7 +527,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], git = "https://github.com/imandra-ai/imandrax-api?subdirectory=src%2Fpy&rev=b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20" },
     { name = "inline-snapshot", specifier = ">=0.28.0" },
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "pdbpp", specifier = ">=0.11.7" },

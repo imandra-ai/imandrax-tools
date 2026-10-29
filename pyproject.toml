@@ -19,8 +19,6 @@ imandrax-api-models = { workspace = true }
 iml-query = { workspace = true }
 imandrax-tools = { workspace = true }
 imandrax-codegen = { path = "packages/imandrax-codegen", editable = true }
-# v21 API, not yet released on PyPI
-imandrax-api = { git = "https://github.com/imandra-ai/imandrax-api", subdirectory = "src/py", rev = "b5eb0ab09228bdc9e6682bee8fee0acfb84d4b83" }
 
 [dependency-groups]
 dev = [

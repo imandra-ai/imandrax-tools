@@ -148,7 +148,7 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
     if op in ('let', 'match', 'fun', 'function', 'try'):
         return OperatorInfo(op, Notation.NONE, Associativity.NONE, 3)
 
-    if op == 'List.append':
+    if op in ('List.append', 'List.@'):
         return operator_info('@', more_than_one_arg)
 
     if op == 'subterm_selection_wildcard':

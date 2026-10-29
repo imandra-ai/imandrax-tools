@@ -139,7 +139,9 @@ def extract_type_decl_names(ml_code: str) -> list[str]:
 def gen_ast(
     art: str | ArtifactModel, mode: Literal['fun-decomp', 'model', 'decl']
 ) -> list[ast_types.stmt]:
-    raise NotImplementedError(f'Only ArtifactModel and str are supported, got {type(art)}')
+    raise NotImplementedError(
+        f'Only ArtifactModel and str are supported, got {type(art)}'
+    )
 
 
 @gen_ast.register
