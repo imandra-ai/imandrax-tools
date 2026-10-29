@@ -1,6 +1,6 @@
 [project]
 name = "imandrax-tools"
-version = "20.8.1"
+version = "21.0.0"
 description = "Umbralla package bundling imandrax-api-models and iml-query. Also provides miscellaneous utilities (goal state formatting, rec knowledge base)."
 readme = "README.md"
 authors = [
@@ -8,7 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "imandrax-api-models>=20.11.0, <20.14.0",
+    "imandrax-api-models>=21.0.0, <22.0.0",
     "iml-query>=0.11.0",
     "pydantic>=2.12",
     "structlog>=24",
@@ -17,10 +17,10 @@ dependencies = [
 
 [project.optional-dependencies]
 extended-client = [
-    "imandrax-api-models[client]>=20.0.0, <21.0.0",
+    "imandrax-api-models[client]>=21.0.0, <22.0.0",
 ]
 codegen = [
-    "imandrax-codegen>=20.0.0, <21.0.0",
+    "imandrax-codegen>=21.0.0, <22.0.0",
 ]
 widget = [
     "anywidget>=0.11.0",

@@ -405,7 +405,7 @@ wheels = [
 
 [[package]]
 name = "imandrax-api"
-version = "0.20.2.4"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "protobuf" },
@@ -413,7 +413,7 @@ dependencies = [
     { name = "structlog" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/af/dfb2e1d0d6c1a86989fe54e6fe228978f8fd962be3fc0525ee1eb5097ae3/imandrax_api-0.20.2.4-py3-none-any.whl", hash = "sha256:826ee4f75ea4e5b4dcde9c0ca0d64f7bb150e8e151aa470b4acec17607248634", size = 75596, upload-time = "2026-09-15T11:31:17.757Z" },
+    { url = "https://files.pythonhosted.org/packages/a2/96/786d68cb18334adbc8b4d6f47cb799d8b95b828278c7dcf278a83abfd57a/imandrax_api-0.21.0-py3-none-any.whl", hash = "sha256:e8593b6197d563bf007a1f304848e377b94338c01329f88f37b3e5484e8949ab", size = 76442, upload-time = "2026-10-23T20:30:07.315Z" },
 ]
 
 [package.optional-dependencies]
@@ -423,22 +423,44 @@ async = [
 
 [[package]]
 name = "imandrax-api-models"
-version = "20.12.0"
-source = { registry = "https://pypi.org/simple" }
+version = "21.0.0"
+source = { editable = "../imandrax-api-models" }
 dependencies = [
     { name = "devtools" },
     { name = "imandrax-api", extra = ["async"] },
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/14/0f/299794c4c42b73d347ec23c2cd39ad8b20fce6cd8c9d3ade6818b3d9c050/imandrax_api_models-20.12.0.tar.gz", hash = "sha256:83830c3c72a01937e76133e85ad7884ff308f58977c80a922e0fffeb19dcfe70", size = 68228, upload-time = "2026-10-08T16:01:20.574Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/41/176de855279d3ecfb80c16c6e7354c3a590cd71b2d8bdf3f3ef722511c81/imandrax_api_models-20.12.0-py3-none-any.whl", hash = "sha256:1807b837fa0e5ab3b72eae9429c16cd707ab84c6badd8247fa7e28d9922e7bb1", size = 85121, upload-time = "2026-10-08T16:01:19.269Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "devtools", specifier = ">=0.12.2" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.21.0,<0.22" },
+    { name = "iml-query", marker = "extra == 'client'", editable = "../iml-query" },
+    { name = "opentelemetry-api", marker = "extra == 'tracing'", specifier = ">=1.27" },
+    { name = "opentelemetry-exporter-otlp-proto-grpc", marker = "extra == 'tracing'", specifier = ">=1.41.1" },
+    { name = "opentelemetry-sdk", marker = "extra == 'tracing'", specifier = ">=1.27" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+provides-extras = ["client", "tracing"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "dotenv", specifier = ">=0.9.9" },
+    { name = "inline-snapshot", extras = ["dirty-equals"], specifier = ">=0.31.1" },
+    { name = "ipykernel", specifier = ">=7.1.0" },
+    { name = "jupytext", specifier = ">=1.19.1" },
+    { name = "marimo", specifier = ">=0.23.0" },
+    { name = "pdbpp", specifier = ">=0.11.7" },
+    { name = "pytest", specifier = ">=9.0.1" },
+    { name = "pytest-retry", specifier = ">=1.7.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
 ]
 
 [[package]]
 name = "imandrax-codegen"
-version = "20.2.0"
+version = "21.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "devtools" },
@@ -463,8 +485,8 @@ dev = [
 requires-dist = [
     { name = "devtools", specifier = ">=0.12.2" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "imandrax-api", extras = ["async"], specifier = ">=0.20,<0.21" },
-    { name = "imandrax-api-models", specifier = ">=20.12.0,<21" },
+    { name = "imandrax-api", extras = ["async"], specifier = ">=0.21.0,<0.22" },
+    { name = "imandrax-api-models", editable = "../imandrax-api-models" },
     { name = "iml-query", editable = "../iml-query" },
     { name = "pydantic", specifier = ">=2.12.3" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -481,7 +503,7 @@ dev = [
 
 [[package]]
 name = "iml-query"
-version = "0.14.1"
+version = "0.16.0"
 source = { editable = "../iml-query" }
 dependencies = [
     { name = "devtools" },
@@ -499,7 +521,7 @@ requires-dist = [
     { name = "sexpdata", specifier = ">=1.0.2" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tree-sitter", specifier = ">=0.25.1" },
-    { name = "tree-sitter-iml", specifier = ">=0.27" },
+    { name = "tree-sitter-iml", specifier = ">=0.28" },
 ]
 
 [package.metadata.requires-dev]
@@ -1326,11 +1348,18 @@ wheels = [
 
 [[package]]
 name = "tree-sitter-iml"
-version = "0.27.0"
+version = "0.29.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e4/f2/cbab3099ced6f279fc91ab3508ba8ed03a77a497fb1cbd6838702ef18bd7/tree_sitter_iml-0.27.0.tar.gz", hash = "sha256:4b8008a23992095dc79309d6a624225ad51175689d6f3ce11d8727ad79f51dfb", size = 2290221, upload-time = "2026-06-18T20:41:42.913Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/52/f571e5390737cc63edd01ad145f555dbd00cf370fcf547b0d0edf0e0b96c/tree_sitter_iml-0.29.0.tar.gz", hash = "sha256:844cdc22b1c82b5a802f96bb27d38eb18dfa4a13bc321bd0a06a9939a89985ba", size = 2323474, upload-time = "2026-10-13T11:49:38.775Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f4/a9/4c7ac9f28d26e7894b42c91ff9c470c9d40ee6f0dac67400d4924a103342/tree_sitter_iml-0.27.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:01cabd83cb19c53c8541aa7aaa0adca95f6eb54d629fc0946752a01023e07381", size = 958935, upload-time = "2026-06-18T20:41:41.336Z" },
+    { url = "https://files.pythonhosted.org/packages/88/3c/362519e09d2d99a0823bf537f2d6315ce4e7917d8551e77ca4d2af56fe8b/tree_sitter_iml-0.29.0-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:39f7bf629865665f570c64b44c307e526401d36b804d4e1bdc75e38495c5ad28", size = 900361, upload-time = "2026-10-13T11:49:27.984Z" },
+    { url = "https://files.pythonhosted.org/packages/b9/c3/f92bb295efef4eedefceb497a6bc4918e6c226c708d33f5420c1f65f064d/tree_sitter_iml-0.29.0-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:21dcbc355a345bd80b1f9c32ca05f057c3d794a6d2f38832ec52e5384bea67e9", size = 967406, upload-time = "2026-10-13T11:49:29.801Z" },
+    { url = "https://files.pythonhosted.org/packages/59/91/a60693a5c40725de40c38a70c1a8700611065ed8c347eed4965547d3cf89/tree_sitter_iml-0.29.0-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4a0d9b4466532243efd79d2c5a98ae68a9f7b0e7e93f30d8d95be3500f86dcfa", size = 962733, upload-time = "2026-10-13T11:49:30.92Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/74/58572249098c9ff92cbe286f5ee73f761f421e64948d990ad33137fe70c7/tree_sitter_iml-0.29.0-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:4b07395d21759052bdad73a9aeda21670e3a0ce7894852748857be69c723d597", size = 967200, upload-time = "2026-10-13T11:49:32.071Z" },
+    { url = "https://files.pythonhosted.org/packages/af/94/81a1f7490034d46ec8a9480a0c0b66f0259fad190ba6dcfa585f56859b39/tree_sitter_iml-0.29.0-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:a18f36443be044bb8401066a7f087db900ec0888df490364a425f5b57634828f", size = 960443, upload-time = "2026-10-13T11:49:33.338Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/83/57824711e6c38698018ad7912dad00697a337804d934c70496dfc93fc466/tree_sitter_iml-0.29.0-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:9176d048bcaf92ccae33dcb9b6e00302041e2af40150da4c96e8266d9d4adb24", size = 965037, upload-time = "2026-10-13T11:49:34.729Z" },
+    { url = "https://files.pythonhosted.org/packages/58/fe/f6a7cf0ddb5a7ea9ad340d708b5408ac19b2b546f07ac9fab407c8bab767/tree_sitter_iml-0.29.0-cp310-abi3-win_amd64.whl", hash = "sha256:2324023729292fdbf6492425a90e9c0ca203ed59fa74d7eb9b44ae04d4ec346e", size = 903593, upload-time = "2026-10-13T11:49:35.989Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/b9/25f67a176de8ea8f99702cd820bceb9488e87fadd0c2da427d24ea9b68bc/tree_sitter_iml-0.29.0-cp310-abi3-win_arm64.whl", hash = "sha256:fae9603af09ddc8c610badeabdaf0e3d5322f89aae4e4c3613c598e56f4cb6de", size = 899116, upload-time = "2026-10-13T11:49:37.381Z" },
 ]
 
 [[package]]

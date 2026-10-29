@@ -18,6 +18,7 @@ members = [
 imandrax-api-models = { workspace = true }
 iml-query = { workspace = true }
 imandrax-tools = { workspace = true }
+imandrax-codegen = { path = "packages/imandrax-codegen", editable = true }
 
 [dependency-groups]
 dev = [

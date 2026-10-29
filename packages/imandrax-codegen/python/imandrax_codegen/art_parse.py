@@ -9,7 +9,7 @@ from typing import Literal
 
 import imandrax_codegen.ast_types as ast_types
 from imandrax_api import url_dev, url_prod  # noqa: F401
-from imandrax_api_models import Art
+from imandrax_api_models import Artifact
 from imandrax_codegen.ast_deserialize import stmts_of_json
 
 SUPPORTED_PLATFORMS = ('darwin', 'linux')
@@ -74,7 +74,7 @@ def _convert_to_standard_base64(data: str | bytes) -> str:
     return base64.b64encode(decoded_bytes).decode('ascii')
 
 
-def _serialize_artifact(art: Art) -> str:
+def _serialize_artifact(art: Artifact) -> str:
     """Serialize an artifact BaseModel to a JSON string."""
     art_dict = art.model_dump()
     art_dict['data'] = _convert_to_standard_base64(art_dict['data'])
@@ -96,16 +96,16 @@ def _run_parser(art_str: str, mode: Mode, lang: Lang) -> str:
     return result.stdout
 
 
-def ast_of_art(art: str | Art, mode: Mode) -> list[ast_types.stmt]:
-    if isinstance(art, Art):
+def ast_of_art(art: str | Artifact, mode: Mode) -> list[ast_types.stmt]:
+    if isinstance(art, Artifact):
         art = _serialize_artifact(art)
     output = _run_parser(art, mode, 'python')
     return stmts_of_json(output)
 
 
-def code_of_art(art: str | Art, mode: Mode, lang: Lang) -> str:
+def code_of_art(art: str | Artifact, mode: Mode, lang: Lang) -> str:
     """Generate source code from an artifact."""
-    if isinstance(art, Art):
+    if isinstance(art, Artifact):
         art = _serialize_artifact(art)
     match lang:
         case 'python':

@@ -4,6 +4,10 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [21.0.0] - 2026-10-29
+- **BREAKING**: ImandraX API v21
+- DEPS: `imandrax-api-models>=21.0.0,<22.0.0` (also for the `extended-client` extra), `imandrax-codegen>=21.0.0,<22.0.0` for the `codegen` extra
+
 ## [20.8.1] - 2026-10-13
 - DEPS: loose `imandrax-api-models` upper bound
 

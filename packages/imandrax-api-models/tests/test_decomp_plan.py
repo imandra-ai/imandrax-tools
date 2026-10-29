@@ -9,10 +9,10 @@ wire format. All offline -- no session needed.
 
 import imandrax_api.bindings.simple_api_pb2 as xsimple_api_pb2
 from imandrax_api.client import decomp as proto_decomp
-from imandrax_api_models import Art, LiftBool, decomp
+from imandrax_api_models import Artifact, LiftBool, decomp
 from imandrax_api_models.proto_models.decomp import DECOMP_TYPE_ADAPTER
 
-ART = Art(kind='mir.fun_decomp', data=b'\x00twine', api_version='v20')
+ART = Artifact(kind='mir.fun_decomp', data=b'\x00twine', api_version='v20')
 
 
 def test_by_name_minimal():
@@ -78,6 +78,34 @@ def test_unary_ops():
     assert decomp.combine(d).to_proto() == proto_decomp.combine(p)
 
 
+def test_enumerate():
+    f, g, h = (decomp.by_name(n) for n in 'fgh')
+    plan = decomp.enumerate_(f, [g, h], decomp.EnumerationStyle.Multiplicative)
+    msg = plan.to_proto().enumerate
+    assert msg.d_f == f.to_proto()
+    assert list(msg.ds) == [g.to_proto(), h.to_proto()]
+    assert msg.style == xsimple_api_pb2.DecomposeReqFull.EnumerationStyle.Multiplicative
+
+
+def test_enumerate_default_style_is_additive():
+    msg = decomp.enumerate_(decomp.by_name('f'), []).to_proto().enumerate
+    assert msg.style == xsimple_api_pb2.DecomposeReqFull.EnumerationStyle.Additive
+
+
+def test_enumerate_json_round_trip_and_repr():
+    plan = decomp.enumerate_(
+        decomp.by_name('f'),
+        [decomp.from_artifact(ART)],
+        decomp.EnumerationStyle.Multiplicative,
+    )
+    back = DECOMP_TYPE_ADAPTER.validate_json(plan.model_dump_json())
+    assert back == plan
+    assert back.to_proto() == plan.to_proto()
+    assert decomp.decomp_repr(plan) == (
+        'enumerate(by_name(f), [from_artifact(mir.fun_decomp)], Multiplicative)'
+    )
+
+
 def test_let_and_get():
     plan = decomp.let(
         [('a', decomp.by_name('f')), ('b', decomp.prune(decomp.by_name('g')))],
@@ -109,6 +137,7 @@ def test_json_schema_covers_every_op():
         'ByName',
         'Combine',
         'CompoundMerge',
+        'Enumerate',
         'FromArtifact',
         'LocalVarGet',
         'LocalVarLet',

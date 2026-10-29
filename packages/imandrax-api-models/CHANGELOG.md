@@ -4,6 +4,13 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [21.0.0] - 26-10-29
+- bump ImandraX API to v21
+- **BREAKING**: `Art` is renamed to `Artifact`
+- **BREAKING**: `get_artifact`, `parse_term`, `parse_type`, `list_artifacts`, and `get_artifact_zip` all returns result types (`ArtifactResult`, `ArtifactListResult`, and `ArtifactZipResult`); each holds `ok` or `error`, and  return and `.unwrap()` returns the value or raises `ArtifactResultError`
+- FEAT(decomp): `Enumerate` plan node, built with `enumerate_` and an `EnumerationStyle` (`Additive` or `Multiplicative`)
+- DEPS: `imandrax-api>=0.21.0,<0.22`
+
 ## [20.13.0] - 26-10-13
 - FEAT(context_utils): `format_eval_res` (and `format_errors`, `format_error`, `format_error_msg`) accept sources keyed by file name to cut error excerpts from the right file
 - `format_location` prefixes the file name when the location has one

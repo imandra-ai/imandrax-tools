@@ -1,7 +1,11 @@
 from .proto_models import (
-    Art,
+    Artifact,
+    ArtifactList,
     ArtifactListResult,
+    ArtifactResult,
+    ArtifactResultError,
     ArtifactZip,
+    ArtifactZipResult,
     CodeSnippet,
     CodeSnippetEvalResult,
     CounterSat,
@@ -60,9 +64,13 @@ from .proto_models import (
 )
 
 __all__ = [
-    'Art',
+    'Artifact',
+    'ArtifactList',
     'ArtifactListResult',
+    'ArtifactResult',
+    'ArtifactResultError',
     'ArtifactZip',
+    'ArtifactZipResult',
     'CodeSnippet',
     'CodeSnippetEvalResult',
     'CounterSat',

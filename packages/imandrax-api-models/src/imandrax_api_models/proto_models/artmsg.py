@@ -19,7 +19,7 @@ class StorageEntry(BaseModel):
 
 # We tend to generate this using `google.protobuf.json_format.MessageToDict`
 # This converts protobuf bytes to base64 strings
-class Art(BaseModel):
+class Artifact(BaseModel):
     model_config = ConfigDict(ser_json_bytes='base64', val_json_bytes='base64')
 
     kind: str = Field(description='The kind of artifact')
@@ -34,8 +34,8 @@ class Art(BaseModel):
         default_factory=list, description='Additional definitions on the side'
     )
 
-    def to_proto(self) -> xartmsg_pb2.Art:
-        return xartmsg_pb2.Art(
+    def to_proto(self) -> xartmsg_pb2.Artifact:
+        return xartmsg_pb2.Artifact(
             kind=self.kind,
             data=self.data,
             api_version=self.api_version,

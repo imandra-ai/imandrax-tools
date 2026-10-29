@@ -70,7 +70,7 @@ def po_res_list() -> list[xtype.Tasks_PO_res_Shallow]:
     eval_res = c.eval_src(IML)
     po_tasks = [t for t in eval_res.tasks if t.kind == TaskKind.TASK_CHECK_PO]
     po_res_zips = [c.get_artifact_zip(task, kind='po_res') for task in po_tasks]
-    return [po_res_of_art_zip(zip.art_zip) for zip in po_res_zips]
+    return [po_res_of_art_zip(zip.unwrap().art_zip) for zip in po_res_zips]
 
 
 @pytest.mark.vcr
@@ -86,7 +86,7 @@ def test_goal_state_pp(po_res_list: list[xtype.Tasks_PO_res_Shallow]):
         [
             """\
 1 subgoal
-- ⊢ length (x append y) = length x + length y\
+- ⊢ length (x @ y) = length x + length y\
 """,
             "No goal state for i=1; got: msg='Proof found'",
             "No goal state for i=2; got: msg='Proof found'",
