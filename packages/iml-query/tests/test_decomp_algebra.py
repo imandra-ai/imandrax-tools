@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+import iml_query.processing.decomp as decomp
 import pytest
 from iml_query.processing.decomp import (
     CompoundMerge,
@@ -333,6 +334,31 @@ class TestExtractDecompReq_:
                 'unsupported decomp operator',
                 id='unsupported-operator',
             ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> frobnicate]',
+                'unsupported refiner',
+                id='unknown-refiner',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate_all [top () [%id a]]]',
+                'needs `~style',
+                id='enumerate-all-missing-style',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate_all ~style:Both [top () [%id a]]]',
+                '`Additive` or `Multiplicative`',
+                id='enumerate-all-bad-style',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate (top ())]',
+                'must be applied to an `[%id ...]`',
+                id='enumerate-missing-id',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp prune ()]',
+                'expected `top',
+                id='payload-not-top',
+            ),
         ],
     )
     def test_extract_rejects_malformed_payload(self, iml: str, expected_msg: str):
@@ -357,6 +383,13 @@ class TestDecompReqRoundTrip_:
             '[@@decomp top () << top () [%id a] << top () [%id b]]',
             '[@@decomp top () <|< top () [%id c]]',
             '[@@decomp top ~assuming:[%id g] ~basis:[[%id g]; [%id h]] ()]',
+            '[@@decomp top () |>> prune]',
+            '[@@decomp top () |>> combine]',
+            '[@@decomp ~| (top ~basis:[[%id a]] ())]',
+            '[@@decomp top () |>> enumerate (top () [%id a])]',
+            '[@@decomp top () |>> enumerate_all ~style:Multiplicative [top () [%id a]; top () [%id b]]]',
+            '[@@decomp ~| (top () << top () [%id a]) |>> prune]',
+            '[@@decomp ~| (top ()) << top () [%id a]]',
         ],
     )
     def test_round_trip_preserves_attr(self, attr: str):
@@ -364,3 +397,56 @@ class TestDecompReqRoundTrip_:
         leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
         rebuilt, _ = insert_decomp_req_(leftover, self._parse(leftover), reqs[0])
         assert rebuilt.strip() == iml.strip()
+
+
+class TestExtractRefiners:
+    """`|>>` refiners (`prune`, `combine`, `enumerate`, `enumerate_all`) and `~|`."""
+
+    @staticmethod
+    def _parse(iml: str) -> tree_sitter.Tree:
+        parser = get_parser()
+        return parser.parse(bytes(iml, encoding='utf8'))
+
+    def _decomp_of(self, payload: str) -> decomp.Decomp:
+        iml = f'let f x = x\n[@@decomp {payload}]'
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(iml, self._parse(iml))
+        assert len(reqs) == 1
+        return reqs[0]['decomp']
+
+    def test_prune(self):
+        assert self._decomp_of('top () |>> prune') == decomp.Prune(m=Top())
+
+    def test_combine_infix(self):
+        assert self._decomp_of('top () |>> combine') == decomp.Combine(m=Top())
+
+    def test_combine_prefix(self):
+        assert self._decomp_of('~| (top ~basis:[[%id g]] ())') == decomp.Combine(
+            m=Top(basis=['g']), prefix=True
+        )
+
+    def test_enumerate(self):
+        assert self._decomp_of(
+            'top ~basis:[[%id a]] () |>> enumerate (top () [%id a])'
+        ) == decomp.Enumerate(
+            m=Top(basis=['a']), ds=[apply_decomp(Top(), 'a')], style=None
+        )
+
+    def test_enumerate_all(self):
+        assert self._decomp_of(
+            'top () |>> enumerate_all ~style:Additive'
+            ' [top () [%id a]; top ~prune:true () [%id b]]'
+        ) == decomp.Enumerate(
+            m=Top(),
+            ds=[apply_decomp(Top(), 'a'), apply_decomp(Top(prune=True), 'b')],
+            style='Additive',
+        )
+
+    def test_refiners_are_left_associative_with_merge(self):
+        assert self._decomp_of(
+            'top () << top () [%id g] |>> prune |>> combine'
+        ) == decomp.Combine(m=decomp.Prune(m=merge(Top(), apply_decomp(Top(), 'g'))))
+
+    def test_merge_after_prefix_combine(self):
+        assert self._decomp_of('~| (top ()) << top () [%id g]') == merge(
+            decomp.Combine(m=Top(), prefix=True), apply_decomp(Top(), 'g')
+        )
