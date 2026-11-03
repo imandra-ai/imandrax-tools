@@ -350,6 +350,17 @@ class TestExtractDecompReq_:
                 id='enumerate-all-bad-style',
             ),
             pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate_all'
+                ' ~style:Additive ~style:Multiplicative [top () [%id a]]]',
+                'takes `~style` once',
+                id='enumerate-all-repeated-style',
+            ),
+            pytest.param(
+                'let f x = x\n[@@decomp top () |>> enumerate_all ~style [top () [%id a]]]',
+                '`Additive` or `Multiplicative`',
+                id='enumerate-all-punned-style',
+            ),
+            pytest.param(
                 'let f x = x\n[@@decomp top () |>> enumerate (top ())]',
                 'must be applied to an `[%id ...]`',
                 id='enumerate-missing-id',
@@ -439,6 +450,17 @@ class TestExtractRefiners:
             m=Top(),
             ds=[apply_decomp(Top(), 'a'), apply_decomp(Top(prune=True), 'b')],
             style='Additive',
+        )
+
+    @pytest.mark.parametrize(
+        'style',
+        ['(Multiplicative)', 'Decomp.Multiplicative', '((Decomp.Multiplicative))'],
+    )
+    def test_enumerate_all_style_spellings(self, style: str):
+        assert self._decomp_of(
+            f'top () |>> enumerate_all ~style:{style} [top () [%id a]]'
+        ) == decomp.Enumerate(
+            m=Top(), ds=[apply_decomp(Top(), 'a')], style='Multiplicative'
         )
 
     def test_refiners_are_left_associative_with_merge(self):

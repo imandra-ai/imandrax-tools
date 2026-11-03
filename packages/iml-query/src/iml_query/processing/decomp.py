@@ -468,16 +468,19 @@ _REFINER_HINT = (
 
 
 def _style_of_labeled_arg(arg: Node) -> EnumerationStyle:
-    """`~style:Additive` -> `'Additive'` (also accepts `Decomp.Additive`)."""
+    """`~style:Additive` -> `'Additive'` (also `Decomp.Additive`, `(Additive)`)."""
     label = next((c for c in arg.children if c.type == 'label_name'), None)
     if label is None or _text(label) != 'style':
         raise DecompParsingError(
             f'unexpected argument `{_text(arg)}` to `enumerate_all`'
         )
-    ctor_path = next((c for c in arg.children if c.type == 'constructor_path'), None)
+    value = arg.named_children[-1]
+    ctor_path = (
+        None if value.type == 'label_name' else _strip_parens(value)
+    )  # `~style` alone (punned) has no value
     ctor = (
         None
-        if ctor_path is None
+        if ctor_path is None or ctor_path.type != 'constructor_path'
         else next(
             (c for c in reversed(ctor_path.children) if c.type == 'constructor_name'),
             None,
@@ -521,6 +524,11 @@ def _refine(m: Decomp, node: Node) -> Decomp:
                 lists: list[Node] = []
                 for arg in args:
                     if arg.type == 'labeled_argument':
+                        if style is not None:
+                            raise DecompParsingError(
+                                '`enumerate_all` takes `~style` once, got'
+                                f' `{_text(node)}`'
+                            )
                         style = _style_of_labeled_arg(arg)
                     elif _strip_parens(arg).type == 'list_expression':
                         lists.append(_strip_parens(arg))
