@@ -40,7 +40,7 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   ├── avoid-higher-order-functions-in-proofs.md # Notes on potential issues with higher-order functions like List.map in IML proofs
 │   ├── bypass-verification-completely.md # Last resort to bypass verification completely using `[@@no_validate]`. Don't use this unless you absolutely have the reason to.
 │   ├── opaque-functions.md # Notes on using opaque functions in IML to mock functionality
-│   └── region-decomp-advanced-features.md # Advanced features in Region Decomposition, including composition operators and refiners
+│   └── region-decomp-advanced-features.md # Composing region decompositions inside the decomp attribute - the types m / ret / refiner, the operators <<, <|<, ~|, |>>, the refiners prune / enumerate / enumerate_all, let-bindings, and rule specs
 ├── error-fix-data/ # Data for common error and fix
 │   └── README.md # IML error and fixes database. Provides `error_corpus.json`, a collection of common IML errors and their fixes. Search it using jq or grep to find relevant errors and their fixes.
 ├── extended-prelude/
