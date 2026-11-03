@@ -10,7 +10,7 @@ Pipeline:
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import Any, Required, TypedDict, cast
+from typing import Any, Literal, Required, TypedDict, cast
 
 from tree_sitter import Node, Range, Tree
 
@@ -143,7 +143,40 @@ class CompoundMerge:
     d1: LazyRet
 
 
-Decomp = Top | Merge | CompoundMerge
+@dataclass
+class Prune:
+    """`m |>> prune`."""
+
+    m: Decomp
+
+
+@dataclass
+class Combine:
+    """`m |>> combine`, or `~| m` when `prefix`."""
+
+    m: Decomp
+    prefix: bool = False
+    """Spelled `~| m` rather than `m |>> combine`.
+
+    Same semantics, but kept apart so that re-printing reproduces the source:
+    ImandraX accepts some chains with one spelling and not the other.
+    """
+
+
+EnumerationStyle = Literal['Additive', 'Multiplicative']
+
+
+@dataclass
+class Enumerate:
+    """`m |>> enumerate d`, or `m |>> enumerate_all ~style:s [d1; ...]`."""
+
+    m: Decomp
+    ds: list[LazyRet]
+    style: EnumerationStyle | None = None
+    """`None` for `enumerate d` (exactly one `ds`), else `enumerate_all`'s style."""
+
+
+Decomp = Top | Merge | CompoundMerge | Prune | Combine | Enumerate
 
 
 @dataclass
@@ -283,6 +316,19 @@ def iml_of_decomp(d: Decomp) -> str:
             return f'{iml_of_decomp(m)} << {iml_of_lazy_ret(d1)}'
         case CompoundMerge(m=m, d1=d1):
             return f'{iml_of_decomp(m)} <|< {iml_of_lazy_ret(d1)}'
+        case Prune(m=m):
+            return f'{iml_of_decomp(m)} |>> prune'
+        case Combine(m=m, prefix=True):
+            return f'~| ({iml_of_decomp(m)})'
+        case Combine(m=m):
+            return f'{iml_of_decomp(m)} |>> combine'
+        case Enumerate(m=m, ds=[only], style=None):
+            return f'{iml_of_decomp(m)} |>> enumerate ({iml_of_lazy_ret(only)})'
+        case Enumerate(style=None):
+            raise ValueError('`enumerate` (no style) takes exactly one decomp')
+        case Enumerate(m=m, ds=ds, style=style):
+            items = '; '.join(map(iml_of_lazy_ret, ds))
+            return f'{iml_of_decomp(m)} |>> enumerate_all ~style:{style} [{items}]'
 
 
 def iml_of_lazy_ret(ret: LazyRet) -> str:
@@ -325,13 +371,27 @@ def iml_of_top(top: Top) -> str:
 # ====================
 
 
+def _text(node: Node) -> str:
+    return unwrap_bytes(node.text).decode('utf8')
+
+
+def _named_children(node: Node) -> list[Node]:
+    """
+    `node.named_children` without comments.
+
+    Tree-sitter attaches a comment as a child wherever it appears, so taking
+    children by position must skip them.
+    """
+    return [c for c in node.named_children if c.type != 'comment']
+
+
 def _top_of_decomp_attr_payload(
     node: Node,
 ) -> Top:
     """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
-    expect_appl = node.children[0].children[0]
+    expect_appl = _named_children(_named_children(node)[0])[0]
     if expect_appl.type != 'application_expression':
         raise NotImplementedError('Composition operators are not supported yet')
 
@@ -353,41 +413,170 @@ def _identifier_of_appl_expr_node(node: Node) -> str | None:
         attr_id = next((c for c in child.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
-        if unwrap_bytes(attr_id.text).decode('utf8') != 'id':
+        if _text(attr_id) != 'id':
             continue
         payload = next(
             (c for c in child.children if c.type == 'attribute_payload'), None
         )
         if payload is None:
             raise DecompParsingError('`[%id ...]` has no payload')
-        return unwrap_bytes(payload.text).decode('utf8').strip()
+        return _text(payload).strip()
 
     return None
 
 
+def _strip_parens(node: Node) -> Node:
+    """`((e))` -> `e`."""
+    while node.type == 'parenthesized_expression':
+        inner = next(iter(_named_children(node)), None)
+        if inner is None:
+            raise DecompParsingError('empty parenthesized decomp expression')
+        node = inner
+    return node
+
+
+def _head_name_of_appl_expr_node(node: Node) -> str | None:
+    """The function name an application applies, e.g. `top` (also for `Decomp.top`)."""
+    assert node.type == 'application_expression'
+    head = node.children[0]
+    if head.type != 'value_path':
+        return None
+    name = next((c for c in reversed(head.children) if c.type == 'value_name'), None)
+    return None if name is None else _text(name)
+
+
+def _top_of_m_node(node: Node) -> Top:
+    """Parse a `top ... ()` application, rejecting any other function."""
+    if node.type != 'application_expression' or (
+        _head_name_of_appl_expr_node(node) != 'top'
+    ):
+        raise DecompParsingError(f'expected `top ... ()`, got `{_text(node)}`')
+    return _top_of_appl_expr_node(node)
+
+
 def _lazy_ret_of_appl_expr_node(node: Node) -> LazyRet:
     """Parse `top ... () [%id x]` — a `Decomp.m` applied to an identifier."""
+    node = _strip_parens(node)
     if node.type != 'application_expression':
         raise DecompParsingError(
-            'right operand of `<<` / `<|<` must be a `top ... () [%id ...]` '
+            'a decomp operand must be a `top ... () [%id ...]` '
             f'application, got a `{node.type}`'
         )
 
     identifier = _identifier_of_appl_expr_node(node)
     if identifier is None:
         raise DecompParsingError(
-            'right operand of `<<` / `<|<` must be applied to an `[%id ...]`'
+            f'a decomp operand must be applied to an `[%id ...]`, got `{_text(node)}`'
         )
-    return LazyRet(m=_top_of_appl_expr_node(node), identifier=identifier)
+    return LazyRet(m=_top_of_m_node(node), identifier=identifier)
+
+
+_REFINER_HINT = (
+    '`prune`, `combine`, `enumerate (top ... () [%id ...])` or '
+    '`enumerate_all ~style:(Additive|Multiplicative) [top ... () [%id ...]; ...]`'
+)
+
+
+def _style_of_labeled_arg(arg: Node) -> EnumerationStyle:
+    """`~style:Additive` -> `'Additive'` (also `Decomp.Additive`, `(Additive)`)."""
+    label = next((c for c in arg.children if c.type == 'label_name'), None)
+    if label is None or _text(label) != 'style':
+        raise DecompParsingError(
+            f'unexpected argument `{_text(arg)}` to `enumerate_all`'
+        )
+    value = _named_children(arg)[-1]
+    ctor_path = (
+        None if value.type == 'label_name' else _strip_parens(value)
+    )  # `~style` alone (punned) has no value
+    ctor = (
+        None
+        if ctor_path is None or ctor_path.type != 'constructor_path'
+        else next(
+            (c for c in reversed(ctor_path.children) if c.type == 'constructor_name'),
+            None,
+        )
+    )
+    match None if ctor is None else _text(ctor):
+        case 'Additive':
+            return 'Additive'
+        case 'Multiplicative':
+            return 'Multiplicative'
+        case _:
+            raise DecompParsingError(
+                f'`~style` must be `Additive` or `Multiplicative`, got `{_text(arg)}`'
+            )
+
+
+def _refine(m: Decomp, node: Node) -> Decomp:
+    """Parse the right operand of `m |>> <refiner>`."""
+    node = _strip_parens(node)
+
+    if node.type == 'value_path':
+        match _text(node).rsplit('.', 1)[-1]:
+            case 'prune':
+                return Prune(m=m)
+            case 'combine':
+                return Combine(m=m)
+            case _:
+                pass
+
+    if node.type == 'application_expression':
+        args = _named_children(node)[1:]
+        match _head_name_of_appl_expr_node(node):
+            case 'enumerate':
+                if len(args) != 1:
+                    raise DecompParsingError(
+                        '`enumerate` takes one `top ... () [%id ...]` decomp'
+                    )
+                return Enumerate(m=m, ds=[_lazy_ret_of_appl_expr_node(args[0])])
+            case 'enumerate_all':
+                style: EnumerationStyle | None = None
+                lists: list[Node] = []
+                for arg in args:
+                    if arg.type == 'labeled_argument':
+                        if style is not None:
+                            raise DecompParsingError(
+                                '`enumerate_all` takes `~style` once, got'
+                                f' `{_text(node)}`'
+                            )
+                        style = _style_of_labeled_arg(arg)
+                    elif _strip_parens(arg).type == 'list_expression':
+                        lists.append(_strip_parens(arg))
+                    else:
+                        raise DecompParsingError(
+                            f'unexpected argument `{_text(arg)}` to `enumerate_all`'
+                        )
+                if style is None:
+                    raise DecompParsingError(
+                        '`enumerate_all` needs `~style:Additive` or '
+                        '`~style:Multiplicative`'
+                    )
+                if len(lists) != 1:
+                    raise DecompParsingError(
+                        '`enumerate_all` takes one list of `top ... () [%id ...]` decomps'
+                    )
+                ds = [
+                    _lazy_ret_of_appl_expr_node(item)
+                    for item in _named_children(lists[0])
+                ]
+                return Enumerate(m=m, ds=ds, style=style)
+            case _:
+                pass
+
+    raise DecompParsingError(
+        f'unsupported refiner `{_text(node)}` after `|>>`; expected {_REFINER_HINT}'
+    )
 
 
 def _decomp_of_expr_node(node: Node) -> Decomp:
     """
     Parse a decomp algebra expression node into a `Decomp`.
 
-    Handles a bare `top ... ()` plus the `<<` (merge) and `<|<`
-    (compound merge) operators. Both are left-associative, so
-    `a << b << c` nests as `Merge(Merge(a, b), c)`.
+    Handles a bare `top ... ()`, the `<<` (merge), `<|<` (compound merge) and
+    `|>>` (refine) operators, and the `~|` (combine) prefix operator.
+
+    The infix operators share one precedence level and are left-associative, so
+    `a << b |>> prune` nests as `Prune(Merge(a, b))`.
     """
     if node.type == 'application_expression':
         if _identifier_of_appl_expr_node(node) is not None:
@@ -397,34 +586,40 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
                 'decomp payload is applied to an `[%id ...]`; expected a '
                 'decomp (`top ... ()`), not a decomp result'
             )
-        return _top_of_appl_expr_node(node)
+        return _top_of_m_node(node)
+
+    if node.type == 'prefix_expression':
+        operator, operand = _named_children(node)
+        if _text(operator) != '~|':
+            raise DecompParsingError(
+                f'unsupported decomp prefix operator `{_text(operator)}`; expected `~|`'
+            )
+        return Combine(m=_decomp_of_expr_node(operand), prefix=True)
 
     if node.type == 'infix_expression':
-        operands = node.named_children
+        operands = _named_children(node)
         if len(operands) != 3:
             raise DecompParsingError(
                 f'expected a binary decomp operator, got {len(operands)} operands'
             )
         lhs, operator, rhs = operands
-        op = unwrap_bytes(operator.text).decode('utf8')
+        op = _text(operator)
 
         m = _decomp_of_expr_node(lhs)
-        d1 = _lazy_ret_of_appl_expr_node(rhs)
         match op:
             case '<<':
-                return Merge(m=m, d1=d1)
+                return Merge(m=m, d1=_lazy_ret_of_appl_expr_node(rhs))
             case '<|<':
-                return CompoundMerge(m=m, d1=d1)
+                return CompoundMerge(m=m, d1=_lazy_ret_of_appl_expr_node(rhs))
+            case '|>>':
+                return _refine(m, rhs)
             case _:
                 raise DecompParsingError(
-                    f'unsupported decomp operator `{op}`; expected `<<` or `<|<`'
+                    f'unsupported decomp operator `{op}`; expected `<<`, `<|<` or `|>>`'
                 )
 
     if node.type == 'parenthesized_expression':
-        inner = next((c for c in node.named_children), None)
-        if inner is None:
-            raise DecompParsingError('empty parenthesized decomp expression')
-        return _decomp_of_expr_node(inner)
+        return _decomp_of_expr_node(_strip_parens(node))
 
     raise DecompParsingError(f'cannot parse `{node.type}` as a decomp expression')
 
@@ -433,8 +628,8 @@ def _decomp_of_decomp_attr_payload(node: Node) -> Decomp:
     """Parse a `[@@decomp ...]` payload into a (possibly composite) `Decomp`."""
     assert node.type == 'attribute_payload'
 
-    expression_item = node.children[0]
-    expr = expression_item.children[0]
+    expression_item = _named_children(node)[0]
+    expr = _named_children(expression_item)[0]
     return _decomp_of_expr_node(expr)
 
 
@@ -473,7 +668,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
             attr_id = next((c for c in attr.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
-        if unwrap_bytes(attr_id.text).decode('utf8') != 'timeout':
+        if _text(attr_id) != 'timeout':
             continue
 
         number = next(
@@ -488,7 +683,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
         )
         if number is None:
             raise DecompParsingError('`[@@timeout]` payload is not an integer literal')
-        return int(unwrap_bytes(number.text).decode('utf8'))
+        return int(_text(number))
 
     return None
 
@@ -517,7 +712,7 @@ def decomp_capture_to_req(
     capture: DecompCapture,
 ) -> tuple[DecompReqArgs, Range]:
     req: dict[str, Any] = {}
-    req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
+    req['name'] = _text(capture.decomposed_func_name)
     req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
     req |= {k: v for k, v in asdict(req_labels).items() if v is not None}
     timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
@@ -644,7 +839,7 @@ def decomp_capture_to_req_(
 ) -> tuple[DecompReqArgs_, Range]:
     """Composite counterpart of `decomp_capture_to_req`."""
     req: DecompReqArgs_ = {
-        'name': unwrap_bytes(capture.decomposed_func_name.text).decode('utf8'),
+        'name': _text(capture.decomposed_func_name),
         'decomp': _decomp_of_decomp_attr_payload(capture.decomp_payload),
     }
     timeout = _timeout_of_sibling_attrs(capture.decomp_attr)

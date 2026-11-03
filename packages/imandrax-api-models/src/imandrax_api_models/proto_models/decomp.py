@@ -385,10 +385,19 @@ def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
     function from an identifier to a result, and `<<` / `<|<` compose on the
     left of that application. So `name` is threaded down the left spine, while
     each right operand is a `LazyRet` carrying its own identifier.
+
+    Refiners map onto the plan API as checked against ImandraX evaluating the
+    same `[@@decomp ...]` attribute: `m |>> prune` / `m |>> combine` / `~| m`
+    are `Prune(m)` / `Combine(m)`, and `m |>> enumerate d` and
+    `m |>> enumerate_all ~style:s [d1; ...]` are `Enumerate(d_f=m, ds=[d1, ...],
+    style=s)`. With a single `d` the style makes no difference.
     """
     from iml_query.processing.decomp import (
+        Combine as CombineCST,
         CompoundMerge as CompoundMergeCST,
+        Enumerate as EnumerateCST,
         Merge as MergeCST,
+        Prune as PruneCST,
         Top as TopCST,
     )
 
@@ -412,6 +421,16 @@ def _decomp_of_cst(d: DecompCST, name: str) -> Decomp:
             return CompoundMerge(
                 d1=_decomp_of_cst(d.m, name),
                 d2=_decomp_of_cst(d.d1.m, d.d1.identifier),
+            )
+        case PruneCST():
+            return Prune(d=_decomp_of_cst(d.m, name))
+        case CombineCST():
+            return Combine(d=_decomp_of_cst(d.m, name))
+        case EnumerateCST():
+            return Enumerate(
+                d_f=_decomp_of_cst(d.m, name),
+                ds=[_decomp_of_cst(r.m, r.identifier) for r in d.ds],
+                style=EnumerationStyle[d.style or 'Additive'],
             )
         case _:
             assert_never(d)
