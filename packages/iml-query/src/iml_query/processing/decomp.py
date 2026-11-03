@@ -371,13 +371,27 @@ def iml_of_top(top: Top) -> str:
 # ====================
 
 
+def _text(node: Node) -> str:
+    return unwrap_bytes(node.text).decode('utf8')
+
+
+def _named_children(node: Node) -> list[Node]:
+    """
+    `node.named_children` without comments.
+
+    Tree-sitter attaches a comment as a child wherever it appears, so taking
+    children by position must skip them.
+    """
+    return [c for c in node.named_children if c.type != 'comment']
+
+
 def _top_of_decomp_attr_payload(
     node: Node,
 ) -> Top:
     """Parse the decomp payload (`Decomp.top` function application) to label dict."""
     assert node.type == 'attribute_payload'
 
-    expect_appl = node.children[0].children[0]
+    expect_appl = _named_children(_named_children(node)[0])[0]
     if expect_appl.type != 'application_expression':
         raise NotImplementedError('Composition operators are not supported yet')
 
@@ -399,14 +413,14 @@ def _identifier_of_appl_expr_node(node: Node) -> str | None:
         attr_id = next((c for c in child.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
-        if unwrap_bytes(attr_id.text).decode('utf8') != 'id':
+        if _text(attr_id) != 'id':
             continue
         payload = next(
             (c for c in child.children if c.type == 'attribute_payload'), None
         )
         if payload is None:
             raise DecompParsingError('`[%id ...]` has no payload')
-        return unwrap_bytes(payload.text).decode('utf8').strip()
+        return _text(payload).strip()
 
     return None
 
@@ -414,7 +428,7 @@ def _identifier_of_appl_expr_node(node: Node) -> str | None:
 def _strip_parens(node: Node) -> Node:
     """`((e))` -> `e`."""
     while node.type == 'parenthesized_expression':
-        inner = next((c for c in node.named_children), None)
+        inner = next(iter(_named_children(node)), None)
         if inner is None:
             raise DecompParsingError('empty parenthesized decomp expression')
         node = inner
@@ -428,11 +442,7 @@ def _head_name_of_appl_expr_node(node: Node) -> str | None:
     if head.type != 'value_path':
         return None
     name = next((c for c in reversed(head.children) if c.type == 'value_name'), None)
-    return None if name is None else unwrap_bytes(name.text).decode('utf8')
-
-
-def _text(node: Node) -> str:
-    return unwrap_bytes(node.text).decode('utf8')
+    return None if name is None else _text(name)
 
 
 def _top_of_m_node(node: Node) -> Top:
@@ -474,7 +484,7 @@ def _style_of_labeled_arg(arg: Node) -> EnumerationStyle:
         raise DecompParsingError(
             f'unexpected argument `{_text(arg)}` to `enumerate_all`'
         )
-    value = arg.named_children[-1]
+    value = _named_children(arg)[-1]
     ctor_path = (
         None if value.type == 'label_name' else _strip_parens(value)
     )  # `~style` alone (punned) has no value
@@ -511,7 +521,7 @@ def _refine(m: Decomp, node: Node) -> Decomp:
                 pass
 
     if node.type == 'application_expression':
-        args = node.children[1:]
+        args = _named_children(node)[1:]
         match _head_name_of_appl_expr_node(node):
             case 'enumerate':
                 if len(args) != 1:
@@ -547,7 +557,7 @@ def _refine(m: Decomp, node: Node) -> Decomp:
                     )
                 ds = [
                     _lazy_ret_of_appl_expr_node(item)
-                    for item in lists[0].named_children
+                    for item in _named_children(lists[0])
                 ]
                 return Enumerate(m=m, ds=ds, style=style)
             case _:
@@ -579,7 +589,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
         return _top_of_m_node(node)
 
     if node.type == 'prefix_expression':
-        operator, operand = node.named_children
+        operator, operand = _named_children(node)
         if _text(operator) != '~|':
             raise DecompParsingError(
                 f'unsupported decomp prefix operator `{_text(operator)}`; expected `~|`'
@@ -587,13 +597,13 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
         return Combine(m=_decomp_of_expr_node(operand), prefix=True)
 
     if node.type == 'infix_expression':
-        operands = node.named_children
+        operands = _named_children(node)
         if len(operands) != 3:
             raise DecompParsingError(
                 f'expected a binary decomp operator, got {len(operands)} operands'
             )
         lhs, operator, rhs = operands
-        op = unwrap_bytes(operator.text).decode('utf8')
+        op = _text(operator)
 
         m = _decomp_of_expr_node(lhs)
         match op:
@@ -609,10 +619,7 @@ def _decomp_of_expr_node(node: Node) -> Decomp:
                 )
 
     if node.type == 'parenthesized_expression':
-        inner = next((c for c in node.named_children), None)
-        if inner is None:
-            raise DecompParsingError('empty parenthesized decomp expression')
-        return _decomp_of_expr_node(inner)
+        return _decomp_of_expr_node(_strip_parens(node))
 
     raise DecompParsingError(f'cannot parse `{node.type}` as a decomp expression')
 
@@ -621,8 +628,8 @@ def _decomp_of_decomp_attr_payload(node: Node) -> Decomp:
     """Parse a `[@@decomp ...]` payload into a (possibly composite) `Decomp`."""
     assert node.type == 'attribute_payload'
 
-    expression_item = node.children[0]
-    expr = expression_item.children[0]
+    expression_item = _named_children(node)[0]
+    expr = _named_children(expression_item)[0]
     return _decomp_of_expr_node(expr)
 
 
@@ -661,7 +668,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
             attr_id = next((c for c in attr.children if c.type == 'attribute_id'), None)
         if attr_id is None:
             continue
-        if unwrap_bytes(attr_id.text).decode('utf8') != 'timeout':
+        if _text(attr_id) != 'timeout':
             continue
 
         number = next(
@@ -676,7 +683,7 @@ def _timeout_of_sibling_attrs(decomp_attr: Node) -> int | None:
         )
         if number is None:
             raise DecompParsingError('`[@@timeout]` payload is not an integer literal')
-        return int(unwrap_bytes(number.text).decode('utf8'))
+        return int(_text(number))
 
     return None
 
@@ -705,7 +712,7 @@ def decomp_capture_to_req(
     capture: DecompCapture,
 ) -> tuple[DecompReqArgs, Range]:
     req: dict[str, Any] = {}
-    req['name'] = unwrap_bytes(capture.decomposed_func_name.text).decode('utf8')
+    req['name'] = _text(capture.decomposed_func_name)
     req_labels = _top_of_decomp_attr_payload(capture.decomp_payload)
     req |= {k: v for k, v in asdict(req_labels).items() if v is not None}
     timeout = _timeout_of_sibling_attrs(capture.decomp_attr)
@@ -832,7 +839,7 @@ def decomp_capture_to_req_(
 ) -> tuple[DecompReqArgs_, Range]:
     """Composite counterpart of `decomp_capture_to_req`."""
     req: DecompReqArgs_ = {
-        'name': unwrap_bytes(capture.decomposed_func_name.text).decode('utf8'),
+        'name': _text(capture.decomposed_func_name),
         'decomp': _decomp_of_decomp_attr_payload(capture.decomp_payload),
     }
     timeout = _timeout_of_sibling_attrs(capture.decomp_attr)

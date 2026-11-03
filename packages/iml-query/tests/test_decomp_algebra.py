@@ -472,3 +472,82 @@ class TestExtractRefiners:
         assert self._decomp_of('~| (top ()) << top () [%id g]') == merge(
             decomp.Combine(m=Top(), prefix=True), apply_decomp(Top(), 'g')
         )
+
+
+class TestComments:
+    """A comment anywhere in a decomp payload parses as if it were not there."""
+
+    @staticmethod
+    def _decomp_of(payload: str) -> decomp.Decomp:
+        iml = f'let f x = x\n[@@decomp {payload}]'
+        _leftover, _tree, reqs, _ranges = extract_decomp_reqs_(
+            iml, get_parser().parse(bytes(iml, encoding='utf8'))
+        )
+        assert len(reqs) == 1
+        return reqs[0]['decomp']
+
+    @pytest.mark.parametrize(
+        'payload',
+        [
+            pytest.param('(* c *) top () << top () [%id a] |>> prune', id='start'),
+            pytest.param('top () << top () [%id a] |>> prune (* c *)', id='end'),
+            pytest.param('top () (* c *) << top () [%id a] |>> prune', id='before-op'),
+            pytest.param('top () << (* c *) top () [%id a] |>> prune', id='after-op'),
+            pytest.param('top () << top () (* c *) [%id a] |>> prune', id='before-id'),
+            pytest.param('(top () << top () [%id a]) |>> prune', id='no-comment'),
+            pytest.param('( (* c *) top () << top () [%id a]) |>> prune', id='paren'),
+            pytest.param(
+                '(top () << top () [%id a] (* c *)) |>> prune', id='paren-end'
+            ),
+        ],
+    )
+    def test_merge_then_prune(self, payload: str):
+        assert self._decomp_of(payload) == decomp.Prune(
+            m=merge(Top(), apply_decomp(Top(), 'a'))
+        )
+
+    def test_prefix_combine(self):
+        assert self._decomp_of('~| (* c *) (top ())') == decomp.Combine(
+            m=Top(), prefix=True
+        )
+
+    def test_enumerate(self):
+        assert self._decomp_of(
+            'top () |>> enumerate (* c *) (top () [%id a])'
+        ) == decomp.Enumerate(m=Top(), ds=[apply_decomp(Top(), 'a')])
+
+    @pytest.mark.parametrize(
+        'payload',
+        [
+            pytest.param(
+                'top () |>> enumerate_all (* c *) ~style:Additive [top () [%id a]; top () [%id b]]',
+                id='before-style',
+            ),
+            pytest.param(
+                'top () |>> enumerate_all ~style:(* c *)Additive [top () [%id a]; top () [%id b]]',
+                id='in-style',
+            ),
+            pytest.param(
+                'top () |>> enumerate_all ~style:Additive (* c *) [top () [%id a]; top () [%id b]]',
+                id='before-list',
+            ),
+            pytest.param(
+                'top () |>> enumerate_all ~style:Additive [(* c *) top () [%id a]; top () [%id b]]',
+                id='list-start',
+            ),
+            pytest.param(
+                'top () |>> enumerate_all ~style:Additive [top () [%id a]; (* c *) top () [%id b]]',
+                id='between-items',
+            ),
+            pytest.param(
+                'top () |>> enumerate_all ~style:Additive [top () [%id a]; top () [%id b] (* c *)]',
+                id='list-end',
+            ),
+        ],
+    )
+    def test_enumerate_all(self, payload: str):
+        assert self._decomp_of(payload) == decomp.Enumerate(
+            m=Top(),
+            ds=[apply_decomp(Top(), 'a'), apply_decomp(Top(), 'b')],
+            style='Additive',
+        )
