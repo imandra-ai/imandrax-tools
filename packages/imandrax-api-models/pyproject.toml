@@ -1,11 +1,9 @@
 [project]
 name = "imandrax-api-models"
-version = "21.0.0"
+version = "21.1.0"
 description = "Pydantic model definitions for imandrax-api. Also provides a client wrapper with built-in validation and utility methods."
 readme = "README.md"
-authors = [
-    { name = "hongyu", email = "hongyu@imandra.ai" }
-]
+authors = [{ name = "hongyu", email = "hongyu@imandra.ai" }]
 requires-python = ">=3.12"
 dependencies = [
     "devtools>=0.12.2",
@@ -15,9 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-client = [
-    "iml-query>=0.14.0",
-]
+client = ["iml-query>=0.17.0"]
 tracing = [
     "opentelemetry-api>=1.27",
     "opentelemetry-sdk>=1.27",

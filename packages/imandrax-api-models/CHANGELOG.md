@@ -4,6 +4,13 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [21.1.0] - 26-11-03
+- FEAT(decomp): CST to decomp plan now handles `prune`, `combine`, `enumerate` and `enumerate_all` 
+- FIX(decomp/grouping): when regions overlap (e.g. from `enumerate_all ~style:Additive`), grouping no longer fails with "Leaf group must be concrete" or drops regions 
+  - regions with the same constraint set merge into one leaf, with `weight` = number of copies, keeping the first copy's model; raises `ValueError` if they differ in invariant
+  - a region whose constraints are a subset of another region's is kept as a sibling leaf
+  - emits one `OverlappingRegionsWarning` when regions have identical or nested constraint sets
+
 ## [21.0.0] - 26-10-29
 - bump ImandraX API to v21
 - **BREAKING**: `Art` is renamed to `Artifact`

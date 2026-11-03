@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-03
+- FEAT(decomp): parse and print the `|>>` refiners `prune`, `combine`, `enumerate d` and `enumerate_all ~style:(Additive|Multiplicative) [d1; ...]`, and the `~|` prefix combine, as new `Decomp` nodes `Prune`, `Combine` and `Enumerate`
+- FIX(decomp): comments inside a `[@@decomp ...]` payload no longer break parsing
+- decomp: operands of `<<` / `<|<` / `enumerate` may be parenthesized, and an operand applying a function other than `top` is rejected
+
 ## [0.16.0] - 2026-10-13
 - FEAT!(multifile): `gather_modules` returns a `Library` object, which contains information about the location maps before and after joining. (was: return `(deps, entry)` two-element string tuple)
 - **BREAKING** multifile: imports, and the dependencies' VGs and decomps, are blanked out instead of deleted, and leading lines are kept
