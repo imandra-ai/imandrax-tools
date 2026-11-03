@@ -15,6 +15,7 @@ import warnings
 from collections.abc import Callable, Sequence
 from dataclasses import fields, is_dataclass
 from functools import reduce
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Annotated, Any, NamedTuple, Protocol, Self, cast
 
@@ -41,6 +42,7 @@ from ._region import (
 __all__ = (
     'EnrichedDecomposeRes',
     'ForTesting',
+    'OverlappingRegionsWarning',
     'Region',
     'RegionGroup',
     'RegionGroupView',
@@ -329,14 +331,13 @@ def group_regions(
     """
     Group regions hierarchically based on constraints.
 
-    Emits one `UserWarning` if any two regions overlap visibly in their
-    constraints (see `_warn_if_overlapping`). Regions with the same constraint
-    set are merged into one leaf with `weight` = number of copies; every other
-    region keeps its own leaf.
+    Emits one `OverlappingRegionsWarning` if any two regions overlap visibly in
+    their constraints (see `_warn_if_overlapping`). Regions with the same
+    constraint set are merged into one leaf with `weight` = number of copies,
+    keeping the first copy's model; every other region keeps its own leaf.
 
     Raises:
-        ValueError: if regions with the same constraint set differ in invariant
-            or model.
+        ValueError: if regions with the same constraint set differ in invariant.
 
     Args:
         eq_term: constraint equality. Defaults to `eq_term_with_pp`, memoized
@@ -362,8 +363,9 @@ class _TextualOverlaps(NamedTuple):
     """`(i, j)`: region `j` has the same constraint set as region `i`, the first
     region with that set."""
     contained: list[tuple[int, int]]
-    """`(i, j)`: region `i`'s constraints are a strict subset of region `j`'s,
-    so region `i` contains region `j`. One pair per pair of distinct sets."""
+    """`(i, j)`: region `i`'s constraints, ignoring `true`, are a subset of region
+    `j`'s, so region `i` contains region `j`. One pair per pair of distinct sets
+    (e.g. `['x > 0']` and `['true', 'x > 0']` are one pair)."""
 
 
 def _textual_overlaps(constraints: Sequence[Sequence[str]]) -> _TextualOverlaps:
@@ -381,23 +383,32 @@ def _textual_overlaps(constraints: Sequence[Sequence[str]]) -> _TextualOverlaps:
 
     identical = [(idxs[0], j) for idxs in by_set.values() for j in idxs[1:]]
 
-    def without_true(s: frozenset[str]) -> frozenset[str]:
-        return s - {'true'}
-
-    distinct = sorted(by_set, key=lambda s: len(without_true(s)))
+    # (first region, set without `true`) per distinct set, smallest first
+    distinct = sorted(
+        ((idxs[0], s - {'true'}) for s, idxs in by_set.items()),
+        key=lambda x: len(x[1]),
+    )
     contained = [
-        (by_set[small][0], by_set[big][0])
-        for i, small in enumerate(distinct)
-        for big in distinct[i + 1 :]
-        if without_true(small) < without_true(big)
+        (i, j)
+        for k, (i, small) in enumerate(distinct)
+        for j, big in distinct[k + 1 :]
+        if small <= big
     ]
     return _TextualOverlaps(identical=identical, contained=contained)
+
+
+class OverlappingRegionsWarning(UserWarning):
+    """The decomposition returned regions that overlap (see `group_regions`)."""
+
+
+_PACKAGE_DIR = str(Path(__file__).parent.parent)
+"""Warnings are attributed to the first caller outside this package."""
 
 
 def _warn_if_overlapping(
     regions: Sequence[Region], show_term: Callable[[xtype.Mir_Term_term], str]
 ) -> None:
-    """Emit one `UserWarning` summarizing `_textual_overlaps`, if there are any."""
+    """Emit one `OverlappingRegionsWarning` summarizing `_textual_overlaps`."""
     constraints = [[show_term(c) for c in r.constraints] for r in regions]
     overlaps = _textual_overlaps(constraints)
     if not overlaps.identical and not overlaps.contained:
@@ -410,6 +421,19 @@ def _warn_if_overlapping(
             f'{len(overlaps.identical)} region(s) repeat the constraints of'
             f' another region and are merged into it, e.g. {constraints[i]}'
         )
+        other_model = [
+            (i, j)
+            for i, j in overlaps.identical
+            if regions[i].non_group_stat().model != regions[j].non_group_stat().model
+        ]
+        if other_model:
+            i, j = other_model[0]
+            parts.append(
+                f'{len(other_model)} of them have a different model than the region'
+                f' they are merged into, whose model is kept, e.g. for {constraints[i]}:'
+                f' {regions[i].non_group_stat().model!r}, not'
+                f' {regions[j].non_group_stat().model!r}'
+            )
     if overlaps.contained:
         i, j = overlaps.contained[0]
         parts.append(
@@ -419,7 +443,8 @@ def _warn_if_overlapping(
         )
     warnings.warn(
         'the decomposition returned overlapping regions: ' + '; '.join(parts) + '.',
-        stacklevel=3,
+        OverlappingRegionsWarning,
+        skip_file_prefixes=(_PACKAGE_DIR,),
     )
 
 
@@ -431,21 +456,23 @@ def _merge_copies(
     """
     The one region that `copies` (regions with the same constraint set) stand for.
 
+    The first copy is kept, with its model. Copies may differ in model: each is
+    only one witness of the region (`group_regions` warns about it).
+
     Raises:
-        ValueError: if the copies differ in invariant or model, which ImandraX
-            should never return for one constraint set.
+        ValueError: if the copies differ in invariant, which ImandraX should
+            never return for one constraint set.
 
     """
-    first = copies[0].non_group_stat()
+    invariant = copies[0].non_group_stat().invariant
     for r in copies[1:]:
-        other = r.non_group_stat()
-        for field in ('invariant', 'model'):
-            if getattr(first, field) != getattr(other, field):
-                raise ValueError(
-                    'regions with the same constraints'
-                    f' {[show_term(c) for c in constraint_path]} have different'
-                    f' {field}s: {getattr(first, field)!r} and {getattr(other, field)!r}'
-                )
+        other = r.non_group_stat().invariant
+        if other != invariant:
+            raise ValueError(
+                'regions with the same constraints'
+                f' {[show_term(c) for c in constraint_path]} have different'
+                f' invariants: {invariant!r} and {other!r}'
+            )
     return copies[0]
 
 
@@ -575,7 +602,7 @@ def _loop_group_regions(
     - Every input region is in exactly one leaf. Regions with the same constraint
       set (copies) share one leaf, whose `weight` is the number of copies; a
       node's `weight` is the sum of its leaves' weights. (`group_regions` warns
-      about copies up front, and raises if they differ in invariant or model.)
+      about copies up front, and raises if they differ in invariant.)
     - If the input regions are disjoint, each node's children partition it (the
       inputs its regions cover). The converse does not hold: merged copies and
       overlap between top-level groups leave no overlapping siblings.

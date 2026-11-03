@@ -7,17 +7,20 @@ from pathlib import Path
 from typing import Any
 
 import imandrax_api
+import imandrax_api.lib as xtype
 import pytest
 from imandrax_api_models.client import ImandraXClient
 from imandrax_api_models.proto_models import DecomposeRes
 from imandrax_api_models.region_decomp import (
     EnrichedDecomposeRes,
     ForTesting,
+    OverlappingRegionsWarning,
     Region,
     RegionGroup,
     get_leaf_groups,
     group_regions,
     mir_regions_of_fun_decomp_artifact,
+    rgs_of_mir_fun_decomp,
 )
 from imandrax_api_models.region_decomp._common import term_to_string
 from inline_snapshot import snapshot
@@ -435,29 +438,47 @@ class TestOverlappingRegions:
         self._assert_every_region_is_in_one_leaf(groups, regions)
         assert [(g.label_path, g.weight) for g in groups] == [([1], 2), ([2], 1)]
 
-    @pytest.mark.parametrize('field', ['invariant', 'model'])
-    def test_copies_that_differ_raise(
-        self, decomp_res_classify: DecomposeRes, field: str
+    def test_copies_with_different_invariants_raise(
+        self, decomp_res_classify: DecomposeRes
     ):
         r, other = self._classify_regions(decomp_res_classify)[:2]
-        if field == 'invariant':
-            mir = dataclasses.replace(
-                r.mir_region, invariant=other.mir_region.invariant
-            )
-            dup = dataclasses.replace(r, mir_region=mir, id=f'{r.id}-dup')
-        else:
-            assert r.string_result is not None
-            string_result = {**r.string_result, 'model': {'x': '12345'}}
-            dup = dataclasses.replace(r, string_result=string_result, id=f'{r.id}-dup')
-        assert getattr(dup.non_group_stat(), field) != getattr(
-            r.non_group_stat(), field
-        )
+        mir = dataclasses.replace(r.mir_region, invariant=other.mir_region.invariant)
+        dup = dataclasses.replace(r, mir_region=mir, id=f'{r.id}-dup')
+        assert dup.non_group_stat().invariant != r.non_group_stat().invariant
 
         with (
-            pytest.warns(UserWarning, match='merged'),
-            pytest.raises(ValueError, match=f'different {field}s'),
+            pytest.warns(OverlappingRegionsWarning, match='merged'),
+            pytest.raises(ValueError, match='different invariants'),
         ):
             group_regions([r, dup])
+
+    def test_copies_with_different_models_keep_the_first(
+        self, decomp_res_classify: DecomposeRes
+    ):
+        """Each copy's model is only one witness of the region: warn, don't raise."""
+        r = self._classify_regions(decomp_res_classify)[0]
+        assert r.string_result is not None
+        string_result = {**r.string_result, 'model': {'x': '12345'}}
+        dup = dataclasses.replace(r, string_result=string_result, id=f'{r.id}-dup')
+        assert dup.non_group_stat().model != r.non_group_stat().model
+
+        with pytest.warns(OverlappingRegionsWarning, match='different model') as rec:
+            groups = group_regions([r, dup])
+        assert len(rec) == 1
+        assert [(g.region, g.weight) for g in groups] == [(r, 2)]
+
+    def test_warning_points_at_the_caller(self, decomp_res_classify: DecomposeRes):
+        """Through a library wrapper, the warning names the caller's line."""
+        assert decomp_res_classify.artifact is not None
+        art = decomp_res_classify.artifact
+        fun_decomp = xtype.read_artifact_data(data=art.data, kind=art.kind)
+        assert isinstance(fun_decomp, xtype.Common_Fun_decomp_t_poly)
+        r = fun_decomp.regions[0]
+        doubled = dataclasses.replace(fun_decomp, regions=[r, r])
+
+        with pytest.warns(OverlappingRegionsWarning) as rec:
+            rgs_of_mir_fun_decomp(doubled)
+        assert rec[0].filename == __file__
 
     def _region_with(self, base: Region, constraints: list[Any], tag: str) -> Region:
         mir = dataclasses.replace(base.mir_region, constraints=constraints)
@@ -501,6 +522,9 @@ class TestOverlappingRegions:
         ov = _textual_overlaps(
             [['a'], ['b', 'a'], ['a'], ['true'], ['c'], ['a', 'true']]
         )
-        # `['a', 'true']` is not a copy of `['a']`: grouping tells them apart.
+        # `['a', 'true']` is not a copy of `['a']` (grouping tells them apart), but
+        # they cover the same inputs: one containment pair.
         assert ov.identical == [(0, 2)]
-        assert sorted(ov.contained) == [(0, 1), (3, 0), (3, 1), (3, 4), (3, 5), (5, 1)]
+        assert sorted(ov.contained) == [
+            (0, 1), (0, 5), (3, 0), (3, 1), (3, 4), (3, 5), (5, 1),
+        ]  # fmt: skip
