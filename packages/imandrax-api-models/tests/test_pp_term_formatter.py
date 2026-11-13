@@ -4,6 +4,9 @@ from imandrax_api_models.pp.term_builders import (
     app,
     const_int,
     construct,
+    destruct,
+    field,
+    is_a,
     tuple_,
     var,
 )
@@ -43,3 +46,42 @@ def test_constructor_tuple_arg_stays_one_element():
 def test_constructor_in_cons():
     t = construct('::', [construct('Set', [var('a'), var('b')]), construct('[]', [])])
     assert pp(t) == 'Set (a, b) :: []'
+
+
+# Is_a and Destruct
+# =================
+# Printed as ImandraX prints them in region strings.
+
+
+def test_is_a():
+    assert pp(is_a('Set', var('e'))) == 'Is_a(Set, e)'
+
+
+def test_is_a_under_not_is_parenthesised():
+    assert pp(app('not', [is_a('Add', var('e'))])) == 'not (Is_a(Add, e))'
+
+
+def test_is_a_in_conjunction():
+    t = app('&&', [is_a('Set', var('e')), app('not', [var('b')])])
+    assert pp(t) == 'Is_a(Set, e) && not b'
+
+
+def test_destruct():
+    assert pp(destruct('Set', 1, var('e'))) == 'Destruct(Set, 1, e)'
+
+
+def test_destruct_as_argument_is_parenthesised():
+    t = app('mem_int', [field('gone', var('s')), destruct('Replace', 0, var('e'))])
+    assert pp(t) == 'mem_int s.gone (Destruct(Replace, 0, e))'
+
+
+def test_field_of_destruct_is_parenthesised():
+    t = app(
+        'mem_int', [field('gone', var('s')), field('src', destruct('Add', 0, var('e')))]
+    )
+    assert pp(t) == 'mem_int s.gone (Destruct(Add, 0, e)).src'
+
+
+def test_destruct_in_comparison():
+    t = app('=', [field('v3', field('now', var('s'))), destruct('Set', 1, var('e'))])
+    assert pp(t) == 's.now.v3 = Destruct(Set, 1, e)'

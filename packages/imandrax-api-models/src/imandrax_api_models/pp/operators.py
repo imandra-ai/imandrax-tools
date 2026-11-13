@@ -190,7 +190,10 @@ def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
                 return operator_info('/.', True)
             return default_()
         case xtype.Mir_Term_view_Is_a():
-            return OperatorInfo('is-a', Notation.INFIX, Associativity.LEFT, 17)
+            # NOTE: this deviates from `imandrax_operators.ts`, where `Is_a`
+            # is the infix `is-a`. We print it as the application `Is_a(C, t)`
+            # (see `term_formatter.py`), so it binds like one.
+            return OperatorInfo('Is_a', Notation.PREFIX, Associativity.LEFT, 17)
         case _:
             return default_()
 
