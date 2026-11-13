@@ -327,11 +327,11 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
 
         case xtype.Mir_Term_view_Field(f=f, t=inner):
             inner_doc = _projection_base2doc(inner)
-            return _g([inner_doc, text('.'), linebreak, sym2doc(f)])
+            return hcat(inner_doc, text('.'), sym2doc(f))
 
         case xtype.Mir_Term_view_Tuple_field(i=i, t=inner):
             inner_doc = _projection_base2doc(inner)
-            return _g([inner_doc, text('.'), linebreak, text(str(i))])
+            return hcat(inner_doc, text('.'), text(str(i)))
 
         case xtype.Mir_Term_view_Record(rows=rows, rest=rest):
             if False:

@@ -135,3 +135,19 @@ def test_sequence_in_tuple_element_is_parenthesised():
 def test_nested_tuple_element_is_parenthesised():
     t = tuple_([tuple_([var('a'), var('b')]), var('c')])
     assert term_to_string(t) == '(a, b), c'
+
+
+def test_field_access_does_not_break_at_the_dot():
+    t = app(
+        '=',
+        [
+            field(
+                'order_price',
+                app('hd', [app('tl', [field('sells', var('order_book_snapshot'))])]),
+            ),
+            var('ref_price'),
+        ],
+    )
+    assert prettify(t, width=20) == (
+        '(hd\n  (tl\n    order_book_snapshot.sells)).order_price\n=\nref_price'
+    )
