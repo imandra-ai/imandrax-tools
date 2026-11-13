@@ -1,11 +1,14 @@
 from imandrax_api_models.pp.term_builders import (
     app,
     const_int,
+    const_q,
     construct,
     destruct,
     field,
     is_a,
+    sequence,
     tuple_,
+    tuple_field,
     var,
 )
 from imandrax_api_models.pp.term_formatter import prettify
@@ -84,3 +87,51 @@ def test_field_of_destruct_is_parenthesised():
 def test_destruct_in_comparison():
     t = app('=', [field('v3', field('now', var('s'))), destruct('Set', 1, var('e'))])
     assert term_to_string(t) == 's.now.v3 = Destruct(Set, 1, e)'
+
+
+def test_constructor_negative_arg_is_parenthesised():
+    assert term_to_string(construct('Some', [const_int(-1)])) == 'Some (-1)'
+    assert term_to_string(construct('Some', [const_q(-3, 1)])) == 'Some (-3.0)'
+
+
+def test_application_negative_arg_is_parenthesised():
+    assert term_to_string(app('f', [const_int(-1), var('x')])) == 'f (-1) x'
+
+
+def test_negative_operand_of_infix_is_not_parenthesised():
+    assert term_to_string(app('+', [var('x'), const_int(-1)])) == 'x + -1'
+
+
+# Field and tuple-element access
+# ==============================
+
+
+def test_field_of_application_is_parenthesised():
+    t = field('x', app('hd', [var('l')]))
+    assert term_to_string(t) == '(hd l).x'
+
+
+def test_tuple_field_of_application_is_parenthesised():
+    t = tuple_field(0, app('f', [var('x')]))
+    assert term_to_string(t) == '(f x).0'
+
+
+def test_nested_field_is_not_parenthesised():
+    assert term_to_string(field('v3', field('now', var('s')))) == 's.now.v3'
+
+
+# Sequences in tuples
+# ===================
+
+
+def test_sequence_in_tuple_element_is_parenthesised():
+    seq = sequence([var('a')], var('b'))
+    assert term_to_string(construct('Set', [seq, var('c')])) == 'Set ((a; b), c)'
+    assert term_to_string(destruct('C', 0, seq)) == 'Destruct(C, 0, (a; b))'
+    assert term_to_string(is_a('C', seq)) == 'Is_a(C, (a; b))'
+    assert term_to_string(tuple_([seq, var('c')])) == '(a; b), c'
+
+
+def test_nested_tuple_element_is_parenthesised():
+    t = tuple_([tuple_([var('a'), var('b')]), var('c')])
+    assert term_to_string(t) == '(a, b), c'

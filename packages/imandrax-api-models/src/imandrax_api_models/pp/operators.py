@@ -45,6 +45,33 @@ def short_id(uid: xtype.Uid) -> str:
     return uid.name
 
 
+def const2str(c: xtype.Const) -> str:
+    """
+    IML source text of a constant.
+
+    Lives here, not in `term_formatter`, so that `operator_info_of_term` can
+    decide a constant's precedence from the text that is actually printed.
+    """
+    match c:
+        case xtype.Const_Const_float(arg=v):
+            return repr(v)
+        case xtype.Const_Const_string(arg=v):
+            return f'"{v}"'
+        case xtype.Const_Const_z(arg=v):
+            return str(v)
+        case xtype.Const_Const_q(arg=(num, den)):
+            if den != 1:
+                return f'{num}.0 /. {den}.0'
+            return f'{num}.0'
+        case xtype.Const_Const_real_approx(arg=v):
+            return v
+        case xtype.Const_Const_uid(arg=u):
+            return u.name
+        case xtype.Const_Const_bool(arg=v):
+            return 'true' if v else 'false'
+    return repr(c)
+
+
 def has_multiple_children(t: xtype.Mir_Term) -> bool:
     v = t.view
     match v:
@@ -188,7 +215,13 @@ def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
         case xtype.Mir_Term_view_Const(arg=c):
             if isinstance(c, xtype.Const_Const_q) and c.arg[1] != 1:
                 return operator_info('/.', True)
+            # A literal printed with a leading `-` binds like unary minus:
+            # `Some -1` parses as `Some - 1`.
+            if const2str(c).startswith('-'):
+                return operator_info('~-', False)
             return default_()
+        case xtype.Mir_Term_view_Sequence():
+            return operator_info(';', True)
         case xtype.Mir_Term_view_Is_a():
             # NOTE: this deviates from `imandrax_operators.ts`, where `Is_a`
             # is the infix `is-a`. We print it as the application `Is_a(C, t)`

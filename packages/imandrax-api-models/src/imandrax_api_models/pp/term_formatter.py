@@ -9,6 +9,7 @@ from . import operators as IXO
 from .operators import (
     Notation,
     OperatorInfo,
+    const2str,
     has_multiple_children,
     needs_parentheses,
     operator_info,
@@ -73,24 +74,7 @@ def _applied_sym_short(s: xtype.Common_Applied_symbol_t_poly) -> str:
 
 
 def _const2doc(c: xtype.Const) -> Doc:
-    match c:
-        case xtype.Const_Const_float(arg=v):
-            return text(repr(v))
-        case xtype.Const_Const_string(arg=v):
-            return text(f'"{v}"')
-        case xtype.Const_Const_z(arg=v):
-            return text(str(v))
-        case xtype.Const_Const_q(arg=(num, den)):
-            if den != 1:
-                return text(f'{num}.0 /. {den}.0')
-            return text(f'{num}.0')
-        case xtype.Const_Const_real_approx(arg=v):
-            return text(v)
-        case xtype.Const_Const_uid(arg=u):
-            return text(u.name)
-        case xtype.Const_Const_bool(arg=v):
-            return text('true' if v else 'false')
-    return text(repr(c))
+    return text(const2str(c))
 
 
 # Subterm-selection (used inside `subterm_selection_select`)
@@ -165,12 +149,20 @@ def _tuple_elem2doc(x: xtype.Mir_Term) -> Doc:
     A term binding no tighter than `,` (a tuple, `if`, `match`, ...) is
     parenthesised so it stays one element.
     """
-    comma_prec = operator_info(',').precedence
-    return _par_if(operator_info_of_term(x).precedence <= comma_prec, [term2doc(x)])
+    return _par_if(operator_info_of_term(x).precedence <= _COMMA_PREC, [term2doc(x)])
 
 
-def _is_destruct(t: xtype.Mir_Term) -> bool:
-    return isinstance(t.view, xtype.Mir_Term_view_Destruct)
+_COMMA_PREC = operator_info(',').precedence
+
+
+def _projection_base2doc(x: xtype.Mir_Term) -> Doc:
+    """
+    Print the term a field or tuple-element access is applied to.
+
+    `.f` binds tighter than application, so any compound term is
+    parenthesised: `(f x).g`, `(Destruct(C, i, t)).f`, not `f x.g`.
+    """
+    return _par_if(has_multiple_children(x), [term2doc(x)])
 
 
 def _tuple2doc(docs: list[Doc]) -> Doc:
@@ -325,16 +317,20 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             return _g([_kw('Is_a'), _tuple2doc([sym2doc(c), _tuple_elem2doc(inner)])])
 
         case xtype.Mir_Term_view_Tuple(l=ls):
-            return _g([_indent([join(hcat(text(','), line), [rec(x) for x in ls])])])
+            return _g(
+                [
+                    _indent(
+                        [join(hcat(text(','), line), [_tuple_elem2doc(x) for x in ls])]
+                    )
+                ]
+            )
 
-        # `Destruct(C, i, t).f` would parse as `Destruct ((C, i, t).f)`, so
-        # parenthesise it, as ImandraX does: `(Destruct(C, i, t)).f`.
         case xtype.Mir_Term_view_Field(f=f, t=inner):
-            inner_doc = _par_if(_is_destruct(inner), [rec(inner)])
+            inner_doc = _projection_base2doc(inner)
             return _g([inner_doc, text('.'), linebreak, sym2doc(f)])
 
         case xtype.Mir_Term_view_Tuple_field(i=i, t=inner):
-            inner_doc = _par_if(_is_destruct(inner), [rec(inner)])
+            inner_doc = _projection_base2doc(inner)
             return _g([inner_doc, text('.'), linebreak, text(str(i))])
 
         case xtype.Mir_Term_view_Record(rows=rows, rest=rest):
