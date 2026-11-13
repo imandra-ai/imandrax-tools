@@ -9,6 +9,7 @@ from . import operators as IXO
 from .operators import (
     Notation,
     OperatorInfo,
+    const2str,
     has_multiple_children,
     needs_parentheses,
     operator_info,
@@ -17,7 +18,6 @@ from .operators import (
 )
 from .pretty import (
     Doc,
-    brackets,
     flatten,
     group,
     hcat,
@@ -74,24 +74,7 @@ def _applied_sym_short(s: xtype.Common_Applied_symbol_t_poly) -> str:
 
 
 def _const2doc(c: xtype.Const) -> Doc:
-    match c:
-        case xtype.Const_Const_float(arg=v):
-            return text(repr(v))
-        case xtype.Const_Const_string(arg=v):
-            return text(f'"{v}"')
-        case xtype.Const_Const_z(arg=v):
-            return text(str(v))
-        case xtype.Const_Const_q(arg=(num, den)):
-            if den != 1:
-                return text(f'{num}.0 /. {den}.0')
-            return text(f'{num}.0')
-        case xtype.Const_Const_real_approx(arg=v):
-            return text(v)
-        case xtype.Const_Const_uid(arg=u):
-            return text(u.name)
-        case xtype.Const_Const_bool(arg=v):
-            return text('true' if v else 'false')
-    return text(repr(c))
+    return text(const2str(c))
 
 
 # Subterm-selection (used inside `subterm_selection_select`)
@@ -157,6 +140,41 @@ def _subterm_selection2doc(ts: list[xtype.Mir_Term]) -> Doc:
 
 # Main recursion
 # --------------
+
+
+def _tuple_elem2doc(x: xtype.Mir_Term) -> Doc:
+    """
+    Print a term as one element of a tuple.
+
+    A term binding no tighter than `,` (a tuple, `if`, `match`, ...) is
+    parenthesised so it stays one element.
+    """
+    return _par_if(operator_info_of_term(x).precedence <= _COMMA_PREC, [term2doc(x)])
+
+
+_COMMA_PREC = operator_info(',').precedence
+
+
+def _projection_base2doc(x: xtype.Mir_Term) -> Doc:
+    """
+    Print the term a field or tuple-element access is applied to.
+
+    `.f` binds tighter than application, so any compound term is
+    parenthesised: `(f x).g`, `(Destruct(C, i, t)).f`, not `f x.g`.
+    """
+    return _par_if(has_multiple_children(x), [term2doc(x)])
+
+
+def _tuple2doc(docs: list[Doc]) -> Doc:
+    """Print already-printed elements in IML tuple syntax, `(a, b, c)`."""
+    return _g(
+        [
+            text('('),
+            _indent([linebreak, join(hcat(text(','), line), docs)]),
+            linebreak,
+            text(')'),
+        ]
+    )
 
 
 def terms2doc(ts: list[xtype.Mir_Term]) -> Doc:
@@ -269,32 +287,51 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                     ]
                 )
                 return _g([text('( '), op_doc, text(' )'), hargs])
-            rargs = [rec(x) for x in args]
-            return _g([op_doc, _indent([line, join(line, rargs)])])
+            # NOTE: this deviates from `term-formatter.ts`, which joins the
+            # arguments with spaces and no parentheses, producing `Set S1 a b`
+            # for `Set (S1, a, b)` and `Some f x` for `Some (f x)`, neither of
+            # which is valid IML. We print one argument as an application argument
+            # (parenthesised when needed), several as parenthesised.
+            if len(args) == 1:
+                return _g([op_doc, _indent([line, recwp(IXO.default_(), args[0])])])
+            return _g(
+                [op_doc, text(' '), _tuple2doc([_tuple_elem2doc(x) for x in args])]
+            )
 
+        # NOTE: `Destruct` and `Is_a` deviate from `term-formatter.ts`, which
+        # prints them as `destruct[C|i] t` and `t is-a C`, display notation
+        # that does not parse as IML.
+        # We print the form ImandraX itself uses in its region strings,
+        # `Destruct(C, i, t)` and `Is_a(C, t)`.
+        # These parse, though neither is defined in IML, so they do not type-check
+        # as source.
         case xtype.Mir_Term_view_Destruct(c=c, i=i, t=inner):
             return _g(
                 [
-                    _kw('destruct'),
-                    brackets(hcat(sym2doc(c), text('|'), text(str(i)))),
-                    _indent([line, recwp(IXO.default_(), inner)]),
+                    _kw('Destruct'),
+                    _tuple2doc([sym2doc(c), text(str(i)), _tuple_elem2doc(inner)]),
                 ]
             )
 
         case xtype.Mir_Term_view_Is_a(c=c, t=inner):
-            pi = operator_info_of_term(t)
-            lhs = recwp(pi, inner, True)
-            rhs = sym2doc(c)
-            return _g([lhs, line, _kw(pi.name), line, rhs])
+            return _g([_kw('Is_a'), _tuple2doc([sym2doc(c), _tuple_elem2doc(inner)])])
 
         case xtype.Mir_Term_view_Tuple(l=ls):
-            return _g([_indent([join(hcat(text(','), line), [rec(x) for x in ls])])])
+            return _g(
+                [
+                    _indent(
+                        [join(hcat(text(','), line), [_tuple_elem2doc(x) for x in ls])]
+                    )
+                ]
+            )
 
         case xtype.Mir_Term_view_Field(f=f, t=inner):
-            return _g([rec(inner), text('.'), linebreak, sym2doc(f)])
+            inner_doc = _projection_base2doc(inner)
+            return hcat(inner_doc, text('.'), sym2doc(f))
 
         case xtype.Mir_Term_view_Tuple_field(i=i, t=inner):
-            return _g([rec(inner), text('.'), linebreak, text(str(i))])
+            inner_doc = _projection_base2doc(inner)
+            return hcat(inner_doc, text('.'), text(str(i)))
 
         case xtype.Mir_Term_view_Record(rows=rows, rest=rest):
             if False:
