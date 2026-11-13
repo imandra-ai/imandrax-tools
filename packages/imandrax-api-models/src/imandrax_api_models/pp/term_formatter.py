@@ -158,9 +158,9 @@ def _subterm_selection2doc(ts: list[xtype.Mir_Term]) -> Doc:
 # --------------
 
 
-def _arg2doc(x: xtype.Mir_Term) -> Doc:
+def _tuple_elem2doc(x: xtype.Mir_Term) -> Doc:
     """
-    Print one element of a tuple.
+    Print a term as one element of a tuple.
 
     A term binding no tighter than `,` (a tuple, `if`, `match`, ...) is
     parenthesised so it stays one element.
@@ -183,11 +183,6 @@ def _tuple2doc(docs: list[Doc]) -> Doc:
             text(')'),
         ]
     )
-
-
-def _tuple_args2doc(args: list[xtype.Mir_Term]) -> Doc:
-    """Print arguments in IML tuple syntax, `(a, b, c)`, as for a constructor with several arguments."""
-    return _tuple2doc([_arg2doc(x) for x in args])
 
 
 def terms2doc(ts: list[xtype.Mir_Term]) -> Doc:
@@ -307,7 +302,9 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             # application argument (parenthesised when needed), several as a tuple.
             if len(args) == 1:
                 return _g([op_doc, _indent([line, recwp(IXO.default_(), args[0])])])
-            return _g([op_doc, text(' '), _tuple_args2doc(args)])
+            return _g(
+                [op_doc, text(' '), _tuple2doc([_tuple_elem2doc(x) for x in args])]
+            )
 
         # NOTE: `Destruct` and `Is_a` deviate from `term-formatter.ts`, which
         # prints them as `destruct[C|i] t` and `t is-a C` — display notation
@@ -318,12 +315,12 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             return _g(
                 [
                     _kw('Destruct'),
-                    _tuple2doc([sym2doc(c), text(str(i)), _arg2doc(inner)]),
+                    _tuple2doc([sym2doc(c), text(str(i)), _tuple_elem2doc(inner)]),
                 ]
             )
 
         case xtype.Mir_Term_view_Is_a(c=c, t=inner):
-            return _g([_kw('Is_a'), _tuple2doc([sym2doc(c), _arg2doc(inner)])])
+            return _g([_kw('Is_a'), _tuple2doc([sym2doc(c), _tuple_elem2doc(inner)])])
 
         case xtype.Mir_Term_view_Tuple(l=ls):
             return _g([_indent([join(hcat(text(','), line), [rec(x) for x in ls])])])
