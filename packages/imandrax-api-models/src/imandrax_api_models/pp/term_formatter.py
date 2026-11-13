@@ -296,10 +296,10 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                 )
                 return _g([text('( '), op_doc, text(' )'), hargs])
             # NOTE: this deviates from `term-formatter.ts`, which joins the
-            # arguments with spaces and no parentheses — producing `Set S1 a b`
+            # arguments with spaces and no parentheses, producing `Set S1 a b`
             # for `Set (S1, a, b)` and `Some f x` for `Some (f x)`, neither of
-            # which is valid IML. We print IML syntax: one argument as an
-            # application argument (parenthesised when needed), several as a tuple.
+            # which is valid IML. We print one argument as an application argument
+            # (parenthesised when needed), several as parenthesised.
             if len(args) == 1:
                 return _g([op_doc, _indent([line, recwp(IXO.default_(), args[0])])])
             return _g(
@@ -307,10 +307,12 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             )
 
         # NOTE: `Destruct` and `Is_a` deviate from `term-formatter.ts`, which
-        # prints them as `destruct[C|i] t` and `t is-a C` — display notation
-        # that does not parse as IML. We print the form ImandraX itself uses in
-        # its region strings, `Destruct(C, i, t)` and `Is_a(C, t)`. These parse,
-        # though neither is defined in IML, so they do not type-check as source.
+        # prints them as `destruct[C|i] t` and `t is-a C`, display notation
+        # that does not parse as IML.
+        # We print the form ImandraX itself uses in its region strings,
+        # `Destruct(C, i, t)` and `Is_a(C, t)`.
+        # These parse, though neither is defined in IML, so they do not type-check
+        # as source.
         case xtype.Mir_Term_view_Destruct(c=c, i=i, t=inner):
             return _g(
                 [
