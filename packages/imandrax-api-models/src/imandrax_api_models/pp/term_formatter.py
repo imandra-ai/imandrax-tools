@@ -159,6 +159,30 @@ def _subterm_selection2doc(ts: list[xtype.Mir_Term]) -> Doc:
 # --------------
 
 
+def _tuple_args2doc(args: list[xtype.Mir_Term]) -> Doc:
+    """
+    Print arguments in IML tuple syntax, `(a, b, c)`, as for a constructor with several arguments.
+
+    An argument binding no tighter than `,` (a tuple, `if`, `match`, ...) is
+    parenthesised so it stays one element.
+    """
+    comma_prec = operator_info(',').precedence
+
+    def arg2doc(x: xtype.Mir_Term) -> Doc:
+        return _par_if(operator_info_of_term(x).precedence <= comma_prec, [term2doc(x)])
+
+    return _g(
+        [
+            text('('),
+            _indent(
+                [linebreak, join(hcat(text(','), line), [arg2doc(x) for x in args])]
+            ),
+            linebreak,
+            text(')'),
+        ]
+    )
+
+
 def terms2doc(ts: list[xtype.Mir_Term]) -> Doc:
     """Show terms in one `Terms(t1, t2, ...)` block."""
     term_f = lambda t: flatten(term2doc(t))
@@ -269,8 +293,14 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                     ]
                 )
                 return _g([text('( '), op_doc, text(' )'), hargs])
-            rargs = [rec(x) for x in args]
-            return _g([op_doc, _indent([line, join(line, rargs)])])
+            # NOTE: this deviates from `term-formatter.ts`, which joins the
+            # arguments with spaces and no parentheses — producing `Set S1 a b`
+            # for `Set (S1, a, b)` and `Some f x` for `Some (f x)`, neither of
+            # which is valid IML. We print IML syntax: one argument as an
+            # application argument (parenthesised when needed), several as a tuple.
+            if len(args) == 1:
+                return _g([op_doc, _indent([line, recwp(IXO.default_(), args[0])])])
+            return _g([op_doc, text(' '), _tuple_args2doc(args)])
 
         case xtype.Mir_Term_view_Destruct(c=c, i=i, t=inner):
             return _g(
