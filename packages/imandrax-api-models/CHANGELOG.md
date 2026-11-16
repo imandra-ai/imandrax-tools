@@ -4,6 +4,9 @@ Versioning scheme: <IMANDRAX_API_VERSION>.<MINOR>.<PATCH>
 
 ## [Unreleased]
 
+## [21.2.0] - 26-11-16
+- FIX(pp/term): print MIR terms as IML syntax (best-effort)
+
 ## [21.1.0] - 26-11-03
 - FEAT(decomp): CST to decomp plan now handles `prune`, `combine`, `enumerate` and `enumerate_all` 
 - FIX(decomp/grouping): when regions overlap (e.g. from `enumerate_all ~style:Additive`), grouping no longer fails with "Leaf group must be concrete" or drops regions 

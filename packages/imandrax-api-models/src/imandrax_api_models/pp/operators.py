@@ -7,6 +7,7 @@ Precedence table follows OCaml 5.3 (https://ocaml.org/manual/5.3/expr.html).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -43,6 +44,50 @@ class OperatorInfo:
 def short_id(uid: xtype.Uid) -> str:
     """Bare (display) name of a Uid — equivalent to TS `short_id` of `name/hash`."""
     return uid.name
+
+
+_OPERATOR_CHARS = frozenset('!$%&*+-./:<=>?@^|~#')
+_KEYWORD_OPERATORS = frozenset(
+    ('mod', 'land', 'lor', 'lxor', 'lsl', 'lsr', 'asr', 'or')
+)
+
+
+def is_operator_name(name: str) -> bool:
+    """
+    `name` is an operator, which OCaml lexes as infix or prefix: `+`, `::`, `mod`.
+
+    `$lambda_1` is not one: a generated name, `$` followed by an identifier.
+    """
+    return name in _KEYWORD_OPERATORS or (
+        name != '' and all(ch in _OPERATOR_CHARS for ch in name)
+    )
+
+
+def const2str(c: xtype.Const) -> str:
+    """
+    IML source text of a constant.
+
+    Lives here, not in `term_formatter`, so that `operator_info_of_term` can
+    decide a constant's precedence from the text that is actually printed.
+    """
+    match c:
+        case xtype.Const_Const_float(arg=v):
+            return repr(v)
+        case xtype.Const_Const_string(arg=v):
+            return f'"{v}"'
+        case xtype.Const_Const_z(arg=v):
+            return str(v)
+        case xtype.Const_Const_q(arg=(num, den)):
+            if den != 1:
+                return f'{num}.0 /. {den}.0'
+            return f'{num}.0'
+        case xtype.Const_Const_real_approx(arg=v):
+            return v
+        case xtype.Const_Const_uid(arg=u):
+            return u.name
+        case xtype.Const_Const_bool(arg=v):
+            return 'true' if v else 'false'
+    return repr(c)
 
 
 def has_multiple_children(t: xtype.Mir_Term) -> bool:
@@ -86,8 +131,13 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
     if op == 'assert' or op == 'lazy':
         return OperatorInfo(op, Notation.PREFIX, Associativity.LEFT, 17)
     # unary minus
-    if op in ('-', '-.', '~-', '~-.') and not more_than_one_arg:
-        return OperatorInfo(op, Notation.PREFIX, Associativity.NONE, 16)
+    # `~-` and `~-.` are named `-` and `-.`: printed as `~-`, the lexer reads a
+    # prefix symbol binding tighter than application, so `~- f x` is `(~- f) x`.
+    # A binary `-` with fewer than two arguments is a partial application, not
+    # a negation: it falls through to the infix rule and prints as `( - ) x`.
+    if op in ('~-', '~-.'):
+        name = '-.' if op.endswith('.') else '-'
+        return OperatorInfo(name, Notation.PREFIX, Associativity.NONE, 16)
     # **… lsl lsr asr
     if op.startswith('**') or op in ('lsl', 'lsr', 'asr'):
         return OperatorInfo(op, Notation.INFIX, Associativity.RIGHT, 15)
@@ -122,7 +172,7 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
         op.startswith(('=', '<', '>'))
         or (op.startswith('|') and op != '||')
         or (op.startswith('&') and op not in ('&', '&&'))
-        or op.startswith('$')
+        or (op.startswith('$') and is_operator_name(op))
         or op == '!='
     ):
         return OperatorInfo(op, Notation.INFIX, Associativity.LEFT, 10)
@@ -170,27 +220,78 @@ def is_default(x: OperatorInfo) -> bool:
     )
 
 
+_MODULE_PATH = re.compile(r'^(?:[A-Z][A-Za-z0-9_\']*\.)+(?P<short>.+)$')
+
+
+def short_name(full: str) -> str:
+    """
+    Name without its module path: `Int.<` -> `<`, `Float.+.` -> `+.`.
+
+    `+.` keeps its trailing dot, which is part of the operator, not a path.
+    """
+    if m := _MODULE_PATH.match(full):
+        return m['short']
+    dot = full.rfind('.')
+    return full[dot + 1 :] if 0 < dot < len(full) - 1 else full
+
+
+def _is_fallback(info: OperatorInfo, op: str) -> bool:
+    """`operator_info` did not recognise `op` and treats it as a plain function."""
+    return info == OperatorInfo(op, Notation.PREFIX, Associativity.LEFT, 17)
+
+
+def sym_operator_info(
+    full: str, more_than_one_arg: bool = False
+) -> tuple[OperatorInfo, str]:
+    """
+    Operator info of a symbol, and the text to print for it.
+
+    Both come from the same name, so the layout matches the text: the full name
+    when it is a known operator or alias (`implies` -> `==>`, `List.append` ->
+    `@`), otherwise the name without its module path (`Int.<` -> `<`, infix).
+    """
+    info = operator_info(full, more_than_one_arg)
+    if not _is_fallback(info, full):
+        return info, info.name
+    short = short_name(full)
+    info = operator_info(short, more_than_one_arg)
+    return info, (short if _is_fallback(info, short) else info.name)
+
+
 def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
     v = t.view
     match v:
         case xtype.Mir_Term_view_If():
             return operator_info('if', False)
         case xtype.Mir_Term_view_Apply(f=f, l=args):
-            if isinstance(f.view, xtype.Mir_Term_view_Sym):
-                return operator_info(short_id(f.view.arg.sym.id), len(args) > 0)
+            # With no arguments, an operator prints as the atom `(+)`.
+            if isinstance(f.view, xtype.Mir_Term_view_Sym) and args:
+                return sym_operator_info(short_id(f.view.arg.sym.id), len(args) > 1)[0]
             return default_()
         case xtype.Mir_Term_view_Tuple():
             return operator_info(',', False)
         case xtype.Mir_Term_view_Case():
-            return operator_info('match', False)
+            # NOTE: this deviates from `imandrax_operators.ts`, where `Case` is
+            # a `match`. We print it as the application `Case(u, [...])` (see
+            # `term_formatter.py`), so it binds like one.
+            return default_()
         case xtype.Mir_Term_view_Construct(c=c, args=args):
-            return operator_info(short_id(c.sym.id), len(args) > 0)
+            return sym_operator_info(short_id(c.sym.id), len(args) > 1)[0]
         case xtype.Mir_Term_view_Const(arg=c):
             if isinstance(c, xtype.Const_Const_q) and c.arg[1] != 1:
                 return operator_info('/.', True)
+            # A literal printed with a leading `-` binds like unary minus:
+            # `Some -1` parses as `Some - 1`.
+            if const2str(c).startswith('-'):
+                return operator_info('~-', False)
             return default_()
+        case xtype.Mir_Term_view_Sequence():
+            return operator_info(';', True)
         case xtype.Mir_Term_view_Is_a():
-            return OperatorInfo('is-a', Notation.INFIX, Associativity.LEFT, 17)
+            # NOTE: this deviates from `imandrax_operators.ts`, where `Is_a`
+            # is the infix `is-a`. We print it as the application `Is_a(C, t)`
+            # (see `term_formatter.py`), so it binds like one.
+            return OperatorInfo('Is_a', Notation.PREFIX, Associativity.LEFT, 17)
         case _:
             return default_()
 
