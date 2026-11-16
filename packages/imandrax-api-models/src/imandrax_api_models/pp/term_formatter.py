@@ -11,6 +11,7 @@ from .operators import (
     OperatorInfo,
     const2str,
     has_multiple_children,
+    is_operator_name,
     needs_parentheses,
     operator_info,
     operator_info_of_term,
@@ -160,15 +161,15 @@ def sym2doc(s: xtype.Common_Applied_symbol_t_poly) -> Doc:
     return text(_applied_sym_short(s))
 
 
-def _ctor_name2doc(c: xtype.Common_Applied_symbol_t_poly) -> Doc:
+def _standalone_sym2doc(s: xtype.Common_Applied_symbol_t_poly) -> Doc:
     """
-    A constructor's name where it stands alone, as in `Destruct(C, i, t)`.
+    A symbol used as a value rather than applied.
 
-    An operator constructor is parenthesised: `Destruct((::), 0, l)`.
+    As in `fold_left (+) 0 l` or `Destruct(C, i, t)`. An operator is
+    parenthesised: `(+)`, `Destruct((::), 0, l)`.
     """
-    name = _applied_sym_short(c)
-    is_operator = not (name[:1].isalnum() or name[:1] in ('_', '[', '(', '`'))
-    return text(f'({name})' if is_operator else name)
+    name = _applied_sym_short(s)
+    return text(f'({name})' if is_operator_name(name) else name)
 
 
 # subterm_selection_select(...) special-casing
@@ -312,7 +313,7 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                 if sid == 'subterm_selection_select':
                     return _subterm_selection2doc(args)
                 if len(args) == 0:
-                    return fn
+                    return _standalone_sym2doc(s)
                 if pi.notation == Notation.INFIX:
                     if len(args) == 2:
                         lhs = recwp(pi, args[0], True)
@@ -349,7 +350,7 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             return text(var.id.name)
 
         case xtype.Mir_Term_view_Sym(arg=s):
-            return sym2doc(s)
+            return _standalone_sym2doc(s)
 
         case xtype.Mir_Term_view_Construct(c=c, args=args):
             if len(args) == 0:
@@ -392,14 +393,17 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                 [
                     _kw('Destruct'),
                     _tuple2doc(
-                        [_ctor_name2doc(c), text(str(i)), _tuple_elem2doc(inner)]
+                        [_standalone_sym2doc(c), text(str(i)), _tuple_elem2doc(inner)]
                     ),
                 ]
             )
 
         case xtype.Mir_Term_view_Is_a(c=c, t=inner):
             return _g(
-                [_kw('Is_a'), _tuple2doc([_ctor_name2doc(c), _tuple_elem2doc(inner)])]
+                [
+                    _kw('Is_a'),
+                    _tuple2doc([_standalone_sym2doc(c), _tuple_elem2doc(inner)]),
+                ]
             )
 
         case xtype.Mir_Term_view_Tuple(l=ls):
@@ -440,9 +444,9 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                 return hcat(text('{'), hrest, hrows, text('}'))
             else:
                 # leading separators style, with
-                # `{`, `;` and `}` aligned when broken. Flat: `{ a: 1; b: 2 }`.
-                #     { fst_key: fst_item
-                #     ; snd_key: snd_item
+                # `{`, `;` and `}` aligned when broken. Flat: `{ a = 1; b = 2 }`.
+                #     { fst_key = fst_item
+                #     ; snd_key = snd_item
                 #     }
                 if not rows:
                     return (
@@ -451,7 +455,7 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                         else _g([text('{ '), rec(rest), text(' }')])
                     )
                 fields = [
-                    group(_indent([sym2doc(sym), text(':'), line, rec(term)]))
+                    group(_indent([sym2doc(sym), text(' ='), line, rec(term)]))
                     for sym, term in rows
                 ]
                 head: list[Doc] = [text('{ ')]
@@ -473,7 +477,7 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
         # element when present, `Case(u, [(C1, t1)], d)`.
         case xtype.Mir_Term_view_Case(u=u, cases=cases, default=default):
             branches = [
-                _tuple2doc([_ctor_name2doc(sym), _tuple_elem2doc(term)])
+                _tuple2doc([_standalone_sym2doc(sym), _tuple_elem2doc(term)])
                 for sym, term in cases
             ]
             hcases = _g(

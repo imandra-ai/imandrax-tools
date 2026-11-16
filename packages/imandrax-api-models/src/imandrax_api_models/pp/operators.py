@@ -46,6 +46,23 @@ def short_id(uid: xtype.Uid) -> str:
     return uid.name
 
 
+_OPERATOR_CHARS = frozenset('!$%&*+-./:<=>?@^|~#')
+_KEYWORD_OPERATORS = frozenset(
+    ('mod', 'land', 'lor', 'lxor', 'lsl', 'lsr', 'asr', 'or')
+)
+
+
+def is_operator_name(name: str) -> bool:
+    """
+    `name` is an operator, which OCaml lexes as infix or prefix: `+`, `::`, `mod`.
+
+    `$lambda_1` is not one: a generated name, `$` followed by an identifier.
+    """
+    return name in _KEYWORD_OPERATORS or (
+        name != '' and all(ch in _OPERATOR_CHARS for ch in name)
+    )
+
+
 def const2str(c: xtype.Const) -> str:
     """
     IML source text of a constant.
@@ -116,7 +133,9 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
     # unary minus
     # `~-` and `~-.` are named `-` and `-.`: printed as `~-`, the lexer reads a
     # prefix symbol binding tighter than application, so `~- f x` is `(~- f) x`.
-    if op in ('-', '-.', '~-', '~-.') and not more_than_one_arg:
+    # A binary `-` with fewer than two arguments is a partial application, not
+    # a negation: it falls through to the infix rule and prints as `( - ) x`.
+    if op in ('~-', '~-.'):
         name = '-.' if op.endswith('.') else '-'
         return OperatorInfo(name, Notation.PREFIX, Associativity.NONE, 16)
     # **… lsl lsr asr
@@ -153,7 +172,7 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
         op.startswith(('=', '<', '>'))
         or (op.startswith('|') and op != '||')
         or (op.startswith('&') and op not in ('&', '&&'))
-        or op.startswith('$')
+        or (op.startswith('$') and is_operator_name(op))
         or op == '!='
     ):
         return OperatorInfo(op, Notation.INFIX, Associativity.LEFT, 10)
@@ -245,7 +264,8 @@ def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
         case xtype.Mir_Term_view_If():
             return operator_info('if', False)
         case xtype.Mir_Term_view_Apply(f=f, l=args):
-            if isinstance(f.view, xtype.Mir_Term_view_Sym):
+            # With no arguments, an operator prints as the atom `(+)`.
+            if isinstance(f.view, xtype.Mir_Term_view_Sym) and args:
                 return sym_operator_info(short_id(f.view.arg.sym.id), len(args) > 1)[0]
             return default_()
         case xtype.Mir_Term_view_Tuple():

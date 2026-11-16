@@ -1,10 +1,10 @@
 root
 ├───▶ ╭─ id=1, step_idx=0
-│     │ invariant='{ tag: -1 }',
+│     │ invariant='{ tag = -1 }',
 │     │ constraints=['Is_a(Some, nth 0 events)', 'Destruct(Some, 0, nth 0 events) <> A']
 │     ╰───────────
 │     ├───▶ ╭─ id=3, step_idx=1
-│     │     │ invariant='{ tag: 0 }',
+│     │     │ invariant='{ tag = 0 }',
 │     │     │ constraints=[
 │     │     │   'Is_a(Some, nth 1 events)',
 │     │     │   'Is_a(Some, nth 0 events)',
@@ -13,7 +13,7 @@ root
 │     │     │ ]
 │     │     ╰───────────
 │     │     ├───▶ ╭─ id=7, step_idx=2 [LEAF]
-│     │     │     │ invariant='{ tag: 1 }',
+│     │     │     │ invariant='{ tag = 1 }',
 │     │     │     │ constraints=[
 │     │     │     │   'Is_a(Some, nth 2 events)',
 │     │     │     │   'Is_a(Some, nth 1 events)',
@@ -24,7 +24,7 @@ root
 │     │     │     │ ]
 │     │     │     ╰───────────
 │     │     └───▶ ╭─ id=12, step_idx=2 [LEAF]
-│     │           │ invariant='{ tag: -1 }',
+│     │           │ invariant='{ tag = -1 }',
 │     │           │ constraints=[
 │     │           │   'Is_a(Some, nth 2 events)',
 │     │           │   'Is_a(Some, nth 1 events)',
@@ -35,7 +35,7 @@ root
 │     │           │ ]
 │     │           ╰───────────
 │     └───▶ ╭─ id=6, step_idx=1
-│           │ invariant='{ tag: -2 }',
+│           │ invariant='{ tag = -2 }',
 │           │ constraints=[
 │           │   'Is_a(Some, nth 1 events)',
 │           │   'Is_a(Some, nth 0 events)',
@@ -44,7 +44,7 @@ root
 │           │ ]
 │           ╰───────────
 │           ├───▶ ╭─ id=11, step_idx=2 [LEAF]
-│           │     │ invariant='{ tag: -1 }',
+│           │     │ invariant='{ tag = -1 }',
 │           │     │ constraints=[
 │           │     │   'Is_a(Some, nth 2 events)',
 │           │     │   'Is_a(Some, nth 1 events)',
@@ -55,7 +55,7 @@ root
 │           │     │ ]
 │           │     ╰───────────
 │           └───▶ ╭─ id=14, step_idx=2 [LEAF]
-│                 │ invariant='{ tag: -3 }',
+│                 │ invariant='{ tag = -3 }',
 │                 │ constraints=[
 │                 │   'Is_a(Some, nth 2 events)',
 │                 │   'Is_a(Some, nth 1 events)',
@@ -66,11 +66,11 @@ root
 │                 │ ]
 │                 ╰───────────
 └───▶ ╭─ id=2, step_idx=0
-      │ invariant='{ tag: 1 }',
+      │ invariant='{ tag = 1 }',
       │ constraints=['Is_a(Some, nth 0 events)', 'Destruct(Some, 0, nth 0 events) = A']
       ╰───────────
       ├───▶ ╭─ id=4, step_idx=1
-      │     │ invariant='{ tag: 0 }',
+      │     │ invariant='{ tag = 0 }',
       │     │ constraints=[
       │     │   'Is_a(Some, nth 1 events)',
       │     │   'Is_a(Some, nth 0 events)',
@@ -79,7 +79,7 @@ root
       │     │ ]
       │     ╰───────────
       │     ├───▶ ╭─ id=8, step_idx=2 [LEAF]
-      │     │     │ invariant='{ tag: 1 }',
+      │     │     │ invariant='{ tag = 1 }',
       │     │     │ constraints=[
       │     │     │   'Is_a(Some, nth 2 events)',
       │     │     │   'Is_a(Some, nth 1 events)',
@@ -90,7 +90,7 @@ root
       │     │     │ ]
       │     │     ╰───────────
       │     └───▶ ╭─ id=13, step_idx=2 [LEAF]
-      │           │ invariant='{ tag: -1 }',
+      │           │ invariant='{ tag = -1 }',
       │           │ constraints=[
       │           │   'Is_a(Some, nth 2 events)',
       │           │   'Is_a(Some, nth 1 events)',
@@ -101,7 +101,7 @@ root
       │           │ ]
       │           ╰───────────
       └───▶ ╭─ id=5, step_idx=1
-            │ invariant='{ tag: 2 }',
+            │ invariant='{ tag = 2 }',
             │ constraints=[
             │   'Is_a(Some, nth 1 events)',
             │   'Is_a(Some, nth 0 events)',
@@ -110,7 +110,7 @@ root
             │ ]
             ╰───────────
             ├───▶ ╭─ id=9, step_idx=2 [LEAF]
-            │     │ invariant='{ tag: 1 }',
+            │     │ invariant='{ tag = 1 }',
             │     │ constraints=[
             │     │   'Is_a(Some, nth 2 events)',
             │     │   'Is_a(Some, nth 1 events)',
@@ -121,7 +121,7 @@ root
             │     │ ]
             │     ╰───────────
             └───▶ ╭─ id=10, step_idx=2 [LEAF]
-                  │ invariant='{ tag: 3 }',
+                  │ invariant='{ tag = 3 }',
                   │ constraints=[
                   │   'Is_a(Some, nth 2 events)',
                   │   'Is_a(Some, nth 1 events)',

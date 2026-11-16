@@ -1,6 +1,6 @@
 root
 └───▶ ╭─ id=1, step_idx=0
-      │ invariant='{ x: Destruct(IncX, 0, Destruct(Some, 0, nth 0 events)); y: 0 }',
+      │ invariant='{ x = Destruct(IncX, 0, Destruct(Some, 0, nth 0 events)); y = 0 }',
       │ constraints=[
       │   'Is_a(Some, nth 0 events)',
       │   'Is_a(IncX, Destruct(Some, 0, nth 0 events))',
@@ -10,11 +10,11 @@ root
       ╰───────────
       ├───▶ ╭─ id=2, step_idx=1
       │     │ invariant='''
-      │     │   { x:
+      │     │   { x =
       │     │     Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
       │     │     +
       │     │     Destruct(IncX, 0, Destruct(Some, 0, nth 1 events))
-      │     │   ; y: 0
+      │     │   ; y = 0
       │     │   }
       │     │ ''',
       │     │ constraints=[
@@ -36,11 +36,11 @@ root
       │     ╰───────────
       │     └───▶ ╭─ id=6, step_idx=2 [LEAF]
       │           │ invariant='''
-      │           │   { x:
+      │           │   { x =
       │           │     Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
       │           │     +
       │           │     Destruct(IncX, 0, Destruct(Some, 0, nth 1 events))
-      │           │   ; y: Destruct(IncY, 0, Destruct(Some, 0, nth 2 events))
+      │           │   ; y = Destruct(IncY, 0, Destruct(Some, 0, nth 2 events))
       │           │   }
       │           │ ''',
       │           │ constraints=[
@@ -67,8 +67,8 @@ root
       │           ╰───────────
       ├───▶ ╭─ id=3, step_idx=1
       │     │ invariant='''
-      │     │   { x: Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
-      │     │   ; y: Destruct(IncY, 0, Destruct(Some, 0, nth 1 events))
+      │     │   { x = Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
+      │     │   ; y = Destruct(IncY, 0, Destruct(Some, 0, nth 1 events))
       │     │   }
       │     │ ''',
       │     │ constraints=[
@@ -85,8 +85,8 @@ root
       │     ╰───────────
       │     └───▶ ╭─ id=5, step_idx=2 [LEAF]
       │           │ invariant='''
-      │           │   { x: Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
-      │           │   ; y:
+      │           │   { x = Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
+      │           │   ; y =
       │           │     Destruct(IncY, 0, Destruct(Some, 0, nth 1 events))
       │           │     +
       │           │     Destruct(IncY, 0, Destruct(Some, 0, nth 2 events))
@@ -117,7 +117,7 @@ root
       │           ╰───────────
       └───▶ ╭─ id=4, step_idx=1
             │ invariant='''
-            │   { x: 0; y: Destruct(IncX, 0, Destruct(Some, 0, nth 0 events)) }
+            │   { x = 0; y = Destruct(IncX, 0, Destruct(Some, 0, nth 0 events)) }
             │ ''',
             │ constraints=[
             │   'Is_a(Some, nth 1 events)',
@@ -131,8 +131,8 @@ root
             ╰───────────
             └───▶ ╭─ id=7, step_idx=2 [LEAF]
                   │ invariant='''
-                  │   { x: 0
-                  │   ; y:
+                  │   { x = 0
+                  │   ; y =
                   │     Destruct(IncX, 0, Destruct(Some, 0, nth 0 events))
                   │     +
                   │     Destruct(IncY, 0, Destruct(Some, 0, nth 2 events))

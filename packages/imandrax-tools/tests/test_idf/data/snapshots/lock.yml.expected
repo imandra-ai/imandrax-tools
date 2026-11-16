@@ -1,13 +1,13 @@
 root
 └───▶ ╭─ id=1, step_idx=0
-      │ invariant='{ locked: false; count: 0 }',
+      │ invariant='{ locked = false; count = 0 }',
       │ constraints=[
       │   'Is_a(Some, nth 0 events)',
       │   'Destruct(Some, 0, nth 0 events) <> Inc',
       │ ]
       ╰───────────
       ├───▶ ╭─ id=2, step_idx=1
-      │     │ invariant='{ locked: true; count: 0 }',
+      │     │ invariant='{ locked = true; count = 0 }',
       │     │ constraints=[
       │     │   'Is_a(Some, nth 1 events)',
       │     │   'Is_a(Some, nth 0 events)',
@@ -16,7 +16,7 @@ root
       │     │ ]
       │     ╰───────────
       │     └───▶ ╭─ id=4, step_idx=2 [LEAF]
-      │           │ invariant='{ locked: false; count: 0 }',
+      │           │ invariant='{ locked = false; count = 0 }',
       │           │ constraints=[
       │           │   'Is_a(Some, nth 2 events)',
       │           │   'Is_a(Some, nth 1 events)',
@@ -27,7 +27,7 @@ root
       │           │ ]
       │           ╰───────────
       └───▶ ╭─ id=3, step_idx=1
-            │ invariant='{ locked: false; count: 1 }',
+            │ invariant='{ locked = false; count = 1 }',
             │ constraints=[
             │   'Is_a(Some, nth 1 events)',
             │   'Is_a(Some, nth 0 events)',
@@ -36,7 +36,7 @@ root
             │ ]
             ╰───────────
             ├───▶ ╭─ id=5, step_idx=2 [LEAF]
-            │     │ invariant='{ locked: true; count: 1 }',
+            │     │ invariant='{ locked = true; count = 1 }',
             │     │ constraints=[
             │     │   'Is_a(Some, nth 2 events)',
             │     │   'Is_a(Some, nth 1 events)',
@@ -47,7 +47,7 @@ root
             │     │ ]
             │     ╰───────────
             └───▶ ╭─ id=6, step_idx=2 [LEAF]
-                  │ invariant='{ locked: false; count: 2 }',
+                  │ invariant='{ locked = false; count = 2 }',
                   │ constraints=[
                   │   'Is_a(Some, nth 2 events)',
                   │   'Is_a(Some, nth 1 events)',

@@ -1,7 +1,7 @@
 root
 ├───▶ ╭─ id=1, step_idx=0
 │     │ invariant='''
-│     │   { counter: Destruct(AddX, 0, Destruct(Some, 0, nth 0 events)); hitTen: false }
+│     │   { counter = Destruct(AddX, 0, Destruct(Some, 0, nth 0 events)); hitTen = false }
 │     │ ''',
 │     │ constraints=[
 │     │   'Is_a(Some, nth 0 events)',
@@ -12,11 +12,11 @@ root
 │     ╰───────────
 │     ├───▶ ╭─ id=3, step_idx=1 [LEAF]
 │     │     │ invariant='''
-│     │     │   { counter:
+│     │     │   { counter =
 │     │     │     Destruct(AddX, 0, Destruct(Some, 0, nth 0 events))
 │     │     │     +
 │     │     │     Destruct(AddX, 0, Destruct(Some, 0, nth 1 events))
-│     │     │   ; hitTen: true
+│     │     │   ; hitTen = true
 │     │     │   }
 │     │     │ ''',
 │     │     │ constraints=[
@@ -37,11 +37,11 @@ root
 │     │     ╰───────────
 │     └───▶ ╭─ id=4, step_idx=1
 │           │ invariant='''
-│           │   { counter:
+│           │   { counter =
 │           │     Destruct(AddX, 0, Destruct(Some, 0, nth 0 events))
 │           │     +
 │           │     Destruct(AddX, 0, Destruct(Some, 0, nth 1 events))
-│           │   ; hitTen: false
+│           │   ; hitTen = false
 │           │   }
 │           │ ''',
 │           │ constraints=[
@@ -69,13 +69,13 @@ root
 │           ╰───────────
 │           ├───▶ ╭─ id=5, step_idx=2 [LEAF]
 │           │     │ invariant='''
-│           │     │   { counter:
+│           │     │   { counter =
 │           │     │     Destruct(AddX, 0, Destruct(Some, 0, nth 0 events))
 │           │     │     +
 │           │     │     (Destruct(AddX, 0, Destruct(Some, 0, nth 1 events))
 │           │     │     +
 │           │     │     Destruct(AddX, 0, Destruct(Some, 0, nth 2 events)))
-│           │     │   ; hitTen: true
+│           │     │   ; hitTen = true
 │           │     │   }
 │           │     │ ''',
 │           │     │ constraints=[
@@ -114,13 +114,13 @@ root
 │           │     ╰───────────
 │           └───▶ ╭─ id=6, step_idx=2 [LEAF]
 │                 │ invariant='''
-│                 │   { counter:
+│                 │   { counter =
 │                 │     Destruct(AddX, 0, Destruct(Some, 0, nth 0 events))
 │                 │     +
 │                 │     (Destruct(AddX, 0, Destruct(Some, 0, nth 1 events))
 │                 │     +
 │                 │     Destruct(AddX, 0, Destruct(Some, 0, nth 2 events)))
-│                 │   ; hitTen: false
+│                 │   ; hitTen = false
 │                 │   }
 │                 │ ''',
 │                 │ constraints=[
@@ -168,7 +168,7 @@ root
 │                 ╰───────────
 └───▶ ╭─ id=2, step_idx=0 [LEAF]
       │ invariant='''
-      │   { counter: Destruct(AddX, 0, Destruct(Some, 0, nth 0 events)); hitTen: true }
+      │   { counter = Destruct(AddX, 0, Destruct(Some, 0, nth 0 events)); hitTen = true }
       │ ''',
       │ constraints=[
       │   'Is_a(Some, nth 0 events)',

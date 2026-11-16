@@ -10,7 +10,9 @@ from imandrax_api_models.pp.term_builders import (
     field,
     if_,
     is_a,
+    record,
     sequence,
+    sym,
     tuple_,
     tuple_field,
     var,
@@ -293,3 +295,52 @@ def test_applied_if_is_parenthesised():
 
 def test_applied_field_is_not_parenthesised():
     assert term_to_string(apply(field('f', var('r')), [var('x')])) == 'r.f x'
+
+
+# Partial application of binary minus
+# ===================================
+
+
+def test_binary_minus_with_one_arg_is_not_negation():
+    assert term_to_string(app('-', [var('x')])) == '( - ) x'
+    assert term_to_string(app('Int.-', [var('x')])) == '( - ) x'
+
+
+# Generated `$` names
+# ===================
+
+
+def test_dollar_generated_name_is_prefix():
+    t = app('$lambda_1', [var('x'), var('y')])
+    assert term_to_string(t) == '$lambda_1 x y'
+
+
+def test_dollar_operator_is_infix():
+    assert term_to_string(app('$$', [var('x'), var('y')])) == 'x $$ y'
+
+
+# Operators as values
+# ===================
+
+
+def test_operator_symbol_as_argument_is_parenthesised():
+    t = app('List.fold_left', [sym('+'), const_int(0), var('l')])
+    assert term_to_string(t) == 'fold_left (+) 0 l'
+
+
+def test_operator_applied_to_nothing_is_parenthesised():
+    t = app('List.fold_left', [app('Int.+', []), const_int(0), var('l')])
+    assert term_to_string(t) == 'fold_left (+) 0 l'
+
+
+def test_keyword_operator_as_value_is_parenthesised():
+    assert term_to_string(app('f', [sym('mod')])) == 'f (mod)'
+
+
+# Records
+# =======
+
+
+def test_record_uses_equals():
+    t = record([('a', const_int(1)), ('b', const_int(-1))], None)
+    assert term_to_string(t) == '{ a = 1; b = -1 }'
