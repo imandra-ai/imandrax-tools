@@ -33,6 +33,69 @@ from .pretty import (
     text,
 )
 
+# Note [MIR Term Formatter]
+# ~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# (A) Goal
+#
+# The output should read as IML: it should parse, with a parse tree matching
+# the MIR term.
+# Type-checking is not a goal. Some MIR nodes have no IML source form and are printed
+# in a form that parses but is not defined in IML.
+# Names are printed without their module path (`List.length` as `length`), so they may
+# not resolve.
+#
+# (B) How it works
+#
+# `term2doc` walks the term's view and builds a `Doc`. `group`
+# lays a part out flat if it fits the width and breaks its `line`s otherwise.
+#
+# Parentheses come from precedence. `operators.operator_info_of_term` gives the
+# precedence, associativity and notation of a term as printed, following
+# OCaml's table. `recwp` parenthesises a child when `needs_parentheses` says
+# the parent binds tighter. Some positions have their own rule:
+#
+#   - `_tuple_elem2doc`, a tuple element or constructor argument: parenthesise
+#     anything binding no tighter than `,`, as in `Set ((a; b), c)`.
+#   - `_atom2doc`, the base of `.f`, or an applied function that is not a
+#     symbol: parenthesise anything compound, as in `(hd l).x` and
+#     `(Destruct((::), 0, ts)) x`.
+#   - `if` branches: parenthesise anything binding looser than `if`.
+#     `if c then a; b else e` does not parse, and `if c then x else a; b`
+#     parses as `(if c then x else a); b`.
+#
+# `operators.sym_operator_info` gives both the layout (infix or prefix) and the
+# printed text of a symbol, from the same name: `Int.<` prints as `x < y`,
+# `List.append` as `x @ y`, `~-` as `- x`.
+#
+# (W1) Cases that parses but does not type-check
+#
+# MIR reads and tests constructors directly, where IML binds fields in a
+# `match` pattern. These nodes are printed as a capitalised name applied to a
+# tuple, which parses as a constructor application:
+#
+#   - `Destruct(C, i, t)`: field `i` of `t`, built with constructor `C`.
+#   - `Is_a(C, t)`: `t` is built with `C`.
+#   - `Case(u, [(C1, t1); (C2, t2)], d)`: branch on the constructor of `u`; `d`
+#     is the default branch, printed only when present. MIR's `Case` binds no
+#     fields; branches read them with `Destruct`. A `match` would need each
+#     constructor's arity for its pattern.
+#
+# `Destruct` and `Is_a` are spelled as in ImandraX's region strings; `Case`
+# follows them. None of the three is defined in IML. Operator constructors are
+# parenthesised in them: `Destruct((::), 0, l)`, `Case(l, [((::), 1); ([], 0)])`.
+#
+# (W2) Does not parse
+#
+#   - Tuple projections print as `t.0`, which is a syntax error. IML has no
+#     projection syntax, and a `match` would need the tuple's size.
+#   - Generated names, such as a lifted lambda `$lambda...` or `$opt_depth` in
+#     `Tactic.repeat`, print as is. `$` cannot start an identifier. Printing
+#     the lambda as `fun ...` would need the MIR DB.
+#
+# Both occur mostly in prelude internals (`fst`, `snd`, `Tactic`, `Decomp`).
+#
+
 # Small helpers
 # =============
 
