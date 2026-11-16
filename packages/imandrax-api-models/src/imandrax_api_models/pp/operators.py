@@ -7,6 +7,7 @@ Precedence table follows OCaml 5.3 (https://ocaml.org/manual/5.3/expr.html).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from enum import IntEnum
 
@@ -113,8 +114,11 @@ def operator_info(op: str, more_than_one_arg: bool = False) -> OperatorInfo:
     if op == 'assert' or op == 'lazy':
         return OperatorInfo(op, Notation.PREFIX, Associativity.LEFT, 17)
     # unary minus
+    # `~-` and `~-.` are named `-` and `-.`: printed as `~-`, the lexer reads a
+    # prefix symbol binding tighter than application, so `~- f x` is `(~- f) x`.
     if op in ('-', '-.', '~-', '~-.') and not more_than_one_arg:
-        return OperatorInfo(op, Notation.PREFIX, Associativity.NONE, 16)
+        name = '-.' if op.endswith('.') else '-'
+        return OperatorInfo(name, Notation.PREFIX, Associativity.NONE, 16)
     # **… lsl lsr asr
     if op.startswith('**') or op in ('lsl', 'lsr', 'asr'):
         return OperatorInfo(op, Notation.INFIX, Associativity.RIGHT, 15)
@@ -197,6 +201,44 @@ def is_default(x: OperatorInfo) -> bool:
     )
 
 
+_MODULE_PATH = re.compile(r'^(?:[A-Z][A-Za-z0-9_\']*\.)+(?P<short>.+)$')
+
+
+def short_name(full: str) -> str:
+    """
+    Name without its module path: `Int.<` -> `<`, `Float.+.` -> `+.`.
+
+    `+.` keeps its trailing dot, which is part of the operator, not a path.
+    """
+    if m := _MODULE_PATH.match(full):
+        return m['short']
+    dot = full.rfind('.')
+    return full[dot + 1 :] if 0 < dot < len(full) - 1 else full
+
+
+def _is_fallback(info: OperatorInfo, op: str) -> bool:
+    """`operator_info` did not recognise `op` and treats it as a plain function."""
+    return info == OperatorInfo(op, Notation.PREFIX, Associativity.LEFT, 17)
+
+
+def sym_operator_info(
+    full: str, more_than_one_arg: bool = False
+) -> tuple[OperatorInfo, str]:
+    """
+    Operator info of a symbol, and the text to print for it.
+
+    Both come from the same name, so the layout matches the text: the full name
+    when it is a known operator or alias (`implies` -> `==>`, `List.append` ->
+    `@`), otherwise the name without its module path (`Int.<` -> `<`, infix).
+    """
+    info = operator_info(full, more_than_one_arg)
+    if not _is_fallback(info, full):
+        return info, info.name
+    short = short_name(full)
+    info = operator_info(short, more_than_one_arg)
+    return info, (short if _is_fallback(info, short) else info.name)
+
+
 def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
     v = t.view
     match v:
@@ -204,14 +246,17 @@ def operator_info_of_term(t: xtype.Mir_Term) -> OperatorInfo:
             return operator_info('if', False)
         case xtype.Mir_Term_view_Apply(f=f, l=args):
             if isinstance(f.view, xtype.Mir_Term_view_Sym):
-                return operator_info(short_id(f.view.arg.sym.id), len(args) > 0)
+                return sym_operator_info(short_id(f.view.arg.sym.id), len(args) > 1)[0]
             return default_()
         case xtype.Mir_Term_view_Tuple():
             return operator_info(',', False)
         case xtype.Mir_Term_view_Case():
-            return operator_info('match', False)
+            # NOTE: this deviates from `imandrax_operators.ts`, where `Case` is
+            # a `match`. We print it as the application `Case(u, [...])` (see
+            # `term_formatter.py`), so it binds like one.
+            return default_()
         case xtype.Mir_Term_view_Construct(c=c, args=args):
-            return operator_info(short_id(c.sym.id), len(args) > 0)
+            return sym_operator_info(short_id(c.sym.id), len(args) > 1)[0]
         case xtype.Mir_Term_view_Const(arg=c):
             if isinstance(c, xtype.Const_Const_q) and c.arg[1] != 1:
                 return operator_info('/.', True)

@@ -15,6 +15,7 @@ from .operators import (
     operator_info,
     operator_info_of_term,
     short_id,
+    sym_operator_info,
 )
 from .pretty import (
     Doc,
@@ -60,13 +61,7 @@ def _applied_sym_short(s: xtype.Common_Applied_symbol_t_poly) -> str:
     """
     Short, display-friendly name for an applied symbol, with module path stripped (the dotted prefix, if any).
     """
-    sid = short_id(_applied_sym_id(s))
-    op_info = operator_info(sid)
-    op_name = sid if op_info.name == '' else op_info.name
-    dot_inx = sid.rfind('.')
-    if 0 < dot_inx < len(sid) - 1:
-        op_name = sid[dot_inx + 1 :]
-    return op_name
+    return sym_operator_info(short_id(_applied_sym_id(s)))[1]
 
 
 # Constants
@@ -100,6 +95,17 @@ def _get_string_const(t: xtype.Mir_Term) -> str | None:
 
 def sym2doc(s: xtype.Common_Applied_symbol_t_poly) -> Doc:
     return text(_applied_sym_short(s))
+
+
+def _ctor_name2doc(c: xtype.Common_Applied_symbol_t_poly) -> Doc:
+    """
+    A constructor's name where it stands alone, as in `Destruct(C, i, t)`.
+
+    An operator constructor is parenthesised: `Destruct((::), 0, l)`.
+    """
+    name = _applied_sym_short(c)
+    is_operator = not (name[:1].isalnum() or name[:1] in ('_', '[', '(', '`'))
+    return text(f'({name})' if is_operator else name)
 
 
 # subterm_selection_select(...) special-casing
@@ -153,14 +159,17 @@ def _tuple_elem2doc(x: xtype.Mir_Term) -> Doc:
 
 
 _COMMA_PREC = operator_info(',').precedence
+_IF_PREC = operator_info('if').precedence
 
 
-def _projection_base2doc(x: xtype.Mir_Term) -> Doc:
+def _atom2doc(x: xtype.Mir_Term) -> Doc:
     """
-    Print the term a field or tuple-element access is applied to.
+    Print a term where only an atom fits.
 
-    `.f` binds tighter than application, so any compound term is
-    parenthesised: `(f x).g`, `(Destruct(C, i, t)).f`, not `f x.g`.
+    These are the base of a field or tuple-element access, and the function of
+    an application. Both bind at least as tight as application, so any compound term is
+    parenthesised: `(f x).g`, not `f x.g`; `(Destruct(C, i, t)) x`, not
+    `Destruct(C, i, t) x`, which applies a constructor to two arguments.
     """
     return _par_if(has_multiple_children(x), [term2doc(x)])
 
@@ -213,22 +222,29 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             return _const2doc(c)
 
         case xtype.Mir_Term_view_If(args=(c, th, el)):
+            # A branch binding looser than `if` is parenthesised:
+            # `if c then a; b else e` does not parse, and `if c then x else a; b`
+            # parses as `(if c then x else a); b`.
+            def branch(x: xtype.Mir_Term) -> Doc:
+                looser = operator_info_of_term(x).precedence < _IF_PREC
+                return _par_if(looser, [rec(x)])
+
             return _g(
                 [
-                    _g([_kw('if'), _indent([line, rec(c)]), line, _kw('then')]),
-                    _indent([line, rec(th)]),
+                    _g([_kw('if'), _indent([line, branch(c)]), line, _kw('then')]),
+                    _indent([line, branch(th)]),
                     line,
                     _kw('else'),
-                    _indent([line, rec(el)]),
+                    _indent([line, branch(el)]),
                 ]
             )
 
         case xtype.Mir_Term_view_Apply(f=f, l=args):
-            fn = rec(f)
             if isinstance(f.view, xtype.Mir_Term_view_Sym):
                 s = f.view.arg
                 sid = short_id(s.sym.id)
-                pi = operator_info(sid, len(args) > 1)
+                pi, name = sym_operator_info(sid, len(args) > 1)
+                fn = text(name)
 
                 if sid == 'subterm_selection_select':
                     return _subterm_selection2doc(args)
@@ -254,14 +270,17 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                     ]
                 )
                 return _g([fn, hargs])
-            # fn is a function term, not a symbol
+            # The function is a term, not a symbol.
+            fn = _atom2doc(f)
+            if len(args) == 0:
+                return fn
             hargs = _indent(
                 [
                     line,
                     join(line, [recwp(IXO.default_(), x) for x in args]),
                 ]
             )
-            return _par_if(len(args) > 0, [fn, hargs])
+            return _g([fn, hargs])
 
         case xtype.Mir_Term_view_Var(arg=var):
             return text(var.id.name)
@@ -272,9 +291,9 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
         case xtype.Mir_Term_view_Construct(c=c, args=args):
             if len(args) == 0:
                 return sym2doc(c)
-            op_doc = sym2doc(c)
             sid = short_id(c.sym.id)
-            pi = operator_info(sid, len(args) > 1)
+            pi, name = sym_operator_info(sid, len(args) > 1)
+            op_doc = text(name)
             if pi.notation == Notation.INFIX:
                 if len(args) == 2:
                     lhs = recwp(pi, args[0], True)
@@ -309,12 +328,16 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             return _g(
                 [
                     _kw('Destruct'),
-                    _tuple2doc([sym2doc(c), text(str(i)), _tuple_elem2doc(inner)]),
+                    _tuple2doc(
+                        [_ctor_name2doc(c), text(str(i)), _tuple_elem2doc(inner)]
+                    ),
                 ]
             )
 
         case xtype.Mir_Term_view_Is_a(c=c, t=inner):
-            return _g([_kw('Is_a'), _tuple2doc([sym2doc(c), _tuple_elem2doc(inner)])])
+            return _g(
+                [_kw('Is_a'), _tuple2doc([_ctor_name2doc(c), _tuple_elem2doc(inner)])]
+            )
 
         case xtype.Mir_Term_view_Tuple(l=ls):
             return _g(
@@ -326,11 +349,11 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
             )
 
         case xtype.Mir_Term_view_Field(f=f, t=inner):
-            inner_doc = _projection_base2doc(inner)
+            inner_doc = _atom2doc(inner)
             return hcat(inner_doc, text('.'), sym2doc(f))
 
         case xtype.Mir_Term_view_Tuple_field(i=i, t=inner):
-            inner_doc = _projection_base2doc(inner)
+            inner_doc = _atom2doc(inner)
             return hcat(inner_doc, text('.'), text(str(i)))
 
         case xtype.Mir_Term_view_Record(rows=rows, rest=rest):
@@ -378,55 +401,30 @@ def term2doc(t: xtype.Mir_Term) -> Doc:
                     body += [linebreak, text('; '), fd]
                 return group(hcat(*head, *body, line, text('}')))
 
+        # NOTE: this deviates from `term-formatter.ts`, which prints
+        # `case u of | C -> t | ...`. That does not parse as IML, and a real
+        # `match` would need a pattern for each constructor's fields, which MIR's
+        # `Case` does not bind: branches read them with `Destruct`.
+        # We print the MIR node as a pseudo-constructor, like `Destruct`:
+        # `Case(u, [(C1, t1); (C2, t2)])`, with the default branch as a third
+        # element when present, `Case(u, [(C1, t1)], d)`.
         case xtype.Mir_Term_view_Case(u=u, cases=cases, default=default):
-            hcases = join(
-                line,
+            branches = [
+                _tuple2doc([_ctor_name2doc(sym), _tuple_elem2doc(term)])
+                for sym, term in cases
+            ]
+            hcases = _g(
                 [
-                    _g(
-                        [
-                            text('|'),
-                            line,
-                            sym2doc(sym),
-                            line,
-                            text('->'),
-                            line,
-                            rec(term),
-                        ]
-                    )
-                    for sym, term in cases
-                ],
-            )
-            hdefault: Doc = (
-                _g(
-                    [
-                        line,
-                        text('|'),
-                        line,
-                        text('_'),
-                        line,
-                        text('->'),
-                        line,
-                        rec(default),
-                    ]
-                )
-                if default is not None
-                else nil
-            )
-            # NOTE: this deviates from `term-formatter.ts`, which writes
-            # `rec(v.u), kw("of")` with no separator — producing `optof`.
-            # We add a `line` so the scrutinee and `of` are space-separated.
-            return _g(
-                [
-                    _kw('case'),
-                    line,
-                    rec(u),
-                    line,
-                    _kw('of'),
-                    line,
-                    hcases,
-                    hdefault,
+                    text('['),
+                    _indent([linebreak, join(hcat(text(';'), line), branches)]),
+                    linebreak,
+                    text(']'),
                 ]
             )
+            elems = [_tuple_elem2doc(u), hcases]
+            if default is not None:
+                elems.append(_tuple_elem2doc(default))
+            return _g([_kw('Case'), _tuple2doc(elems)])
 
         case xtype.Mir_Term_view_Sequence(args=(items, last)):
             # NOTE: this deviates from `term-formatter.ts`, which joins
