@@ -1,0 +1,53 @@
+(* Conversion between int and LString.t (logic-mode strings). *)
+
+[@@@import Lchar_utils, "lchar_utils.iml"]
+
+(* --- Code to character conversion (inverse of Lchar_utils.char_code) --- *)
+
+let char_of_code (code : int) : LChar.t =
+  LChar.Char (
+    code / 128 mod 2 = 1,
+    code / 64 mod 2 = 1,
+    code / 32 mod 2 = 1,
+    code / 16 mod 2 = 1,
+    code / 8 mod 2 = 1,
+    code / 4 mod 2 = 1,
+    code / 2 mod 2 = 1,
+    code mod 2 = 1
+  )
+
+(* --- int to LString.t --- *)
+
+let digit_to_char (d : int) : LChar.t =
+  char_of_code (d + 48)
+
+let rec nat_to_lstring (n : int) (acc : LString.t) : LString.t =
+  if n < 10 then digit_to_char n :: acc
+  else nat_to_lstring (n / 10) (digit_to_char (n mod 10) :: acc)
+
+let string_of_int (n : int) : LString.t =
+  if n = 0 then [digit_to_char 0]
+  else if n < 0 then char_of_code 45 :: nat_to_lstring (abs n) []
+  else nat_to_lstring n []
+
+(* --- LString.t to int --- *)
+
+let rec parse_nat (acc : int) (cs : LChar.t list) : int option =
+  match cs with
+  | [] -> Some acc
+  | c :: rest ->
+    let code = Lchar_utils.char_code c in
+    if code >= 48 && code <= 57 then
+      parse_nat (acc * 10 + (code - 48)) rest
+    else None
+
+let int_of_string (s : LString.t) : int option =
+  match s with
+  | [] -> None
+  | c :: rest ->
+    if Lchar_utils.char_code c = 45 then
+      (match rest with
+       | [] -> None
+       | _ -> Option.map (fun n -> ~- n) (parse_nat 0 rest))
+    else
+      parse_nat 0 s

@@ -23,6 +23,8 @@ For each tactic, extract the following information:
 - signature: the type annotation (e.g., `t`, `string -> t`, `int list -> t`)
 - documentation: the OCaml doc comment `(** ... *)` preceding the definition
 - documentation_md: markdown version of the documentation
+- aliases (only when present): names bound as plain aliases of the tactic,
+  e.g. `let esimp = expr_simplify`
 
 Assertion: the number of extracted tactics must match the number of
 `[@@builtin.tac "fn.tac.*"]` attributes found in the source file.
@@ -365,6 +367,15 @@ def extract_tactics(content: str) -> list[dict]:
     return tactics
 
 
+def attach_aliases(content: str, tactics: list[dict]) -> None:
+    """Record plain aliases (`let esimp = expr_simplify`) on the aliased tactic."""
+    by_name = {tac['name']: tac for tac in tactics}
+    alias_pattern = re.compile(r'^\s*let\s+(\w+)\s*=\s*(\w+)\s*$', re.MULTILINE)
+    for alias, target in alias_pattern.findall(content):
+        if target in by_name:
+            by_name[target].setdefault('aliases', []).append(alias)
+
+
 def str_representer(dumper: yaml.Dumper, data: str):
     """
     If the string contains newlines, represent it as a literal block.
@@ -394,6 +405,7 @@ def main(
     # Count expected tactics and extract them
     expected_count = count_tactic_attributes(content)
     tactics = extract_tactics(content)
+    attach_aliases(content, tactics)
 
     # Assert that we extracted all tactics
     assert len(tactics) == expected_count, (

@@ -40,7 +40,7 @@ Commands that will trigger verification:
 
 ## Tactics
 
-> This section is general usage guide for tactics. Refer to [reference/tactics.md](./reference/tactics.md) for the full details of tactics.
+> This section is general usage guide for tactics. Refer to [reference/tactics.md](../reference/tactics.md) for the full details of tactics.
 
 Based on the `by` annotation (`[@@by auto]`), ImandraX allows users to structure proofs through a combination of smaller tactics and more sophisticated tacticals, enabling modular, reusable proof strategies. 
 
@@ -182,4 +182,35 @@ To compose tactics, use the following operators:
 - `<|>`: `t1 <|> t2` is the `or tactical` which applies `t1` and uses its result if
     it succeeds, and otherwise applies `t2` if `t1` had failed
 - `@>>|`: `t1 @>>| t2` applies `t1` and then applies `t2` to all `t1`-generated subgoals.
-- `@>|`: `t @>| [t1; t2; ...; tn]` expects `t` to produce `n` subgoals, and , and uses `t_i` to solve the `i`-th goal.
+- `@>|`: `t @>| [t1; t2; ...; tn]` expects `t` to produce `n` subgoals, and uses `t_i` to solve the `i`-th goal.
+
+### Defining your own tactics
+
+Tactics are ordinary values, so you can bind them with `let` at the top level of
+a file and reuse them. A tactic can take parameters, which is a convenient way to
+fix solver options once per file:
+
+```iml
+let crush = Tactic.unroll 10
+
+let unroll_nonlin qt nqt steps =
+  Tactic.unroll ~smt:"z3-full-nonlinear" ~query_timeout:qt ~no_asm_query_timeout:nqt steps
+
+theorem foo x y = ... [@@by unroll_nonlin 1000 2000 20]
+```
+
+`"z3-full-nonlinear"` is an SMT solver with nonlinear arithmetic enabled.
+
+A `[@@by]` block can also use local `let` bindings, both to name a tactic used
+on several subgoals and to name terms for later instantiation:
+
+```iml
+[@@by
+  let close_sub = intros @> crush in
+  induction ~id:[%id my_ind] () @>>| close_sub]
+
+[@@by let (u, v) = bezout_sub a b in [%use mod_mul_preserves_zero u a k] @> auto]
+```
+
+This only names combinations of existing tactics. It does not let you write new
+proof procedures.

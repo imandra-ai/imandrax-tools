@@ -71,11 +71,11 @@ Along with `SKILL.md` (this file), we have the following materials:
 │   └── verification-guide.md # Verification guide for ImandraX, including tactic usage. Read this when working with any non-trivial proof-obligation tasks spawned by `let rec` (termination), `instance`, `verify`, `lemma` and `theorem`.
 ├── SKILL.md
 ├── async-workflow.md # Async-only workflow for submitting tasks non-blockingly and polling for results. A common way to tackle timeouts.
+├── client-libraries.md # Libraries for programmatically interacting with ImandraX - the Python and TypeScript clients (with a quickstart covering connecting, the main endpoints, reading results and the MIR db), plus Python utilities for protobuf models, pretty-printing and IML code manipulation.
 ├── codelogician-cli.md # Guide for using the  `codelogician` / `codelogician-lite` CLI to interact with ImandraX. Includes installation guide, `--json` output, `--async-only` workflow.
 ├── eval-command.md # The `eval <expr>` syntax evaluates a closed IML expression and prints its value. With `--task-filter=anonymous`, you can only run `eval` computation and ignores all verification as if you are running a script. With `--json`, you can write test cases by computation as if you are unit-testing regular programs.
 ├── iml-language-guide.md # IML language guide. Covers the syntax and built-in annotations, and how ImandraX works with IML. Includes examples, tips and pitfalls.
 ├── import-syntax.md # Import syntax in IML. For multi-file (multi-module) projects. Useful for separating types and functions definition from VGs and region-decompositions triggering commands.
-├── python-libraries.md # Python libraries for programmatically interacting with ImandraX. `imandrax-api-models` for client, `iml-query` for treesitter-based IML code manipulation.
 ├── region-decomp-intro.md # Intro to region decomposition, including concept explanations, basic usage, and common errors.
 ├── task-and-artifacts.md # Conceptual guide about tasks and artifacts
 ├── termination-proving.md # Termination proving using [@@measure ...] and the Ordinal module. Every `let rec` definition triggers a termination proving task. Read this when the default termination proving heuristics fail.
