@@ -71,6 +71,7 @@ returns 1 goal.
 
 11. `expr_simplify`
 - Signature: `t`
+- Aliases: `esimp`
 - Doc: Moral equivalent of Z3's Expr.simplify applied to each hypothesis and
 conclusion in the goal.
 
@@ -288,15 +289,15 @@ Note the notation `[%use foo x y z]` handles term quoting automatically.
 
 
 
-# Additional proof forms and attributes
+# Other tactic forms and attributes
 
-Forms used pervasively in expert proofs that are not in the tactic list above.
+Forms that are not in the tactic list above.
 
-## `[%have name := fact by (tactic)]` — structured forward step
+## `[%have name := fact by (tactic)]`
 
-Proves `fact` on the spot with the given sub-tactic and adds it to the goal as a
-named hypothesis. Lets a long proof read like a paper proof: a sequence of named,
-locally-discharged facts.
+Proves `fact` with the given tactic and adds it to the goal as a hypothesis
+named `name`. Chaining several `[%have]` steps gives a forward proof built from
+named intermediate facts:
 
 ```iml
 [@@by intros
@@ -305,41 +306,21 @@ locally-discharged facts.
    @> nonlin ()]
 ```
 
-The `by (...)` sub-proof can use any tactic expression (`[%use]`, `[%simp_only]`,
-`arith`, `nonlin ()`, ...). Also useful for micro-rewrites the simplifier won't
-perform: `[%have rew := 2*m*m = 2*(m*m) by (nonlin ())]`.
+The tactic after `by` can be any tactic expression. `[%have]` is also useful for
+small rewrites the simplifier won't do on its own, e.g.
+`[%have rew := 2*m*m = 2*(m*m) by (nonlin ())]`.
 
-## `esimp` — evaluation-oriented simplification
+## `[%t e]`
 
-Simplifies by evaluation/computation; useful to expose `let`-bound tuple
-components (e.g. a `let (u, v) = bezout_sub a b in ...` in the goal) and to
-compute ground subterms mid-proof. Commonly chained: `esimp @> simplify ()`.
+Shorthand for `quote_term e`, for tactics that take a term argument:
+`generalize [%t (a / b)] "q"` is `generalize (quote_term (a / b)) "q"`.
 
-## `[%t ...]` — quote_term shorthand
+## `[@@disable f, g, ...]`
 
-`generalize [%t (a / b)] "q"` ≡ `generalize (quote_term (a / b)) "q"`.
-
-## Tactics are first-class values
-
-Bind and reuse them:
-```iml
-let crush = Tactic.unroll 10   (* file-level house closer *)
-
-theorem descent_loop_correct p m q = ...
-[@@by
-  let close_sub = intros @> [%subgoal ...] @>| [ ...; crush ] in
-  induction ~id:[%id descent_ind] () @>>| close_sub]
-```
-
-Plain `let` inside a `[@@by]` block can also name terms for instantiations:
-`let (u, v) = bezout_sub a b in [%use mod_mul_preserves_zero u a k] @> ...`.
-
-## `[@@disable f, g, ...]` — freeze definitions for one proof
-
-Attribute on a lemma/theorem: the listed function definitions are not unfolded
-during that proof, so the prover must reason through previously proven lemmas
-about them. Essential once a function has its characteristic-lemma API, and to
-stop `auto` diverging into a case-explosion or nested-recursion unfold:
+An attribute on a `lemma` / `theorem`: the listed functions are not unfolded
+while proving it, so the prover has to use previously proven lemmas about them.
+Use it once a function has enough lemmas, or to stop `auto` from unfolding into
+a case explosion:
 
 ```iml
 theorem descent_loop_correct p m q = ...
@@ -347,13 +328,14 @@ theorem descent_loop_correct p m q = ...
 [@@disable c_mod, descent_q, centered, sum2]
 ```
 
-Works on prelude functions too (e.g. `[@@disable List.mem]`). Counterpart:
-`[%simp_only f, g]` *unfolds only* the listed definitions at a chosen point.
+Prelude functions can be disabled too, e.g. `[@@disable List.mem]`. The opposite
+direction is `[%simp_only f, g]`, which simplifies using only the listed
+definitions and rules.
 
-## `[@trigger]` — forward-chaining trigger annotation
+## `[@trigger]`
 
-Marks the subterm of a `[@@fc]` rule that should pattern-match hypotheses to
-fire the rule:
+Inside a `[@@fc]` (forward-chaining) rule, marks the subterm that is matched
+against the goal to decide when the rule fires:
 
 ```iml
 theorem odds_len_1 x =
@@ -362,11 +344,11 @@ theorem odds_len_1 x =
 [@@by induct ~on_fun:[%id odds] ()] [@@fc]
 ```
 
-## `[@@by ...]` on a `let rec` — proving the termination obligation
+## `[@@by ...]` on a `let rec`
 
-A `[@@by]` attached to a recursive *definition* is the tactic for its
-termination proof obligation (usually next to `[@@measure ...]`). Nontrivial
-termination goals can `[%use]` previously proven lemmas:
+On a recursive definition, `[@@by]` gives the tactic for its termination proof
+obligation. It usually goes with `[@@measure ...]`, and can `[%use]` lemmas
+proven earlier:
 
 ```iml
 let rec prime_factors (n:int) : int list = ...
@@ -375,4 +357,10 @@ let rec prime_factors (n:int) : int list = ...
    @> simplify () @> arith]
 ```
 
-See [[termination-proving.md]] for more details on measures, `[@@adm]`, and related idioms.
+See [[termination-proving.md]] for measures, `[@@adm]`, and related idioms.
+
+## Defining your own tactics
+
+Tactics are values: they can be bound with `let`, take parameters, and be
+reused. See "Defining your own tactics" in
+[verification-guide.md](../verification/verification-guide.md).

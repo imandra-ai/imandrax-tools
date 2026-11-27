@@ -99,6 +99,8 @@ tactics:
   documentation_md: |-
     Moral equivalent of Z3's Expr.simplify applied to each hypothesis and
     conclusion in the goal.
+  aliases:
+  - esimp
 - name: or_left
   tac_id: fn.tac.or_left
   signature: t
