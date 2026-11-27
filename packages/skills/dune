@@ -1,0 +1,14 @@
+; Generate imandrax/ from the codelogician skill (../codelogician-skill/skill).
+
+(rule
+ (alias default)
+ (mode
+  (promote (until-clean)))
+ (deps
+  ../codelogician-skill/scripts/gen-imandrax-skill.sh
+  ../codelogician-skill/skill)
+ (target
+  (dir imandrax))
+ (action
+  (run bash %{dep:../codelogician-skill/scripts/gen-imandrax-skill.sh}
+   ../codelogician-skill/skill imandrax)))
