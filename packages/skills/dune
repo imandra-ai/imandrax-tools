@@ -12,3 +12,16 @@
  (action
   (run bash %{dep:../codelogician-skill/scripts/gen-imandrax-skill.sh}
    ../codelogician-skill/skill imandrax)))
+
+; Copy the codelogician skill as is.
+
+(rule
+ (alias default)
+ (mode
+  (promote (until-clean)))
+ (deps ../codelogician-skill/skill)
+ (target
+  (dir codelogician))
+ (action
+  (bash
+   "cp -R ../codelogician-skill/skill codelogician")))

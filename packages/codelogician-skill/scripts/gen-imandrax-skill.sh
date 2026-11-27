@@ -11,7 +11,6 @@ rm -rf "${OUT}"
 mkdir -p "${OUT}"
 cp -R "${SRC}"/. "${OUT}"/
 chmod -R u+w "${OUT}"
-find "${OUT}" -name .DS_Store -delete
 
 # Replace frontmatter and prepend a note to SKILL.md
 body="$(awk 'BEGIN{n=0} n>=2{print; next} /^---$/{n++}' "${SRC}/SKILL.md")"
